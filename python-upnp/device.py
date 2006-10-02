@@ -22,6 +22,8 @@
 
 import cElementTree
 import urllib2
+import time
+
 from service import Service
 import utils
 
@@ -82,6 +84,22 @@ class Device:
             if type['type'] == device_type:
                 return type[u'client']
         return None
+
+    def renew_service_subscriptions(self):
+        """ iterate over device's services and renew subscriptions """
+        now = time.time()
+        for service in self.get_services():
+            if service.get_sid():
+                if service.get_timeout() < now + 30 :
+                    service.renew_subscription()
+                if service.get_timeout() < now:
+                    print "wow, we lost an event subscription, maybe we need to rethink the loop time and timeout calculation?"
+        
+    def unsubscribe_service_subscriptions(self):
+        """ iterate over device's services and unsubscribe subscriptions """
+        for service in self.get_services():
+            if service.get_sid():
+                service.unsubscribe()
             
     def parse_description(self):
         handle = utils.url_fetch(self.location)

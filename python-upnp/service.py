@@ -131,7 +131,8 @@ class Service:
         subscribers[self.get_sid()] = self
         
     def unsubscribe(self):
-        pass
+        print "service.unsubscribe"
+        event.unsubscribe(self)
 
     def subscribe_for_variable(self, var_name, callback):
         variable = self.get_state_variable(var_name)

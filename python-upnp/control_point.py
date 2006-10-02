@@ -19,7 +19,6 @@
 # Elisa Commercial Agreement licenses.
 # See "LICENSE.Elisa" in the root of this distribution.
 
-
 import service
 from ssdp import SSDPServer
 from event import EventServer
@@ -27,9 +26,8 @@ from msearch import MSearch
 from device import Device, RootDevice
 
 from twisted.internet import task
+from twisted.internet import reactor
 from twisted.web import xmlrpc
-
-import time
 
 class ControlPoint:
 
@@ -41,25 +39,29 @@ class ControlPoint:
         self.events_server = EventServer(self)
         self.msearch = MSearch(self.ssdp_server)
 
-        l = task.LoopingCall(self.check_devices)
-        l.start(2.0) # call every 2 seconds
+        reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown)
+
+        self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
+        self.renew_service_subscription_loop.start(20.0)
+
+    def shutdown( self):
+        """ send control point unsubscribe messages """
+        try:
+            self.renew_service_subscription_loop.stop()
+        except:
+            pass
+        for root_device in self.get_devices():
+            root_device.unsubscribe_service_subscriptions()
+            for device in root_device.get_devices():
+                device.unsubscribe_service_subscriptions()
+        print 'ControlPoint shutdown'
 
     def check_devices(self):
-        #print "check_devices"
-        now = time.time()
+        """ iterate over devices and their embedded ones and renew subscriptions """
         for root_device in self.get_devices():
-            for service in root_device.get_services():
-                #print "check service:", service.get_type()
-                if service.get_sid():
-                    if service.get_timeout() < now + 30 :
-                        service.renew_subscription()
+            root_device.renew_service_subscriptions()
             for device in root_device.get_devices():
-                #print "check device:", device.get_friendly_name()
-                for service in device.get_services():
-                    #print "check service:", service.get_type()
-                    if service.get_sid():
-                        if service.get_timeout() < now + 30 :
-                            service.renew_subscription()
+                device.renew_service_subscriptions()
 
     def subscribe(self, name, callback):
         self.ssdp_server.subscribe(name, callback)
@@ -84,13 +86,9 @@ class ControlPoint:
         return found
 
     def get_devices(self):
-        #print "get_devices"
-        #print self.devices
         return self.devices
 
     def add_device(self, device_type, infos):
-        print "add_device"
-        print "infos:", infos
         if infos['ST'] == 'upnp:rootdevice':
             root = RootDevice(infos)
             self.devices.append(root)
@@ -105,12 +103,18 @@ class ControlPoint:
             self.devices.remove(device)
 
     def propagate(self, event):
+        print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
             target_service = service.subscribers[event.get_sid()]
             state_variables = target_service.get_state_variables()
             for var_name, variable in state_variables.iteritems():
-                if var_name in event:
-                    variable.update(event[var_name])
+                print var_name
+                if var_name == 'LastChange':
+                    print """ we have an AVTransport or RenderingControl event """
+                    print event[var_name]
+                else:    
+                    if var_name in event:
+                        variable.update(event[var_name])
 
 
 class XMLRPC( xmlrpc.XMLRPC):
@@ -238,12 +242,11 @@ def startXMLRPC( control_point, port):
 
                     
 if __name__ == '__main__':
-    from twisted.internet import reactor
     from content_directory_client import ContentDirectoryClient
     from connection_manager_client import ConnectionManagerClient
     from media_renderer_client import MediaRendererClient
 
-    ctrl = ControlPoint( True)
+    ctrl = ControlPoint()
 
     def print_results(results):
         print "results="

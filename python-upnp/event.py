@@ -38,13 +38,50 @@ TODO:
 EVENT_SERVER_PORT = 10001
 
 
+class EventServer(resource.Resource):
+
+    def __init__(self, control_point):
+        resource.Resource.__init__(self)
+        self.putChild('', self)
+        self.control_point = control_point
+        reactor.listenTCP(EVENT_SERVER_PORT, server.Site(self))
+        
+    def render_NOTIFY(self, request):
+        print "EventServer received request, code:", request.code
+        if request.code != 200:
+            print "data:"
+            print data
+        else:
+            headers = request.getAllHeaders()
+            sid = headers['sid']
+            data = request.content.getvalue()
+            tree = utils.parse_xml(data).getroot()
+            ns = "urn:schemas-upnp-org:event-1-0"
+            event = Event(sid)
+            for prop in tree.findall('{%s}property' % ns):
+                for var in prop.getchildren():
+                    tag = var.tag
+                    idx = tag.find('}') + 1
+                    event.update({tag[idx:]: var.text})
+            self.control_point.propagate(event)
+        return ""
+    
+class Event(dict):
+    def __init__(self, sid):
+        dict.__init__(self)
+        self._sid = sid
+
+    def get_sid(self):
+        return self._sid
+
 class EventProtocol(Protocol):
 
-    def __init__(self, service):
+    def __init__(self, service, action):
         self.service = service
+        self.action = action
 
     def dataReceived(self, data):
-        print " response received from the Service Events HTTP server "
+        print "response received from the Service Events HTTP server "
         cmd, headers = utils.parse_http_response(data)
         print cmd, headers
         try:
@@ -59,61 +96,34 @@ class EventProtocol(Protocol):
             pass
             
     def connectionLost( self, reason):
-        print " connection closed from the Service Events HTTP server"
+        print "connection closed from the Service Events HTTP server"
         
-class EventServer(resource.Resource):
-
-    def __init__(self, control_point):
-        resource.Resource.__init__(self)
-        self.putChild('', self)
-        self.control_point = control_point
-        reactor.listenTCP(EVENT_SERVER_PORT, server.Site(self))
-        
-    def render_NOTIFY(self, request):
-        print "EventServer received request, code:", request.code
-        headers = request.getAllHeaders()
-        sid = headers['sid']
-        data = request.content.getvalue()
-        print "data:"
-        print data
-        tree = utils.parse_xml(data).getroot()
-        ns = "urn:schemas-upnp-org:event-1-0"
-        event = Event(sid)
-        for prop in tree.findall('{%s}property' % ns):
-            for var in prop.getchildren():
-                tag = var.tag
-                idx = tag.find('}') + 1
-                event.update({tag[idx:]: var.text})
-        self.control_point.propagate(event)
-        return ""
+def unsubscribe(service, action='unsubscribe'):
+    subscribe(service, action)
     
-class Event(dict):
-    def __init__(self, sid):
-        dict.__init__(self)
-        self._sid = sid
-
-    def get_sid(self):
-        return self._sid
-
-def subscribe(service):
+def subscribe(service, action='subscribe'):
     """
-    send a subscribe request to a service
+    send a subscribe/renewal/unsubscribe request to a service
     return the device response
     """
-
+    print "event.subscribe, action:", action 
     service_url = service.get_base_url()
     
     host_port = service_url.split('//')[1]
     host,port = tuple(host_port.split(':'))
     port = int(port)
 
-    print "host:", host, "port:", port
-    def send_request(p):
-
-        request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
-                   "TIMEOUT: Second-300",
-                   "HOST: %s:%s" % (host, port),
-                   ]
+    def send_request(p, action):
+        print "event.subscribe.send_request, action:", action 
+        if action == 'subscribe':
+            request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
+                        "HOST: %s:%s" % (host, port),
+                        "TIMEOUT: Second-300",
+                        ]
+        else:
+            request = ["UNSUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
+                        "HOST: %s:%s" % (host, port),
+                        ]
 
         if service.get_sid():
             request.append("SID: %s" % service.get_sid())
@@ -130,5 +140,18 @@ def subscribe(service):
         print "event.subscribe.send_request", request
         return p.transport.write(request)
 
-    c = ClientCreator(reactor, EventProtocol, service=service)
-    c.connectTCP(host, port).addCallback(send_request)
+    def prepare_connection( service, action):
+        print "event.subscribe.prepare_connection action:", action
+        c = ClientCreator(reactor, EventProtocol, service=service, action=action)
+        d = c.connectTCP(host, port).addCallback(send_request, action=action)
+        return d
+
+    if action == 'unsubscribe':
+        """ I'm uncertain if this is really the right way to do this,
+            but so far it seems to work
+        """
+        reactor.addSystemEventTrigger( 'before', 'shutdown', prepare_connection, service, action)
+    else:
+        prepare_connection(service, action)
+
+    print "event.subscribe finished"
