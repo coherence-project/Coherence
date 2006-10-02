@@ -67,7 +67,7 @@ class Service:
         self.scpd_url = scpd_url
         self.device = device
         self._actions = {}
-        self._variables = {}
+        self._variables = { 0: {}}
         self._var_subscribers = {}
         self.subscription_id = ""
         self.timeout = 0
@@ -103,11 +103,11 @@ class Service:
     def get_actions(self):
         return self._actions
 
-    def get_state_variables(self):
-        return self._variables
+    def get_state_variables(self, instance):
+        return self._variables.get(instance)
 
-    def get_state_variable(self, name):
-        return self._variables.get(name)
+    def get_state_variable(self, name, instance=0):
+        return self._variables.get(instance).get(name)
 
     def get_control_url(self):
         return self.url_base + self.control_url
@@ -134,7 +134,7 @@ class Service:
         print "service.unsubscribe"
         event.unsubscribe(self)
 
-    def subscribe_for_variable(self, var_name, callback):
+    def subscribe_for_variable(self, var_name, instance=0, callback=None):
         variable = self.get_state_variable(var_name)
         if variable:
             variable.subscribe(callback)
@@ -174,7 +174,8 @@ class Service:
             values = []
             for allowed in var_node.findall('.//{%s}allowedValue' % ns):
                 values.append(allowed.text)
-            self._variables[name] = variable.StateVariable(self, name, send_events,
+            instance = 0
+            self._variables.get(instance)[name] = variable.StateVariable(self, name, instance, send_events,
                                                            data_type, values)
             
             

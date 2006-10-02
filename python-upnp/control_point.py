@@ -106,15 +106,12 @@ class ControlPoint:
         print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
             target_service = service.subscribers[event.get_sid()]
-            state_variables = target_service.get_state_variables()
-            for var_name, variable in state_variables.iteritems():
-                print var_name
+            for var_name, var_value  in event.items():
                 if var_name == 'LastChange':
                     print """ we have an AVTransport or RenderingControl event """
-                    print event[var_name]
+                    target_service.get_state_variable(var_name, 0).update(var_value)
                 else:    
-                    if var_name in event:
-                        variable.update(event[var_name])
+                    target_service.get_state_variable(var_name, 0).update(var_value)
 
 
 class XMLRPC( xmlrpc.XMLRPC):

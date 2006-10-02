@@ -33,7 +33,7 @@ class AVTransportClient( ServiceClient):
         self.namespace = service.get_type()
         self.url = service.get_control_url()
         self.service.subscribe()
-        print "AVTransportClient __init__", self.url
+        #print "AVTransportClient __init__", self.url
 
     def set_av_transport_uri(self, instance_id=0, current_uri='', current_uri_metadata='<dc:title>Test</dc:title>'):
         client = self._get_client("SetAVTransportURI")

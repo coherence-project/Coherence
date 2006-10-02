@@ -75,5 +75,9 @@ class MediaRendererClient:
         #self.rendering_control.get_mute()
         #self.rendering_control.get_volume()
         #self.rendering_control.set_mute(desired_mute=1)
+        self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
+        self.av_transport.service.subscribe_for_variable('TransportState', 0, self.state_variable_change)
 
+    def state_variable_change( self, variable):
+        print variable.name, 'changed from', variable.old_value, 'to', variable.value
 
