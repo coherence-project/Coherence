@@ -24,10 +24,13 @@ from ssdp import SSDPServer
 from event import EventServer
 from msearch import MSearch
 from device import Device, RootDevice
+from utils import parse_xml
 
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.web import xmlrpc
+
+import string
 
 class ControlPoint:
 
@@ -103,13 +106,20 @@ class ControlPoint:
             self.devices.remove(device)
 
     def propagate(self, event):
-        print 'propagate:', event
+        #print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
             target_service = service.subscribers[event.get_sid()]
             for var_name, var_value  in event.items():
                 if var_name == 'LastChange':
-                    print """ we have an AVTransport or RenderingControl event """
+                    """ we have an AVTransport or RenderingControl event """
                     target_service.get_state_variable(var_name, 0).update(var_value)
+                    tree = parse_xml(var_value).getroot()
+                    namespace_uri, tag = string.split(tree.tag[1:], "}", 1)
+                    for instance in tree.findall('{%s}InstanceID' % namespace_uri):
+                        instance_id = instance.attrib['val']
+                        for var in instance.getchildren():
+                            namespace_uri, tag = string.split(var.tag[1:], "}", 1)
+                            target_service.get_state_variable(tag, instance_id).update(var.attrib['val'])
                 else:    
                     target_service.get_state_variable(var_name, 0).update(var_value)
 

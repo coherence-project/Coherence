@@ -107,6 +107,7 @@ class Service:
         return self._variables.get(instance)
 
     def get_state_variable(self, name, instance=0):
+        instance = int(instance)
         return self._variables.get(instance).get(name)
 
     def get_control_url(self):
@@ -131,7 +132,6 @@ class Service:
         subscribers[self.get_sid()] = self
         
     def unsubscribe(self):
-        print "service.unsubscribe"
         event.unsubscribe(self)
 
     def subscribe_for_variable(self, var_name, instance=0, callback=None):
@@ -140,7 +140,6 @@ class Service:
             variable.subscribe(callback)
             
     def renew_subscription(self):
-        print "service.renew_subscription"
         event.subscribe(self)
 
     
