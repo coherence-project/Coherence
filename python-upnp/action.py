@@ -19,6 +19,7 @@
 # Elisa Commercial Agreement licenses.
 # See "LICENSE.Elisa" in the root of this distribution.
 
+from soap_proxy import SOAPProxy
 
 class Argument:
 
@@ -46,6 +47,14 @@ class Action:
         self.service = service
         self.name = name
         self.arguments_list = arguments_list
+        
+    def _get_client(self):
+        url = self.service.get_control_url()
+        namespace = self.service.get_type()
+        action = "%s#%s" % (namespace, self.name)
+        client = SOAPProxy( url, namespace=("u",namespace), soapaction=action)
+        return client
+
 
     def get_name(self):
         return self.name
@@ -56,9 +65,22 @@ class Action:
     def get_service(self):
         return self.service
 
-    def launch(self):
-        pass
+    def call(self, *args, **kwargs):
+        print "calling", self.name
+        instance_id = 0
+        for arg_name, arg in kwargs.iteritems():
+            print arg_name, arg
+            if arg_name == 'InstanceID':
+                instance_id = arg
+        client = self._get_client()
+        d = client.callRemote( self.name,
+                                    **kwargs)
+        d.addCallback( self.got_results, instance_id=instance_id)
+        return d
 
+    def got_results( self, results, instance_id):
+        print "call %s (instance %d) returns: %r" % (self.name, instance_id, results)
+        
     def __repr__(self):
         return "Action: %s (%s args)" % (self.get_name(),
                                          len(self.get_arguments_list()))

@@ -24,9 +24,7 @@ from twisted.python import log
 import sys, threading
 import DIDLLite, utils
 
-from service import ServiceClient
-
-class ConnectionManagerClient( ServiceClient):
+class ConnectionManagerClient:
 
     def __init__(self, service):
         self.service = service
@@ -36,51 +34,24 @@ class ConnectionManagerClient( ServiceClient):
         #print "ConnectionManagerClient __init__", self.url
 
     def get_protocol_info(self):
-        client = self._get_client("GetProtocolInfo")
-        d = client.callRemote("GetProtocolInfo")
-        def got_results(results):
-            print "protocol info: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetProtocolInfo')
+        return action.call()
 
     def prepare_for_connection(self, remote_protocol_info, peer_connection_manager, peer_connection_id, direction):
-        client = self._get_client("PrepareForConnection")
-        d = client.callRemote("PrepareForConnection",
-                                    RemoteProtocolInfo=remote_protocol_info,
-                                    PeerConnectionManager=peer_connection_manager,
-                                    PeerConnectionID=peer_connection_id,
-                                    Direction=direction)
-        def got_results(results):
-            print "prepare for connection: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('PrepareForConnection')
+        return action.call( RemoteProtocolInfo=remote_protocol_info,
+                            PeerConnectionManager=peer_connection_manager,
+                            PeerConnectionID=peer_connection_id,
+                            Direction=direction)
 
     def connection_complete(self, connection_id):
-        client = self._get_client("ConnectionComplete")
-        d = client.callRemote("ConnectionComplete",
-                                    ConnectionID=connection_id)
-        def got_results(results):
-            print "connection complete: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('ConnectionComplete')
+        return action.call(ConnectionID=connection_id)
 
     def get_current_connection_ids(self):
-        client = self._get_client("GetCurrentConnectionIDs")
-        d = client.callRemote("GetCurrentConnectionIDs")
-        def got_results(results):
-            print "current connection ids: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetCurrentConnectionIDs')
+        return action.call()
 
     def get_current_connection_info(self, connection_id):
-        client = self._get_client("GetCurrentConnectionInfo")
-        d = client.callRemote("GetCurrentConnectionInfo",
-                                    ConnectionID=connection_id)
-        def got_results(results):
-            print "current connection info: %r" % results
-        d.addCallback(got_results)
-        return d
-
-    def _failure(self, error):
-        log.msg(error.getTraceback(), debug=True)
-        error.trap(Exception)
+        action = self.service.get_action('GetCurrentConnectionInfo')
+        return action.call(ConnectionID=connection_id)

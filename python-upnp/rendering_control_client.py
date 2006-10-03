@@ -24,9 +24,7 @@ from twisted.python import log
 import sys, threading
 import DIDLLite, utils
 
-from service import ServiceClient
-
-class RenderingControlClient( ServiceClient):
+class RenderingControlClient:
 
     def __init__(self, service):
         self.service = service
@@ -36,118 +34,59 @@ class RenderingControlClient( ServiceClient):
         #print "RenderingControlClient __init__", self.url
 
     def list_presets(self, instance_id=0):
-        client = self._get_client( "ListPresets")
-        d = client.callRemote("ListPresets",
-                                InstanceID=instance_id)
-        def got_results(results):
-            print "list presets: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('ListPresets')
+        return action.call(InstanceID=instance_id)
 
     def select_presets(self, instance_id=0, preset_name=''):
-        client = self._get_client( "SelectPresets")
-        d = client.callRemote("SelectPresets",
-                                InstanceID=instance_id,
-                                PresetName=preset_name)
-        def got_results(results):
-            print "select presets: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('SelectPresets')
+        return action.call( InstanceID=instance_id,
+                            PresetName=preset_name)
 
     def get_mute(self, instance_id=0, channel='Master'):
-        client = self._get_client( "GetMute")
-        d = client.callRemote("GetMute",
-                                InstanceID=instance_id,
-                                Channel=channel)
-        def got_results(results):
-            print "get mute: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetMute')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel)
 
     def set_mute(self, instance_id=0, channel='Master', desired_mute=0):
-        client = self._get_client( "SetMute")
-        d = client.callRemote("SetMute",
-                                InstanceID=instance_id,
-                                Channel=channel,
-                                DesiredMute=desired_mute)
-        def got_results(results):
-            print "set mute: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('SetMute')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel,
+                            DesiredMute=desired_mute)
 
     def get_volume(self, instance_id=0, channel='Master'):
-        client = self._get_client( "GetVolume")
-        d = client.callRemote("GetVolume",
-                                InstanceID=instance_id,
-                                Channel=channel)
-        def got_results(results):
-            print "get volume: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetVolume')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel)
 
     def set_volume(self, instance_id=0, channel='Master', desired_volume=0):
-        client = self._get_client( "SetVolume")
-        d = client.callRemote("SetVolume",
-                                InstanceID=instance_id,
-                                Channel=channel,
-                                DesiredVolume=desired_volume)
-        def got_results(results):
-            print "set volume: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('SetVolume')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel,
+                            DesiredVolume=desired_volume)
 
     def get_volume_db(self, instance_id=0, channel='Master'):
-        client = self._get_client( "GetVolumeDB")
-        d = client.callRemote("GetVolumeDB",
-                                InstanceID=instance_id,
-                                Channel=channel)
-        def got_results(results):
-            print "get volumeDB: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetVolumeDB')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel)
 
     def set_volume_db(self, instance_id=0, channel='Master', desired_volume=0):
-        client = self._get_client( "SetVolumeDB")
-        d = client.callRemote("SetVolumeDB",
-                                InstanceID=instance_id,
-                                Channel=channel,
-                                DesiredVolume=desired_volume)
-        def got_results(results):
-            print "set volumeDB: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('SetVolumeDB')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel,
+                            DesiredVolume=desired_volume)
 
     def get_volume_db_range(self, instance_id=0, channel='Master'):
-        client = self._get_client( "GetVolumeDBRange")
-        d = client.callRemote("GetVolumeDBRange",
-                                InstanceID=instance_id,
-                                Channel=channel)
-        def got_results(results):
-            print "get volumeDB range: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetVolumeDBRange')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel)
 
     def get_loudness(self, instance_id=0, channel='Master'):
-        client = self._get_client( "GetLoudness")
-        d = client.callRemote("GetLoudness",
-                                InstanceID=instance_id,
-                                Channel=channel)
-        def got_results(results):
-            print "get loudness: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetLoudness')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel)
 
     def set_loudness(self, instance_id=0, channel='Master', desired_loudness=0):
-        client = self._get_client( "SetLoudness")
-        d = client.callRemote("SetLoudness",
-                                InstanceID=instance_id,
-                                Channel=channel,
-                                DesiredLoudness=desired_loudnesse)
-        def got_results(results):
-            print "set loudness: %r" % results
-        d.addCallback(got_results)
-        return d
-
-    def _failure(self, error):
-        log.msg(error.getTraceback(), debug=True)
-        error.trap(Exception)
+        action = self.service.get_action('SetLoudness')
+        return action.call( InstanceID=instance_id,
+                            Channel=channel,
+                            DesiredLoudness=desired_loudness)

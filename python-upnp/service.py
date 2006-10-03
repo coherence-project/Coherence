@@ -38,14 +38,6 @@ def unsubscribe(service):
     if subscribers.has_key(service.get_sid()):
         del subscribers[service.get_sid()]
         
-class ServiceClient:
-    
-    def _get_client(self, action):
-        action = "%s#%s" % (self.namespace, action)
-        client = SOAPProxy(self.url, namespace=("u",self.namespace),
-                           soapaction=action)
-        return client
-
 class Service:
 
     def __init__(self, service_type, service_id, location, control_url,
@@ -102,6 +94,9 @@ class Service:
             
     def get_actions(self):
         return self._actions
+        
+    def get_action( self, name):
+        return self.get_actions()[name]
 
     def get_state_variables(self, instance):
         return self._variables.get(instance)

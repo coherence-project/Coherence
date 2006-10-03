@@ -24,14 +24,12 @@ from twisted.python import log
 import sys, threading
 import DIDLLite, utils
 
-from service import ServiceClient
-
 global work, pending
 work = []
 pending = {}
 
 
-class ContentDirectoryClient( ServiceClient):
+class ContentDirectoryClient:
 
     def __init__(self, service):
         self.service = service
@@ -40,28 +38,16 @@ class ContentDirectoryClient( ServiceClient):
         #print "ContentDirectoryClient __init__", self.url
 
     def get_sort_capabilities(self):
-        client = self._get_client("GetSortCapabilities")
-        d = client.callRemote("GetSortCapabilities")
-        def got_results(results):
-            print "sort capabilities: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetSortCapabilities')
+        return action.call()
 
     def get_system_update_id(self):
-        client = self._get_client("GetSystemUpdateID")
-        d = client.callRemote("GetSystemUpdateID")
-        def got_results(results):
-            print "system update id: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetSystemUpdateID')
+        return action.call()
 
     def get_search_capabilities(self):
-        client = self._get_client("GetSearchCapabilities")
-        d = client.callRemote("GetSearchCapabilities")
-        def got_results(results):
-            print "search capabilities: %r" % results
-        d.addCallback(got_results)
-        return d
+        action = self.service.get_action('GetSearchCapabilities')
+        return action.call()
 
     def search(self, container_id, criteria, starting_index=0,
                requested_count=0):
