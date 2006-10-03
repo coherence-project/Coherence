@@ -99,3 +99,6 @@ class AVTransportClient:
         action = self.service.get_action('Previous')
         return action.call( InstanceID=instance_id)
 
+    def get_current_transport_actions(self, instance_id=0):
+        action = self.service.get_action('GetCurrentTransportActions')
+        return action.call( InstanceID=instance_id)
