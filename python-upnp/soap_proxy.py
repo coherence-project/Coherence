@@ -65,9 +65,9 @@ class SOAPProxy(soap.Proxy):
         preambule = """<?xml version="1.0" encoding="utf-8"?>"""
         payload = preambule + tostring(envelope)
         
-        print "soapaction:", soapaction
-        print "callRemote:", payload
-        print "url:", self.url
+        #print "soapaction:", soapaction
+        #print "callRemote:", payload
+        #print "url:", self.url
         
         return client.getPage(self.url, postdata=payload, method="POST",
                               headers={'content-type': 'text/xml ;charset="utf-8"',
