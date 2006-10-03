@@ -140,7 +140,6 @@ def SoapElement(parent, name, type=None, text=None):
         #elem.set(NS_XSI + "type", type)
         elem.set("xsi:type", type)
     elem.text = text
-    print "SoapElement", tostring(elem)
     return elem
 
 ##
