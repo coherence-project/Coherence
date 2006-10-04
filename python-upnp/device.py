@@ -38,7 +38,8 @@ class Device:
         self.services = []
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
-        self.device_type = []
+        self.device_type = ""
+        self.client = None
         self.parse_description()
         
     def get_id(self):
@@ -68,23 +69,15 @@ class Device:
     def get_friendly_name(self):
         return self.friendly_name
 
-    def set_device_type(self, type, service_type, client):
-        t = {}
-        t[u'type'] = unicode(type)
-        t[u'service_type'] = unicode(type)
-        t[u'client'] = client
-        self.device_type.append(t)
-
     def get_device_type(self):
         return self.device_type
-        
-    def get_service_client(self, device_type):
-        #print "get_service_client"
-        for type in self.device_type:
-            if type['type'] == device_type:
-                return type[u'client']
-        return None
 
+    def set_client(self, client):
+        self.client = client
+        
+    def get_client(self):
+        return self.client
+        
     def renew_service_subscriptions(self):
         """ iterate over device's services and renew subscriptions """
         now = time.time()
@@ -110,6 +103,7 @@ class Device:
 
         ns = "urn:schemas-upnp-org:device-1-0"
         
+        self.device_type = unicode(tree.findtext('.//{%s}deviceType' % ns))
         self.friendly_name = unicode(tree.findtext('.//{%s}friendlyName' % ns))
         self.udn = tree.findtext('.//{%s}UDN' % ns)
 

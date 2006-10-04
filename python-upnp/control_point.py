@@ -137,10 +137,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             #print device.get_friendly_name(), device.get_service_type(), device.get_location(), device.get_id()
             d = {}
             d[u'friendly_name']=device.get_friendly_name()
-            device_type = []
-            for t in device.get_device_type():
-                device_type.append(t[u'type'])
-            d[u'device_type']=device_type
+            d[u'device_type']=device.get_device_type()
             d[u'location']=unicode(device.get_location())
             d[u'id']=unicode(device.get_id())
             r.append(d)
@@ -150,90 +147,81 @@ class XMLRPC( xmlrpc.XMLRPC):
         print "mute"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.rendering_control.set_mute(desired_mute=1)
-                return "Ok"
+            client = device.get_client()
+            client.rendering_control.set_mute(desired_mute=1)
+            return "Ok"
         return "Error"
 
     def xmlrpc_unmute_device(self, device_id):
         print "unmute", device_id
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.rendering_control.set_mute(desired_mute=0)
-                return "Ok"
+            client = device.get_client()
+            client.rendering_control.set_mute(desired_mute=0)
+            return "Ok"
         return "Error"
 
     def xmlrpc_set_volume(self, device_id, volume):
         print "set volume"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.rendering_control.set_volume(desired_volume=volume)
-                return "Ok"
+            client = device.get_client()
+            client.rendering_control.set_volume(desired_volume=volume)
+            return "Ok"
         return "Error"
 
     def xmlrpc_play(self, device_id):
         print "play"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.av_transport.play()
-                return "Ok"
+            client = device.get_client()
+            client.av_transport.play()
+            return "Ok"
         return "Error"
         
     def xmlrpc_pause(self, device_id):
         print "pause"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.av_transport.pause()
-                return "Ok"
+            client = device.get_client()
+            client.av_transport.pause()
+            return "Ok"
         return "Error"
 
     def xmlrpc_stop(self, device_id):
         print "stop"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.av_transport.stop()
-                return "Ok"
+            client = device.get_client()
+            client.av_transport.stop()
+            return "Ok"
         return "Error"
         
     def xmlrpc_next(self, device_id):
         print "next"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.av_transport.next()
-                return "Ok"
+            client = device.get_client()
+            client.av_transport.next()
+            return "Ok"
         return "Error"
         
     def xmlrpc_previous(self, device_id):
         print "previous"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.av_transport.previous()
-                return "Ok"
+            client = device.get_client()
+            client.av_transport.previous()
+            return "Ok"
         return "Error"
         
     def xmlrpc_set_av_transport_uri(self, device_id, uri):
         print "set_av_transport_uri"
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
-            client = device.get_service_client( 'MediaRenderer')
-            if client != None:
-                client.av_transport.set_av_transport_uri(current_uri=uri)
-                return "Ok"
+            client = device.get_client()
+            client.av_transport.set_av_transport_uri(current_uri=uri)
+            return "Ok"
         return "Error"
 
     def xmlrpc_ping(self):
@@ -249,9 +237,6 @@ def startXMLRPC( control_point, port):
 
                     
 if __name__ == '__main__':
-    from content_directory_client import ContentDirectoryClient
-    from connection_manager_client import ConnectionManagerClient
-    from media_renderer_client import MediaRendererClient
 
     ctrl = ControlPoint()
 
@@ -268,45 +253,19 @@ if __name__ == '__main__':
         device = ctrl.get_device_with_usn(infos['USN'])
         if not device:
             return
+        print "found device %s of type %s" %(device.get_friendly_name(),
+                                                device.get_type())
+        if device.get_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
+                                  "urn:schemas-upnp-org:device:MediaServer:2"]:
+            print "identified MediaServer", device.get_friendly_name()
+            client = MediaServerClient(device)
+            device.set_client( client)
 
-        print 'Browsing services on device %s (%s)' % (device.get_friendly_name(),
-                                                       device.get_location())
-        for service in device.get_services():
-            #print "service: %s" % (service.get_type())
-            """
-            cmgr = "urn:schemas-upnp-org:service:ConnectionManager:1"
-            if service.get_type() == cmgr:
-                print "found Connection Manager on", device.get_friendly_name()
-                control_url = service.get_control_url()
-                client = ConnectionManagerClient(control_url)
-                dfr = client.get_protocol_info()
-            """
-
-            if service.get_type() in ["urn:schemas-upnp-org:service:ContentDirectory:1",
-                                      "urn:schemas-upnp-org:service:ContentDirectory:2"]:    
-                print "found MediaServer", device.get_friendly_name()
-                client = None
-                device.set_device_type('MediaServer', service.get_type(), client)
-            """
-                #service.subscribe()
-                #
-                client = MediaServerClient(device)
-                client.get_system_update_id()
-                #
-                #dfr = client.get_search_capabilities()
-                #dfr2 = client.get_sort_capabilities()
-                #dfr3 = client.browse(0)
-                #dfr3.addCallback(process_meta, client)
-                #dfr4 = client.search("0",'upnp:class = "object.item.audioItem"',
-                #                     requested_count=1)
-                #dfr4.addCallback(print_results)
-            """
-
-            if service.get_type() in ["urn:schemas-upnp-org:service:RenderingControl:1",
-                                      "urn:schemas-upnp-org:service:RenderingControl:2"]:    
-                print "found MediaRenderer", device.get_friendly_name()
-                client = MediaRendererClient(device)
-                device.set_device_type('MediaRenderer', service.get_type(), client)
+        if device.get_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
+                                  "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
+            print "identified MediaRenderer", device.get_friendly_name()
+            client = MediaRendererClient(device)
+            device.set_client( client)
                 
                 
     ctrl.subscribe("new_device", browse)
