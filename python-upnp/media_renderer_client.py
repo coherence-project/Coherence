@@ -1,39 +1,24 @@
-# Elisa - Home multimedia server
-# Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
+# Python UPnP Framework
+# Copyright (C) 2006 Frank Scholz (dev@netzflocken.de)
 # All rights reserved.
 # 
-# This software is available under three license agreements.
+# This software is available under three licence agreements.
 # 
-# There are various plugins and extra modules for Elisa licensed
-# under the MIT license. For instance our upnp module uses this license.
+# There are some parts and extra modules for the Python UPnP Framework licenced
+# under the MIT licence.
 # 
-# The core of Elisa is licensed under GPL version 2.
-# See "LICENSE.GPL" in the root of this distribution including a special 
-# exception to use Elisa with Fluendo's plugins.
+# The core of the Python UPnP Framework is licenced under GPL version 2.
+# See "LICENCE.GPL" in the root of this distribution
 # 
-# The GPL part is also available under a commerical licensing
+# The GPL part is also available under a commerical licencing
 # agreement.
 # 
-# The second license is the Elisa Commercial License Agreement.
-# This license agreement is available to licensees holding valid
-# Elisa Commercial Agreement licenses.
-# See "LICENSE.Elisa" in the root of this distribution.
-
-from twisted.internet import reactor, defer
-from twisted.python import log
-import sys, threading
-import DIDLLite, utils
-from soap_proxy import SOAPProxy
+# The third licence is the Python UPnP Framework Commercial Licence Agreement.
+# See "LICENCE" in the root of this distribution.
 
 from connection_manager_client import ConnectionManagerClient
 from rendering_control_client import RenderingControlClient
 from av_transport_client import AVTransportClient
-
-
-global work, pending
-work = []
-pending = {}
-
 
 class MediaRendererClient:
 
