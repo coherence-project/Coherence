@@ -19,8 +19,6 @@
 # Elisa Commercial Agreement licenses.
 # See "LICENSE.Elisa" in the root of this distribution.
 
-from soap_proxy import SOAPProxy
-
 class Argument:
 
     def __init__(self, name, direction, state_variable):
@@ -49,13 +47,9 @@ class Action:
         self.arguments_list = arguments_list
         
     def _get_client(self):
-        url = self.service.get_control_url()
-        namespace = self.service.get_type()
-        action = "%s#%s" % (namespace, self.name)
-        client = SOAPProxy( url, namespace=("u",namespace), soapaction=action)
+        client = self.service._get_client( self.name)
         return client
-
-
+        
     def get_name(self):
         return self.name
 
@@ -70,7 +64,7 @@ class Action:
             
     def get_service(self):
         return self.service
-
+        
     def call(self, *args, **kwargs):
         #print "calling", self.name
         in_arguments = self.get_in_arguments()
@@ -88,23 +82,30 @@ class Action:
         if len(in_arguments) > 0:
             print "argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],self.name)
             return
+            
         client = self._get_client()
         d = client.callRemote( self.name,
-                                    **kwargs)
+                                **kwargs)
         d.addCallback( self.got_results, instance_id=instance_id)
         return d
 
     def got_results( self, results, instance_id):
-        #print "call %s (instance %d) returns: %r" % (self.name, instance_id, results)
         out_arguments = self.get_out_arguments()
-        if len(out_arguments) == 0:
-            pass
-        elif len(out_arguments) == 1:
+        # print "call %s (instance %d) returns %d arguments: %r" % (self.name,
+        #                                                            instance_id,
+        #                                                            len(out_arguments),
+        #                                                            results)
+        #
+        #
+        # XXX A_ARG_TYPE_ arguments probably don't need a variable update
+        if len(out_arguments) == 1:
             self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
-        else:
+        elif len(out_arguments) > 1:
             for arg_name, value in results._asdict().items():
                 state_variable_name = [a.get_state_variable() for a in out_arguments if a.get_name() == arg_name]
                 self.service.get_state_variable(state_variable_name[0], instance_id).update(value)
+                
+        return results
         
     def __repr__(self):
         return "Action: %s (%s args)" % (self.get_name(),
