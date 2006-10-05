@@ -37,41 +37,21 @@ class ContentDirectoryClient:
         self.url = service.get_control_url()
         #print "ContentDirectoryClient __init__", self.url
 
-    def get_sort_capabilities(self):
-        action = self.service.get_action('GetSortCapabilities')
+    def get_search_capabilities(self):
+        action = self.service.get_action('GetSearchCapabilities')
+        return action.call()
+
+    def get_sort_extension_capabilities(self):
+        action = self.service.get_action('GetSortExtensionCapabilities')
+        return action.call()
+
+    def get_feature_list(self):
+        action = self.service.get_action('GetFeatureList')
         return action.call()
 
     def get_system_update_id(self):
         action = self.service.get_action('GetSystemUpdateID')
         return action.call()
-
-    def get_search_capabilities(self):
-        action = self.service.get_action('GetSearchCapabilities')
-        return action.call()
-
-    def search(self, container_id, criteria, starting_index=0,
-               requested_count=0):
-        #print "search:", criteria
-        starting_index = str(starting_index)
-        requested_count = str(requested_count)
-        action = self.service.get_action('Search')
-        d = action.call( ContainerID=container_id,
-                            SearchCriteria=criteria,
-                            Filter="*",
-                            StartingIndex=starting_index,
-                            RequestedCount=requested_count,
-                            SortCriteria="")
-        d.addErrback(self._failure)
-
-        def gotResults(results):
-            items = []
-            if results is not None:
-                elt = DIDLLite.DIDLElement.fromString(results['Result'])
-                items = elt.getItems()
-            return items
-
-        d.addCallback(gotResults)
-        return d
 
     def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
                starting_index=0, requested_count=0,
@@ -150,6 +130,78 @@ class ContentDirectoryClient:
 
         d.addCallback( processResults)
         return finished
+
+    def search(self, container_id, criteria, starting_index=0,
+               requested_count=0):
+        #print "search:", criteria
+        starting_index = str(starting_index)
+        requested_count = str(requested_count)
+        action = self.service.get_action('Search')
+        d = action.call( ContainerID=container_id,
+                            SearchCriteria=criteria,
+                            Filter="*",
+                            StartingIndex=starting_index,
+                            RequestedCount=requested_count,
+                            SortCriteria="")
+        d.addErrback(self._failure)
+
+        def gotResults(results):
+            items = []
+            if results is not None:
+                elt = DIDLLite.DIDLElement.fromString(results['Result'])
+                items = elt.getItems()
+            return items
+
+        d.addCallback(gotResults)
+        return d
+        
+    def create_object(self, container_id, elements):
+        action = self.service.get_action('CreateObject')
+        return action.call( ContainerID=container_id,
+                            Elements=elements)
+
+    def destroy_object(self, object_id):
+        action = self.service.get_action('DestroyObject')
+        return action.call( ObjectID=object_id)
+
+    def update_object(self, object_id, current_tag_value, new_tag_value):
+        action = self.service.get_action('UpdateObject')
+        return action.call( ObjectID=object_id,
+                            CurrentTagValue=current_tag_value,
+                            NewTagValue=new_tag_value)
+
+    def move_object(self, object_id, new_parent_id):
+        action = self.service.get_action('MoveObject')
+        return action.call( ObjectID=object_id,
+                            NewParentID=new_parent_id)
+
+    def import_resource(self, source_uri, destination_uri):
+        action = self.service.get_action('ImportResource')
+        return action.call( SourceURI=source_uri,
+                            DestinationURI=destination_uri)
+
+    def export_resource(self, source_uri, destination_uri):
+        action = self.service.get_action('ExportResource')
+        return action.call( SourceURI=source_uri,
+                            DestinationURI=destination_uri)
+
+    def delete_resource(self, resource_uri):
+        action = self.service.get_action('DeleteResource')
+        return action.call( ResourceURI=resource_uri)
+
+    def stop_transfer_resource(self, transfer_id):
+        action = self.service.get_action('StopTransferResource')
+        return action.call( TransferID=transfer_id)
+
+    def get_transfer_progress(self, transfer_id):
+        action = self.service.get_action('GetTransferProgress')
+        return action.call( TransferID=transfer_id)
+
+    def create_reference(self, container_id, object_id):
+        action = self.service.get_action('CreateReference')
+        return action.call( ContainerID=container_id,
+                            ObjectID=object_id)
+
 
     def _failure(self, error):
         log.msg(error.getTraceback(), debug=True)
