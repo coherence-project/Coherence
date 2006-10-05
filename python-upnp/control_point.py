@@ -238,30 +238,24 @@ def startXMLRPC( control_point, port):
                     
 if __name__ == '__main__':
 
+    from media_server_client import MediaServerClient
+    from media_renderer_client import MediaRendererClient
+
     ctrl = ControlPoint()
-
-    def print_results(results):
-        print "results="
-        print results
-
-    def process_meta(results, client):
-        for k,v in results.iteritems():
-            dfr = client.browse(k, "BrowseMetadata")
-            dfr.addCallback(print_results)
 
     def browse(st, infos):
         device = ctrl.get_device_with_usn(infos['USN'])
         if not device:
             return
         print "found device %s of type %s" %(device.get_friendly_name(),
-                                                device.get_type())
-        if device.get_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
+                                                device.get_device_type())
+        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
                                   "urn:schemas-upnp-org:device:MediaServer:2"]:
             print "identified MediaServer", device.get_friendly_name()
             client = MediaServerClient(device)
             device.set_client( client)
 
-        if device.get_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
+        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
                                   "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
             print "identified MediaRenderer", device.get_friendly_name()
             client = MediaRendererClient(device)
