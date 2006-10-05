@@ -52,16 +52,15 @@ class ContentDirectoryClient:
     def search(self, container_id, criteria, starting_index=0,
                requested_count=0):
         #print "search:", criteria
-        client = self._get_client("Search")
         starting_index = str(starting_index)
         requested_count = str(requested_count)
-        #print "search:", self.url, starting_index, requested_count
-        d = client.callRemote('Search', ContainerID=container_id,
-                              SearchCriteria=criteria,
-                              Filter="*",
-                              StartingIndex=starting_index,
-                              RequestedCount=requested_count,
-                              SortCriteria="")
+        action = self.service.get_action('Search')
+        d = action.call( ContainerID=container_id,
+                            SearchCriteria=criteria,
+                            Filter="*",
+                            StartingIndex=starting_index,
+                            RequestedCount=requested_count,
+                            SortCriteria="")
         d.addErrback(self._failure)
 
         def gotResults(results):
@@ -81,21 +80,21 @@ class ContentDirectoryClient:
         """
         finished = defer.Deferred()
         infos = {}
-        client = self._get_client("Browse")
-        d = client.callRemote('Browse', ObjectID=object_id,
-                              BrowseFlag=browse_flag,
-                              Filter="*",SortCriteria="",
-                              StartingIndex=str(starting_index),
-                              RequestedCount=str(requested_count))
-
-        def gotResults(results):
+        action = self.service.get_action('Browse')
+        d = action.call( ObjectID=object_id,
+                            BrowseFlag=browse_flag,
+                            Filter="*",SortCriteria="",
+                            StartingIndex=str(starting_index),
+                            RequestedCount=str(requested_count))
+                            
+        def processResults( results):
             global work, pending
 
             returned_nb = results['NumberReturned']
             total_matches = results['TotalMatches']
 
-            log.msg("Returned %s results. Total matches: %s" % (returned_nb,
-                                                                total_matches))
+            print "Browsing returned %s results. Total matches: %s" % (returned_nb,
+                                                                total_matches)
             elt = DIDLLite.DIDLElement.fromString(results['Result'])
             work.extend(elt.getItems())
 
@@ -110,22 +109,20 @@ class ContentDirectoryClient:
                                    'childCount': childCount,
                                    'parentID': item.parentID}
                 title = item.title.encode('iso-8859-15')
-                log.msg("%s <- %s : %s (%s)" % (item.parentID, item.id,
-                                                title, childCount))
+                print "%s <- %s : %s (%s)" % (item.parentID, item.id,
+                                                title, childCount)
                 if isinstance(item, DIDLLite.Container):
-                    log.msg('Folder "%s" with %s children' % (title,
-                                                              item.childCount))
+                    print 'Folder "%s" with %s children' % (title,
+                                                              item.childCount)
                     _infos[item.id].update({'search_class': item.searchClass})
                     if recursive:
-                        nextD = client.callRemote('Browse',
-                                                  ObjectID=item.id,
-                                                  BrowseFlag=browse_flag,
-                                                  Filter="*",
-                                                  SortCriteria="",
-                                                  StartingIndex="0",
-                                                  RequestedCount="0")
-                        nextD.addCallback(gotResults)
-                        nextD.addErrback(finished.errback)
+                        next_deferred = action.call( ObjectID=item.id,
+                                         BrowseFlag=browse_flag,
+                                         Filter="*",SortCriteria="",
+                                         StartingIndex="0",
+                                         RequestedCount="0")
+                        next_deferred.addCallback( processResults)
+                        next_deferred.addErrback(finished.errback)
                         pending[item.id] = int(item.childCount)
 
                 elif isinstance(item, DIDLLite.Object):
@@ -151,8 +148,7 @@ class ContentDirectoryClient:
             if not pending and not finished.called:
                 finished.callback(infos)
 
-        d.addCallback(gotResults)
-        d.addErrback(self._failure)
+        d.addCallback( processResults)
         return finished
 
     def _failure(self, error):

@@ -25,13 +25,13 @@ class MediaServerClient:
     def __init__(self, device):
         self.device = device
         self.scheduled_recording = None
-        self.content_directoy = None
+        self.content_directory = None
         self.connection_manager = None
         self.av_transport = None
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:ContentDirectory:1",
                                       "urn:schemas-upnp-org:service:ContentDirectory:2"]:
-                self.content_directoy = ContentDirectoryClient( service)
+                self.content_directory = ContentDirectoryClient( service)
             if service.get_type() in ["urn:schemas-upnp-org:service:ConnectionManager:1",
                                       "urn:schemas-upnp-org:service:ConnectionManager:2"]:
                 self.connection_manager = ConnectionManagerClient( service)
@@ -42,7 +42,7 @@ class MediaServerClient:
             #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:    
             #    self.scheduled_recording = ScheduledRecordingClient( service)
         print "MediaServer %s:" % (self.device.get_friendly_name())
-        if self.content_directoy:
+        if self.content_directory:
             print "ContentDirectory available"
         else:
             print "ContentDirectory not available, device not implemented properly according to the UPnP specification"
@@ -56,7 +56,19 @@ class MediaServerClient:
             print "AVTransport (optional) available"
         if self.scheduled_recording:
             print "ScheduledRecording (optional) available"
-
+            
+        d = self.content_directory.browse(0, recursive=False) # browse top level
+        d.addCallback( self.process_meta)
+        
     def state_variable_change( self, variable):
         print variable.name, 'changed from', variable.old_value, 'to', variable.value
+
+    def print_results(self, results):
+        print "results="
+        print results
+
+    def process_meta( self, results):
+        for k,v in results.iteritems():
+            dfr = self.content_directory.browse(k, "BrowseMetadata")
+            dfr.addCallback( self.print_results)
 
