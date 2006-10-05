@@ -397,7 +397,7 @@ class DIDLElement(_ElementInterface):
     @classmethod
     def fromString(cls, aString):
         instance = cls()
-        elt = utils.parse_xml(aString)
+        elt = utils.parse_xml(aString, 'utf-8')
         elt = elt.getroot()
         for node in elt.getchildren():
             klass_name = node.tag[node.tag.find('}')+1:].title()
