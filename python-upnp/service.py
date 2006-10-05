@@ -69,6 +69,13 @@ class Service:
 
         self.parse_actions()
 
+    def _get_client(self, name):
+        url = self.get_control_url()
+        namespace = self.get_type()
+        action = "%s#%s" % (namespace, name)
+        client = SOAPProxy( url, namespace=("u",namespace), soapaction=action)
+        return client
+
     def get_device(self):
         return self.device
 
@@ -171,5 +178,4 @@ class Service:
             instance = 0
             self._variables.get(instance)[name] = variable.StateVariable(self, name, instance, send_events,
                                                            data_type, values)
-            
             
