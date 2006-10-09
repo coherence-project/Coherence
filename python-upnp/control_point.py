@@ -1,110 +1,64 @@
-# Elisa - Home multimedia server
-# Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# All rights reserved.
-# 
-# This software is available under three license agreements.
-# 
-# There are various plugins and extra modules for Elisa licensed
-# under the MIT license. For instance our upnp module uses this license.
-# 
-# The core of Elisa is licensed under GPL version 2.
-# See "LICENSE.GPL" in the root of this distribution including a special 
-# exception to use Elisa with Fluendo's plugins.
-# 
-# The GPL part is also available under a commerical licensing
-# agreement.
-# 
-# The second license is the Elisa Commercial License Agreement.
-# This license agreement is available to licensees holding valid
-# Elisa Commercial Agreement licenses.
-# See "LICENSE.Elisa" in the root of this distribution.
-
-import service
-from ssdp import SSDPServer
-from event import EventServer
-from msearch import MSearch
-from device import Device, RootDevice
-from utils import parse_xml
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+ 	
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.web import xmlrpc
 
+import service
+from event import EventServer
+
+from media_server_client import MediaServerClient
+from media_renderer_client import MediaRendererClient
+
+from utils import parse_xml
+
 import string
 
 class ControlPoint:
 
-    def __init__(self, enable_log=False):
-        self.devices = []
-        self.ssdp_server = SSDPServer(enable_log)
-        self.ssdp_server.subscribe("new_device", self.add_device)
-        self.ssdp_server.subscribe("removed_device", self.remove_device)
-        self.events_server = EventServer(self)
-        self.msearch = MSearch(self.ssdp_server)
+    def __init__(self, coherence):
+        self.coherence = coherence
+        
+        self.event_server = EventServer( 'ControlPoint', self)
+        
+        self.coherence.add_web_resource('RPC2',
+                                        XMLRPC(self))
 
-        reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown)
+        
+        for device in coherence.get_devices():
+            self.check_device( device)
+        coherence.subscribe("new_device", self.browse)
 
-        self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
-        self.renew_service_subscription_loop.start(20.0)
-
-    def shutdown( self):
-        """ send control point unsubscribe messages """
-        try:
-            self.renew_service_subscription_loop.stop()
-        except:
-            pass
-        for root_device in self.get_devices():
-            root_device.unsubscribe_service_subscriptions()
-            for device in root_device.get_devices():
-                device.unsubscribe_service_subscriptions()
-        print 'ControlPoint shutdown'
-
-    def check_devices(self):
-        """ iterate over devices and their embedded ones and renew subscriptions """
-        for root_device in self.get_devices():
-            root_device.renew_service_subscriptions()
-            for device in root_device.get_devices():
-                device.renew_service_subscriptions()
-
-    def subscribe(self, name, callback):
-        self.ssdp_server.subscribe(name, callback)
-
-    def unsubscribe(self, name, callback):
-        self.ssdp_server.unsubscribe(name, callback)
-
-    def get_device_with_usn(self, usn):
-        found = None
-        for device in self.devices:
-            if device.get_usn() == usn:
-                found = device
-                break
-        return found
-
-    def get_device_with_id(self, device_id):
-        found = None
-        for device in self.devices:
-            if device.get_id() == device_id:
-                found = device
-                break
-        return found
-
+    def browse( self, st, infos):
+        device = self.coherence.get_device_with_usn(infos['USN'])
+        if not device:
+            return
+        self.check_device( device)
+        
     def get_devices(self):
-        return self.devices
+        return self.coherence.get_devices()
+        
+    def get_device_with_id(self, id):
+        return self.coherence.get_device_with_id(id)
 
-    def add_device(self, device_type, infos):
-        if infos['ST'] == 'upnp:rootdevice':
-            root = RootDevice(infos)
-            self.devices.append(root)
-        else:
-            root_id = infos['USN'][:-len(infos['ST'])-2]
-            root = self.get_device_with_id(root_id)
-            device = Device(infos, root)
+    def check_device( self, device):
+        print "found device %s of type %s" %(device.get_friendly_name(),
+                                                device.get_device_type())
+        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
+                                  "urn:schemas-upnp-org:device:MediaServer:2"]:
+            print "identified MediaServer", device.get_friendly_name()
+            client = MediaServerClient(device)
+            device.set_client( client)
 
-    def remove_device(self, device_type, infos):
-        device = self.get_device_with_usn(infos['USN'])
-        if device:
-            self.devices.remove(device)
-
+        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
+                                  "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
+            print "identified MediaRenderer", device.get_friendly_name()
+            client = MediaRendererClient(device)
+            device.set_client( client)
+                
     def propagate(self, event):
         #print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
@@ -122,6 +76,8 @@ class ControlPoint:
                             target_service.get_state_variable(tag, instance_id).update(var.attrib['val'])
                 else:    
                     target_service.get_state_variable(var_name, 0).update(var_value)
+
+
 
 
 class XMLRPC( xmlrpc.XMLRPC):
@@ -243,26 +199,5 @@ if __name__ == '__main__':
 
     ctrl = ControlPoint()
 
-    def browse(st, infos):
-        device = ctrl.get_device_with_usn(infos['USN'])
-        if not device:
-            return
-        print "found device %s of type %s" %(device.get_friendly_name(),
-                                                device.get_device_type())
-        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
-                                  "urn:schemas-upnp-org:device:MediaServer:2"]:
-            print "identified MediaServer", device.get_friendly_name()
-            client = MediaServerClient(device)
-            device.set_client( client)
-
-        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
-                                  "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
-            print "identified MediaRenderer", device.get_friendly_name()
-            client = MediaRendererClient(device)
-            device.set_client( client)
-                
-                
-    ctrl.subscribe("new_device", browse)
-    reactor.callWhenRunning( startXMLRPC, ctrl, 31020)
 
     reactor.run()

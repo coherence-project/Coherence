@@ -25,21 +25,24 @@ from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
 import time
 import utils
-import socket
 
-EVENT_SERVER_PORT = 10001
-
+global hostname, web_server_port
+hostname = None
+web_server_port = None
 
 class EventServer(resource.Resource):
 
-    def __init__(self, control_point):
-        resource.Resource.__init__(self)
-        self.putChild('', self)
+    def __init__(self, name, control_point):
+        self.coherence = control_point.coherence
         self.control_point = control_point
-        reactor.listenTCP(EVENT_SERVER_PORT, server.Site(self))
+        self.coherence.add_web_resource('events',
+                                        self)
+        global hostname, web_server_port
+        hostname = self.coherence.hostname
+        web_server_port = self.coherence.web_server_port
         
     def render_NOTIFY(self, request):
-        #print "EventServer received request, code:", request.code
+        print "EventServer received request, code:", request.code
         data = request.content.getvalue()
         if request.code != 200:
             print "data:"
@@ -121,8 +124,11 @@ def subscribe(service, action='subscribe'):
         if service.get_sid():
             request.append("SID: %s" % service.get_sid())
         else:
-            ip_address = p.transport.getHost().host
-            url = 'http://%s:10001/' % ip_address
+            # XXX use address and port set in the coherence instance
+            #ip_address = p.transport.getHost().host
+            global hostname, web_server_port
+            #print hostname, web_server_port
+            url = 'http://%s:%d/events' % (hostname, web_server_port)
             request.append("CALLBACK: <%s>" % url)
             request.append("NT: upnp:event")
 

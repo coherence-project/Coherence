@@ -2,6 +2,7 @@
 # http://opensource.org/licenses/mit-license.php
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
+# Copyright 2006 Frank Scholz <dev@netzflocken.de>
 
 #
 # Implementation of SSDP server under Twisted Python.

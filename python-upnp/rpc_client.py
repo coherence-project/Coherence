@@ -21,7 +21,7 @@ for option, param in optlist:
     if option in( '-v', '--volume'):volume=param
     if option in( '-u', '--uri'):uri=param
     
-s = xmlrpclib.Server('http://127.0.0.1:31020/')
+s = xmlrpclib.Server('http://127.0.0.1:30020/RPC2')
 
 if( command == "ping"):
     r=s.ping()
