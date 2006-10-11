@@ -15,6 +15,8 @@ from media_renderer_client import MediaRendererClient
 
 from utils import parse_xml
 
+import louie
+
 import string
 
 class ControlPoint:
@@ -30,9 +32,10 @@ class ControlPoint:
         
         for device in coherence.get_devices():
             self.check_device( device)
-        coherence.subscribe("new_device", self.browse)
+            
+        louie.connect( self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
 
-    def browse( self, st, infos):
+    def browse( self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
             return

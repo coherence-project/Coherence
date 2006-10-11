@@ -15,6 +15,7 @@ from twisted.python.components import registerAdapter
 from nevow import athena, inevow, loaders, tags, static
 from twisted.web import resource
 
+import louie
 
 import service
 
@@ -25,17 +26,6 @@ from utils import parse_xml
 
 import string
 import socket
-
-class RootDeviceXML(static.Data):
-	def __init__(self, hostname, uuid, urlbase):
-		r = {
-			'hostname': hostname,
-			'uuid': uuid,
-			'urlbase': urlbase,
-		}
-		d = file('root-device.xml').read() % r
-		static.Data.__init__(self, d, 'text/xml')
-
 
 class WebUI(athena.LivePage):
     """
@@ -85,7 +75,17 @@ class Coherence:
         self.enable_log = False
         self.devices = []
         
+        self._callbacks = {}
+
+        plugin = louie.TwistedDispatchPlugin()
+        louie.install_plugin(plugin)
+
         self.ssdp_server = SSDPServer(self.enable_log)
+        louie.connect( self.add_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
+        louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.remove_device', louie.Any)
+        louie.connect( self.receiver, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        #louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', louie.Any)
+
         self.ssdp_server.subscribe("new_device", self.add_device)
         self.ssdp_server.subscribe("removed_device", self.remove_device)
 
@@ -99,10 +99,6 @@ class Coherence:
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
         self.web_server = WebServer( self.web_server_port, self)
-        self.add_web_resource('root-device.xml',
-                                RootDeviceXML( self.hostname,
-                                'test',
-                                self.urlbase))
                                 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0)
@@ -131,6 +127,10 @@ class Coherence:
         except ImportError:
             print "Can't enable MediaRenderer functions, sub-system not available."
         
+    def receiver( self, signal, *args, **kwargs):
+        #print "Coherence receiver called with", signal
+        #print kwargs
+        pass
 
     def shutdown( self):
         """ send service unsubscribe messages """
@@ -152,10 +152,18 @@ class Coherence:
                 device.renew_service_subscriptions()
 
     def subscribe(self, name, callback):
-        self.ssdp_server.subscribe(name, callback)
+        self._callbacks.setdefault(name,[]).append(callback)
 
     def unsubscribe(self, name, callback):
-        self.ssdp_server.unsubscribe(name, callback)
+        callbacks = self._callbacks.get(name,[])
+        if callback in callbacks:
+            callbacks.remove(callback)
+        self._callbacks[name] = callbacks
+
+    def callback(self, name, *args):
+        for callback in self._callbacks.get(name,[]):
+            callback(*args)
+
 
     def get_device_with_usn(self, usn):
         found = None
@@ -184,11 +192,19 @@ class Coherence:
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
+        # fire this only after the device detection is fully completed
+        # and we are on the device level already, so we can work with them instead with the SSDP announce
+        #if infos['ST'] == 'upnp:rootdevice':
+        #    self.callback("new_device", infos['ST'], infos)
+
 
     def remove_device(self, device_type, infos):
         device = self.get_device_with_usn(infos['USN'])
         if device:
             self.devices.remove(device)
+            if infos['ST'] == 'upnp:rootdevice':
+                self.callback("removed_device", infos['ST'], infos['USN'])
+
             
     def add_web_resource(self, name, sub):
         self.web_server.web_root_resource.putChild(name, sub)

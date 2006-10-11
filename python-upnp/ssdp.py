@@ -17,6 +17,7 @@ from twisted.python import log
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
 
+import louie
 
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
@@ -83,6 +84,7 @@ class SSDPServer(DatagramProtocol):
         """Register a service or device that this SSDP server will
         respond to."""
         
+        #print 'Registering %s (%s)' % (st, location)
         #log.msg('Registering %s (%s)' % (st, location))
 
         self.known[usn] = {}
@@ -92,16 +94,17 @@ class SSDPServer(DatagramProtocol):
         self.known[usn]['EXT'] = ''
         self.known[usn]['SERVER'] = server
         self.known[usn]['CACHE-CONTROL'] = cache_control
-        
         if st == 'upnp:rootdevice':
-            self.callback("new_device", st, self.known[usn])
+            louie.send('Coherence.UPnP.SSDP.new_device', None, device_type=st, infos=self.known[usn])
+            #self.callback("new_device", st, self.known[usn])
 
     def unRegister(self, usn):
         #log.msg("Un-registering %s" % usn)
 
         st = self.known[usn]['ST']
         if st == 'upnp:rootdevice':
-            self.callback("removed_device", st, self.known[usn])
+            louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=st, infos=self.known[usn])
+            #self.callback("removed_device", st, self.known[usn])
             
         del self.known[usn]
 

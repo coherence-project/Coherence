@@ -29,21 +29,6 @@ import string
 from twisted.python import log
 import socket
 
-socket.setdefaulttimeout(15)
-
-def url_fetch(url):
-    #log.msg('Fetching %r' % url)
-    req = urllib2.Request(url)
-    try:
-        handle = urllib2.urlopen(req)
-    except IOError, e:
-        if hasattr(e, 'reason'):
-            log.msg('We failed to reach a server. Reason: %s' % e.reason)
-        elif hasattr(e, 'code'):
-            log.msg('The server couldn\'t fulfill the request. Error code: %s' % e.code)
-        handle = None
-    return handle
-
 def parse_xml(data, encoding="iso-8859-1"):
     p = cElementTree.XMLParser(encoding=encoding)
     p.feed(data.encode(encoding))

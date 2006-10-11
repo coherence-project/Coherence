@@ -28,6 +28,8 @@ import utils
 
 from soap_proxy import SOAPProxy
 
+import louie
+
 global subscribers
 subscribers = {}
 
@@ -52,6 +54,7 @@ class Service:
             scpd_url = "/%s" % scpd_url
             
         self.service_type = service_type
+        self.detection_completed = False
         self.id = service_id
         self.control_url = control_url
         self.event_sub_url = event_sub_url
@@ -148,34 +151,40 @@ class Service:
     
     def parse_actions(self):
 
-        handle = utils.url_fetch(self.get_scpd_url())
-        if not handle:
-            return
-
-        tree = cElementTree.ElementTree(file=handle).getroot()
-
-        ns = "urn:schemas-upnp-org:service-1-0"
+        from twisted.web.client import getPage
         
-        for action_node in tree.findall('.//{%s}action' % ns):
-            name = action_node.findtext('{%s}name' % ns)
-            arguments = []
-            for argument in action_node.findall('.//{%s}argument' % ns):
-                arg_name = argument.findtext('{%s}name' % ns)
-                arg_direction = argument.findtext('{%s}direction' % ns)
-                arg_state_var = argument.findtext('{%s}relatedStateVariable' % ns)
-                arguments.append(action.Argument(arg_name, arg_direction,
-                                                 arg_state_var))
-            self._actions[name] = action.Action(self, name, arguments)
+        def gotPage(  x):
+            #print "gotPage"
+            #print x
+            tree = utils.parse_xml(x, 'utf-8').getroot()
+            ns = "urn:schemas-upnp-org:service-1-0"
+            
+            for action_node in tree.findall('.//{%s}action' % ns):
+                name = action_node.findtext('{%s}name' % ns)
+                arguments = []
+                for argument in action_node.findall('.//{%s}argument' % ns):
+                    arg_name = argument.findtext('{%s}name' % ns)
+                    arg_direction = argument.findtext('{%s}direction' % ns)
+                    arg_state_var = argument.findtext('{%s}relatedStateVariable' % ns)
+                    arguments.append(action.Argument(arg_name, arg_direction,
+                                                     arg_state_var))
+                self._actions[name] = action.Action(self, name, arguments)
 
-        for var_node in tree.findall('.//{%s}stateVariable' % ns):
-            events = ["no","yes"]
-            send_events = events.index(var_node.attrib["sendEvents"])
-            name = var_node.findtext('{%s}name' % ns)
-            data_type = var_node.findtext('{%s}dataType' % ns)
-            values = []
-            for allowed in var_node.findall('.//{%s}allowedValue' % ns):
-                values.append(allowed.text)
-            instance = 0
-            self._variables.get(instance)[name] = variable.StateVariable(self, name, instance, send_events,
-                                                           data_type, values)
+            for var_node in tree.findall('.//{%s}stateVariable' % ns):
+                events = ["no","yes"]
+                send_events = events.index(var_node.attrib["sendEvents"])
+                name = var_node.findtext('{%s}name' % ns)
+                data_type = var_node.findtext('{%s}dataType' % ns)
+                values = []
+                for allowed in var_node.findall('.//{%s}allowedValue' % ns):
+                    values.append(allowed.text)
+                instance = 0
+                self._variables.get(instance)[name] = variable.StateVariable(self, name, instance, send_events,
+                                                               data_type, values)
+            #print 'service parse:', self, self.device
+            self.detection_completed = True
+
+            louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
+
+        getPage(self.get_scpd_url()).addCallback( gotPage)
             
