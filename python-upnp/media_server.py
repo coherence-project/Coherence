@@ -9,6 +9,8 @@ from twisted.web import xmlrpc, resource, static
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
+from connection_manager_server import ConnectionManagerServer
+
 class MSRoot(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
@@ -21,15 +23,21 @@ class MSRoot(resource.Resource):
                 ch = static.File(p)
         return ch
         
+    def listchilds(self, uri):
+        cl = ''
+        for c in self.children:
+                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+        return cl
+
     def render(self,request):
-        return '<html><p>root of the MediaServer</p></html>'
+        return '<html><p>root of the MediaServer</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
 
 class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
                         device_type="urn:schemas-upnp-org:device:MediaServer:2",
-                        friendly_name='Coherence MediaServer'):
+                        friendly_name='Coherence UPnP A/V MediaServer'):
         root = Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
         e = SubElement(root, 'specVersion')
@@ -39,8 +47,8 @@ class RootDeviceXML(static.Data):
         SubElement(root, 'URLBase').text = urlbase
 
         d = SubElement(root, 'device')
-        SubElement( d, 'deviceType').text = ''
-        SubElement( d, 'friendlyName').text = device_type
+        SubElement( d, 'deviceType').text = device_type
+        SubElement( d, 'friendlyName').text = friendly_name
         SubElement( d, 'manufacturer').text = ''
         SubElement( d, 'manufacturerURL').text = ''
         SubElement( d, 'modelDescription').text = ''
@@ -79,7 +87,9 @@ class MediaServer:
                                 RootDeviceXML( self.coherence.hostname,
                                 self.uuid,
                                 self.coherence.urlbase))
-        #self.register()
+                                
+        self.web_resource.putChild('ConnectionManager', ConnectionManagerServer())
+        self.register()
 
         
     def register(self):
@@ -98,15 +108,15 @@ class MediaServer:
 
         s.register('%s::urn:schemas-upnp-org:device:MediaServer:2' % self.uuid,
         		'urn:schemas-upnp-org:device:MediaServer:2',
-        		self.coherence.urlbase + self.uuid + '/' + 'descriptiondevice.xml')
+        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
 
         s.register('%s::urn:schemas-upnp-org:service:ConnectionManager:2' % self.uuid,
         		'urn:schemas-upnp-org:device:ConnectionManager:2',
-        		self.coherence.urlbase + self.uuid + '/' + 'root-device.xml')
+        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
 
         s.register('%s::urn:schemas-upnp-org:service:ContentDirectory:2' % self.uuid,
         		'urn:schemas-upnp-org:device:ContentDirectory:2',
-        		self.coherence.urlbase + self.uuid + '/' + 'root-device.xml')
+        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
         """
         
 

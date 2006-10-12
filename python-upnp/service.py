@@ -1,23 +1,8 @@
-# Elisa - Home multimedia server
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+ 	
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# All rights reserved.
-# 
-# This software is available under three license agreements.
-# 
-# There are various plugins and extra modules for Elisa licensed
-# under the MIT license. For instance our upnp module uses this license.
-# 
-# The core of Elisa is licensed under GPL version 2.
-# See "LICENSE.GPL" in the root of this distribution including a special 
-# exception to use Elisa with Fluendo's plugins.
-# 
-# The GPL part is also available under a commerical licensing
-# agreement.
-# 
-# The second license is the Elisa Commercial License Agreement.
-# This license agreement is available to licensees holding valid
-# Elisa Commercial Agreement licenses.
-# See "LICENSE.Elisa" in the root of this distribution.
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import cElementTree
 import urllib2
@@ -168,18 +153,19 @@ class Service:
                     arg_state_var = argument.findtext('{%s}relatedStateVariable' % ns)
                     arguments.append(action.Argument(arg_name, arg_direction,
                                                      arg_state_var))
-                self._actions[name] = action.Action(self, name, arguments)
+                self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
             for var_node in tree.findall('.//{%s}stateVariable' % ns):
-                events = ["no","yes"]
-                send_events = events.index(var_node.attrib["sendEvents"])
+                send_events = var_node.attrib["sendEvents"]
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
                 for allowed in var_node.findall('.//{%s}allowedValue' % ns):
                     values.append(allowed.text)
                 instance = 0
-                self._variables.get(instance)[name] = variable.StateVariable(self, name, instance, send_events,
+                self._variables.get(instance)[name] = variable.StateVariable(self, name,
+                                                               'n/a',
+                                                               instance, send_events,
                                                                data_type, values)
             #print 'service parse:', self, self.device
             self.detection_completed = True

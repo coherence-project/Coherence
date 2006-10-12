@@ -27,6 +27,17 @@ from utils import parse_xml
 import string
 import socket
 
+class IWeb(Interface):
+
+    def goingLive(self):
+        pass
+
+class Web(object):
+
+    def __init__(self, coherence):
+        super(Web, self).__init__()
+        self.coherence = coherence
+
 class WebUI(athena.LivePage):
     """
     """
@@ -40,28 +51,56 @@ class WebUI(athena.LivePage):
 </head>
 <body>
 Coherence - a Python UPnP A/V framework
+<p>
+<div nevow:render="listchilds"></div>
+</p>
 </body>
 </html>
 """)
 
-    def __init__(self, coherence, *a, **kw):
+    def __init__(self, *a, **kw):
         super(WebUI, self).__init__( *a, **kw)
-        self.coherence = coherence
+        self.coherence = self.rootObject.coherence
 
     def childFactory(self, ctx, name):
-        ch = super(WebUI, self).childFactory(ctx, name)
-        if ch is None:
-            p = util.sibpath(__file__, name)
-            if os.path.exists(p):
-                ch = static.File(p)
-        return ch
+        #print 'WebUI childFactory:', name 
+        try:
+            return self.rootObject.coherence.children[name]
+        except:
+            ch = super(WebUI, self).childFactory(ctx, name)
+            if ch is None:
+                p = util.sibpath(__file__, name)
+                if os.path.exists(p):
+                    ch = static.File(p)
+            return ch
+        
+    def render_listchilds(self, ctx, data):
+        cl = []
+        #print 'children:', self.coherence.children
+        for c in self.coherence.children:
+            if c[:5] == 'uuid:':
+                device = self.coherence.get_device_with_usn(c)
+                if device != None:
+                    cl.append( tags.li[tags.a(href='/'+c)[device.get_device_type(), device.get_friendly_name()]])
+                else:
+                    cl.append( tags.li[tags.a(href='/'+c)['device: ', c]])
+            else:
+                cl.append( tags.li[c])
+        return ctx.tag[tags.ul[cl]]
         
 class WebServer:
 
     def __init__(self, port, coherence):
         from nevow import appserver
-        
-        self.web_root_resource = WebUI(coherence)
+
+        def ResourceFactory( original):
+            return WebUI( IWeb, original)
+
+        registerAdapter(ResourceFactory, Web, inevow.IResource)
+
+        self.web_root_resource = Web(coherence)
+        #self.web_root_resource = inevow.IResource( web)
+        print self.web_root_resource
         self.site = appserver.NevowSite( self.web_root_resource)
         reactor.listenTCP( port, self.site)
         
@@ -75,6 +114,7 @@ class Coherence:
         self.enable_log = False
         self.devices = []
         
+        self.children = {}
         self._callbacks = {}
 
         plugin = louie.TwistedDispatchPlugin()
@@ -207,7 +247,9 @@ class Coherence:
 
             
     def add_web_resource(self, name, sub):
-        self.web_server.web_root_resource.putChild(name, sub)
+        #self.web_server.web_root_resource.putChild(name, sub)
+        self.children[name] = sub
+        #print self.web_server.web_root_resource.children
 
     def remove_web_resource(self, name):
         # XXX implement me

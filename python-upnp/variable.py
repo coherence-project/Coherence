@@ -1,32 +1,18 @@
-# Elisa - Home multimedia server
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+ 	
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# All rights reserved.
-# 
-# This software is available under three license agreements.
-# 
-# There are various plugins and extra modules for Elisa licensed
-# under the MIT license. For instance our upnp module uses this license.
-# 
-# The core of Elisa is licensed under GPL version 2.
-# See "LICENSE.GPL" in the root of this distribution including a special 
-# exception to use Elisa with Fluendo's plugins.
-# 
-# The GPL part is also available under a commerical licensing
-# agreement.
-# 
-# The second license is the Elisa Commercial License Agreement.
-# This license agreement is available to licensees holding valid
-# Elisa Commercial Agreement licenses.
-# See "LICENSE.Elisa" in the root of this distribution.
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 
 class StateVariable:
 
-    def __init__(self, service, name, instance, send_events,
+    def __init__(self, service, implementation, name, instance, send_events,
                  data_type, values):
         self.service = service
         self.instance = instance
         self.name = name
+        self.implementation = implementation
         self.old_value = ''
         self.value = ''
         self.send_events = send_events
