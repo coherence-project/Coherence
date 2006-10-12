@@ -2,9 +2,10 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2005, Tim Potter <tpot@samba.org>
+# Copyright 2006 John-Mark Gurney <gurney_j@resnet.uoregon.edu>
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-# Connection Manager service
+# Content Directory service
 
 from twisted.python import log
 from twisted.web import resource, static, soap
@@ -53,27 +54,37 @@ class scpdXML(static.Data):
         static.Data.__init__(self, self.xml, 'text/xml')
 
 
-class ConnectionManagerControl(UPnPPublisher):
+class ContentDirectoryControl(UPnPPublisher):
 
-    def _listFunctions(self):
-        """Return a list of the names of all service methods."""
-        return reflect.prefixedMethodNames(self.__class__, 'soap_')
+	updateID = property(lambda x: x['0'].updateID)
         
-    def soap_GetProtocolInfo(self, *args, **kwargs):
-        """Required: returns the protocol-related info that this ConnectionManager
-           supports in its current state."""
-        
-        print 'GetProtocolInfo()', kwargs
-        return { 'GetProtocolInfoResponse': { 'Source': '', 'Sink': '' }}
+	def soap_GetSearchCapabilities(self, *args, **kwargs):
+		"""Required: Return the searching capabilities supported by the device."""
+
+		log.msg('GetSearchCapabilities()')
+		return { 'SearchCapabilitiesResponse': { 'SearchCaps': '' }}
+
+	def soap_GetSortCapabilities(self, *args, **kwargs):
+		"""Required: Return the CSV list of meta-data tags that can be used in
+		sortCriteria."""
+
+		log.msg('GetSortCapabilities()')
+		return { 'SortCapabilitiesResponse': { 'SortCaps': '' }}
+
+	def soap_GetSystemUpdateID(self, *args, **kwargs):
+		"""Required: Return the current value of state variable SystemUpdateID."""
+
+		log.msg('GetSystemUpdateID()')
+		return { 'SystemUpdateIdResponse': { 'Id': self.updateID }}
 
 
-class ConnectionManagerServer(resource.Resource):
+class ContentDirectoryServer(resource.Resource):
 
     def __init__(self):
         resource.Resource.__init__(self)
         
-        self.type = 'urn:schemas-upnp-org:service:ConnectionManager:2'
-        self.id = 'ConnectionManager'
+        self.type = 'urn:schemas-upnp-org:service:ContentDirectory:2'
+        self.id = 'ContentDirectory'
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         
@@ -82,9 +93,9 @@ class ConnectionManagerServer(resource.Resource):
         
         self.init_var_and_actions()
 
-        self.connection_manager_control = ConnectionManagerControl()
-        self.putChild(self.scpd_url, scpdXML(self, self.connection_manager_control))
-        self.putChild(self.control_url, self.connection_manager_control)
+        self.content_directory_control = ContentDirectoryControl()
+        self.putChild('scpd.xml', scpdXML(self, self.content_directory_control))
+        self.putChild('control', self.content_directory_control)
         
         
     def listchilds(self, uri):
@@ -94,54 +105,11 @@ class ConnectionManagerServer(resource.Resource):
         return cl
 
     def render(self,request):
-        return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
-
-    def old_init_var_and_actions(self):
-        instance = 0
-        
-        def init_var(self, name, implementation, instance, send_events, data_type, values):
-            events = ['no','yes']
-            self._variables.get(instance)[name] = \
-                            variable.StateVariable(self, name,
-                                                    required,
-                                                    instance,
-                                                    send_events,
-                                                    data_type, values)
-
-        init_var(self, 'SourceProtocolInfo', 'required', instance, 'yes', 'string', [])
-        init_var(self, 'SinkProtocolInfo', 'required', instance, 'yes', 'string', [])
-        init_var(self, 'CurrentConnectionIDs', 'required', instance, 'yes', 'string', [])
-        init_var(self, 'A_ARG_TYPE_ConnectionStatus', 'required', instance, 'no', 'string',
-                        ['OK', 'ContentFormatMismatch','InsufficientBandwidth','UnreliableChannel','Unknown'])
-        init_var(self, 'A_ARG_TYPE_ConnectionManager', 'required', instance, 'no', 'string', [])
-        init_var(self, 'A_ARG_TYPE_Direction', 'required', instance, 'no', 'string',
-                        ['Input', 'Output'])
-        init_var(self, 'A_ARG_TYPE_ProtocolInfo', 'required', instance, 'no', 'string', [])
-        init_var(self, 'A_ARG_TYPE_ConnectionID', 'required', instance, 'no', 'i4', [])
-        init_var(self, 'A_ARG_TYPE_AVTransportID', 'required', instance, 'no', 'i4', [])
-        init_var(self, 'A_ARG_TYPE_RcsID', 'required', instance, 'no', 'i4', [])
-        
-        def init_action(self, name, implementation, arguments):
-            self._actions[name] = action.Action(self, name, implementation, arguments)
-
-        arguments = []
-        arguments.append(action.Argument('Source','out','SourceProtocolInfo'))
-        arguments.append(action.Argument('Sink','out','SinkProtocolInfo'))
-        init_action(self, 'GetProtocolInfo', 'required', arguments)
-
-        arguments = []
-        arguments.append(action.Argument('RemoteProtocolInfo','in','A_ARG_TYPE_ProtocolInfo'))
-        arguments.append(action.Argument('PeerConnectionManager','in','A_ARG_TYPE_ConnectionManager'))
-        arguments.append(action.Argument('PeerConnectionID','in','A_ARG_TYPE_ConnectionID'))
-        arguments.append(action.Argument('Direction','in','A_ARG_TYPE_Direction'))
-        arguments.append(action.Argument('ConnectionID','out','A_ARG_TYPE_ConnectionID'))
-        arguments.append(action.Argument('AVTransportID','out','A_ARG_TYPE_AVTransportID'))
-        arguments.append(action.Argument('RcsID','out','A_ARG_TYPE_RcsID'))
-        init_action(self, 'PrepareForConnection', 'optional', arguments)
+        return '<html><p>root of the ContentDirectory</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
     def init_var_and_actions(self):
 
-        tree = parse('xml-service-descriptions/ConnectionManager1.xml')
+        tree = parse('xml-service-descriptions/ContentDirectory1.xml')
         
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')

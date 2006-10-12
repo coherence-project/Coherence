@@ -10,6 +10,7 @@ from twisted.web import xmlrpc, resource, static
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from connection_manager_server import ConnectionManagerServer
+from content_directory_server import ContentDirectoryServer
 
 class MSRoot(resource.Resource):
     def __init__(self):
@@ -37,7 +38,9 @@ class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
                         device_type="urn:schemas-upnp-org:device:MediaServer:2",
-                        friendly_name='Coherence UPnP A/V MediaServer'):
+                        friendly_name='Coherence UPnP A/V MediaServer',
+                        services=[],
+                        devices=[]):
         root = Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
         e = SubElement(root, 'specVersion')
@@ -60,15 +63,18 @@ class RootDeviceXML(static.Data):
         SubElement( d, 'UPC').text = ''
         SubElement( d, 'presentationURL').text = ''
 
-        e = SubElement( d, 'serviceList')
-        s = SubElement( e, 'service')
-        SubElement( s, 'serviceType').text = ''
-        SubElement( s, 'serviceId').text = ''
-        SubElement( s, 'SCPDURL').text = ''
-        SubElement( s, 'controlURL').text = ''
-        SubElement( s, 'eventSubURL').text = ''
+        if len(services):
+            e = SubElement( d, 'serviceList')
+            for service in services:
+                s = SubElement( e, 'service')
+                SubElement( s, 'serviceType').text = service.type
+                SubElement( s, 'serviceId').text = service.id
+                SubElement( s, 'SCPDURL').text = urlbase + uuid + '/' + service.id + '/' + service.scpd_url
+                SubElement( s, 'controlURL').text = urlbase + uuid + '/' + service.id + '/' + service.control_url
+                SubElement( s, 'eventSubURL').text = urlbase + uuid + '/' + service.id + '/' + 'subscribe'
 
-        e = SubElement( d, 'deviceList')
+        if len(services):
+            e = SubElement( d, 'deviceList')
 
         #indent( root, 0)
         self.xml = tostring( root, encoding='utf-8')
@@ -79,16 +85,26 @@ class MediaServer:
     def __init__(self, coherence):
         self.coherence = coherence
         self.uuid = self.generateuuid()
-        print self.uuid
+        self._services = []
+        self._devices = []
+        
+        self.connection_manager_server = ConnectionManagerServer()
+        self._services.append(self.connection_manager_server)
+        self.content_directory_server = ContentDirectoryServer()
+        self._services.append(self.content_directory_server)
         
         self.web_resource = MSRoot()
         self.coherence.add_web_resource( self.uuid, self.web_resource)
         self.web_resource.putChild( 'description.xml',
                                 RootDeviceXML( self.coherence.hostname,
                                 self.uuid,
-                                self.coherence.urlbase))
-                                
-        self.web_resource.putChild('ConnectionManager', ConnectionManagerServer())
+                                self.coherence.urlbase,
+                                services=self._services,
+                                devices=self._devices))
+        self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
+        self.web_resource.putChild('ContentDirectory', self.content_directory_server)
+
+
         self.register()
 
         
@@ -101,24 +117,21 @@ class MediaServer:
         		self.coherence.urlbase + self.uuid + '/' + 'description.xml',
                 '', '')
 
-        """                
         s.register(self.uuid,
         		self.uuid,
-        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
+        		self.coherence.urlbase + self.uuid + '/' + 'description.xml',
+                '', '')
 
         s.register('%s::urn:schemas-upnp-org:device:MediaServer:2' % self.uuid,
         		'urn:schemas-upnp-org:device:MediaServer:2',
-        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
+        		self.coherence.urlbase + self.uuid + '/' + 'description.xml',
+                '', '')
 
-        s.register('%s::urn:schemas-upnp-org:service:ConnectionManager:2' % self.uuid,
-        		'urn:schemas-upnp-org:device:ConnectionManager:2',
-        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
-
-        s.register('%s::urn:schemas-upnp-org:service:ContentDirectory:2' % self.uuid,
-        		'urn:schemas-upnp-org:device:ContentDirectory:2',
-        		self.coherence.urlbase + self.uuid + '/' + 'description.xml')
-        """
-        
+        for service in self._services:
+            s.register('%s::%s' % (self.uuid,service.type),
+        		service.type,
+        		self.coherence.urlbase + self.uuid + '/' + service.id + '/' + 'scpd.xml',
+                '', '')     
 
     def generateuuid(self):
         import random
