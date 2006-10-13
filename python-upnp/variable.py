@@ -7,7 +7,7 @@
 
 class StateVariable:
 
-    def __init__(self, service, implementation, name, instance, send_events,
+    def __init__(self, service, name, implementation, instance, send_events,
                  data_type, values):
         self.service = service
         self.instance = instance
