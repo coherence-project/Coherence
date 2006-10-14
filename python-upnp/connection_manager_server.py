@@ -17,6 +17,8 @@ from soap_service import UPnPPublisher
 import action 
 import variable
 
+from event import EventSubscriptionServer
+
 class scpdXML(static.Data):
 
     def __init__(self, server, control):
@@ -38,7 +40,7 @@ class scpdXML(static.Data):
                 SubElement( a, 'direction').text = argument.get_direction()
                 SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
 
-        e = SubElement( root, 'ServiceStateTable')
+        e = SubElement( root, 'serviceStateTable')
         for var in server._variables[0].values():
             s = SubElement( e, 'stateVariable')
             s.attrib['sendEvents'] = var.send_events
@@ -76,6 +78,7 @@ class ConnectionManagerServer(resource.Resource):
         self.id = 'ConnectionManager'
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
+        self.subscription_url = 'subscribe'
         
         self._actions = {}
         self._variables = { 0: {}}
@@ -85,6 +88,7 @@ class ConnectionManagerServer(resource.Resource):
         self.connection_manager_control = ConnectionManagerControl()
         self.putChild(self.scpd_url, scpdXML(self, self.connection_manager_control))
         self.putChild(self.control_url, self.connection_manager_control)
+        self.putChild(self.subscription_url, EventSubscriptionServer(self))
         
         
     def listchilds(self, uri):
@@ -141,7 +145,7 @@ class ConnectionManagerServer(resource.Resource):
 
     def init_var_and_actions(self):
 
-        tree = parse('xml-service-descriptions/ConnectionManager1.xml')
+        tree = parse('xml-service-descriptions/ConnectionManager2.xml')
         
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')

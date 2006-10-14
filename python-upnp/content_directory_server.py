@@ -18,6 +18,8 @@ from soap_service import UPnPPublisher
 import action 
 import variable
 
+from event import EventSubscriptionServer
+
 class scpdXML(static.Data):
 
     def __init__(self, server, control):
@@ -39,7 +41,7 @@ class scpdXML(static.Data):
                 SubElement( a, 'direction').text = argument.get_direction()
                 SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
 
-        e = SubElement( root, 'ServiceStateTable')
+        e = SubElement( root, 'serviceStateTable')
         for var in server._variables[0].values():
             s = SubElement( e, 'stateVariable')
             s.attrib['sendEvents'] = var.send_events
@@ -87,7 +89,8 @@ class ContentDirectoryServer(resource.Resource):
         self.id = 'ContentDirectory'
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
-        
+        self.subscription_url = 'subscribe'
+
         self._actions = {}
         self._variables = { 0: {}}
         
@@ -96,7 +99,8 @@ class ContentDirectoryServer(resource.Resource):
         self.content_directory_control = ContentDirectoryControl()
         self.putChild('scpd.xml', scpdXML(self, self.content_directory_control))
         self.putChild('control', self.content_directory_control)
-        
+        self.putChild(self.subscription_url, EventSubscriptionServer(self))
+
         
     def listchilds(self, uri):
         cl = ''
@@ -109,7 +113,7 @@ class ContentDirectoryServer(resource.Resource):
 
     def init_var_and_actions(self):
 
-        tree = parse('xml-service-descriptions/ContentDirectory1.xml')
+        tree = parse('xml-service-descriptions/ContentDirectory2.xml')
         
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')
