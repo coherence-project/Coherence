@@ -172,5 +172,6 @@ class Service:
 
             louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
 
+        #print 'getPage', self.get_scpd_url()
         getPage(self.get_scpd_url()).addCallback( gotPage)
             
