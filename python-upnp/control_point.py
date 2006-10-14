@@ -24,7 +24,7 @@ class ControlPoint:
     def __init__(self, coherence):
         self.coherence = coherence
         
-        self.event_server = EventServer( 'ControlPoint', self)
+        self.event_server = EventServer(self)
         
         self.coherence.add_web_resource('RPC2',
                                         XMLRPC(self))

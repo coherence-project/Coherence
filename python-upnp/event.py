@@ -1,23 +1,8 @@
-# Elisa - Home multimedia server
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+ 	
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# All rights reserved.
-# 
-# This software is available under three license agreements.
-# 
-# There are various plugins and extra modules for Elisa licensed
-# under the MIT license. For instance our upnp module uses this license.
-# 
-# The core of Elisa is licensed under GPL version 2.
-# See "LICENSE.GPL" in the root of this distribution including a special 
-# exception to use Elisa with Fluendo's plugins.
-# 
-# The GPL part is also available under a commerical licensing
-# agreement.
-# 
-# The second license is the Elisa Commercial License Agreement.
-# This license agreement is available to licensees holding valid
-# Elisa Commercial Agreement licenses.
-# See "LICENSE.Elisa" in the root of this distribution.
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 
 from twisted.internet import reactor
@@ -32,7 +17,7 @@ web_server_port = None
 
 class EventServer(resource.Resource):
 
-    def __init__(self, name, control_point):
+    def __init__(self, control_point):
         self.coherence = control_point.coherence
         self.control_point = control_point
         self.coherence.add_web_resource('events',
@@ -40,9 +25,9 @@ class EventServer(resource.Resource):
         global hostname, web_server_port
         hostname = self.coherence.hostname
         web_server_port = self.coherence.web_server_port
-        
+
     def render_NOTIFY(self, request):
-        print "EventServer received request, code:", request.code
+        #print "EventServer received request, code:", request.code
         data = request.content.getvalue()
         if request.code != 200:
             print "data:"
@@ -59,6 +44,35 @@ class EventServer(resource.Resource):
                     idx = tag.find('}') + 1
                     event.update({tag[idx:]: var.text})
             self.control_point.propagate(event)
+        return ""
+
+
+class EventSubscriptionServer(resource.Resource):
+
+    def __init__(self, service):
+        self.service = service
+        
+    def render_SUBSCRIBE(self, request):
+        print "EventSubscriptionServer received request, code:", request.code
+        data = request.content.getvalue()
+        if request.code != 200:
+            print "data:"
+            print data
+        else:
+            headers = request.getAllHeaders()
+            print headers
+            print data
+        return ""
+        
+    def render_UNSUBSCRIBE(self, request):
+        print "EventSubscriptionServer received request, code:", request.code
+        data = request.content.getvalue()
+        if request.code != 200:
+            print "data:"
+            print data
+        else:
+            headers = request.getAllHeaders()
+
         return ""
     
 class Event(dict):
