@@ -57,8 +57,8 @@ class MediaServerClient:
         if self.scheduled_recording:
             print "ScheduledRecording (optional) available"
             
-        d = self.content_directory.browse(0, recursive=False) # browse top level
-        d.addCallback( self.process_meta)
+        #d = self.content_directory.browse(0, recursive=False) # browse top level
+        #d.addCallback( self.process_meta)
         
     def state_variable_change( self, variable):
         print variable.name, 'changed from', variable.old_value, 'to', variable.value
