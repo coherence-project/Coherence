@@ -1,0 +1,29 @@
+<!--============================================================
+Title: UPnP AV MediaRenderer:2 Device Template
+
+Purpose:
+To identify the required and optional services
+defined by this device type.
+
+NOTE: This file uses tabs (not spaces) for block indentation.
+Any updates to this file should maintain this convention.
+This includes disabling any automatic tab-to-space conversion
+feature enabled by your editor. 
+============================================================-->
+<device>
+	<serviceList>
+		<service>
+		<serviceType>urn:schemas-upnp-org:service:RenderingControl:2</serviceType>
+			<serviceId>RenderingControl</serviceId>
+		</service>
+		<service>
+			<serviceType>urn:schemas-upnp-org:service:ConnectionManager:2</serviceType>
+			<serviceId>ConnectionManager</serviceId>
+		</service>
+		<service>
+			<Optional/>
+			<serviceType>urn:schemas-upnp-org:service:AVTransport:2</serviceType>
+			<serviceId>AVTransport</serviceId>
+		</service>
+	</serviceList>
+</device>
