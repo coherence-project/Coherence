@@ -100,7 +100,7 @@ class WebServer:
 
         self.web_root_resource = Web(coherence)
         #self.web_root_resource = inevow.IResource( web)
-        print self.web_root_resource
+        #print self.web_root_resource
         self.site = appserver.NevowSite( self.web_root_resource)
         reactor.listenTCP( port, self.site)
         
