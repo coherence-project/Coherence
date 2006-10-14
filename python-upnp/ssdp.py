@@ -2,20 +2,22 @@
 # http://opensource.org/licenses/mit-license.php
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
-# Copyright 2006 Frank Scholz <dev@netzflocken.de>
-
+# Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 #
-# Implementation of SSDP server under Twisted Python.
+# Implementation of a SSDP server under Twisted Python.
 #
 
 import random
 import string
 import sys
 import time
+import platform
 
 from twisted.python import log
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
+from twisted.internet import task
 
 import louie
 
@@ -49,9 +51,21 @@ class SSDPServer(DatagramProtocol):
             port.setLoopbackMode(0)
 
             port.joinGroup(SSDP_ADDR)
+            
+            l = task.LoopingCall(self.resendNotify)
+            l.start(777.0)
+
         
     def _failure(self, error):
         print error
+        
+    def doStop(self):
+		'''Make sure we send out the byebye notifications.'''
+
+		for st in self.known:
+			self.doByebye(st)
+		DatagramProtocol.doStop(self)
+
     
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""
@@ -72,15 +86,14 @@ class SSDPServer(DatagramProtocol):
 
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
-            #self.discoveryRequest(headers, (host, port))
-            pass
+            self.discoveryRequest(headers, (host, port))
         elif cmd[0] == 'NOTIFY' and cmd[1] == '*':
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
             log.msg('Unknown SSDP command %s %s' % cmd)
 
-    def register(self, usn, st, location, server, cache_control):
+    def register(self, manifestation, usn, st, location, server='UPnP/1.0,Coherence UPnP framework,0.1', cache_control='max-age=1800'):
         """Register a service or device that this SSDP server will
         respond to."""
         
@@ -92,8 +105,18 @@ class SSDPServer(DatagramProtocol):
         self.known[usn]['LOCATION'] = location
         self.known[usn]['ST'] = st
         self.known[usn]['EXT'] = ''
-        self.known[usn]['SERVER'] = server
-        self.known[usn]['CACHE-CONTROL'] = cache_control
+        if manifestation == 'local':
+            self.known[usn]['SERVER'] = ','.join([platform.system(),platform.release(),server])
+            self.known[usn]['CACHE-CONTROL'] = cache_control
+        else:
+            self.known[usn]['SERVER'] = server
+            self.known[usn]['CACHE-CONTROL'] = cache_control
+            
+        self.known[usn]['MANIFESTATION'] = manifestation
+        
+        if manifestation == 'local':
+            self.doNotify(usn)
+
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.new_device', None, device_type=st, infos=self.known[usn])
             #self.callback("new_device", st, self.known[usn])
@@ -117,7 +140,7 @@ class SSDPServer(DatagramProtocol):
 
         if headers['nts'] == 'ssdp:alive':
             if not self.isKnown(headers['usn']):
-                self.register(headers['usn'], headers['nt'], headers['location'],
+                self.register('remote', headers['usn'], headers['nt'], headers['location'],
                               headers['server'], headers['cache-control'])
         elif headers['nts'] == 'ssdp:byebye':
             if self.isKnown(headers['usn']):
@@ -125,6 +148,73 @@ class SSDPServer(DatagramProtocol):
         else:
             log.msg('Unknown subtype %s for notification type %s' %
                     (headers['nts'], headers['nt']))
+
+    def discoveryRequest(self, headers, (host, port)):
+        """Process a discovery request.  The response must be sent to
+        the address specified by (host, port)."""
+
+        #print 'Discovery request from (%s,%d) for %s' % (host, port, headers['st'])
+        log.msg('Discovery request for %s' % headers['st'])
+
+        # Do we know about this service?
+        for i in self.known.values():
+            if i['MANIFESTATION'] == 'remote':
+                continue
+            if( i['ST'] == headers['st'] or
+                headers['st'] == 'ssdp:all'):
+                response = []
+                response.append('HTTP/1.1 200 OK')
+
+                for k, v in i.items():
+                    if k != 'MANIFESTATION':
+                        response.append('%s: %s' % (k, v))
+
+                response.extend(('', ''))
+                delay = random.randint(0, int(headers['mx']))
+                #print 'send Discovery response with delay %d: ' % delay, response
+                reactor.callLater(delay, self.transport.write,
+                                '\r\n'.join(response), (host, port))
+
+    def doNotify(self, usn):
+        """Do notification"""
+
+        #print 'doNotify', 'Sending alive notification for %s' % usn
+
+        resp = [ 'NOTIFY * HTTP/1.1',
+            'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
+            'NTS: ssdp:alive',
+            ]
+        stcpy = dict(self.known[usn].iteritems())
+        stcpy['NT'] = stcpy['ST']
+        del stcpy['ST']
+        del stcpy['MANIFESTATION']
+        resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+        resp.extend(('', ''))
+        #print 'doNotify', resp
+        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+
+    def doByebye(self, st):
+        """Do byebye"""
+
+        log.msg('Sending byebye notification for %s' % st)
+
+        resp = [ 'NOTIFY * HTTP/1.1',
+                'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
+                'NTS: ssdp:byebye',
+                ]
+        stcpy = dict(self.known[st].iteritems())
+        stcpy['NT'] = stcpy['ST']
+        del stcpy['ST']
+        del stcpy['MANIFESTATION']
+        resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+        resp.extend(('', ''))
+        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        
+    def resendNotify( self):
+        for usn in self.known:
+            if self.known[usn]['MANIFESTATION'] == 'local':
+                self.doNotify(usn)
 
     def subscribe(self, name, callback):
         self._callbacks.setdefault(name,[]).append(callback)
