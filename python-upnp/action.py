@@ -54,6 +54,15 @@ class Action:
     def get_service(self):
         return self.service
         
+    def set_callback(self, callback):
+        self.callback = callback
+
+    def get_callback(self):
+        try:
+            return self.callback
+        except:
+            return None
+        
     def call(self, *args, **kwargs):
         #print "calling", self.name
         in_arguments = self.get_in_arguments()
