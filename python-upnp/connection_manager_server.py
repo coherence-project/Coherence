@@ -8,8 +8,7 @@
 
 from twisted.python import log
 from twisted.web import resource, static, soap
-
-from twisted.python import reflect
+from twisted.internet import defer
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
 
@@ -41,7 +40,7 @@ class scpdXML(static.Data):
                 SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
 
         e = SubElement( root, 'serviceStateTable')
-        for var in server._variables[0].values():
+        for var in server._variables.values():
             s = SubElement( e, 'stateVariable')
             s.attrib['sendEvents'] = var.send_events
             SubElement( s, 'name').text = var.name
@@ -57,18 +56,138 @@ class scpdXML(static.Data):
 
 class ConnectionManagerControl(UPnPPublisher):
 
-    def _listFunctions(self):
-        """Return a list of the names of all service methods."""
-        return reflect.prefixedMethodNames(self.__class__, 'soap_')
+    def __init__(self, server):
+        self.variables = server.get_variables()
+        self.actions = server.get_actions()
         
-    def soap_GetProtocolInfo(self, *args, **kwargs):
+    def get_action_results(self, result, action):
+        """ check for out arguments
+            if yes: check if there are related ones to StateVariables with
+                    A_ARG_TYPE_ prefix
+                    if yes: call plugin method for this action
+                            add return value to result dict
+            if yes: add StateVariables without A_ARG_TYPE_ prefix to the result dict
+        """
+        print 'get_action_results', result
+        print 'get_action_results', action
+        r = result
+        for argument in action.get_out_arguments():
+            print 'get_state_variable_contents', argument.name
+            if argument.name[0:11] != 'A_ARG_TYPE_':
+                if action.get_callback() != None:
+                    variable = self.variables[argument.get_state_variable()]
+                    variable.value = r[argument.name];
+                    print 'get_state_variable_contents', 'update', variable.name, variable.value
+                else:
+                    variable = self.variables[argument.get_state_variable()]
+                    print 'get_state_variable_contents', variable.name, variable.value
+                    r[argument.name] = variable.value
+        return { '%sResponse'%action.name: r}
+        
+    def get_state_variable_contents(self, action):
+        """ check for out arguments
+            if yes: check if there are related ones to StateVariables with
+                    A_ARG_TYPE_ prefix
+                    if yes: call plugin method for this action
+                            add return value to result dict
+            if yes: add StateVariables without A_ARG_TYPE_ prefix to the result dict
+        """
+        r = {}
+        for argument in action.get_out_arguments():
+            print 'get_state_variable_contents', argument.name
+            if argument.name[0:11] != 'A_ARG_TYPE_':
+                variable = self.variables[argument.get_state_variable()]
+                print 'get_state_variable_contents', variable.name, variable.value
+                r[argument.name] = variable.value
+        return r
+                
+    def soap__generic(self, *args, **kwargs):
         """Required: returns the protocol-related info that this ConnectionManager
            supports in its current state."""
+        action = kwargs['soap_methodName']
+        #print action, __name__, kwargs
         
-        print 'GetProtocolInfo()', kwargs
-        return { 'GetProtocolInfoResponse': { 'Source': '', 'Sink': '' }}
+        def callit( *args, **kwargs):
+            print 'callit args', args
+            print 'callit kwargs', kwargs
+            result = {}
+            print 'callit before callback', result
+            callback = self.actions[action].get_callback()
+            if callback != None:
+                result.update( callback( **kwargs))
+            print 'callit after callback', result
+            return result
+            
+        # call plugin method for this action
+        d = defer.maybeDeferred( callit, **kwargs)
+        d.addCallback( self.get_action_results, self.actions[action])
+        return d
 
+    def soap_XXXGetProtocolInfo(self, *args, **kwargs):
+        """Required: returns the protocol-related info that this ConnectionManager
+           supports in its current state."""
+        action = 'GetProtocolInfo'
+        print action, __name__, kwargs
+        
+        def callit( r):
+            print 'callit', r
+            result = {}
+            result.update(self.get_state_variable_contents(self.actions[action]))
+            print 'callit', result
+            return result
+            
+        # call plugin method for this action
+        d = defer.maybeDeferred( callit, kwargs)
+        d.addCallback( self.get_action_results, self.actions[action])
+        return d
 
+    def soap_PrepareForConnection(self, *args, **kwargs):
+        """Optional: this action is used to allow the device to prepare itself to connect
+           to the network for the purposes of sending or receiving media content."""
+        
+        print 'PrepareForConnection()', kwargs
+        return { 'PrepareForConnectionResponse': { 'ConnectionID': 0,
+                                                    'AVTransportID': 0,
+                                                    'RcsID': 0}}
+
+    def soap_ConnectionComplete(self, *args, **kwargs):
+        """Optional: this action removes the connection referenced by argument
+           ConnectionID by modifying state variable CurrentConnectionIDs, and
+           (if necessary) performs any protocol-specific cleanup actions such
+           as releasing network resources."""
+        
+        print 'ConnectionComplete()', kwargs
+        return { 'ConnectionCompleteResponse': {}}
+
+    def soap_GetCurrentConnectionIDs(self, *args, **kwargs):
+        """Required: this action returns a Comma-Separated Value list of ConnectionIDs
+           of currently ongoing Connections. A ConnectionID can be used to manually
+           terminate a Connection via action ConnectionComplete(), or to retrieve
+           additional information about the ongoing Connection via action
+           GetCurrentConnectionInfo(). If a device does not implement PrepareForConnection(),
+           this action MUST return the single value '0'."""
+        
+        print 'GetCurrentConnectionIDs()', kwargs
+        return { 'GetCurrentConnectionIDsResponse': { 'ConnectionIDs': self.variables['CurrentConnectionIDs'] }}
+
+    def soap_GetCurrentConnectionInfo(self, *args, **kwargs):
+        """Required: this action returns associated information of the connection
+           referred to by the ConnectionID input argument. The AVTransportID argument
+           MAY be the reserved value -1 and the PeerConnectionManager argument MAY
+           be the empty string in cases where the connection has been setup completely
+           out of band, not involving a PrepareForConnection() action."""
+        
+        print 'GetCurrentConnectionInfo()', kwargs
+        return { 'GetCurrentConnectionInfoResponse': { 'RcsID': -1,
+                                                       'AVTransportID': -1,
+                                                       'ProtocolInfo': '',
+                                                       'PeerConnectionManager': '',
+                                                       'PeerConnectionID': -1,
+                                                       'Direction': 'Output',
+                                                       'Status': 'OK',
+                                                       }}
+
+        
 class ConnectionManagerServer(resource.Resource):
 
     def __init__(self):
@@ -81,67 +200,33 @@ class ConnectionManagerServer(resource.Resource):
         self.subscription_url = 'subscribe'
         
         self._actions = {}
-        self._variables = { 0: {}}
+        self._variables = {}
         
         self.init_var_and_actions()
 
-        self.connection_manager_control = ConnectionManagerControl()
+        self.connection_manager_control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, scpdXML(self, self.connection_manager_control))
         self.putChild(self.control_url, self.connection_manager_control)
         self.putChild(self.subscription_url, EventSubscriptionServer(self))
         
+        self._variables['SourceProtocolInfo'].value = 'http-get:*:audio/mpeg:*'
+        self._variables['SinkProtocolInfo'].value = ''
+        self._variables['CurrentConnectionIDs'].value = '0'
         
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
                 cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
         return cl
+        
+    def get_actions(self):
+        return self._actions
+
+    def get_variables(self):
+        return self._variables
 
     def render(self,request):
         return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
-
-    def old_init_var_and_actions(self):
-        instance = 0
-        
-        def init_var(self, name, implementation, instance, send_events, data_type, values):
-            events = ['no','yes']
-            self._variables.get(instance)[name] = \
-                            variable.StateVariable(self, name,
-                                                    required,
-                                                    instance,
-                                                    send_events,
-                                                    data_type, values)
-
-        init_var(self, 'SourceProtocolInfo', 'required', instance, 'yes', 'string', [])
-        init_var(self, 'SinkProtocolInfo', 'required', instance, 'yes', 'string', [])
-        init_var(self, 'CurrentConnectionIDs', 'required', instance, 'yes', 'string', [])
-        init_var(self, 'A_ARG_TYPE_ConnectionStatus', 'required', instance, 'no', 'string',
-                        ['OK', 'ContentFormatMismatch','InsufficientBandwidth','UnreliableChannel','Unknown'])
-        init_var(self, 'A_ARG_TYPE_ConnectionManager', 'required', instance, 'no', 'string', [])
-        init_var(self, 'A_ARG_TYPE_Direction', 'required', instance, 'no', 'string',
-                        ['Input', 'Output'])
-        init_var(self, 'A_ARG_TYPE_ProtocolInfo', 'required', instance, 'no', 'string', [])
-        init_var(self, 'A_ARG_TYPE_ConnectionID', 'required', instance, 'no', 'i4', [])
-        init_var(self, 'A_ARG_TYPE_AVTransportID', 'required', instance, 'no', 'i4', [])
-        init_var(self, 'A_ARG_TYPE_RcsID', 'required', instance, 'no', 'i4', [])
-        
-        def init_action(self, name, implementation, arguments):
-            self._actions[name] = action.Action(self, name, implementation, arguments)
-
-        arguments = []
-        arguments.append(action.Argument('Source','out','SourceProtocolInfo'))
-        arguments.append(action.Argument('Sink','out','SinkProtocolInfo'))
-        init_action(self, 'GetProtocolInfo', 'required', arguments)
-
-        arguments = []
-        arguments.append(action.Argument('RemoteProtocolInfo','in','A_ARG_TYPE_ProtocolInfo'))
-        arguments.append(action.Argument('PeerConnectionManager','in','A_ARG_TYPE_ConnectionManager'))
-        arguments.append(action.Argument('PeerConnectionID','in','A_ARG_TYPE_ConnectionID'))
-        arguments.append(action.Argument('Direction','in','A_ARG_TYPE_Direction'))
-        arguments.append(action.Argument('ConnectionID','out','A_ARG_TYPE_ConnectionID'))
-        arguments.append(action.Argument('AVTransportID','out','A_ARG_TYPE_AVTransportID'))
-        arguments.append(action.Argument('RcsID','out','A_ARG_TYPE_RcsID'))
-        init_action(self, 'PrepareForConnection', 'optional', arguments)
 
     def init_var_and_actions(self):
 
@@ -172,7 +257,7 @@ class ConnectionManagerServer(resource.Resource):
             values = []
             for allowed in var_node.findall('.//allowedValue'):
                 values.append(allowed.text)
-            self._variables.get(instance)[name] = variable.StateVariable(self, name,
+            self._variables[name] = variable.StateVariable(self, name,
                                                            implementation,
-                                                           instance, send_events,
+                                                           0, send_events,
                                                            data_type, values)
