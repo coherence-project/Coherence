@@ -1,6 +1,6 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
- 	
+
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 from twisted.internet import task
@@ -136,4 +136,4 @@ class MediaServer:
     def generateuuid(self):
         import random
         import string
-    	return ''.join([ 'uuid:'] + map(lambda x: random.choice(string.letters), xrange(20)))
+        return ''.join([ 'uuid:'] + map(lambda x: random.choice(string.letters), xrange(20)))

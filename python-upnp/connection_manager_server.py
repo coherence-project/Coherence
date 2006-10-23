@@ -63,10 +63,11 @@ class ConnectionManagerControl(UPnPPublisher):
     def get_action_results(self, result, action):
         """ check for out arguments
             if yes: check if there are related ones to StateVariables with
-                    A_ARG_TYPE_ prefix
-                    if yes: call plugin method for this action
-                            add return value to result dict
-            if yes: add StateVariables without A_ARG_TYPE_ prefix to the result dict
+                    non A_ARG_TYPE_ prefix
+                    if yes: check if there is a call plugin method for this action
+                            if yes: update StateVariable values with call result
+                            if no:  get StateVariable values and
+                                    add them to result dict
         """
         print 'get_action_results', result
         print 'get_action_results', action
@@ -77,30 +78,13 @@ class ConnectionManagerControl(UPnPPublisher):
                 if action.get_callback() != None:
                     variable = self.variables[argument.get_state_variable()]
                     variable.value = r[argument.name];
-                    print 'get_state_variable_contents', 'update', variable.name, variable.value
+                    print 'update state variable contents', variable.name, variable.value
                 else:
                     variable = self.variables[argument.get_state_variable()]
-                    print 'get_state_variable_contents', variable.name, variable.value
+                    print 'get state variable contents', variable.name, variable.value
                     r[argument.name] = variable.value
         return { '%sResponse'%action.name: r}
         
-    def get_state_variable_contents(self, action):
-        """ check for out arguments
-            if yes: check if there are related ones to StateVariables with
-                    A_ARG_TYPE_ prefix
-                    if yes: call plugin method for this action
-                            add return value to result dict
-            if yes: add StateVariables without A_ARG_TYPE_ prefix to the result dict
-        """
-        r = {}
-        for argument in action.get_out_arguments():
-            print 'get_state_variable_contents', argument.name
-            if argument.name[0:11] != 'A_ARG_TYPE_':
-                variable = self.variables[argument.get_state_variable()]
-                print 'get_state_variable_contents', variable.name, variable.value
-                r[argument.name] = variable.value
-        return r
-                
     def soap__generic(self, *args, **kwargs):
         """Required: returns the protocol-related info that this ConnectionManager
            supports in its current state."""
@@ -120,24 +104,6 @@ class ConnectionManagerControl(UPnPPublisher):
             
         # call plugin method for this action
         d = defer.maybeDeferred( callit, **kwargs)
-        d.addCallback( self.get_action_results, self.actions[action])
-        return d
-
-    def soap_XXXGetProtocolInfo(self, *args, **kwargs):
-        """Required: returns the protocol-related info that this ConnectionManager
-           supports in its current state."""
-        action = 'GetProtocolInfo'
-        print action, __name__, kwargs
-        
-        def callit( r):
-            print 'callit', r
-            result = {}
-            result.update(self.get_state_variable_contents(self.actions[action]))
-            print 'callit', result
-            return result
-            
-        # call plugin method for this action
-        d = defer.maybeDeferred( callit, kwargs)
         d.addCallback( self.get_action_results, self.actions[action])
         return d
 
