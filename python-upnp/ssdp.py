@@ -60,11 +60,11 @@ class SSDPServer(DatagramProtocol):
         print error
         
     def doStop(self):
-		'''Make sure we send out the byebye notifications.'''
+        '''Make sure we send out the byebye notifications.'''
 
-		for st in self.known:
-			self.doByebye(st)
-		DatagramProtocol.doStop(self)
+        for st in self.known:
+            self.doByebye(st)
+        DatagramProtocol.doStop(self)
 
     
     def datagramReceived(self, data, (host, port)):
@@ -91,7 +91,7 @@ class SSDPServer(DatagramProtocol):
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            log.msg('Unknown SSDP command %s %s' % cmd)
+            log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1])
 
     def register(self, manifestation, usn, st, location, server='UPnP/1.0,Coherence UPnP framework,0.1', cache_control='max-age=1800'):
         """Register a service or device that this SSDP server will
