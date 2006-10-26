@@ -41,6 +41,7 @@ class RootDeviceXML(static.Data):
                         friendly_name='Coherence UPnP A/V MediaServer',
                         services=[],
                         devices=[]):
+        uuid = str(uuid)
         root = Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
         e = SubElement(root, 'specVersion')
@@ -83,8 +84,9 @@ class RootDeviceXML(static.Data):
 class MediaServer:
 
     def __init__(self, coherence):
+        from uuid import UUID
         self.coherence = coherence
-        self.uuid = self.generateuuid()
+        self.uuid = UUID()
         self._services = []
         self._devices = []
         
@@ -94,10 +96,10 @@ class MediaServer:
         self._services.append(self.content_directory_server)
         
         self.web_resource = MSRoot()
-        self.coherence.add_web_resource( self.uuid, self.web_resource)
+        self.coherence.add_web_resource( str(self.uuid), self.web_resource)
         self.web_resource.putChild( 'description.xml',
                                 RootDeviceXML( self.coherence.hostname,
-                                self.uuid,
+                                str(self.uuid),
                                 self.coherence.urlbase,
                                 services=self._services,
                                 devices=self._devices))
@@ -110,30 +112,26 @@ class MediaServer:
         
     def register(self):
         s = self.coherence.ssdp_server
+        uuid = str(self.uuid)
         print 'MediaServer register'
         # we need to do this after the children are there, since we send notifies
         s.register('local',
-                    '%s::upnp:rootdevice' % self.uuid,
+                    '%s::upnp:rootdevice' % uuid,
                     'upnp:rootdevice',
-                    self.coherence.urlbase + self.uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid + '/' + 'description.xml')
 
         s.register('local',
-                    self.uuid,
-                    self.uuid,
-                    self.coherence.urlbase + self.uuid + '/' + 'description.xml')
+                    uuid,
+                    uuid,
+                    self.coherence.urlbase + uuid + '/' + 'description.xml')
 
         s.register('local',
-                    '%s::urn:schemas-upnp-org:device:MediaServer:2' % self.uuid,
+                    '%s::urn:schemas-upnp-org:device:MediaServer:2' % uuid,
                     'urn:schemas-upnp-org:device:MediaServer:2',
-                    self.coherence.urlbase + self.uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid + '/' + 'description.xml')
 
         for service in self._services:
             s.register('local',
-                        '%s::%s' % (self.uuid,service.type),
+                        '%s::%s' % (uuid,service.type),
                         service.type,
-                        self.coherence.urlbase + self.uuid + '/' + service.id + '/' + 'scpd.xml')     
-
-    def generateuuid(self):
-        import random
-        import string
-        return ''.join([ 'uuid:'] + map(lambda x: random.choice(string.letters), xrange(20)))
+                        self.coherence.urlbase + uuid + '/' + service.id + '/' + 'scpd.xml')     
