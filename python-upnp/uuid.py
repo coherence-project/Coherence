@@ -1,6 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
-
+#
+# Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 #
 
