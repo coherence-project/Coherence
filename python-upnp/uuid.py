@@ -14,6 +14,6 @@ class UUID:
         import random
         import string
         return ''.join([ 'uuid:'] + map(lambda x: random.choice(string.letters), xrange(20)))
-        
+ 
     def __repr__(self):
-        print self.uuid
+        return self.uuid

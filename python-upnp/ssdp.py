@@ -91,9 +91,11 @@ class SSDPServer(DatagramProtocol):
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1])
+            log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
 
-    def register(self, manifestation, usn, st, location, server='UPnP/1.0,Coherence UPnP framework,0.1', cache_control='max-age=1800'):
+    def register(self, manifestation, usn, st, location,
+                        server='UPnP/1.0,Coherence UPnP framework,0.1',
+                        cache_control='max-age=1800'):
         """Register a service or device that this SSDP server will
         respond to."""
         
