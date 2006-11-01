@@ -1,10 +1,13 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
- 	
+
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from twisted.internet import task
+
 import cElementTree
+import time
 import urllib2
 import action
 import event
@@ -12,6 +15,9 @@ import variable
 import utils
 
 from soap_proxy import SOAPProxy
+
+from event import EventSubscriptionServer
+from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
 
 import louie
 
@@ -175,3 +181,122 @@ class Service:
         #print 'getPage', self.get_scpd_url()
         getPage(self.get_scpd_url()).addCallback( gotPage)
             
+
+class Server:
+
+    def __init__(self, id):
+        self.id = id
+        self.service_type = 'urn:schemas-upnp-org:service:%s:2' % id
+        self.scpd_url = 'scpd.xml'
+        self.control_url = 'control'
+        self.subscription_url = 'subscribe'
+        
+        self._actions = {}
+        self._variables = {0: {}}
+
+        self._subscribers = {}
+        
+        self.init_var_and_actions()
+        self.putChild(self.subscription_url, EventSubscriptionServer(self))
+        
+        self.check_subscribers_loop = task.LoopingCall(self.check_subscribers)
+        self.check_subscribers_loop.start(120.0)
+
+        #simulation_loop = task.LoopingCall(self.simulate_notification)
+        #simulation_loop.start(60.0)
+
+    def get_actions(self):
+        return self._actions
+
+    def get_variables(self):
+        return self._variables
+
+    def get_subscribers(self):
+        return self._subscribers
+
+    def get_id(self):
+        return self.id
+        
+    def get_type(self):
+        return self.service_type
+        
+    def set_variable(self, instance, variable_name, value):
+        try:
+            self._variables[instance][variable_name].value = value
+            if len(self._subscribers) > 0:
+                xml = self.build_event(instance, variable_name, value)
+                for s in self._subscribers.values():
+                    event.send_notification(s, xml)
+        except:
+            pass
+
+    def build_event(self, instance, variable_name, value):
+        root = Element('propertyset')
+        root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
+        e = SubElement( root, 'property')
+        s = SubElement( e, variable_name).text = str(value)
+        return tostring( root, encoding='utf-8')
+        
+    def propagate_notification(self, notify):
+        if len(self._subscribers) <= 0:
+            return
+            
+        root = Element('propertyset')
+        root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
+
+        if isinstance( notify, Variable):
+            notify = [notify,]
+
+        for n in notify:
+            e = SubElement( root, 'property')
+            SubElement( e, n.name).text = str(n.value)
+            
+        xml = tostring( root, encoding='utf-8')
+        for s in self._subscribers.values():
+            event.send_notification(s, xml)
+        
+    def check_subscribers(self):
+        for s in self._subscribers.values():
+            timeout = 86400
+            print s
+            if s['timeout'].startswith('Second-'):
+                timeout = int(s['timeout'][len('Second-'):])
+            if time.time() > s['created'] + timeout:
+                del s
+
+    def simulate_notification(self):
+        print "simulate_notification for", self.id
+        self.set_variable(0, 'CurrentConnectionIDs', '0')
+
+    def init_var_and_actions(self):
+        tree = parse('xml-service-descriptions/%s2.xml' % self.id)
+        
+        for action_node in tree.findall('.//action'):
+            name = action_node.findtext('name')
+            implementation = 'required'
+            if action_node.find('Optional') != None:
+                implementation = 'optional'
+            arguments = []
+            for argument in action_node.findall('.//argument'):
+                arg_name = argument.findtext('name')
+                arg_direction = argument.findtext('direction')
+                arg_state_var = argument.findtext('relatedStateVariable')
+                arguments.append(action.Argument(arg_name, arg_direction,
+                                                 arg_state_var))
+            self._actions[name] = action.Action(self, name, implementation, arguments)
+            
+        for var_node in tree.findall('.//stateVariable'):
+            instance = 0
+            name = var_node.findtext('name')
+            implementation = 'required'
+            if action_node.find('Optional') != None:
+                implementation = 'optional'
+            send_events = var_node.findtext('sendEventsAttribute')
+            data_type = var_node.findtext('dataType')
+            values = []
+            for allowed in var_node.findall('.//allowedValue'):
+                values.append(allowed.text)
+            self._variables.get(instance)[name] = variable.StateVariable(self, name,
+                                                           implementation,
+                                                           instance, send_events,
+                                                           data_type, values)

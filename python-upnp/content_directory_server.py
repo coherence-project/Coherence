@@ -12,13 +12,11 @@ from twisted.web import resource, static, soap
 
 from twisted.python import reflect
 
-from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
+from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from soap_service import UPnPPublisher
-import action 
-import variable
 
-from event import EventSubscriptionServer
+import service
 
 class scpdXML(static.Data):
 
@@ -179,26 +177,15 @@ class ContentDirectoryControl(UPnPPublisher):
             (`ContainerID`, `ObjectID`))
 
 
-class ContentDirectoryServer(resource.Resource):
+class ContentDirectoryServer(service.Server, resource.Resource):
 
     def __init__(self):
         resource.Resource.__init__(self)
+        service.Server.__init__(self, 'ContentDirectory')
         
-        self.type = 'urn:schemas-upnp-org:service:ContentDirectory:2'
-        self.id = 'ContentDirectory'
-        self.scpd_url = 'scpd.xml'
-        self.control_url = 'control'
-        self.subscription_url = 'subscribe'
-
-        self._actions = {}
-        self._variables = { 0: {}}
-        
-        self.init_var_and_actions()
-
         self.content_directory_control = ContentDirectoryControl()
         self.putChild('scpd.xml', scpdXML(self, self.content_directory_control))
         self.putChild('control', self.content_directory_control)
-        self.putChild(self.subscription_url, EventSubscriptionServer(self))
 
         
     def listchilds(self, uri):
@@ -209,37 +196,3 @@ class ContentDirectoryServer(resource.Resource):
 
     def render(self,request):
         return '<html><p>root of the ContentDirectory</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
-
-    def init_var_and_actions(self):
-
-        tree = parse('xml-service-descriptions/ContentDirectory2.xml')
-        
-        for action_node in tree.findall('.//action'):
-            name = action_node.findtext('name')
-            implementation = 'required'
-            if action_node.find('Optional') != None:
-                implementation = 'optional'
-            arguments = []
-            for argument in action_node.findall('.//argument'):
-                arg_name = argument.findtext('name')
-                arg_direction = argument.findtext('direction')
-                arg_state_var = argument.findtext('relatedStateVariable')
-                arguments.append(action.Argument(arg_name, arg_direction,
-                                                 arg_state_var))
-            self._actions[name] = action.Action(self, name, implementation, arguments)
-            
-        for var_node in tree.findall('.//stateVariable'):
-            instance = 0
-            name = var_node.findtext('name')
-            implementation = 'required'
-            if action_node.find('Optional') != None:
-                implementation = 'optional'
-            send_events = var_node.findtext('sendEventsAttribute')
-            data_type = var_node.findtext('dataType')
-            values = []
-            for allowed in var_node.findall('.//allowedValue'):
-                values.append(allowed.text)
-            self._variables.get(instance)[name] = variable.StateVariable(self, name,
-                                                           implementation,
-                                                           instance, send_events,
-                                                           data_type, values)

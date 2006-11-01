@@ -10,13 +10,11 @@ from twisted.python import log
 from twisted.web import resource, static, soap
 from twisted.internet import defer
 
-from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
+from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from soap_service import UPnPPublisher
-import action 
-import variable
 
-from event import EventSubscriptionServer
+import service
 
 class scpdXML(static.Data):
 
@@ -40,7 +38,7 @@ class scpdXML(static.Data):
                 SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
 
         e = SubElement( root, 'serviceStateTable')
-        for var in server._variables.values():
+        for var in server._variables[0].values():
             s = SubElement( e, 'stateVariable')
             s.attrib['sendEvents'] = var.send_events
             SubElement( s, 'name').text = var.name
@@ -57,6 +55,7 @@ class scpdXML(static.Data):
 class ConnectionManagerControl(UPnPPublisher):
 
     def __init__(self, server):
+        self.server = server
         self.variables = server.get_variables()
         self.actions = server.get_actions()
         
@@ -72,17 +71,21 @@ class ConnectionManagerControl(UPnPPublisher):
         print 'get_action_results', result
         print 'get_action_results', action
         r = result
+        notify = []
         for argument in action.get_out_arguments():
             print 'get_state_variable_contents', argument.name
             if argument.name[0:11] != 'A_ARG_TYPE_':
                 if action.get_callback() != None:
-                    variable = self.variables[argument.get_state_variable()]
-                    variable.value = r[argument.name];
-                    print 'update state variable contents', variable.name, variable.value
+                    variable = self.variables[0][argument.get_state_variable()]
+                    variable.update(r[argument.name])
+                    #print 'update state variable contents', variable.name, variable.value
+                    #self.server.set_variable( 0, argument.get_state_variable(), r[argument.name])
+                    notify.append(variable)
                 else:
-                    variable = self.variables[argument.get_state_variable()]
+                    variable = self.variables[0][argument.get_state_variable()]
                     print 'get state variable contents', variable.name, variable.value
                     r[argument.name] = variable.value
+            self.server.propagate_notification(notify)
         return { '%sResponse'%action.name: r}
         
     def soap__generic(self, *args, **kwargs):
@@ -134,7 +137,7 @@ class ConnectionManagerControl(UPnPPublisher):
            this action MUST return the single value '0'."""
         
         print 'GetCurrentConnectionIDs()', kwargs
-        return { 'GetCurrentConnectionIDsResponse': { 'ConnectionIDs': self.variables['CurrentConnectionIDs'] }}
+        return { 'GetCurrentConnectionIDsResponse': { 'ConnectionIDs': self.variables[0]['CurrentConnectionIDs'] }}
 
     def soap_GetCurrentConnectionInfo(self, *args, **kwargs):
         """Required: this action returns associated information of the connection
@@ -154,30 +157,19 @@ class ConnectionManagerControl(UPnPPublisher):
                                                        }}
 
         
-class ConnectionManagerServer(resource.Resource):
+class ConnectionManagerServer(service.Server, resource.Resource):
 
     def __init__(self):
         resource.Resource.__init__(self)
-        
-        self.type = 'urn:schemas-upnp-org:service:ConnectionManager:2'
-        self.id = 'ConnectionManager'
-        self.scpd_url = 'scpd.xml'
-        self.control_url = 'control'
-        self.subscription_url = 'subscribe'
-        
-        self._actions = {}
-        self._variables = {}
-        
-        self.init_var_and_actions()
+        service.Server.__init__(self, 'ConnectionManager')
 
         self.connection_manager_control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, scpdXML(self, self.connection_manager_control))
         self.putChild(self.control_url, self.connection_manager_control)
-        self.putChild(self.subscription_url, EventSubscriptionServer(self))
         
-        self._variables['SourceProtocolInfo'].value = 'http-get:*:audio/mpeg:*'
-        self._variables['SinkProtocolInfo'].value = ''
-        self._variables['CurrentConnectionIDs'].value = '0'
+        self.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+        self.set_variable(0, 'SinkProtocolInfo', '')
+        self.set_variable(0, 'CurrentConnectionIDs', '0')
         
     def listchilds(self, uri):
         cl = ''
@@ -185,45 +177,6 @@ class ConnectionManagerServer(resource.Resource):
                 cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
         return cl
         
-    def get_actions(self):
-        return self._actions
-
-    def get_variables(self):
-        return self._variables
-
     def render(self,request):
         return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
-    def init_var_and_actions(self):
-
-        tree = parse('xml-service-descriptions/ConnectionManager2.xml')
-        
-        for action_node in tree.findall('.//action'):
-            name = action_node.findtext('name')
-            implementation = 'required'
-            if action_node.find('Optional') != None:
-                implementation = 'optional'
-            arguments = []
-            for argument in action_node.findall('.//argument'):
-                arg_name = argument.findtext('name')
-                arg_direction = argument.findtext('direction')
-                arg_state_var = argument.findtext('relatedStateVariable')
-                arguments.append(action.Argument(arg_name, arg_direction,
-                                                 arg_state_var))
-            self._actions[name] = action.Action(self, name, implementation, arguments)
-            
-        for var_node in tree.findall('.//stateVariable'):
-            instance = 0
-            name = var_node.findtext('name')
-            implementation = 'required'
-            if action_node.find('Optional') != None:
-                implementation = 'optional'
-            send_events = var_node.findtext('sendEventsAttribute')
-            data_type = var_node.findtext('dataType')
-            values = []
-            for allowed in var_node.findall('.//allowedValue'):
-                values.append(allowed.text)
-            self._variables[name] = variable.StateVariable(self, name,
-                                                           implementation,
-                                                           0, send_events,
-                                                           data_type, values)
