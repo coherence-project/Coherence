@@ -79,9 +79,14 @@ Coherence - a Python UPnP A/V framework
         #print 'children:', self.coherence.children
         for c in self.coherence.children:
             if c[:5] == 'uuid:':
-                device = self.coherence.get_device_with_usn(c)
+                device = self.coherence.get_device_with_id(c)
                 if device != None:
-                    cl.append( tags.li[tags.a(href='/'+c)[device.get_device_type(), device.get_friendly_name()]])
+                    _,_,_,device_type,version = device.get_device_type().split(':')
+                    cl.append( tags.li[tags.a(href='/'+c)[device_type,
+                                                          ':',
+                                                          version,
+                                                          ' ',
+                                                          device.get_friendly_name()]])
                 else:
                     cl.append( tags.li[tags.a(href='/'+c)['device: ', c]])
             else:
