@@ -1,5 +1,6 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
+
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).

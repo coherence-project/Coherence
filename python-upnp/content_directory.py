@@ -1,23 +1,8 @@
-# Elisa - Home multimedia server
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# All rights reserved.
-# 
-# This software is available under three license agreements.
-# 
-# There are various plugins and extra modules for Elisa licensed
-# under the MIT license. For instance our upnp module uses this license.
-# 
-# The core of Elisa is licensed under GPL version 2.
-# See "LICENSE.GPL" in the root of this distribution including a special 
-# exception to use Elisa with Fluendo's plugins.
-# 
-# The GPL part is also available under a commerical licensing
-# agreement.
-# 
-# The second license is the Elisa Commercial License Agreement.
-# This license agreement is available to licensees holding valid
-# Elisa Commercial Agreement licenses.
-# See "LICENSE.Elisa" in the root of this distribution.
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import re
 
@@ -172,14 +157,14 @@ def buildHierarchy(hashed_items, container_id, build_parents=True):
     root = Folder(container_id, "root", 0, [], None)
 
     for folder_id in keys:
-	folder = folders[folder_id]
+        folder = folders[folder_id]
 
         if build_parents:
             parent = _get_parent(root,folder, folders)
         else:
             parent = root
 
-	Folder(folder_id, folder['title'], folder['childCount'],
+        Folder(folder_id, folder['title'], folder['childCount'],
                folder['search_class'], parent)
         
     for item_id, item in items.iteritems():

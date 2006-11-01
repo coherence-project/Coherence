@@ -1,20 +1,7 @@
-# Python UPnP Framework
-# Copyright (C) 2006 Frank Scholz (dev@netzflocken.de)
-# All rights reserved.
-# 
-# This software is available under three licence agreements.
-# 
-# There are some parts and extra modules for the Python UPnP Framework licenced
-# under the MIT licence.
-# 
-# The core of the Python UPnP Framework is licenced under GPL version 2.
-# See "LICENCE.GPL" in the root of this distribution
-# 
-# The GPL part is also available under a commerical licencing
-# agreement.
-# 
-# The third licence is the Python UPnP Framework Commercial Licence Agreement.
-# See "LICENCE" in the root of this distribution.
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 from connection_manager_client import ConnectionManagerClient
 from rendering_control_client import RenderingControlClient
