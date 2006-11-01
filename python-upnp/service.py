@@ -181,6 +181,16 @@ class Service:
         #print 'getPage', self.get_scpd_url()
         getPage(self.get_scpd_url()).addCallback( gotPage)
             
+moderated_variables = \
+        {'urn:schemas-upnp-org:service:AVTransport:2':
+            ['LastChange'],
+         'urn:schemas-upnp-org:service:ContentDirectory:2':
+            ['SystemUpdateID', 'ContainerUpdateIDs'],
+         'urn:schemas-upnp-org:service:RenderingControl:2':
+            ['LastChange'],
+         'urn:schemas-upnp-org:service:ScheduledRecording:1':
+            ['LastChange'],
+        }
 
 class Server:
 
@@ -201,6 +211,11 @@ class Server:
         
         self.check_subscribers_loop = task.LoopingCall(self.check_subscribers)
         self.check_subscribers_loop.start(120.0)
+        
+        if moderated_variables.has_key(self.service_type):
+            self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
+            self.check_moderated_loop.start(0.5)
+            
 
         #simulation_loop = task.LoopingCall(self.simulate_notification)
         #simulation_loop.start(60.0)
@@ -264,10 +279,31 @@ class Server:
             if time.time() > s['created'] + timeout:
                 del s
 
+    def check_moderated_variables(self):
+        if len(self._subscribers) <= 0:
+            return
+        print "check_moderated"
+        variables = mv[self.get_type()]
+        notify = []
+        for v in variables:
+            if self._variables[0][v].update == True:
+                self._variables[0][v].update = False
+                notify.append(self._variables[0][v])
+        self.propagate_notification(notify)
+
+    def is_variable_moderated(self, name):
+        try:
+            variables = mv[self.get_type()]
+            if name in variables:
+                return True
+        except:
+            pass
+        return False
+        
     def simulate_notification(self):
         print "simulate_notification for", self.id
         self.set_variable(0, 'CurrentConnectionIDs', '0')
-
+        
     def init_var_and_actions(self):
         tree = parse('xml-service-descriptions/%s2.xml' % self.id)
         

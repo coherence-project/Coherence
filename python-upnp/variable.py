@@ -21,9 +21,8 @@ class StateVariable:
         self.allowed_values = values
         self._callbacks = []
         if isinstance( self.service, service.Server):
-            self.moderated = check_for_moderation(self.service.get_type(), name)
+            self.moderated = self.service.is_variable_moderated(name)
             self.updated = False
-
 
     def update(self, value):
         self.old_value = self.value
@@ -40,20 +39,3 @@ class StateVariable:
         for callback in self._callbacks:
             callback( self)
         
-def check_for_moderation(service_type, name):
-    t = {'urn:schemas-upnp-org:service:AVTransport:2':
-            ['LastChange'],
-         'urn:schemas-upnp-org:service:ContentDirectory:2':
-            ['SystemUpdateID', 'ContainerUpdateIDs'],
-         'urn:schemas-upnp-org:service:RenderingControl:2':
-            ['LastChange'],
-         'urn:schemas-upnp-org:service:ScheduledRecording:1':
-            ['LastChange'],
-        }
-    try:
-        variables = t[service_type]
-        if name in variables:
-            return True
-    except:
-        pass
-    return False
