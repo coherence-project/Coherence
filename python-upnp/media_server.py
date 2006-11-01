@@ -67,12 +67,13 @@ class RootDeviceXML(static.Data):
         if len(services):
             e = SubElement( d, 'serviceList')
             for service in services:
+                id = service.get_id()
                 s = SubElement( e, 'service')
-                SubElement( s, 'serviceType').text = service.type
-                SubElement( s, 'serviceId').text = service.id
-                SubElement( s, 'SCPDURL').text = '/' + uuid + '/' + service.id + '/' + service.scpd_url
-                SubElement( s, 'controlURL').text = '/' + uuid + '/' + service.id + '/' + service.control_url
-                SubElement( s, 'eventSubURL').text = '/' + uuid + '/' + service.id + '/' + service.subscription_url
+                SubElement( s, 'serviceType').text = service.get_type()
+                SubElement( s, 'serviceId').text = id
+                SubElement( s, 'SCPDURL').text = '/' + uuid + '/' + id + '/' + service.scpd_url
+                SubElement( s, 'controlURL').text = '/' + uuid + '/' + id + '/' + service.control_url
+                SubElement( s, 'eventSubURL').text = '/' + uuid + '/' + id + '/' + service.subscription_url
 
         if len(services):
             e = SubElement( d, 'deviceList')
@@ -132,6 +133,6 @@ class MediaServer:
 
         for service in self._services:
             s.register('local',
-                        '%s::%s' % (uuid,service.type),
-                        service.type,
+                        '%s::%s' % (uuid,service.get_type()),
+                        service.get_type(),
                         self.coherence.urlbase + uuid + '/' + service.id + '/' + 'scpd.xml')     
