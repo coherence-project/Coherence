@@ -18,42 +18,6 @@ from soap_service import UPnPPublisher
 
 import service
 
-class scpdXML(static.Data):
-
-    def __init__(self, server, control):
-    
-        root = Element('scpd')
-        root.attrib['xmlns']='urn:schemas-upnp-org:service-1-0'
-        e = SubElement(root, 'specVersion')
-        SubElement( e, 'major').text = '1'
-        SubElement( e, 'minor').text = '0'
-
-        e = SubElement( root, 'actionList')
-        for action in server._actions.values():
-            s = SubElement( e, 'action')
-            SubElement( s, 'name').text = action.get_name()
-            al = SubElement( s, 'argumentList')
-            for argument in action.get_arguments_list():
-                a = SubElement( al, 'argument')
-                SubElement( a, 'name').text = argument.get_name()
-                SubElement( a, 'direction').text = argument.get_direction()
-                SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
-
-        e = SubElement( root, 'serviceStateTable')
-        for var in server._variables[0].values():
-            s = SubElement( e, 'stateVariable')
-            s.attrib['sendEvents'] = var.send_events
-            SubElement( s, 'name').text = var.name
-            SubElement( s, 'dataType').text = var.data_type
-            if len(var.allowed_values):
-                v = SubElement( s, 'allowedValueList')
-                for value in var.allowed_values:
-                    SubElement( v, 'allowedValue').text = value
-
-        self.xml = tostring( root, encoding='utf-8')
-        static.Data.__init__(self, self.xml, 'text/xml')
-
-
 class ContentDirectoryControl(UPnPPublisher):
 
     def soap_GetSearchCapabilities(self, *args, **kwargs):
@@ -184,7 +148,7 @@ class ContentDirectoryServer(service.Server, resource.Resource):
         service.Server.__init__(self, 'ContentDirectory')
         
         self.content_directory_control = ContentDirectoryControl()
-        self.putChild('scpd.xml', scpdXML(self, self.content_directory_control))
+        self.putChild('scpd.xml', service.scpdXML(self, self.content_directory_control))
         self.putChild('control', self.content_directory_control)
 
         
