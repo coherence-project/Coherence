@@ -239,8 +239,9 @@ class Server:
         
     def set_variable(self, instance, variable_name, value):
         try:
-            self._variables[instance][variable_name].value = value
-            if len(self._subscribers) > 0:
+            variable = self._variables[instance][variable_name]
+            variable.value = value
+            if(variable.send_events and len(self._subscribers) > 0):
                 xml = self.build_event(instance, variable_name, value)
                 for s in self._subscribers.values():
                     event.send_notification(s, xml)
@@ -375,4 +376,58 @@ class scpdXML(static.Data):
         self.xml = tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
+
+class ServiceControl:
+
+    def get_action_results(self, result, action):
+        """ check for out arguments
+            if yes: check if there are related ones to StateVariables with
+                    non A_ARG_TYPE_ prefix
+                    if yes: check if there is a call plugin method for this action
+                            if yes: update StateVariable values with call result
+                            if no:  get StateVariable values and
+                                    add them to result dict
+        """
+        print 'get_action_results', result
+        print 'get_action_results', action
+        r = result
+        notify = []
+        for argument in action.get_out_arguments():
+            print 'get_state_variable_contents', argument.name
+            if argument.name[0:11] != 'A_ARG_TYPE_':
+                if action.get_callback() != None:
+                    variable = self.variables[0][argument.get_state_variable()]
+                    variable.update(r[argument.name])
+                    #print 'update state variable contents', variable.name, variable.value
+                    #self.server.set_variable( 0, argument.get_state_variable(), r[argument.name])
+                    if variable.send_events:
+                        notify.append(variable)
+                else:
+                    variable = self.variables[0][argument.get_state_variable()]
+                    print 'get state variable contents', variable.name, variable.value
+                    r[argument.name] = variable.value
+            self.server.propagate_notification(notify)
+        return { '%sResponse'%action.name: r}
+        
+    def soap__generic(self, *args, **kwargs):
+        """Required: returns the protocol-related info that this ConnectionManager
+           supports in its current state."""
+        action = kwargs['soap_methodName']
+        #print action, __name__, kwargs
+        
+        def callit( *args, **kwargs):
+            print 'callit args', args
+            print 'callit kwargs', kwargs
+            result = {}
+            print 'callit before callback', result
+            callback = self.actions[action].get_callback()
+            if callback != None:
+                result.update( callback( **kwargs))
+            print 'callit after callback', result
+            return result
+            
+        # call plugin method for this action
+        d = defer.maybeDeferred( callit, **kwargs)
+        d.addCallback( self.get_action_results, self.actions[action])
+        return d
 

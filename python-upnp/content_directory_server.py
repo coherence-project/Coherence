@@ -18,7 +18,7 @@ from soap_service import UPnPPublisher
 
 import service
 
-class ContentDirectoryControl(UPnPPublisher):
+class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
 
     def soap_GetSearchCapabilities(self, *args, **kwargs):
         """Required: Return the searching capabilities supported by the device."""
