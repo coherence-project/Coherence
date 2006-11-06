@@ -5,6 +5,8 @@
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import platform
+
 from twisted.web import soap, server
 from twisted.python import log, failure
 from twisted.internet import defer
@@ -16,11 +18,28 @@ class errorCode(Exception):
         self.status = status
 
 class UPnPPublisher(soap.SOAPPublisher):
-    """UPnP requires OUT parameters to be returned in a slightly
+    """UPnP requires headers and OUT parameters to be returned
+    in a slightly
     different way than the SOAPPublisher class does."""
 
+    def _sendResponse(self, request, response, status=200):
+        request.setResponseCode(status)
+
+        if self.encoding is not None:
+            mimeType = 'text/xml; charset="%s"' % self.encoding
+        else:
+            mimeType = "text/xml"
+        request.setHeader("Content-type", mimeType)
+        request.setHeader("Content-length", str(len(response)))
+        request.setHeader("EXT", '')
+        request.setHeader("SERVER",
+            ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+        """ XXX: version string """
+        request.write(response)
+        request.finish()
+        
     def _gotResult(self, result, request, methodName):
-        print '_gotResult', result, request, methodName
+        #print '_gotResult', result, request, methodName
         response = SOAPpy.buildSOAP(kw=result, encoding=self.encoding)
         self._sendResponse(request, response)
 
@@ -50,11 +69,17 @@ class UPnPPublisher(soap.SOAPPublisher):
     def render(self, request):
         """Handle a SOAP command."""
         data = request.content.read()
+        headers = request.getAllHeaders()
 
         p, header, body, attrs = SOAPpy.parseSOAPRPC(data, 1, 1, 1)
-
         methodName, args, kwargs, ns = p._name, p._aslist, p._asdict, p._ns
 
+        try:
+            headers['content-type'].index('text/xml')
+        except:
+            self._gotError(failure.Failure(errorCode(415)), request, methodName)
+            return server.NOT_DONE_YET
+            
         # deal with changes in SOAPpy 0.11
         if callable(args):
             args = args()
