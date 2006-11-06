@@ -19,7 +19,7 @@ import service
 class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 
     def __init__(self, server):
-        self.server = server
+        self.service = server
         self.variables = server.get_variables()
         self.actions = server.get_actions()
         
@@ -50,7 +50,9 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
            this action MUST return the single value '0'."""
         
         print 'GetCurrentConnectionIDs()', kwargs
-        return { 'GetCurrentConnectionIDsResponse': { 'ConnectionIDs': self.variables[0]['CurrentConnectionIDs'] }}
+        r = { 'GetCurrentConnectionIDsResponse': { 'ConnectionIDs': self.variables[0]['CurrentConnectionIDs'].value }}
+        print r
+        return r
 
     def soap_GetCurrentConnectionInfo(self, *args, **kwargs):
         """Required: this action returns associated information of the connection

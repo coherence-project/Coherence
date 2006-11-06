@@ -20,6 +20,11 @@ import service
 
 class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
 
+    def __init__(self, server):
+        self.service = server
+        self.variables = server.get_variables()
+        self.actions = server.get_actions()
+
     def soap_GetSearchCapabilities(self, *args, **kwargs):
         """Required: Return the searching capabilities supported by the device."""
 
@@ -147,7 +152,7 @@ class ContentDirectoryServer(service.Server, resource.Resource):
         resource.Resource.__init__(self)
         service.Server.__init__(self, 'ContentDirectory')
         
-        self.content_directory_control = ContentDirectoryControl()
+        self.content_directory_control = ContentDirectoryControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.content_directory_control))
         self.putChild('control', self.content_directory_control)
 

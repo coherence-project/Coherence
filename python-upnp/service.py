@@ -20,6 +20,7 @@ from event import EventSubscriptionServer
 from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
 
 from twisted.web import static
+from twisted.internet import defer
 
 import louie
 
@@ -256,6 +257,7 @@ class Server:
         return tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
+        #print "propagate_notification", notify
         if len(self._subscribers) <= 0:
             return
             
@@ -388,46 +390,49 @@ class ServiceControl:
                             if no:  get StateVariable values and
                                     add them to result dict
         """
-        print 'get_action_results', result
-        print 'get_action_results', action
+        #print 'get_action_results', result
+        #print 'get_action_results', action
         r = result
         notify = []
         for argument in action.get_out_arguments():
-            print 'get_state_variable_contents', argument.name
+            #print 'get_state_variable_contents', argument.name
             if argument.name[0:11] != 'A_ARG_TYPE_':
                 if action.get_callback() != None:
                     variable = self.variables[0][argument.get_state_variable()]
                     variable.update(r[argument.name])
-                    #print 'update state variable contents', variable.name, variable.value
+                    #print 'update state variable contents', variable.name, variable.value, variable.send_events
                     #self.server.set_variable( 0, argument.get_state_variable(), r[argument.name])
                     if variable.send_events:
                         notify.append(variable)
                 else:
                     variable = self.variables[0][argument.get_state_variable()]
-                    print 'get state variable contents', variable.name, variable.value
+                    #print 'get state variable contents', variable.name, variable.value
                     r[argument.name] = variable.value
-            self.server.propagate_notification(notify)
+                    #print "r", r
+            self.service.propagate_notification(notify)
         return { '%sResponse'%action.name: r}
         
     def soap__generic(self, *args, **kwargs):
-        """Required: returns the protocol-related info that this ConnectionManager
-           supports in its current state."""
+        """ generic UPnP service control method,
+            which will be used if no soap_ACTIONNAME method
+            in the server service control class can be found
+        """
         action = kwargs['soap_methodName']
-        #print action, __name__, kwargs
+        #print "soap__generic", action, __name__, kwargs
         
         def callit( *args, **kwargs):
-            print 'callit args', args
-            print 'callit kwargs', kwargs
+            #print 'callit args', args
+            #print 'callit kwargs', kwargs
             result = {}
-            print 'callit before callback', result
+            #print 'callit before callback', result
             callback = self.actions[action].get_callback()
             if callback != None:
                 result.update( callback( **kwargs))
-            print 'callit after callback', result
+            #print 'callit after callback', result
             return result
             
         # call plugin method for this action
-        d = defer.maybeDeferred( callit, **kwargs)
+        d = defer.maybeDeferred( callit, *args, **kwargs)
         d.addCallback( self.get_action_results, self.actions[action])
         return d
 
