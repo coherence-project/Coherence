@@ -15,12 +15,14 @@ import variable
 import utils
 
 from soap_proxy import SOAPProxy
+from soap_service import errorCode
 
 from event import EventSubscriptionServer
 from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
 
 from twisted.web import static
 from twisted.internet import defer
+from twisted.python import log, failure
 
 import louie
 
@@ -417,15 +419,32 @@ class ServiceControl:
             which will be used if no soap_ACTIONNAME method
             in the server service control class can be found
         """
-        action = kwargs['soap_methodName']
+        try:
+            action = self.actions[kwargs['soap_methodName']]
+        except:
+            return failure.Failure(errorCode(401))
+        
         #print "soap__generic", action, __name__, kwargs
+        del kwargs['soap_methodName']
+
+        in_arguments = action.get_in_arguments()
+        for arg_name, arg in kwargs.iteritems():
+            l = [ a for a in in_arguments if arg_name == a.get_name()] 
+            if len(l) > 0:
+                in_arguments.remove(l[0])
+            else:
+                print "argument %s not valid for action %s" % (arg_name,action.name)
+                return failure.Failure(errorCode(402))
+        if len(in_arguments) > 0:
+            print "argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],action.name)
+            return failure.Failure(errorCode(402))
         
         def callit( *args, **kwargs):
             #print 'callit args', args
             #print 'callit kwargs', kwargs
             result = {}
             #print 'callit before callback', result
-            callback = self.actions[action].get_callback()
+            callback = action.get_callback()
             if callback != None:
                 result.update( callback( **kwargs))
             #print 'callit after callback', result
@@ -433,6 +452,6 @@ class ServiceControl:
             
         # call plugin method for this action
         d = defer.maybeDeferred( callit, *args, **kwargs)
-        d.addCallback( self.get_action_results, self.actions[action])
+        d.addCallback( self.get_action_results, action)
         return d
 
