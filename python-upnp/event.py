@@ -8,6 +8,8 @@
 from twisted.internet import reactor
 from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
+
+import platform
 import time
 import utils
 
@@ -73,7 +75,7 @@ class EventSubscriptionServer(resource.Resource):
         self.subscribers = service.get_subscribers()
         
     def render_SUBSCRIBE(self, request):
-        #print "EventSubscriptionServer received request, code:", request.code
+        #print "EventSubscriptionServer %s received request, code: %d" % (self.service.id, request.code)
         data = request.content.getvalue()
         if request.code != 200:
             print "data:"
@@ -95,11 +97,13 @@ class EventSubscriptionServer(resource.Resource):
 
             request.setHeader('SID', s['sid'])
             #request.setHeader('Subscription-ID', sid)  wrong example in the UPnP UUID spec?
-            request.setHeader('Timeout', s['timeout'])
+            request.setHeader('TIMEOUT', s['timeout'])
+            request.setHeader('SERVER', ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+            request.setHeader('CONTENT-LENGTH', 0)
         return ""
         
     def render_UNSUBSCRIBE(self, request):
-        print "EventSubscriptionServer received request, code:", request.code
+        #print "EventSubscriptionServer received request, code:", request.code
         data = request.content.getvalue()
         if request.code != 200:
             print "data:"
@@ -130,6 +134,7 @@ class EventProtocol(Protocol):
 
     def dataReceived(self, data):
         #print "response received from the Service Events HTTP server "
+        #print data
         cmd, headers = utils.parse_http_response(data)
         #print cmd, headers
         try:

@@ -14,7 +14,7 @@ class ConnectionManagerClient:
         self.service = service
         self.namespace = service.get_type()
         self.url = service.get_control_url()
-        #self.service.subscribe()
+        self.service.subscribe()
         #print "ConnectionManagerClient __init__", self.url
 
     def get_protocol_info(self):

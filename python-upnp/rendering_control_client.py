@@ -14,7 +14,7 @@ class RenderingControlClient:
         self.service = service
         self.namespace = service.get_type()
         self.url = service.get_control_url()
-        #self.service.subscribe()
+        self.service.subscribe()
         #print "RenderingControlClient __init__", self.url
 
     def list_presets(self, instance_id=0):

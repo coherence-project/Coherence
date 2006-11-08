@@ -219,7 +219,8 @@ class Server:
         
         if moderated_variables.has_key(self.service_type):
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
-            self.check_moderated_loop.start(0.5)
+            self.check_moderated_loop.start(5.0)
+            #self.check_moderated_loop.start(0.5)
             
 
         #simulation_loop = task.LoopingCall(self.simulate_notification)
@@ -259,14 +260,16 @@ class Server:
         return tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
-        #print "propagate_notification", notify
+        print "propagate_notification", notify
         if len(self._subscribers) <= 0:
+            return
+        if len(notify) <= 0:
             return
             
         root = Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
 
-        if isinstance( notify, Variable):
+        if isinstance( notify, variable.StateVariable):
             notify = [notify,]
 
         for n in notify:
@@ -287,20 +290,22 @@ class Server:
                 del s
 
     def check_moderated_variables(self):
+        print "check_moderated for %s" % self.id
+        print self._subscribers
         if len(self._subscribers) <= 0:
             return
-        print "check_moderated"
-        variables = mv[self.get_type()]
+        print "check_moderated for %s" % self.id
+        variables = moderated_variables[self.get_type()]
         notify = []
         for v in variables:
-            if self._variables[0][v].update == True:
-                self._variables[0][v].update = False
+            if self._variables[0][v].updated == True:
+                self._variables[0][v].updated = False
                 notify.append(self._variables[0][v])
         self.propagate_notification(notify)
 
     def is_variable_moderated(self, name):
         try:
-            variables = mv[self.get_type()]
+            variables = moderated_variables[self.get_type()]
             if name in variables:
                 return True
         except:

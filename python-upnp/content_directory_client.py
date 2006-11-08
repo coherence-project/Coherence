@@ -20,6 +20,7 @@ class ContentDirectoryClient:
         self.service = service
         self.namespace = service.get_type()
         self.url = service.get_control_url()
+        self.service.subscribe()
         #print "ContentDirectoryClient __init__", self.url
 
     def get_search_capabilities(self):
