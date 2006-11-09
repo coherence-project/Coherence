@@ -146,7 +146,7 @@ class Coherence:
         self.web_server = WebServer( self.web_server_port, self)
                                 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
-        self.renew_service_subscription_loop.start(20.0)
+        self.renew_service_subscription_loop.start(20.0, now=False)
 
 
     
