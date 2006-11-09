@@ -90,8 +90,8 @@ class EventSubscriptionServer(resource.Resource):
                 s = { 'sid' : str(sid),
                       'callback' : headers['callback'][1:len(headers['callback'])-1],
                       'seq' : 0}
-                self.subscribers[str(sid)] = s
-                
+                reactor.callLater(0.8, self.service.new_subscriber, s)
+
             s['timeout'] = headers['timeout']
             s['created'] = time.time()
 

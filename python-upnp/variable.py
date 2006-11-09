@@ -31,6 +31,8 @@ class StateVariable:
             self.notify()
         elif self.moderated:
             self.updated = True
+            if self.service.last_change:
+                self.service.last_change.updated = True
 
     def subscribe(self, callback):
         self._callbacks.append(callback)

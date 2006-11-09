@@ -205,26 +205,40 @@ class Server:
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
-        
+        self.event_metadata = ''
+        if id == 'AVTransport':
+            self.event_metadata = 'urn:schemas-upnp-org:metadata-1-0/AVT/'
+        if id == 'RenderingControl':
+            self.event_metadata = 'urn:schemas-upnp-org:metadata-1-0/RCS/'
+        if id == 'ScheduledRecording':
+            self.event_metadata = 'urn:schemas-upnp-org:av:srs-event'
+            
         self._actions = {}
         self._variables = {0: {}}
-
         self._subscribers = {}
         
         self.init_var_and_actions()
+
+        self.last_change = None
+        try:
+            if 'LastChange' in moderated_variables[self.service_type]:
+                self.last_change = self._variables[0]['LastChange']
+        except:
+            pass
+
         self.putChild(self.subscription_url, EventSubscriptionServer(self))
         
         self.check_subscribers_loop = task.LoopingCall(self.check_subscribers)
-        self.check_subscribers_loop.start(120.0)
+        self.check_subscribers_loop.start(120.0, now=False)
         
         if moderated_variables.has_key(self.service_type):
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
-            self.check_moderated_loop.start(5.0)
-            #self.check_moderated_loop.start(0.5)
+            self.check_moderated_loop.start(5.0, now=False)
+            #self.check_moderated_loop.start(0.5, now=False)
             
 
         #simulation_loop = task.LoopingCall(self.simulate_notification)
-        #simulation_loop.start(60.0)
+        #simulation_loop.start(60.0, now=False)
 
     def get_actions(self):
         return self._actions
@@ -235,6 +249,27 @@ class Server:
     def get_subscribers(self):
         return self._subscribers
 
+    def new_subscriber(self, subscriber):
+        instance = 0
+        notify = [v for v in self._variables[instance].values() if v.send_events == 'yes']
+        #print "new_subscriber", subscriber, notify
+        if len(notify) <= 0:
+            return
+        
+        root = Element('propertyset')
+        root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
+
+        for n in notify:
+            e = SubElement( root, 'property')
+            if n.name == 'LastChange':
+                SubElement( e, n.name).text = self.build_last_change_event()
+            else:
+                SubElement( e, n.name).text = str(n.value)
+            
+        xml = tostring( root, encoding='utf-8')
+        event.send_notification(subscriber, xml)
+        self._subscribers[subscriber['sid']] = subscriber
+        
     def get_id(self):
         return self.id
         
@@ -246,17 +281,29 @@ class Server:
             variable = self._variables[instance][variable_name]
             variable.value = value
             if(variable.send_events and len(self._subscribers) > 0):
-                xml = self.build_event(instance, variable_name, value)
+                xml = self.build_single_notification(instance, variable_name, value)
                 for s in self._subscribers.values():
                     event.send_notification(s, xml)
         except:
             pass
 
-    def build_event(self, instance, variable_name, value):
+    def build_single_notification(self, instance, variable_name, value):
         root = Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
         e = SubElement( root, 'property')
         s = SubElement( e, variable_name).text = str(value)
+        return tostring( root, encoding='utf-8')
+        
+    def build_last_change_event(self, instance=0):
+        root = Element('Event')
+        root.attrib['xmlns']=self.event_metadata
+        e = SubElement( root, 'InstanceID')
+        e.attrib['val']=str(instance)
+        for variable in self._variables[instance].values():
+            if( variable.name != 'LastChange' and
+                variable.name[0:11] != 'A_ARG_TYPE_'):
+                s = SubElement( e, variable.name)
+                s.attrib['val'] = str(variable.value)
         return tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
@@ -274,9 +321,13 @@ class Server:
 
         for n in notify:
             e = SubElement( root, 'property')
-            SubElement( e, n.name).text = str(n.value)
+            if n.name == 'LastChange':
+                SubElement( e, n.name).text = self.build_last_change_event()
+            else:
+                SubElement( e, n.name).text = str(n.value)
             
         xml = tostring( root, encoding='utf-8')
+        print "propagate_notification", xml
         for s in self._subscribers.values():
             event.send_notification(s, xml)
         
@@ -409,7 +460,7 @@ class ServiceControl:
                     variable.update(r[argument.name])
                     #print 'update state variable contents', variable.name, variable.value, variable.send_events
                     #self.server.set_variable( 0, argument.get_state_variable(), r[argument.name])
-                    if variable.send_events:
+                    if variable.send_events == 'yes':
                         notify.append(variable)
                 else:
                     variable = self.variables[0][argument.get_state_variable()]

@@ -50,7 +50,7 @@ class MediaRendererClient:
             return
         if self.av_transport:
             print "AVTransport (optional) available"
-            #self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
+            self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('TransportState', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('CurrentTransportActions', 0, self.state_variable_change)
             #self.av_transport.get_transport_info()
