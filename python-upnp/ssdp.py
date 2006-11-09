@@ -54,7 +54,7 @@ class SSDPServer(DatagramProtocol):
             port.joinGroup(SSDP_ADDR)
             
             l = task.LoopingCall(self.resendNotify)
-            l.start(777.0)
+            l.start(777.0, now=False)
 
         
     def _failure(self, error):
