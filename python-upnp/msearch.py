@@ -17,7 +17,7 @@ class MSearch(DatagramProtocol):
 
     def __init__(self, ssdp_server):
         self.ssdp_server = ssdp_server
-        port = reactor.listenUDP(5654, self)
+        port = reactor.listenUDP(0, self)
 
         l = task.LoopingCall(self.double_discover)
         l.start(120.0)
