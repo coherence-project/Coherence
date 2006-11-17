@@ -93,18 +93,18 @@ class UPnPPublisher(soap.SOAPPublisher):
             kwargs = kwargs()
 
         function, useKeywords = self.lookupFunction(methodName)
+        #print 'function', function, 'keywords', useKeywords, 'args', args, 'kwargs', kwargs
 
         if not function:
             self._methodNotFound(request, methodName)
             return server.NOT_DONE_YET
         else:
+            keywords = {'soap_methodName':methodName}
+            for k, v in kwargs.items():
+                keywords[str(k)] = v
             if hasattr(function, "useKeywords"):
-                keywords = {'soap_methodName':methodName}
-                for k, v in kwargs.items():
-                    keywords[str(k)] = v
                 d = defer.maybeDeferred(function, **keywords)
             else:
-                keywords = {'soap_methodName':methodName}
                 d = defer.maybeDeferred(function, *args, **keywords)
 
         d.addCallback(self._gotResult, request, methodName)
