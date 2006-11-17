@@ -25,9 +25,10 @@ class AVTransportControl(service.ServiceControl,UPnPPublisher):
 
 class AVTransportServer(service.Server, resource.Resource):
 
-    def __init__(self):
+    def __init__(self, backend):
+        self.backend = backend
         resource.Resource.__init__(self)
-        service.Server.__init__(self, 'AVTransport')
+        service.Server.__init__(self, 'AVTransport',backend)
 
         self.av_transport_control = AVTransportControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.av_transport_control))

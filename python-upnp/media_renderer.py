@@ -92,13 +92,13 @@ class MediaRenderer:
         self._services = []
         self._devices = []
         
-        self.connection_manager_server = ConnectionManagerServer()
+        self.connection_manager_server = ConnectionManagerServer(None)
         self._services.append(self.connection_manager_server)
 
-        self.rendering_control_server = RenderingControlServer()
+        self.rendering_control_server = RenderingControlServer(None)
         self._services.append(self.rendering_control_server)
 
-        self.av_transport_server = AVTransportServer()
+        self.av_transport_server = AVTransportServer(None)
         self._services.append(self.av_transport_server)
 
         self.web_resource = MRRoot()

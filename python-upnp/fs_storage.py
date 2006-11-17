@@ -109,7 +109,7 @@ class FSStore:
         self.nextID += 1
         return ret
         
-    def browse(self, *args, **kwargs):
+    def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
         BrowseFlag = kwargs['BrowseFlag']
         Filter = kwargs['Filter']

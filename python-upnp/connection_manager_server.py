@@ -74,9 +74,10 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
         
 class ConnectionManagerServer(service.Server, resource.Resource):
 
-    def __init__(self):
+    def __init__(self, backend):
+        self.backend = backend
         resource.Resource.__init__(self)
-        service.Server.__init__(self, 'ConnectionManager')
+        service.Server.__init__(self, 'ConnectionManager', backend)
 
         self.connection_manager_control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.connection_manager_control))

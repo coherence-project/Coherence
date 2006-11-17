@@ -25,9 +25,10 @@ class RenderingControlControl(service.ServiceControl,UPnPPublisher):
 
 class RenderingControlServer(service.Server, resource.Resource):
 
-    def __init__(self):
+    def __init__(self,backend):
+        self.backend = backend
         resource.Resource.__init__(self)
-        service.Server.__init__(self, 'RenderingControl')
+        service.Server.__init__(self, 'RenderingControl',backend)
 
         self.rendering_control_control = RenderingControlControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.rendering_control_control))

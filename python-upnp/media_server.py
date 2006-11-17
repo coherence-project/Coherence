@@ -89,15 +89,26 @@ class RootDeviceXML(static.Data):
 class MediaServer:
 
     def __init__(self, coherence):
-        from uuid import UUID
         self.coherence = coherence
+        self.store = None
+
+        p = '/data/images'
+        """ this could take some time, put it in a  thread to be sure it doesn't block
+            as we can't tell for sure that every backend is implemented properly """
+        d = threads.deferToThread(FSStore, 'my images',p,())
+        d.addCallback(self.backend_ready)
+        d.addErrback(log.err)
+        
+    def backend_ready(self, backend):
+        from uuid import UUID
         self.uuid = UUID()
         self._services = []
         self._devices = []
         
-        self.connection_manager_server = ConnectionManagerServer()
+        self.connection_manager_server = ConnectionManagerServer(backend)
         self._services.append(self.connection_manager_server)
-        self.content_directory_server = ContentDirectoryServer()
+        
+        self.content_directory_server = ContentDirectoryServer(backend)
         self._services.append(self.content_directory_server)
         
         self.web_resource = MSRoot()
@@ -111,16 +122,7 @@ class MediaServer:
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
 
-        p = '/data/images'
-        """ this could take some time, put it in a  thread to be sure it doesn't block
-            as we can't tell for sure that every backend is implemented properly """
-        d = threads.deferToThread(FSStore, 'my images',p,())
-        d.addCallback(self.backend_ready)
-        d.addErrback(log.err)
-        
-    def backend_ready(self, store):
-        self.store = store
-        self.content_directory_server.get_action('Browse').set_callback(self.store.browse)
+        self.store = backend
         self.register()
 
         

@@ -198,8 +198,9 @@ moderated_variables = \
 
 class Server:
 
-    def __init__(self, id):
+    def __init__(self, id, backend):
         self.id = id
+        self.backend = backend
         self.service_type = 'urn:schemas-upnp-org:service:%s:2' % id
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
@@ -384,7 +385,11 @@ class Server:
                 arg_state_var = argument.findtext('relatedStateVariable')
                 arguments.append(action.Argument(arg_name, arg_direction,
                                                  arg_state_var))
-            self._actions[name] = action.Action(self, name, implementation, arguments)
+            new_action = action.Action(self, name, implementation, arguments)
+            self._actions[name] = new_action
+            callback = getattr(self.backend, "upnp_%s" % self._actions[name].get_name(), None)
+            if callback != None:
+                new_action.set_callback(callback)
             
         for var_node in tree.findall('.//stateVariable'):
             instance = 0
@@ -401,7 +406,6 @@ class Server:
                                                            implementation,
                                                            instance, send_events,
                                                            data_type, values)
-
 
 class scpdXML(static.Data):
 
