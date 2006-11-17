@@ -4,8 +4,6 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-from twisted.internet import task
-
 import cElementTree
 import time
 import urllib2
@@ -23,6 +21,7 @@ from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tos
 from twisted.web import static
 from twisted.internet import defer
 from twisted.python import log, failure
+from twisted.internet import task
 
 import louie
 
@@ -240,6 +239,9 @@ class Server:
         #simulation_loop = task.LoopingCall(self.simulate_notification)
         #simulation_loop.start(60.0, now=False)
 
+    def get_action(self, action_name):
+        return self._actions[action_name]
+
     def get_actions(self):
         return self._actions
 
@@ -307,7 +309,7 @@ class Server:
         return tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
-        print "propagate_notification", notify
+        #print "propagate_notification", notify
         if len(self._subscribers) <= 0:
             return
         if len(notify) <= 0:
@@ -327,25 +329,25 @@ class Server:
                 SubElement( e, n.name).text = str(n.value)
             
         xml = tostring( root, encoding='utf-8')
-        print "propagate_notification", xml
+        #print "propagate_notification", xml
         for s in self._subscribers.values():
             event.send_notification(s, xml)
         
     def check_subscribers(self):
         for s in self._subscribers.values():
             timeout = 86400
-            print s
+            #print s
             if s['timeout'].startswith('Second-'):
                 timeout = int(s['timeout'][len('Second-'):])
             if time.time() > s['created'] + timeout:
                 del s
 
     def check_moderated_variables(self):
-        print "check_moderated for %s" % self.id
-        print self._subscribers
+        #print "check_moderated for %s" % self.id
+        #print self._subscribers
         if len(self._subscribers) <= 0:
             return
-        print "check_moderated for %s" % self.id
+        #print "check_moderated for %s" % self.id
         variables = moderated_variables[self.get_type()]
         notify = []
         for v in variables:
@@ -459,7 +461,7 @@ class ServiceControl:
                     variable = self.variables[0][argument.get_state_variable()]
                     variable.update(r[argument.name])
                     #print 'update state variable contents', variable.name, variable.value, variable.send_events
-                    #self.server.set_variable( 0, argument.get_state_variable(), r[argument.name])
+                    self.service.set_variable( 0, argument.get_state_variable(), r[argument.name])
                     if variable.send_events == 'yes':
                         notify.append(variable)
                 else:
@@ -468,7 +470,9 @@ class ServiceControl:
                     r[argument.name] = variable.value
                     #print "r", r
             self.service.propagate_notification(notify)
-        return { '%sResponse'%action.name: r}
+        r= { '%sResponse'%action.name: r}
+        #print 'action_results', r
+        return r
         
     def soap__generic(self, *args, **kwargs):
         """ generic UPnP service control method,
@@ -480,7 +484,7 @@ class ServiceControl:
         except:
             return failure.Failure(errorCode(401))
         
-        #print "soap__generic", action, __name__, kwargs
+        print "soap__generic", action, __name__, kwargs
         del kwargs['soap_methodName']
 
         in_arguments = action.get_in_arguments()
@@ -509,5 +513,6 @@ class ServiceControl:
         # call plugin method for this action
         d = defer.maybeDeferred( callit, *args, **kwargs)
         d.addCallback( self.get_action_results, action)
+        d.addErrback(log.err)
         return d
 
