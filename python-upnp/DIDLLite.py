@@ -2,23 +2,28 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2005, Tim Potter <tpot@samba.org>
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 """
 TODO:
 
-- use cElementTree instead of elementtree
 - use more XPath expressions in fromElement() methods
 
 """
 
-from elementtree.ElementTree import ElementTree, Element, SubElement, fromstring, tostring, _ElementInterface
-import elementtree
-import utils
-
 my_namespaces = {'http://purl.org/dc/elements/1.1/' : 'dc',
                  'urn:schemas-upnp-org:metadata-1-0/upnp/': 'upnp'
                  }
-elementtree.ElementTree._namespace_map.update(my_namespaces)
+try:
+    from cElementTree import ElementTree, Element, SubElement, fromstring, tostring, _ElementInterface
+    ElementTree._namespace_map.update(my_namespaces)
+except ImportError:
+    from elementtree.ElementTree import ElementTree, Element, SubElement, fromstring, tostring, _ElementInterface
+    import elementtree
+    elementtree.ElementTree._namespace_map.update(my_namespaces)
+
+import utils
+
 
 class Resource:
     """An object representing a resource."""
@@ -64,7 +69,7 @@ class Resource:
 class Object:
     """The root class of the entire content directory class heirachy."""
 
-    klass = 'object'
+    upnp_class = 'object'
     creator = None
     #res = None
     writeStatus = None
@@ -81,15 +86,18 @@ class Object:
             self.restricted = 'true'
         else:
             self.restricted = 'false'
+            
+    def checkUpdate(self):
+        return self
 
     def toElement(self):
 
         root = Element(self.elementName)
 
-        root.attrib['id'] = self.id
-        root.attrib['parentID'] = self.parentID
+        root.attrib['id'] = str(self.id)
+        root.attrib['parentID'] = str(self.parentID)
         SubElement(root, 'dc:title').text = self.title
-        SubElement(root, 'upnp:class').text = self.klass
+        SubElement(root, 'upnp:class').text = self.upnp_class
 
         root.attrib['restricted'] = self.restricted
 
@@ -122,7 +130,7 @@ class Object:
             if child.tag.endswith('title'):
                 self.title = child.text
             elif child.tag.endswith('class'):
-                self.klass = child.text
+                self.upnp_class = child.text
             elif child.tag.endswith('res'):
                 res = Resource.fromString(tostring(child))
                 self.res.append(res)
@@ -141,7 +149,7 @@ class Item(Object):
     """A class used to represent atomic (non-container) content
     objects."""
 
-    klass = Object.klass + '.item'
+    upnp_class = Object.upnp_class + '.item'
     elementName = 'item'
     refID = None
 
@@ -163,15 +171,15 @@ class Item(Object):
 
 
 class ImageItem(Item):
-    klass = Item.klass + '.imageItem'
+    upnp_class = Item.upnp_class + '.imageItem'
 
 class Photo(ImageItem):
-    klass = ImageItem.klass + '.photo'
+    upnp_class = ImageItem.upnp_class + '.photo'
 
 class AudioItem(Item):
     """A piece of content that when rendered generates some audio."""
 
-    klass = Item.klass + '.audioItem'
+    upnp_class = Item.upnp_class + '.audioItem'
 
     genre = None
     description = None
@@ -224,7 +232,7 @@ class AudioItem(Item):
 class MusicTrack(AudioItem):
     """A discrete piece of audio that should be interpreted as music."""
 
-    klass = AudioItem.klass + '.musicTrack'
+    upnp_class = AudioItem.upnp_class + '.musicTrack'
 
     artist = None
     album = None
@@ -263,33 +271,33 @@ class MusicTrack(AudioItem):
         return root
 
 class AudioBroadcast(AudioItem):
-    klass = AudioItem.klass + '.audioBroadcast'
+    upnp_class = AudioItem.upnp_class + '.audioBroadcast'
 
 class AudioBook(AudioItem):
-    klass = AudioItem.klass + '.audioBook'
+    upnp_class = AudioItem.upnp_class + '.audioBook'
 
 class VideoItem(Item):
-    klass = Item.klass + '.videoItem'
+    upnp_class = Item.upnp_class + '.videoItem'
 
 class Movie(VideoItem):
-    klass = VideoItem.klass + '.movie'
+    upnp_class = VideoItem.upnp_class + '.movie'
 
 class VideoBroadcast(VideoItem):
-    klass = VideoItem.klass + '.videoBroadcast'
+    upnp_class = VideoItem.upnp_class + '.videoBroadcast'
 
 class MusicVideoClip(VideoItem):
-    klass = VideoItem.klass + '.musicVideoClip'
+    upnp_class = VideoItem.upnp_class + '.musicVideoClip'
 
 class PlaylistItem(Item):
-    klass = Item.klass + '.playlistItem'
+    upnp_class = Item.upnp_class + '.playlistItem'
 
 class TextItem(Item):
-    klass = Item.klass + '.textItem'
+    upnp_class = Item.upnp_class + '.textItem'
 
 class Container(Object):
     """An object that can contain other objects."""
 
-    klass = Object.klass + '.container'
+    upnp_class = Object.upnp_class + '.container'
 
     elementName = 'container'
     childCount = 0
@@ -334,40 +342,40 @@ class Container(Object):
 
 
 class Person(Container):
-    klass = Container.klass + '.person'
+    upnp_class = Container.upnp_class + '.person'
 
 class MusicArtist(Person):
-    klass = Person.klass + '.musicArtist'
+    upnp_class = Person.upnp_class + '.musicArtist'
 
 class PlaylistContainer(Container):
-    klass = Container.klass + '.playlistContainer'
+    upnp_class = Container.upnp_class + '.playlistContainer'
 
 class Album(Container):
-    klass = Container.klass + '.album'
+    upnp_class = Container.upnp_class + '.album'
 
 class MusicAlbum(Album):
-    klass = Album.klass + '.musicAlbum'
+    upnp_class = Album.upnp_class + '.musicAlbum'
 
 class PhotoAlbum(Album):
-    klass = Album.klass + '.photoAlbum'
+    upnp_class = Album.upnp_class + '.photoAlbum'
 
 class Genre(Container):
-    klass = Container.klass + '.genre'
+    upnp_class = Container.upnp_class + '.genre'
 
 class MusicGenre(Genre):
-    klass = Genre.klass + '.musicGenre'
+    upnp_class = Genre.upnp_class + '.musicGenre'
 
 class MovieGenre(Genre):
-    klass = Genre.klass + '.movieGenre'
+    upnp_class = Genre.upnp_class + '.movieGenre'
 
 class StorageSystem(Container):
-    klass = Container.klass + '.storageSystem'
+    upnp_class = Container.upnp_class + '.storageSystem'
 
 class StorageVolume(Container):
-    klass = Container.klass + '.storageVolume'
+    upnp_class = Container.upnp_class + '.storageVolume'
 
 class StorageFolder(Container):
-    klass = Container.klass + '.storageFolder'
+    upnp_class = Container.upnp_class + '.storageFolder'
 
 class DIDLElement(_ElementInterface):
     def __init__(self):
@@ -400,8 +408,8 @@ class DIDLElement(_ElementInterface):
         elt = utils.parse_xml(aString, 'utf-8')
         elt = elt.getroot()
         for node in elt.getchildren():
-            klass_name = node.tag[node.tag.find('}')+1:].title()
-            klass = eval(klass_name)
-            new_node = klass.fromString(tostring(node))
+            upnp_class_name = node.tag[node.tag.find('}')+1:].title()
+            upnp_class = eval(upnp_class_name)
+            new_node = upnp_class.fromString(tostring(node))
             instance.addItem(new_node)
         return instance
