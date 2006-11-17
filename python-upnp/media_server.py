@@ -6,11 +6,15 @@
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.web import xmlrpc, resource, static
+from twisted.internet import threads
+from twisted.python import log, failure
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from connection_manager_server import ConnectionManagerServer
 from content_directory_server import ContentDirectoryServer
+
+from fs_storage import FSStore
 
 class MSRoot(resource.Resource):
     def __init__(self):
@@ -107,7 +111,16 @@ class MediaServer:
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
 
-
+        p = '/data/images'
+        """ this could take some time, put it in a  thread to be sure it doesn't block
+            as we can't tell for sure that every backend is implemented properly """
+        d = threads.deferToThread(FSStore, 'my images',p,())
+        d.addCallback(self.backend_ready)
+        d.addErrback(log.err)
+        
+    def backend_ready(self, store):
+        self.store = store
+        self.content_directory_server.get_action('Browse').set_callback(self.store.browse)
         self.register()
 
         
