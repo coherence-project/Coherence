@@ -14,6 +14,7 @@ from rendering_control_server import RenderingControlServer
 from av_transport_server import AVTransportServer
 
 class MRRoot(resource.Resource):
+
     def __init__(self):
         resource.Resource.__init__(self)
         

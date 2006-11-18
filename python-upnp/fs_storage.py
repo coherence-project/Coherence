@@ -43,6 +43,9 @@ class FSItem:
     def get_location(self):
         return self.location
         
+    def get_path(self):
+        return self.location.path
+
     def get_parent(self):
         return self.item
 
@@ -74,7 +77,7 @@ class FSStore:
         
     def get_by_id(self,id):
         try:
-            return self.store[id]
+            return self.store[int(id)]
         except:
             return None
         

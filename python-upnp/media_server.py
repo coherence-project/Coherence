@@ -3,10 +3,13 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import os
+
 from twisted.internet import task
 from twisted.internet import reactor
-from twisted.web import xmlrpc, resource, static
 from twisted.internet import threads
+from twisted.web import xmlrpc, static
+from twisted.web import resource
 from twisted.python import log, failure
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
@@ -17,11 +20,17 @@ from content_directory_server import ContentDirectoryServer
 from fs_storage import FSStore
 
 class MSRoot(resource.Resource):
-    def __init__(self):
+
+    def __init__(self, store):
         resource.Resource.__init__(self)
+        self.store = store
         
-    def childFactory(self, ctx, name):
-        ch = super(WebUI, self).childFactory(ctx, name)
+    def getChild(self, name, request):
+        ch = self.store.get_by_id(name)
+        if ch != None:
+            p = ch.get_path()
+            if os.path.exists(p):
+                ch = static.File(p)
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
@@ -111,7 +120,7 @@ class MediaServer:
         self.content_directory_server = ContentDirectoryServer(backend)
         self._services.append(self.content_directory_server)
         
-        self.web_resource = MSRoot()
+        self.web_resource = MSRoot(backend)
         self.coherence.add_web_resource( str(self.uuid), self.web_resource)
         self.web_resource.putChild( 'description.xml',
                                 RootDeviceXML( self.coherence.hostname,
