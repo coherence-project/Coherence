@@ -10,6 +10,8 @@ TODO:
 - use more XPath expressions in fromElement() methods
 
 """
+import os
+import string
 
 my_namespaces = {'http://purl.org/dc/elements/1.1/' : 'dc',
                  'urn:schemas-upnp-org:metadata-1-0/upnp/': 'upnp'
@@ -23,6 +25,21 @@ except ImportError:
     elementtree.ElementTree._namespace_map.update(my_namespaces)
 
 import utils
+
+def classChooser(mimetype):
+
+    if mimetype == 'root':
+        return Container
+    if mimetype == 'directory':
+        return Container
+    else:
+        if string.find (mimetype,'image/') == 0:
+            return ImageItem
+        if string.find (mimetype,'audio/') == 0:
+            return AudioItem
+        if string.find (mimetype,'video/') == 0:
+            return VideoItem
+    return None
 
 
 class Resource:

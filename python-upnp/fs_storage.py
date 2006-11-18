@@ -7,23 +7,39 @@ import os
 import time
 import re
 
+import mimetypes
+mimetypes.init()
+
 from twisted.python.filepath import FilePath
 
-from DIDLLite import Container, Item, DIDLElement
+from DIDLLite import classChooser, Container, Resource, DIDLElement
 
 class FSItem:
 
-    def __init__(self, id, parent, location, item):
+    def __init__(self, id, parent, path, mimetype, url, UPnPClass):
         self.id = id
         self.parent = parent
         if parent:
             parent.add_child(self)
-        self.location = location
-        self.item = item
+        self.location = FilePath(path)
+        self.mimetype = mimetype
+        self.url = url
+        
+        if parent == None:
+            parent_id = -1
+        else:
+            parent_id = parent.get_id()
+
+        self.item = UPnPClass(id, parent_id, path)
         self.child_count = 0
         self.children = []
-        if isinstance(self.item, Container):
+
+        if mimetype == 'directory':
             self.update_id = 0
+        else:
+            self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            self.item.res.size = self.location.getsize()
+            self.item.res = [ self.item.res ]
         
     def add_child(self, child):
         self.children.append(child)
@@ -67,6 +83,8 @@ class FSStore:
         self.update_id = 0
         self.store = {}
         
+        #self.root_append()
+        
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         if ignore_file_pattern.match(self.path):
             return
@@ -96,19 +114,25 @@ class FSStore:
                     containers.append(new_container)
 
     def append(self, path, parent):
+        mimetype,_ = mimetypes.guess_type(path)
+        if mimetype == None:
+            if os.path.isdir(path):
+                mimetype = 'directory'
+        if mimetype == None:
+            return None
+        
+        UPnPClass = classChooser(mimetype)
+        if UPnPClass == None:
+            return None
+        
         id = self.getnextID()
         #print "append", path, "with", id, 'at parent', parent
-        if parent == None:
-            parent_id = 0
-        else:
-            parent_id = parent.get_id()
-        f = FilePath(path)
-        if f.isdir():
-            self.store[id] = FSItem( id, parent, f, Container(id,parent_id,f.basename()))
+        self.store[id] = FSItem( id, parent, path, mimetype, 'url', UPnPClass)
+        if mimetype == 'directory':
             return self.store[id]
-        elif f.isfile():
-            self.store[id] = FSItem( id, parent, f, Item(id,parent_id,f.basename()))
-            return None
+            
+        return None
+
         
     def getnextID(self):
         ret = self.next_id
@@ -125,7 +149,7 @@ class FSStore:
 
         didl = DIDLElement()
 
-        item = self.store.get_by_id(ObjectID)
+        item = self.get_by_id(ObjectID)
         if item  == None:
             raise errorCode(701)
             
@@ -135,7 +159,7 @@ class FSStore:
                 didl.addItem(i.item)
             total = item.child_count
         else:
-            didl.addItem(item)
+            didl.addItem(item.item)
             total = 1
 
         r = { 'Result': didl.toString(), 'TotalMatches': total,
@@ -151,6 +175,7 @@ class FSStore:
 
 if __name__ == '__main__':
     p = '/data/images'
+    p = 'content'
     #p = '/home/dev/beeCT/beeMedia/python-upnp'
     #p = '/home/dev/beeCT/beeMedia/python-upnp/xml-service-descriptions'
 
@@ -159,5 +184,6 @@ if __name__ == '__main__':
     print f.len()
     print f.get_by_id(0).child_count, f.get_by_id(0).get_xml()
     print f.get_by_id(1).child_count, f.get_by_id(1).get_xml()
+    print f.get_by_id(2).child_count, f.get_by_id(2).get_xml()
     print f.store[0].get_children(0,0)
     
