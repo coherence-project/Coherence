@@ -22,6 +22,8 @@ class FSItem:
         self.item = item
         self.child_count = 0
         self.children = []
+        if isinstance(self.item, Container):
+            self.update_id = 0
         
     def add_child(self, child):
         self.children.append(child)
@@ -56,9 +58,10 @@ class FSItem:
 class FSStore:
 
     def __init__(self, name, path, ignore_patterns):
-        self.nextID = 0
+        self.next_id = 0
         self.name = name
         self.path = path
+        self.update_id = 0
         self.store = {}
         
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
@@ -105,8 +108,8 @@ class FSStore:
             return None
         
     def getnextID(self):
-        ret = self.nextID
-        self.nextID += 1
+        ret = self.next_id
+        self.next_id += 1
         return ret
         
     def upnp_Browse(self, *args, **kwargs):
@@ -119,20 +122,27 @@ class FSStore:
 
         didl = DIDLElement()
 
-        if ObjectID not in self.store:
+        item = self.store.get_by_id(ObjectID)
+        if item  == None:
             raise errorCode(701)
-
+            
         if BrowseFlag == 'BrowseDirectChildren':
-            childs = self.store[ObjectID].get_children(StartingIndex, StartingIndex + RequestedCount)
+            childs = item.get_children(StartingIndex, StartingIndex + RequestedCount)
             for i in childs:
                 didl.addItem(i.item)
-            total = self.store[ObjectID].child_count
+            total = item.child_count
         else:
-            didl.addItem(self.store[ObjectID])
+            didl.addItem(item)
             total = 1
 
         r = { 'Result': didl.toString(), 'TotalMatches': total,
-            'NumberReturned': didl.numItems(), 'UpdateID': 0}
+            'NumberReturned': didl.numItems()}
+
+        if hasattr(item, 'update_id'):
+            r['UpdateID'] = item.update_id
+        else:
+            r['UpdateID'] = self.store.update_id
+
         return r
 
 
