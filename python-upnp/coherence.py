@@ -78,17 +78,14 @@ Coherence - a Python UPnP A/V framework
         cl = []
         #print 'children:', self.coherence.children
         for c in self.coherence.children:
-            if c[:5] == 'uuid:':
-                device = self.coherence.get_device_with_id(c)
-                if device != None:
-                    _,_,_,device_type,version = device.get_device_type().split(':')
-                    cl.append( tags.li[tags.a(href='/'+c)[device_type,
-                                                          ':',
-                                                          version,
-                                                          ' ',
-                                                          device.get_friendly_name()]])
-                else:
-                    cl.append( tags.li[tags.a(href='/'+c)['device: ', c]])
+            device = self.coherence.get_device_with_id(c)
+            if device != None:
+                _,_,_,device_type,version = device.get_device_type().split(':')
+                cl.append( tags.li[tags.a(href='/'+c)[device_type,
+                                                      ':',
+                                                      version,
+                                                      ' ',
+                                                      device.get_friendly_name()]])
             else:
                 cl.append( tags.li[c])
         return ctx.tag[tags.ul[cl]]
@@ -153,7 +150,7 @@ class Coherence:
         # are we supposed to start a ControlPoint?
         try:
             from control_point import ControlPoint
-            ControlPoint( self)
+            #ControlPoint( self)
         except ImportError:
             print "Can't enable ControlPoint functions, sub-system not available."
 
@@ -168,7 +165,7 @@ class Coherence:
         # are we supposed to start a MediaRenderer?
         try:
             from media_renderer import MediaRenderer
-            MediaRenderer( self)
+            #MediaRenderer( self)
         except ImportError:
             print "Can't enable MediaRenderer functions, sub-system not available."
         
@@ -221,7 +218,10 @@ class Coherence:
     def get_device_with_id(self, device_id):
         found = None
         for device in self.devices:
-            if device.get_id() == device_id:
+            id = device.get_id()
+            if device_id[:5] != 'uuid:':
+                id = id[5:]
+            if id == device_id:
                 found = device
                 break
         return found

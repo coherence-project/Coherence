@@ -6,6 +6,7 @@
 import os
 import time
 import re
+import urlparse
 
 import mimetypes
 mimetypes.init()
@@ -16,14 +17,15 @@ from DIDLLite import classChooser, Container, Resource, DIDLElement
 
 class FSItem:
 
-    def __init__(self, id, parent, path, mimetype, url, UPnPClass):
+    def __init__(self, id, parent, path, mimetype, urlbase, UPnPClass):
         self.id = id
         self.parent = parent
         if parent:
             parent.add_child(self)
         self.location = FilePath(path)
         self.mimetype = mimetype
-        self.url = url
+        self.url = urlparse.urljoin(urlbase, str(self.id))
+
         
         if parent == None:
             parent_id = -1
@@ -76,15 +78,15 @@ class FSItem:
 
 class FSStore:
 
-    def __init__(self, name, path, ignore_patterns):
+    def __init__(self, name, path, urlbase, ignore_patterns):
         self.next_id = 0
         self.name = name
         self.path = path
+        self.urlbase = urlbase
         self.update_id = 0
         self.store = {}
         
-        #self.root_append()
-        
+        #print 'FSStore', name, path, urlbase, ignore_patterns
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         if ignore_file_pattern.match(self.path):
             return
@@ -127,12 +129,11 @@ class FSStore:
         
         id = self.getnextID()
         #print "append", path, "with", id, 'at parent', parent
-        self.store[id] = FSItem( id, parent, path, mimetype, 'url', UPnPClass)
+        self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass)
         if mimetype == 'directory':
             return self.store[id]
             
         return None
-
         
     def getnextID(self):
         ret = self.next_id
@@ -168,7 +169,7 @@ class FSStore:
         if hasattr(item, 'update_id'):
             r['UpdateID'] = item.update_id
         else:
-            r['UpdateID'] = self.store.update_id
+            r['UpdateID'] = self.update_id
 
         return r
 

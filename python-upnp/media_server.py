@@ -4,6 +4,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import os
+import urllib, urlparse
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -84,9 +85,9 @@ class RootDeviceXML(static.Data):
                 s = SubElement( e, 'service')
                 SubElement( s, 'serviceType').text = service.get_type()
                 SubElement( s, 'serviceId').text = id
-                SubElement( s, 'SCPDURL').text = '/' + uuid + '/' + id + '/' + service.scpd_url
-                SubElement( s, 'controlURL').text = '/' + uuid + '/' + id + '/' + service.control_url
-                SubElement( s, 'eventSubURL').text = '/' + uuid + '/' + id + '/' + service.subscription_url
+                SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(services):
             e = SubElement( d, 'deviceList')
@@ -99,18 +100,19 @@ class MediaServer:
 
     def __init__(self, coherence):
         self.coherence = coherence
+        from uuid import UUID
+        self.uuid = UUID()
         self.store = None
 
-        p = '/data/images'
+        p = 'content'
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
-        d = threads.deferToThread(FSStore, 'my images',p,())
+        urlbase = urlparse.urljoin(self.coherence.urlbase, str(self.uuid)[5:])
+        d = threads.deferToThread(FSStore, 'my content', p, urlbase, ())
         d.addCallback(self.backend_ready)
         d.addErrback(log.err)
         
     def backend_ready(self, backend):
-        from uuid import UUID
-        self.uuid = UUID()
         self._services = []
         self._devices = []
         
@@ -121,7 +123,7 @@ class MediaServer:
         self._services.append(self.content_directory_server)
         
         self.web_resource = MSRoot(backend)
-        self.coherence.add_web_resource( str(self.uuid), self.web_resource)
+        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
         self.web_resource.putChild( 'description.xml',
                                 RootDeviceXML( self.coherence.hostname,
                                 str(self.uuid),
@@ -143,20 +145,20 @@ class MediaServer:
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,
                     'upnp:rootdevice',
-                    self.coherence.urlbase + uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description.xml')
 
         s.register('local',
                     uuid,
                     uuid,
-                    self.coherence.urlbase + uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description.xml')
 
         s.register('local',
                     '%s::urn:schemas-upnp-org:device:MediaServer:2' % uuid,
                     'urn:schemas-upnp-org:device:MediaServer:2',
-                    self.coherence.urlbase + uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description.xml')
 
         for service in self._services:
             s.register('local',
                         '%s::%s' % (uuid,service.get_type()),
                         service.get_type(),
-                        self.coherence.urlbase + uuid + '/' + service.id + '/' + 'scpd.xml')     
+                        self.coherence.urlbase + uuid[5:] + '/' + service.id + '/' + 'scpd.xml')     
