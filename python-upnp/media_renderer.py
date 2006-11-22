@@ -39,13 +39,15 @@ class MRRoot(resource.Resource):
 class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
-                        device_type="urn:schemas-upnp-org:device:MediaRenderer:2",
+                        device_type='MediaRenderer',
+                        version=2,
                         friendly_name='Coherence UPnP A/V MediaRenderer',
                         services=[],
                         devices=[]):
         uuid = str(uuid)
         root = Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
+        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
         e = SubElement(root, 'specVersion')
         SubElement( e, 'major').text = '1'
         SubElement( e, 'minor').text = '0'
@@ -55,13 +57,13 @@ class RootDeviceXML(static.Data):
         d = SubElement(root, 'device')
         SubElement( d, 'deviceType').text = device_type
         SubElement( d, 'friendlyName').text = friendly_name
-        SubElement( d, 'manufacturer').text = ''
-        SubElement( d, 'manufacturerURL').text = ''
-        SubElement( d, 'modelDescription').text = ''
-        SubElement( d, 'modelName').text = ''
-        SubElement( d, 'modelNumber').text = ''
-        SubElement( d, 'modelURL').text = ''
-        SubElement( d, 'serialNumber').text = ''
+        SubElement( d, 'manufacturer').text = 'beebits.net'
+        SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
+        SubElement( d, 'modelName').text = 'Coherence'
+        SubElement( d, 'modelNumber').text = '0.1'
+        SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
+        SubElement( d, 'serialNumber').text = '0000001'
         SubElement( d, 'UDN').text = uuid
         SubElement( d, 'UPC').text = ''
         SubElement( d, 'presentationURL').text = ''
@@ -71,11 +73,19 @@ class RootDeviceXML(static.Data):
             for service in services:
                 id = service.get_id()
                 s = SubElement( e, 'service')
-                SubElement( s, 'serviceType').text = service.get_type()
-                SubElement( s, 'serviceId').text = id
-                SubElement( s, 'SCPDURL').text = '/' + uuid + '/' + id + '/' + service.scpd_url
-                SubElement( s, 'controlURL').text = '/' + uuid + '/' + id + '/' + service.control_url
-                SubElement( s, 'eventSubURL').text = '/' + uuid + '/' + id + '/' + service.subscription_url
+                try:
+                    namespace = service.namespace
+                except:
+                    namespace = 'schemas-upnp-org'
+                SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                try:
+                    namespace = service.namespace
+                except:
+                    namespace = 'upnp-org'
+                SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(services):
             e = SubElement( d, 'deviceList')
@@ -86,9 +96,11 @@ class RootDeviceXML(static.Data):
         
 class MediaRenderer:
 
-    def __init__(self, coherence):
+    def __init__(self, coherence, version=2):
         from uuid import UUID
         self.coherence = coherence
+        self.device_type = 'MediaRenderer'
+        self.version = version
         self.uuid = UUID()
         self._services = []
         self._devices = []
@@ -104,12 +116,18 @@ class MediaRenderer:
 
         self.web_resource = MRRoot()
         self.coherence.add_web_resource( str(self.uuid), self.web_resource)
-        self.web_resource.putChild( 'description.xml',
-                                RootDeviceXML( self.coherence.hostname,
-                                str(self.uuid),
-                                self.coherence.urlbase,
-                                services=self._services,
-                                devices=self._devices))
+
+        version = self.version
+        while version > 0:
+            self.web_resource.putChild( 'description-%d.xml' % version,
+                                    RootDeviceXML( self.coherence.hostname,
+                                    str(self.uuid),
+                                    self.coherence.urlbase,
+                                    self.device_type, version,
+                                    services=self._services,
+                                    devices=self._devices))
+            version -= 1
+
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('RenderingControl', self.rendering_control_server)
@@ -127,20 +145,29 @@ class MediaRenderer:
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,
                     'upnp:rootdevice',
-                    self.coherence.urlbase + uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
 
         s.register('local',
                     uuid,
                     uuid,
-                    self.coherence.urlbase + uuid + '/' + 'description.xml')
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
 
-        s.register('local',
-                    '%s::urn:schemas-upnp-org:device:MediaRenderer:2' % uuid,
-                    'urn:schemas-upnp-org:device:MediaRenderer:2',
-                    self.coherence.urlbase + uuid + '/' + 'description.xml')
-
-        for service in self._services:
+        version = self.version
+        while version > 0:
             s.register('local',
-                        '%s::%s' % (uuid,service.get_type()),
-                        service.get_type(),
-                        self.coherence.urlbase + uuid + '/' + service.id + '/' + 'scpd.xml')     
+                        '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
+                        'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
+                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+
+            for service in self._services:
+                try:
+                    namespace = service.namespace
+                except:
+                    namespace = 'schemas-upnp-org'
+
+                s.register('local',
+                            '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
+                            'urn:%s:service:%s:%d' % (namespace,service.id, version),
+                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+
+            version -= 1

@@ -117,6 +117,8 @@ class SSDPServer(DatagramProtocol):
             
         self.known[usn]['MANIFESTATION'] = manifestation
         
+        #print self.known[usn]
+        
         if manifestation == 'local':
             self.doNotify(usn)
 
@@ -140,6 +142,9 @@ class SSDPServer(DatagramProtocol):
     def notifyReceived(self, headers, (host, port)):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
+
+        #print 'Notification from (%s,%d) for %s' % (host, port, headers['nt'])
+        #print headers
 
         if headers['nts'] == 'ssdp:alive':
             if not self.isKnown(headers['usn']):

@@ -45,9 +45,9 @@ class MediaReceiverRegistrarServer(service.Server, resource.Resource):
         self.namespace = 'microsoft.com'
         service.Server.__init__(self, 'X_MS_MediaReceiverRegistrar', version, backend)
         
-        self.media_receiver_registrar_control = MediaReceiverRegistrarControl(self)
-        self.putChild('scpd.xml', service.scpdXML(self, self.media_receiver_registrar_control))
-        self.putChild('control', self.media_receiver_registrar_control)
+        self.control = MediaReceiverRegistrarControl(self)
+        self.putChild('scpd.xml', service.scpdXML(self, self.control))
+        self.putChild('control', self.control)
 
         
     def listchilds(self, uri):

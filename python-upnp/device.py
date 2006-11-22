@@ -83,10 +83,11 @@ class Device:
         now = time.time()
         for service in self.get_services():
             if service.get_sid():
+                if service.get_timeout() < now:
+                    print "wow, we lost an event subscription for %s, " % service.get_id()+ \
+                          "maybe we need to rethink the loop time and timeout calculation?"
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
-                if service.get_timeout() < now:
-                    print "wow, we lost an event subscription, maybe we need to rethink the loop time and timeout calculation?"
         
     def unsubscribe_service_subscriptions(self):
         """ iterate over device's services and unsubscribe subscriptions """

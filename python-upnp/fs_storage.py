@@ -6,7 +6,6 @@
 import os
 import time
 import re
-import urlparse
 
 import mimetypes
 mimetypes.init()
@@ -24,7 +23,9 @@ class FSItem:
             parent.add_child(self)
         self.location = FilePath(path)
         self.mimetype = mimetype
-        self.url = urlparse.urljoin(urlbase, str(self.id))
+        if urlbase[len(urlbase)-1] != '/':
+            urlbase += '/'
+        self.url = urlbase + str(self.id)
 
         
         if parent == None:
@@ -32,7 +33,7 @@ class FSItem:
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(id, parent_id, path)
+        self.item = UPnPClass(id, parent_id, self.location.basename())
         self.child_count = 0
         self.children = []
 
@@ -180,7 +181,7 @@ if __name__ == '__main__':
     #p = '/home/dev/beeCT/beeMedia/python-upnp'
     #p = '/home/dev/beeCT/beeMedia/python-upnp/xml-service-descriptions'
 
-    f = FSStore('my media',p,())
+    f = FSStore('my media',p, 'http://localhost/xyz',())
 
     print f.len()
     print f.get_by_id(0).child_count, f.get_by_id(0).get_xml()

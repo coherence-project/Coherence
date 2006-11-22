@@ -63,7 +63,7 @@ Coherence - a Python UPnP A/V framework
         self.coherence = self.rootObject.coherence
 
     def childFactory(self, ctx, name):
-        #print 'WebUI childFactory:', name 
+        #print 'WebUI childFactory:', name
         try:
             return self.rootObject.coherence.children[name]
         except:
@@ -158,10 +158,11 @@ class Coherence:
         # are we supposed to start a MediaServer?
         try:
             from media_server import MediaServer
-            MediaServer( self)
+            MediaServer( self,version=2)
         except ImportError:
             print "Can't enable MediaServer functions, sub-system not available."
-        
+
+
         # are we supposed to start a MediaRenderer?
         try:
             from media_renderer import MediaRenderer

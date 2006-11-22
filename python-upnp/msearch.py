@@ -27,6 +27,7 @@ class MSearch(DatagramProtocol):
 
         if cmd[0] == 'HTTP/1.1' and cmd[1] == '200':
             if not self.ssdp_server.isKnown(headers['usn']):
+                #print headers
                 self.ssdp_server.register('remote',
                                             headers['usn'], headers['st'],
                                             headers['location'],

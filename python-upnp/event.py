@@ -83,7 +83,13 @@ class EventSubscriptionServer(resource.Resource):
         else:
             headers = request.getAllHeaders()
             try:
-                s = self.subscribers[headers['sid']]
+                if self.subscribers.has_key(headers['sid']):
+                    s = self.subscribers[headers['sid']]
+                elif not headers.has_key('callback'):
+                    request.setResponseCode(404)
+                    request.setHeader('SERVER', ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+                    request.setHeader('CONTENT-LENGTH', 0)
+                    return ""
             except:
                 from uuid import UUID
                 sid = UUID()

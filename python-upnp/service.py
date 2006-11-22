@@ -188,9 +188,15 @@ class Service:
 moderated_variables = \
         {'urn:schemas-upnp-org:service:AVTransport:2':
             ['LastChange'],
+         'urn:schemas-upnp-org:service:AVTransport:1':
+            ['LastChange'],
          'urn:schemas-upnp-org:service:ContentDirectory:2':
             ['SystemUpdateID', 'ContainerUpdateIDs'],
+         'urn:schemas-upnp-org:service:ContentDirectory:1':
+            ['SystemUpdateID', 'ContainerUpdateIDs'],
          'urn:schemas-upnp-org:service:RenderingControl:2':
+            ['LastChange'],
+         'urn:schemas-upnp-org:service:RenderingControl:1':
             ['LastChange'],
          'urn:schemas-upnp-org:service:ScheduledRecording:1':
             ['LastChange'],
@@ -198,10 +204,13 @@ moderated_variables = \
 
 class Server:
 
-    def __init__(self, id, backend):
+    def __init__(self, id, version, backend):
         self.id = id
+        self.version = version
         self.backend = backend
-        self.service_type = 'urn:schemas-upnp-org:service:%s:2' % id
+        if getattr(self, "namespace", None) == None:
+            self.namespace = 'schemas-upnp-org'
+        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, version)
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
@@ -371,7 +380,7 @@ class Server:
         self.set_variable(0, 'CurrentConnectionIDs', '0')
         
     def init_var_and_actions(self):
-        tree = parse('xml-service-descriptions/%s2.xml' % self.id)
+        tree = parse('xml-service-descriptions/%s%d.xml' % (self.id, self.version))
         
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')

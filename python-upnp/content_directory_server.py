@@ -28,14 +28,14 @@ class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
 
 class ContentDirectoryServer(service.Server, resource.Resource):
 
-    def __init__(self, backend):
+    def __init__(self, version, backend):
         self.backend = backend
         resource.Resource.__init__(self)
-        service.Server.__init__(self, 'ContentDirectory', backend)
+        service.Server.__init__(self, 'ContentDirectory', version, backend)
         
-        self.content_directory_control = ContentDirectoryControl(self)
-        self.putChild('scpd.xml', service.scpdXML(self, self.content_directory_control))
-        self.putChild('control', self.content_directory_control)
+        self.control = ContentDirectoryControl(self)
+        self.putChild('scpd.xml', service.scpdXML(self, self.control))
+        self.putChild('control', self.control)
 
         
     def listchilds(self, uri):
