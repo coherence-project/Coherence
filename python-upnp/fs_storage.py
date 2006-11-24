@@ -13,6 +13,7 @@ mimetypes.init()
 from twisted.python.filepath import FilePath
 
 from DIDLLite import classChooser, Container, Resource, DIDLElement
+from soap_service import errorCode
 
 class FSItem:
 
