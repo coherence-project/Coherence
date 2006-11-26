@@ -516,11 +516,9 @@ class ServiceControl:
             #print 'callit args', args
             #print 'callit kwargs', kwargs
             result = {}
-            #print 'callit before callback', result
             callback = action.get_callback()
             if callback != None:
-                result.update( callback( **kwargs))
-            #print 'callit after callback', result
+                return callback( **kwargs)
             return result
             
         # call plugin method for this action
