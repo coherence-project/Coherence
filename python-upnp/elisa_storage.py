@@ -35,17 +35,20 @@ from soap_service import errorCode
 
 class MediaStore:
 
-    def __init__(self, name, path, urlbase, ignore_patterns):
+    def __init__(self, name, host, urlbase, ignore_patterns):
         self.name = name
+        self.host = host
         if urlbase[len(urlbase)-1] != '/':
             urlbase += '/'
         self.urlbase = urlbase
         self.update_id = 0
         self.root_id = 0
-        factory = pb.PBClientFactory()
-        reactor.connectTCP(path, 8789, pb.PBClientFactory())
-        self.store = factory.getRootObject()
         self.get_root_id()
+
+    def get_store(self):
+        factory = pb.PBClientFactory()
+        reactor.connectTCP(self.host, 8789, factory)
+        return factory.getRootObject()
         
     def set_root_id( self, id):
         self.root_id = id
@@ -53,8 +56,13 @@ class MediaStore:
     def get_root_id( self, media_type='audio'):
         """ ask Elisa to tell us the id of the top item
             representing the media_type == 'something' collection """
-        dfr = self.store.callRemote("get_root_id", type)
+        store = self.get_store()
+        dfr = store.addCallback(lambda object:
+                                object.callRemote('get_cache_manager'))
+        dfr.addCallback(lambda cache_mgr:
+                        cache_mgr.callRemote("get_media_root_id", media_type))
         dfr.addCallback(self.set_root_id)
+
 
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
@@ -65,33 +73,38 @@ class MediaStore:
         SortCriteria = kwargs['SortCriteria']
         
         def build_upnp_item(elisa_item):
-            UPnPClass = classChooser(elisa_item.mimetype)
-            upnp_item = UPnPClass(elisa_item.id, elisa_item.parent_id, elisa_item.name)
+            UPnPClass = classChooser(elisa_item['mimetype'])
+            upnp_item = UPnPClass(elisa_item['id'],
+                                  elisa_item['parent_id'],
+                                  elisa_item['name'])
             if isinstance(upnp_item, Container):
-                upnp_item.childCount = len(elisa_item.children)
+                upnp_item.childCount = len(elisa_item.get('children',[]))
             else:
-                url = self.urlbase + elisa_item.location # FIXME
-                upnp_item.res = Resource(elisa_item.url, 'http-get:*:%s:*' % elisa_item.mimetype)
-                upnp_item.res.size = elisa_item.size
+                url = self.urlbase + elisa_item['location'] # FIXME
+                upnp_item.res = Resource(url,
+                                         'http-get:*:%s:*' % elisa_item['mimetype'])
+                upnp_item.res.size = elisa_item['size']
                 upnp_item.res = [ upnp_item.res ]
 
-
+            return upnp_item
+        
         def got_result(elisa_item):
             didl = DIDLElement()
+            children = elisa_item.get('children',[])
             if BrowseFlag == 'BrowseDirectChildren':
                 if RequestedCount == 0:
-                    childs = elisa_item.children[StartingIndex:]
+                    childs = children[StartingIndex:]
                 else:
-                    childs = elisa_item.children[StartingIndex:StartingIndex+RequestedCount]
+                    childs = children[StartingIndex:StartingIndex+RequestedCount]
                 for child in childs:
                     didl.addItem(build_upnp_item(child))
-                total = len(elisa_item.children)
+                total = len(children)
             else:
                 didl.addItem(build_upnp_item(elisa_item))
                 total = 1
 
             r = { 'Result': didl.toString(), 'TotalMatches': total,
-                'NumberReturned': didl.numItems()}
+                  'NumberReturned': didl.numItems()}
 
             if hasattr(elisa_item, 'update_id'):
                 r['UpdateID'] = item.update_id
@@ -99,17 +112,44 @@ class MediaStore:
                 r['UpdateID'] = self.update_id
 
             return r
+    
+        def errback(r):
+            raise errorCode(701)
 
         id = ObjectID
         if id == 0:
             id = self.root_id
-        dfr = self.store.callRemote("get_item_by_id", id)
-        dfr.addCallback(self.got_result)
-        dfr.addErrback(lambda _:raise errorCode(701))
+
+        store = self.get_store()
+        dfr = store.addCallback(lambda object:
+                                object.callRemote('get_cache_manager'))
+        dfr.addErrback(errback)
+        dfr.addCallback(lambda cache_mgr:
+                        cache_mgr.callRemote("get_media_node_with_id", id))
+        dfr.addCallback(got_result)
+        return dfr
             
 
 
 if __name__ == '__main__':
-    
-    print 'test me'
-    
+    def main():
+
+        p = 'localhost'
+
+        def got_result(result):
+            print result
+
+        f = MediaStore('my media',p, 'http://localhost/',())
+
+        dfr = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
+                            RequestedCount=0,
+                            StartingIndex=0,
+                            ObjectID=23,
+                            SortCriteria='*',
+                            Filter='')
+        dfr.addCallback(got_result)
+        dfr.addCallback(lambda _: reactor.stop())
+        
+    reactor.callLater(0.1, main)
+    reactor.run()
+        

@@ -15,6 +15,7 @@ import SOAPpy
 
 class errorCode(Exception):
     def __init__(self, status):
+        Exception.__init__(self)
         self.status = status
 
 class UPnPPublisher(soap.SOAPPublisher):
