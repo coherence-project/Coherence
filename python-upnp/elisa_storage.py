@@ -33,7 +33,7 @@ from twisted.internet import reactor
 from DIDLLite import classChooser, Container, Resource, DIDLElement
 from soap_service import errorCode
 
-class MediaStore:
+class ElisaMediaStore:
 
     def __init__(self, name, host, urlbase, ignore_patterns):
         self.name = name
