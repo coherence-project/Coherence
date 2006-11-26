@@ -24,7 +24,7 @@ class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
         self.service = server
         self.variables = server.get_variables()
         self.actions = server.get_actions()
-        
+
 
 class ContentDirectoryServer(service.Server, resource.Resource):
 

@@ -24,8 +24,9 @@ from fs_storage import FSStore
 
 class MSRoot(resource.Resource):
 
-    def __init__(self, store):
+    def __init__(self, server, store):
         resource.Resource.__init__(self)
+        self.server = server
         self.store = store
         
     def getChildWithDefault(self, path, request):
@@ -34,14 +35,23 @@ class MSRoot(resource.Resource):
             return self.children[path]
         if request.uri == '/':
             return self
-        return self.getChild(path, request)        
+        return self.getChild(path, request)
         
+    def requestFinished(self, result, id):
+        print "finished, remove %d from connection table" % id
+        self.server.connection_manager_server.remove_connection(id)
+
     def getChild(self, name, request):
         print 'MSRoot getChild', name, request
         ch = self.store.get_by_id(name)
         if ch != None:
             p = ch.get_path()
             if os.path.exists(p):
+                new_id = self.server.connection_manager_server.add_connection()
+                print "startup, add %d to connection table" % new_id
+                d = request.notifyFinish()
+                d.addCallback(self.requestFinished, new_id)
+                d.addErrback(self.requestFinished, new_id)
                 ch = static.File(p)
         if ch is None:
             p = util.sibpath(__file__, name)
@@ -54,7 +64,7 @@ class MSRoot(resource.Resource):
         print 'listchilds', uri
         cl = ''
         sep = ''
-        if uri[len(uri)-1:] != '/':
+        if uri[-1] != '/':
             sep = '/'
         for c in self.children:
                 cl += '<li><a href=%s%s%s>%s</a></li>' % (uri,sep,c,c)
@@ -133,16 +143,17 @@ class MediaServer:
         from uuid import UUID
         self.uuid = UUID()
         self.store = None
-
-        p = 'content'
-        """ this could take some time, put it in a  thread to be sure it doesn't block
-            as we can't tell for sure that every backend is implemented properly """
         urlbase = self.coherence.urlbase
-        if urlbase[len(urlbase)-1] != '/':
+        if urlbase[-1] != '/':
             urlbase += '/'
         self.urlbase = urlbase + str(self.uuid)[5:]
 
         print 'MediaServer urlbase', urlbase
+
+        p = 'content'
+        
+        """ this could take some time, put it in a  thread to be sure it doesn't block
+            as we can't tell for sure that every backend is implemented properly """
         d = threads.deferToThread(FSStore, 'my content', p, self.urlbase, ())
         d.addCallback(self.backend_ready)
         d.addErrback(log.err)
@@ -161,7 +172,7 @@ class MediaServer:
                                                         FakeMediaReceiverRegistrarBackend())
         self._services.append(self.media_receiver_registrar_server)
         
-        self.web_resource = MSRoot(backend)
+        self.web_resource = MSRoot( self, backend)
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
         version = self.version

@@ -24,7 +24,7 @@ class FSItem:
             parent.add_child(self)
         self.location = FilePath(path)
         self.mimetype = mimetype
-        if urlbase[len(urlbase)-1] != '/':
+        if urlbase[-1] != '/':
             urlbase += '/'
         self.url = urlbase + str(self.id)
 

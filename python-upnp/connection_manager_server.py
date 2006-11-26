@@ -34,10 +34,29 @@ class ConnectionManagerServer(service.Server, resource.Resource):
         self.control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
+        self.next_connection_id = 1
+        
+        self.connections = {}
         
         self.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
         self.set_variable(0, 'SinkProtocolInfo', '')
-        self.set_variable(0, 'CurrentConnectionIDs', '0')
+        self.set_variable(0, 'CurrentConnectionIDs', '')
+        
+    def add_connection(self):
+        id = self.next_connection_id
+        self.next_connection_id += 1
+        self.connections[id] = {}
+        csv_ids = ','.join([str(x) for x in self.connections])
+        self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
+        return id
+        
+    def remove_connection(self,id):
+        try:
+            del self.connections[id]
+        except:
+            pass
+        csv_ids = ','.join([str(x) for x in self.connections])
+        self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         
     def listchilds(self, uri):
         cl = ''
