@@ -83,7 +83,10 @@ class ElisaMediaStore:
                 url = self.urlbase + elisa_item['location'] # FIXME
                 upnp_item.res = Resource(url,
                                          'http-get:*:%s:*' % elisa_item['mimetype'])
-                upnp_item.res.size = elisa_item['size']
+                try:
+                    upnp_item.res.size = elisa_item['size']
+                except:
+                    upnp_item.res.size = None
                 upnp_item.res = [ upnp_item.res ]
 
             return upnp_item
