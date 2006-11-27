@@ -3,28 +3,6 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-# this is a backend to the Elisa Media DB
-#
-# Elisa needs to expose two methods
-#
-#   get_root_id(media_type)
-#       if media_type == '*'
-#       this returns the root id of the media collection
-#       if media_type == 'audio'
-#       this returns the root id of the audio collection
-#
-#   get_item_by_id(id)
-#       this returns an object with the following attributes
-#       (or a dict with the keys)
-#       id = id in the media db
-#       parent_id = parent_id in the media db
-#       name = title, album name or basename
-#       mimetype = 'directory' or real mimetype
-#      size = in bytes
-#      children = list of objects for which this item is the parent
-#       location = filesystem path if item is a file
-#
-
 import re
 
 from twisted.spread import pb
@@ -35,7 +13,28 @@ from soap_service import errorCode
 
 class ElisaMediaStore:
 
-    def __init__(self, name, host, urlbase, ignore_patterns):
+    """ this is a backend to the Elisa Media DB
+
+        Elisa needs to expose two methods
+
+        get_root_id(media_type)
+            if media_type == '*'
+                this returns the root id of the media collection
+            if media_type == 'audio'
+                this returns the root id of the audio collection
+
+        get_item_by_id(id)
+            this returns a dict with the following keys:
+            id = id in the media db
+            parent_id = parent_id in the media db
+            name = title, album name or basename
+            mimetype = 'directory' or real mimetype
+            children = list of objects for which this item is the parent
+            location = filesystem path if item is a file
+            size = in bytes (OPTIONAL)
+    """
+
+#    def __init__(self, name, host, urlbase, ignore_patterns):
         self.name = name
         self.host = host
         if urlbase[len(urlbase)-1] != '/':
