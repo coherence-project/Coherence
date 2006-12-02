@@ -37,6 +37,8 @@ class ContentDirectoryServer(service.Server, resource.Resource):
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
         self.putChild('control', self.control)
 
+        self.set_variable(0, 'SystemUpdateID', 0)
+        self.set_variable(0, 'ContainerUpdateIDs', '')
         
     def listchilds(self, uri):
         cl = ''

@@ -34,13 +34,44 @@ class StateVariable:
 
     def update(self, value):
         self.old_value = self.value
-        self.value = value
+        #print "variable update", self.name, value, self.service
+        if not isinstance( self.service, service.Service):
+            if self.name == 'ContainerUpdateIDs':
+                if self.updated == True:
+                    if isinstance( value, tuple):
+                        v = self.value.split(',')
+                        i = 0
+                        while i < len(v):
+                            if v[i] == str(value[0]):
+                                del v[i:i+2]
+                                self.value = ','.join(v)
+                                break;
+                            i += 2
+                        if len(self.value):
+                            self.value = self.value + ',' + str(value[0]) + ',' + str(value[1])
+                        else:
+                            self.value = str(value[0]) + ',' + str(value[1])
+                    else:
+                        if len(self.value):
+                            self.value = str(self.value) + ',' + str(value)
+                        else:
+                            self.value = str(value)
+                else:
+                    if isinstance( value, tuple):
+                        self.value = str(value[0]) + ',' + str(value[1])
+                    else:
+                        self.value = value
+            else:
+                self.value = value
+        else:
+            self.value = value
         if isinstance( self.service, service.Service):
             self.notify()
         elif self.moderated:
             self.updated = True
             if self.service.last_change:
                 self.service.last_change.updated = True
+        #print "variable update", self.name, self.value, self.moderated
 
     def subscribe(self, callback):
         self._callbacks.append(callback)

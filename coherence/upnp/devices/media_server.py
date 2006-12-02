@@ -156,8 +156,8 @@ class MediaServer:
         
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
-        d = threads.deferToThread(FSStore, 'my content', p, self.urlbase, ())
-        #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', 'localhost, self.urlbase, ())
+        d = threads.deferToThread(FSStore, 'my content', p, self.urlbase, (), self)
+        #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', 'localhost, self.urlbase, (), self)
         d.addCallback(self.backend_ready)
         d.addErrback(log.err)
         

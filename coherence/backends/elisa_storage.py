@@ -34,12 +34,13 @@ class ElisaMediaStore:
             size = in bytes (OPTIONAL)
     """
 
-    def __init__(self, name, host, urlbase, ignore_patterns):
+    def __init__(self, name, host, urlbase, ignore_patterns, server):
         self.name = name
         self.host = host
         if urlbase[len(urlbase)-1] != '/':
             urlbase += '/'
         self.urlbase = urlbase
+        self.server = server
         self.update_id = 0
         self.root_id = 0
         self.get_root_id()

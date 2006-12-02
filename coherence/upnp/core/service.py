@@ -244,7 +244,6 @@ class Server:
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
             self.check_moderated_loop.start(5.0, now=False)
             #self.check_moderated_loop.start(0.5, now=False)
-            
 
         #simulation_loop = task.LoopingCall(self.simulate_notification)
         #simulation_loop.start(60.0, now=False)
@@ -291,9 +290,9 @@ class Server:
     def set_variable(self, instance, variable_name, value):
         try:
             variable = self._variables[instance][variable_name]
-            variable.value = value
-            if(variable.send_events and len(self._subscribers) > 0):
-                xml = self.build_single_notification(instance, variable_name, value)
+            variable.update(value)
+            if(variable.send_events and variable.moderated == False and len(self._subscribers) > 0):
+                xml = self.build_single_notification(instance, variable_name, variable.value)
                 for s in self._subscribers.values():
                     event.send_notification(s, xml)
         except:
@@ -475,8 +474,7 @@ class ServiceControl:
                     variable = self.variables[0][argument.get_state_variable()]
                     variable.update(r[argument.name])
                     #print 'update state variable contents', variable.name, variable.value, variable.send_events
-                    self.service.set_variable( 0, argument.get_state_variable(), r[argument.name])
-                    if variable.send_events == 'yes':
+                    if(variable.send_events == 'yes' and variable.moderated == False):
                         notify.append(variable)
                 else:
                     variable = self.variables[0][argument.get_state_variable()]
