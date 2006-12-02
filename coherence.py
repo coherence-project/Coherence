@@ -136,6 +136,7 @@ class Coherence:
 
         self.web_server_port = 30020
         self.hostname = socket.gethostbyname(socket.gethostname())
+        #FIXME this doesn't work on systems with more than one network interface
         print 'running on host:', self.hostname
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
