@@ -166,7 +166,7 @@ class Coherence:
         # are we supposed to start a MediaRenderer?
         try:
             from coherence.upnp.devices.media_renderer import MediaRenderer
-            #MediaRenderer( self)
+            MediaRenderer( self)
         except ImportError:
             print "Can't enable MediaRenderer functions, sub-system not available."
         
@@ -185,6 +185,7 @@ class Coherence:
             root_device.unsubscribe_service_subscriptions()
             for device in root_device.get_devices():
                 device.unsubscribe_service_subscriptions()
+        self.ssdp_server.shutdown()
         print 'Coherence UPnP framework shutdown'
         
     def check_devices(self):

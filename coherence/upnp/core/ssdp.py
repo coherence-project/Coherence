@@ -60,14 +60,12 @@ class SSDPServer(DatagramProtocol):
     def _failure(self, error):
         print error
         
-    def doStop(self):
+    def shutdown(self):
         '''Make sure we send out the byebye notifications.'''
-
         for st in self.known:
-            self.doByebye(st)
-        DatagramProtocol.doStop(self)
+            if self.known[st]['MANIFESTATION'] == 'local':
+                self.doByebye(st)
 
-    
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""
         try:
@@ -85,6 +83,7 @@ class SSDPServer(DatagramProtocol):
         headers = [string.split(x, ':', 1) for x in lines]
         headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
+        #print 'SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port)
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
             self.discoveryRequest(headers, (host, port))
@@ -92,7 +91,7 @@ class SSDPServer(DatagramProtocol):
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
+            print 'Unknown SSDP command %s %s' % (cmd[0], cmd[1])
 
     def register(self, manifestation, usn, st, location,
                         server='UPnP/1.0,Coherence UPnP framework,0.1',
@@ -162,7 +161,7 @@ class SSDPServer(DatagramProtocol):
         the address specified by (host, port)."""
 
         #print 'Discovery request from (%s,%d) for %s' % (host, port, headers['st'])
-        log.msg('Discovery request for %s' % headers['st'])
+        #log.msg('Discovery request for %s' % headers['st'])
 
         # Do we know about this service?
         for i in self.known.values():
@@ -174,12 +173,14 @@ class SSDPServer(DatagramProtocol):
                 response.append('HTTP/1.1 200 OK')
 
                 for k, v in i.items():
+                    if k == 'USN':
+                        usn = v
                     if k != 'MANIFESTATION':
                         response.append('%s: %s' % (k, v))
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
-                #print 'send Discovery response with delay %d: ' % delay, response
+                #print 'send Discovery response with delay %d for %s' % (delay, usn)
                 reactor.callLater(delay, self.transport.write,
                                 '\r\n'.join(response), (host, port))
 

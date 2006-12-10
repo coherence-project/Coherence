@@ -24,10 +24,11 @@ class MSearch(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         cmd, headers = utils.parse_http_response(data)
-
+        #print 'MSEARCH datagramReceived from %s:%d, code %s' % (host, port, cmd[1])
         if cmd[0] == 'HTTP/1.1' and cmd[1] == '200':
+            #print 'for', headers['usn']
             if not self.ssdp_server.isKnown(headers['usn']):
-                #print headers
+                #print 'MSEARCH register as remote', headers['usn'], headers['st'], headers['location']
                 self.ssdp_server.register('remote',
                                             headers['usn'], headers['st'],
                                             headers['location'],
@@ -36,6 +37,7 @@ class MSearch(DatagramProtocol):
 
     def double_discover(self):
         " Because it's worth it (with UDP's reliability) "
+        #print 'send out MSEARCH discovery for ssdp:all'
         self.discover()
         self.discover()
         
