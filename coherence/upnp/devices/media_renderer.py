@@ -13,17 +13,31 @@ from coherence.upnp.services.servers.connection_manager_server import Connection
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
 from coherence.upnp.services.servers.av_transport_server import AVTransportServer
 
+from coherence.backends.gstreamer_audio_player import Player
+
+
 class MRRoot(resource.Resource):
 
-    def __init__(self):
+    def __init__(self, server):
         resource.Resource.__init__(self)
+        self.server = server
         
-    def childFactory(self, ctx, name):
-        ch = super(WebUI, self).childFactory(ctx, name)
+    def getChildWithDefault(self, path, request):
+        print 'MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client
+        if self.children.has_key(path):
+            return self.children[path]
+        if request.uri == '/':
+            return self
+        return self.getChild(path, request)
+
+        
+    def getChild(self, name, request):
+        print 'MSRoot getChild', name, request
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
+        print 'MSRoot ch', ch
         return ch
         
     def listchilds(self, uri):
@@ -60,7 +74,7 @@ class RootDeviceXML(static.Data):
         SubElement( d, 'manufacturer').text = 'beebits.net'
         SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
-        SubElement( d, 'modelName').text = 'Coherence'
+        SubElement( d, 'modelName').text = 'Coherence  UPnP A/V MediaRenderer'
         SubElement( d, 'modelNumber').text = '0.1'
         SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'serialNumber').text = '0000001'
@@ -97,25 +111,34 @@ class RootDeviceXML(static.Data):
 class MediaRenderer:
 
     def __init__(self, coherence, version=2):
-        from coherence.upnp.core.uuid import UUID
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
         self.version = version
+        from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
+        self.backend = None
         self._services = []
         self._devices = []
         
-        self.connection_manager_server = ConnectionManagerServer(None)
+        self.backend = Player(self)
+        
+        self.connection_manager_server = ConnectionManagerServer(self)
         self._services.append(self.connection_manager_server)
 
-        self.rendering_control_server = RenderingControlServer(None)
+        self.rendering_control_server = RenderingControlServer(self)
         self._services.append(self.rendering_control_server)
 
-        self.av_transport_server = AVTransportServer(None)
+        self.av_transport_server = AVTransportServer(self)
         self._services.append(self.av_transport_server)
+        
+        upnp_init = getattr(self.backend, "upnp_init", None)
+        if upnp_init:
+            upnp_init()
 
-        self.web_resource = MRRoot()
-        self.coherence.add_web_resource( str(self.uuid), self.web_resource)
+
+        self.web_resource = MRRoot(self)
+        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
+
 
         version = self.version
         while version > 0:
@@ -140,7 +163,7 @@ class MediaRenderer:
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
-        print 'MediaRenderer register'
+        #print '%s register' % self.device_type
         # we need to do this after the children are there, since we send notifies
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,

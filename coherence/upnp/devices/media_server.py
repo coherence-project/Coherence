@@ -31,7 +31,7 @@ class MSRoot(resource.Resource):
         self.store = store
         
     def getChildWithDefault(self, path, request):
-        print 'MSRoot getChildWithDefault', path, request.uri, request.client
+        print 'MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client
         if self.children.has_key(path):
             return self.children[path]
         if request.uri == '/':
@@ -71,9 +71,6 @@ class MSRoot(resource.Resource):
                 cl += '<li><a href=%s%s%s>%s</a></li>' % (uri,sep,c,c)
         return cl
 
-    def render_HTML(self,request):
-        return '<html><p>root of the MediaServer</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
-
     def render(self,request):
         return '<html><p>root of the MediaServer</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
@@ -102,7 +99,7 @@ class RootDeviceXML(static.Data):
         SubElement( d, 'manufacturer').text = 'beebits.net'
         SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        SubElement( d, 'modelName').text = 'Coherence'
+        SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
         SubElement( d, 'modelNumber').text = '0.1'
         SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'serialNumber').text = '0000001'
@@ -143,7 +140,7 @@ class MediaServer:
         self.version = version
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
-        self.store = None
+        self.backend = None
         urlbase = self.coherence.urlbase
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -165,15 +162,21 @@ class MediaServer:
         self._services = []
         self._devices = []
         
-        self.connection_manager_server = ConnectionManagerServer(self.version, backend)
+        self.backend = backend
+        
+        self.connection_manager_server = ConnectionManagerServer(self)
         self._services.append(self.connection_manager_server)
         
-        self.content_directory_server = ContentDirectoryServer(self.version, backend)
+        self.content_directory_server = ContentDirectoryServer(self)
         self._services.append(self.content_directory_server)
         
-        self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self.version,
-                                                        FakeMediaReceiverRegistrarBackend())
+        self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,
+                                                        backend=FakeMediaReceiverRegistrarBackend())
         self._services.append(self.media_receiver_registrar_server)
+        
+        upnp_init = getattr(self.backend, "upnp_init", None)
+        if upnp_init:
+            upnp_init()
         
         self.web_resource = MSRoot( self, backend)
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
@@ -193,7 +196,6 @@ class MediaServer:
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
         self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
 
-        self.store = backend
         self.register()
 
     def register(self):

@@ -36,8 +36,10 @@ class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):
 
 class MediaReceiverRegistrarServer(service.Server, resource.Resource):
 
-    def __init__(self, version, backend):
-        self.backend = backend
+    def __init__(self, device, backend=None):
+        self.device = device
+        if backend == None:
+            backend = self.device.backend
         resource.Resource.__init__(self)
         version = 1
         self.namespace = 'microsoft.com'

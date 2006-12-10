@@ -17,6 +17,7 @@ from coherence.upnp.core.soap_service import errorCode
 
 from coherence.extern.inotify import INotify
 from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
+from coherence.extern.inotify import IN_CHANGED
 
 class FSItem:
 
@@ -124,6 +125,7 @@ class FSStore:
         self.server = server
         self.store = {}
         
+        
         self.inotify = INotify()
         
         #print 'FSStore', name, path, urlbase, ignore_patterns
@@ -194,7 +196,7 @@ class FSStore:
             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         if mimetype == 'directory':
-            mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO
+            mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
             self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
             return self.store[id]
             
@@ -226,6 +228,10 @@ class FSStore:
         if filename:
             path = os.path.join(path, filename)
 
+        if mask & IN_CHANGED:
+            # FIXME react maybe on access right changes, loss of read rights?
+            print '%s was changed, parent %d (%s)' % (path, parameter, iwp.path)
+        
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
             #print '%s was deleted, parent %d (%s)' % (path, parameter, iwp.path)
             id = self.get_id_by_name(parameter,filename)
@@ -242,6 +248,9 @@ class FSStore:
         self.next_id += 1
         return ret
         
+    def upnp_init(self):
+        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
         BrowseFlag = kwargs['BrowseFlag']

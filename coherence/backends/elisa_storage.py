@@ -64,6 +64,9 @@ class ElisaMediaStore:
         dfr.addCallback(self.set_root_id)
 
 
+    def upnp_init(self):
+        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
         BrowseFlag = kwargs['BrowseFlag']

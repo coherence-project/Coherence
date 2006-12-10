@@ -25,10 +25,12 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 
 class ConnectionManagerServer(service.Server, resource.Resource):
 
-    def __init__(self, version, backend):
-        self.backend = backend
+    def __init__(self, device, backend=None):
+        self.device = device
+        if backend == None:
+            backend = self.device.backend
         resource.Resource.__init__(self)
-        service.Server.__init__(self, 'ConnectionManager', version, backend)
+        service.Server.__init__(self, 'ConnectionManager', self.device.version, backend)
 
         self.control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
@@ -37,7 +39,7 @@ class ConnectionManagerServer(service.Server, resource.Resource):
         
         self.connections = {}
         
-        self.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+        self.set_variable(0, 'SourceProtocolInfo', '')
         self.set_variable(0, 'SinkProtocolInfo', '')
         self.set_variable(0, 'CurrentConnectionIDs', '')
         
