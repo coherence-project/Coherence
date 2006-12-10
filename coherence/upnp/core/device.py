@@ -98,7 +98,7 @@ class Device:
     def parse_description(self):
         from twisted.web.client import getPage
                                      
-        def gotPage(  x):
+        def gotPage(x):
             #print "gotPage"
             tree = utils.parse_xml(x, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:device-1-0"
@@ -123,8 +123,11 @@ class Device:
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
             
+        def gotError(failure, url):
+            print "error requesting", url
+            print failure
 
-        getPage(self.location).addCallback( gotPage)
+        getPage(self.location).addCallbacks(gotPage, gotError, None, None, self.location, None)
 
 
 class RootDevice(Device):

@@ -56,11 +56,16 @@ class SOAPProxy(soap.Proxy):
         #print "callRemote:", payload
         #print "url:", self.url
         
+        def gotError(failure, url):
+            print "error requesting", url
+            print failure
+
+
         return client.getPage(self.url, postdata=payload, method="POST",
                               headers={'content-type': 'text/xml ;charset="utf-8"',
                                        'SOAPACTION': '"%s"' % soapaction,
                                        }
-                              ).addCallback(self._cbGotResult)
+                              ).addCallbacks(self._cbGotResult, gotError, None, None, self.url, None)
 
     def _cbGotResult(self, result):
         result = SOAPpy.parseSOAPRPC(result)            

@@ -148,7 +148,7 @@ class Service:
 
         from twisted.web.client import getPage
         
-        def gotPage(  x):
+        def gotPage(x):
             #print "gotPage"
             #print x
             tree = utils.parse_xml(x, 'utf-8').getroot()
@@ -181,9 +181,13 @@ class Service:
             self.detection_completed = True
 
             louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
-
+            
+        def gotError(failure, url):
+            print "error requesting", url
+            print failure
+            
         #print 'getPage', self.get_scpd_url()
-        getPage(self.get_scpd_url()).addCallback( gotPage)
+        getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, self.get_scpd_url(), None)
             
 moderated_variables = \
         {'urn:schemas-upnp-org:service:AVTransport:2':
@@ -210,7 +214,7 @@ class Server:
         self.backend = backend
         if getattr(self, "namespace", None) == None:
             self.namespace = 'schemas-upnp-org'
-        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, version)
+        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, self.version)
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
