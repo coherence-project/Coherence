@@ -106,6 +106,15 @@ class RootDeviceXML(static.Data):
         SubElement(root, 'URLBase').text = urlbase
 
         d = SubElement(root, 'device')
+        x = SubElement( d, 'dlna:X_DLNADOC')
+        x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x.text = 'DMS-1.50'
+        x = SubElement( d, 'dlna:X_DLNADOC')
+        x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x.text = 'M-DMS-1.50'
+        x=SubElement( d, 'dlna:X_DLNACAP')
+        x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x.text = 'av-upload,image-upload,audio-upload'
         SubElement( d, 'deviceType').text = device_type
         if xbox_hack == False:
             SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
