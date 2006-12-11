@@ -37,11 +37,11 @@ class MSRoot(resource.Resource):
         
         if( headers.has_key('user-agent') and
             headers['user-agent'].find('Xbox/') == 0 and
-            path == 'description-1.xml'):
+            path in ['description-1.xml','description-2.xml']):
             print 'XBox alert, we need to simulate a Windows Media Connect server'
-            if self.children.has_key('xbox-'+ path):
-                print 'returning xbox-%s' % path
-                return self.children['xbox-'+ path]
+            if self.children.has_key('xbox-description-1.xml'):
+                print 'returning xbox-description-1.xml'
+                return self.children['xbox-description-1.xml']
 
         if self.children.has_key(path):
             return self.children[path]
