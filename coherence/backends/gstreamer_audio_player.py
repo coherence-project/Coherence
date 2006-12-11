@@ -175,6 +175,11 @@ class Player:
         self.tags = {}
         #self.player.set_state(gst.STATE_PAUSED)
         self.player.set_state(gst.STATE_READY)
+        self.server.av_transport_server.set_variable(0, 'CurrentTrackURI', uri)
+        self.server.av_transport_server.set_variable(0, 'TransportState', 'TRANSITIONING')
+        self.server.av_transport_server.set_variable(0, 'AVTransportURIMetaData', 'NOT_IMPLEMENTED')
+        self.server.av_transport_server.set_variable(0, 'CurrentTransportActions',
+                                                            'Play,Stop,Pause,Seek,Next,Previous')
         self.update()
         print "load <--"
 
@@ -216,6 +221,7 @@ class Player:
         if self.player.get_property('uri') == None:
             return
         print 'Stopping:', self.player.get_property('uri')
+        self.server.av_transport_server.set_variable(0, 'TransportState', 'STOPPED')
         self.seek('-0')
         
     def play( self):   
@@ -228,17 +234,19 @@ class Player:
             return
         print 'Playing:', self.player.get_property('uri')
         self.player.set_state(gst.STATE_PLAYING)
+        self.server.av_transport_server.set_variable(0, 'TransportState', 'PLAYING')
         print "play <--"
 
     def pause( self):
         _,state,_ = self.player.get_state()
         if state == gst.STATE_PAUSED:
             print 'we are already paused, so this means probably to play again'
-            self.player.set_state(gst.STATE_PLAYING)
+            self.play()
             return
         if state == gst.STATE_READY:
             return
         print 'Pausing:', self.player.get_property('uri')
+        self.server.av_transport_server.set_variable(0, 'TransportState', 'PAUSED_PLAYBACK')
         self.player.set_state(gst.STATE_PAUSED)
         
     def seek(self, location):
@@ -297,6 +305,10 @@ class Player:
                 
     def upnp_init(self):
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo', 'http-get:*:audio/mpeg:*')
+        self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT')
+        self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK')
+        self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL')
+        self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '')
 
     def upnp_Play(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
