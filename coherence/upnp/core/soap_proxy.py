@@ -65,7 +65,7 @@ class SOAPProxy(soap.Proxy):
                               headers={'content-type': 'text/xml ;charset="utf-8"',
                                        'SOAPACTION': '"%s"' % soapaction,
                                        }
-                              ).addCallbacks(self._cbGotResult, gotError, None, None, self.url, None)
+                              ).addCallbacks(self._cbGotResult, gotError, None, None, [self.url], None)
 
     def _cbGotResult(self, result):
         result = SOAPpy.parseSOAPRPC(result)            

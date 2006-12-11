@@ -187,7 +187,7 @@ class Service:
             print failure
             
         #print 'getPage', self.get_scpd_url()
-        getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, self.get_scpd_url(), None)
+        getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)
             
 moderated_variables = \
         {'urn:schemas-upnp-org:service:AVTransport:2':

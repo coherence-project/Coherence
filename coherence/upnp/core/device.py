@@ -127,7 +127,7 @@ class Device:
             print "error requesting", url
             print failure
 
-        getPage(self.location).addCallbacks(gotPage, gotError, None, None, self.location, None)
+        getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 
 
 class RootDevice(Device):
