@@ -142,7 +142,7 @@ class SSDPServer(DatagramProtocol):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
 
-        #print 'Notification from (%s,%d) for %s' % (host, port, headers['nt'])
+        print 'Notification from (%s,%d) for %s' % (host, port, headers['nt'])
         #print headers
 
         if headers['nts'] == 'ssdp:alive':
@@ -160,7 +160,7 @@ class SSDPServer(DatagramProtocol):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
 
-        #print 'Discovery request from (%s,%d) for %s' % (host, port, headers['st'])
+        print 'Discovery request from (%s,%d) for %s' % (host, port, headers['st'])
         #log.msg('Discovery request for %s' % headers['st'])
 
         # Do we know about this service?

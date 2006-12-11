@@ -32,6 +32,8 @@ class MSRoot(resource.Resource):
         
     def getChildWithDefault(self, path, request):
         print 'MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client
+        print 'headers', request.getAllHeaders()
+
         if self.children.has_key(path):
             return self.children[path]
         if request.uri == '/':
