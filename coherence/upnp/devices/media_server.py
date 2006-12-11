@@ -128,10 +128,7 @@ class RootDeviceXML(static.Data):
         SubElement( d, 'modelNumber').text = '0.1'
         SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'serialNumber').text = '0000001'
-        if xbox_hack == False:
-            SubElement( d, 'UDN').text = uuid
-        else:
-            SubElement( d, 'UDN').text = 'uuid:0010dc00-d66e-1000-80a6-000049107172'
+        SubElement( d, 'UDN').text = uuid
         SubElement( d, 'UPC').text = ''
         SubElement( d, 'presentationURL').text = ''
 
@@ -173,6 +170,7 @@ class MediaServer:
         self.version = version
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
+        self.uuid = 'uuid:0010dc00-d66e-1000-80a6-000049107172'
         self.backend = None
         urlbase = self.coherence.urlbase
         if urlbase[-1] != '/':
