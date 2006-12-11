@@ -32,7 +32,16 @@ class MSRoot(resource.Resource):
         
     def getChildWithDefault(self, path, request):
         print 'MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client
+        headers = request.getAllHeaders()
         print 'headers', request.getAllHeaders()
+        
+        if( headers.has_key('user-agent') and
+            headers['user-agent'].find('Xbox/') == 0 and
+            path == 'description-1.xml'):
+            print 'XBox alert, we need to simulate a Windows Media Connect server'
+            if self.children.has_key('xbox-'+ path):
+                print 'returning xbox-%s' % path
+                return self.children['xbox-'+ path]
 
         if self.children.has_key(path):
             return self.children[path]
@@ -83,6 +92,7 @@ class RootDeviceXML(static.Data):
                         device_type='MediaServer',
                         version=2,
                         friendly_name='Coherence UPnP A/V MediaServer',
+                        xbox_hack=False,
                         services=[],
                         devices=[]):
         uuid = str(uuid)
@@ -97,11 +107,15 @@ class RootDeviceXML(static.Data):
 
         d = SubElement(root, 'device')
         SubElement( d, 'deviceType').text = device_type
-        SubElement( d, 'friendlyName').text = friendly_name
+        if xbox_hack == False:
+            SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
+            SubElement( d, 'friendlyName').text = friendly_name
+        else:
+            SubElement( d, 'modelName').text = 'Windows Media Connect'
+            SubElement( d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
         SubElement( d, 'manufacturer').text = 'beebits.net'
         SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
         SubElement( d, 'modelNumber').text = '0.1'
         SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         SubElement( d, 'serialNumber').text = '0000001'
@@ -190,6 +204,14 @@ class MediaServer:
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
+                                    services=self._services,
+                                    devices=self._devices))
+            self.web_resource.putChild( 'xbox-description-%d.xml' % version,
+                                    RootDeviceXML( self.coherence.hostname,
+                                    str(self.uuid),
+                                    self.coherence.urlbase,
+                                    self.device_type, version,
+                                    xbox_hack=True,
                                     services=self._services,
                                     devices=self._devices))
             version -= 1
