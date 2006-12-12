@@ -116,7 +116,7 @@ class FSItem:
 class FSStore:
 
     def __init__(self, name, path, urlbase, ignore_patterns, server):
-        self.next_id = 0
+        self.next_id = 1000
         self.name = name
         self.path = path
         if urlbase[len(urlbase)-1] != '/':
@@ -190,10 +190,12 @@ class FSStore:
         self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=update)
         if hasattr(self, 'update_id'):
             self.update_id += 1
-            self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
             value = (parent.get_id(),parent.get_update_id())
-            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         if mimetype == 'directory':
             mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
@@ -211,10 +213,12 @@ class FSStore:
             del self.store[int(id)]
             if hasattr(self, 'update_id'):
                 self.update_id += 1
-                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
                 value = (parent.get_id(),parent.get_update_id())
-                self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         except:
             pass
@@ -249,8 +253,77 @@ class FSStore:
         return ret
         
     def upnp_init(self):
-        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+        if self.server:
+            self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
 
+    def upnp_Search(self, *args, **kwargs):
+        ContainerID = kwargs['ContainerID']
+        Filter = kwargs['Filter']
+        StartingIndex = int(kwargs['StartingIndex'])
+        RequestedCount = int(kwargs['RequestedCount'])
+        SortCriteria = kwargs['SortCriteria']
+        SearchCriteria = kwargs['SearchCriteria']
+        
+        total = 0
+
+        """ fake a Windows Media Connect Server
+            and return for the moment an empty results
+            for the things we can't support now
+        """
+        if ContainerID in ['1','2','3','5','6','7','8','9',
+                           '10','11','12','13','14','15','16','17',
+                           'A','B','C','D','E','F']:
+            didl = DIDLElement()
+            r = { 'Result': didl.toString(), 'TotalMatches': 0,
+                  'UpdateID': self.update_id, 'NumberReturned': didl.numItems()}
+            return r
+        
+        """ a request for all music items served by a Windows Media Connect Server """
+        if ContainerID == '4':
+            root_id = 1000
+            item = self.get_by_id(root_id)
+            if item  == None:
+                raise errorCode(701)
+                
+            items = []
+            containers = [item]
+            while len(containers)>0:
+                container = containers.pop()
+                if container.mimetype != 'directory':
+                    continue
+                for child in container.get_children(0,0):
+                    if child.mimetype == 'directory':
+                        containers.append(child)
+                    else:
+                        items.append(child)
+                        total += 1
+
+        else:
+            ContainerID = int(ContainerID)
+            if ContainerID == 0:
+                root_id = 1000
+
+            item = self.get_by_id(root_id)
+            if item  == None:
+                raise errorCode(701)
+                
+            items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
+            total = item.child_count
+
+        didl = DIDLElement()
+        for i in items:
+            didl.addItem(i.item)
+
+        r = { 'Result': didl.toString(), 'TotalMatches': total,
+            'NumberReturned': didl.numItems()}
+
+        if hasattr(item, 'update_id'):
+            r['UpdateID'] = item.update_id
+        else:
+            r['UpdateID'] = self.update_id
+
+        return r
+        
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
         BrowseFlag = kwargs['BrowseFlag']
@@ -259,12 +332,12 @@ class FSStore:
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
 
-        didl = DIDLElement()
-
         item = self.get_by_id(ObjectID)
         if item  == None:
             raise errorCode(701)
             
+        didl = DIDLElement()
+
         if BrowseFlag == 'BrowseDirectChildren':
             childs = item.get_children(StartingIndex, StartingIndex + RequestedCount)
             for i in childs:
@@ -287,15 +360,21 @@ class FSStore:
 
 if __name__ == '__main__':
     p = '/data/images'
-    p = 'content'
+    p = 'tests/content'
     #p = '/home/dev/beeCT/beeMedia/python-upnp'
     #p = '/home/dev/beeCT/beeMedia/python-upnp/xml-service-descriptions'
 
-    f = FSStore('my media',p, 'http://localhost/xyz',())
+    f = FSStore('my media',p, 'http://localhost/xyz',(),None)
 
     print f.len()
-    print f.get_by_id(0).child_count, f.get_by_id(0).get_xml()
-    print f.get_by_id(1).child_count, f.get_by_id(1).get_xml()
-    print f.get_by_id(2).child_count, f.get_by_id(2).get_xml()
-    print f.store[0].get_children(0,0)
+    print f.get_by_id(1000).child_count, f.get_by_id(1000).get_xml()
+    print f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml()
+    print f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml()
+    print f.store[1000].get_children(0,0)
+    print f.upnp_Search(ContainerID ='4',
+                        Filter ='dc:title,upnp:artist',
+                        RequestedCount = '1000',
+                        StartingIndex = '0',
+                        SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
+                        SortCriteria = '+dc:title')
     
