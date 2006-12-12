@@ -170,7 +170,6 @@ class MediaServer:
         self.version = version
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
-        self.uuid = 'uuid:0010dc00-d66e-1000-80a6-000049107172'
         self.backend = None
         urlbase = self.coherence.urlbase
         if urlbase[-1] != '/':
