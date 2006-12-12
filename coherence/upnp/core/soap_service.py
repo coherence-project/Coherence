@@ -77,6 +77,7 @@ class UPnPPublisher(soap.SOAPPublisher):
         """Handle a SOAP command."""
         data = request.content.read()
         headers = request.getAllHeaders()
+        print 'soap_request:', headers
 
         p, header, body, attrs = SOAPpy.parseSOAPRPC(data, 1, 1, 1)
         methodName, args, kwargs, ns = p._name, p._aslist, p._asdict, p._ns
