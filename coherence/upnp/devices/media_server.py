@@ -147,14 +147,9 @@ class RootDeviceXML(static.Data):
                 except:
                     namespace = 'upnp-org'
                 SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                if xbox_hack == False:
-                    SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                    SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                    SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
-                else:
-                    SubElement( s, 'SCPDURL').text = uuid[5:] + '/' + id + '/' + service.scpd_url
-                    SubElement( s, 'controlURL').text = uuid[5:] + '/' + id + '/' + service.control_url
-                    SubElement( s, 'eventSubURL').text = uuid[5:] + '/' + id + '/' + service.subscription_url
+                SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(services):
             e = SubElement( d, 'deviceList')
