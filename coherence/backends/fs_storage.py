@@ -372,8 +372,8 @@ if __name__ == '__main__':
 
     print f.len()
     print f.get_by_id(1000).child_count, f.get_by_id(1000).get_xml()
-    print f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml()
-    print f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml()
+    #print f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml()
+    #print f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml()
     print f.store[1000].get_children(0,0)
     print f.upnp_Search(ContainerID ='4',
                         Filter ='dc:title,upnp:artist',
