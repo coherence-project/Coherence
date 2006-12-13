@@ -332,7 +332,8 @@ class FSStore:
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
 
-        if ObjectID == 0:
+        root_id = ObjectID
+        if root_id == 0:
             root_id = 1000
         item = self.get_by_id(root_id)
         
