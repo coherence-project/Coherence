@@ -17,7 +17,7 @@ feature provided by your editor.
 			<name>TransportState</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList withVendorDefines="True">
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>STOPPED</allowedValue>
 				<allowedValue>PAUSED_PLAYBACK</allowedValue>
 				<allowedValue>PAUSED_RECORDING</allowedValue>
@@ -33,7 +33,7 @@ feature provided by your editor.
 			<name>TransportStatus</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList withVendorDefines="True">
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>OK</allowedValue>
 				<allowedValue>ERROR_OCCURRED</allowedValue>
 			</allowedValueList>
@@ -56,7 +56,7 @@ feature provided by your editor.
 			<name>PlaybackStorageMedium</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList withVendorDefines="True">
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>UNKNOWN</allowedValue>
 				<allowedValue>DV</allowedValue>
 				<allowedValue>MINI-DV</allowedValue>
@@ -103,7 +103,7 @@ feature provided by your editor.
 			<name>RecordStorageMedium</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList withVendorDefines="True">
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>UNKNOWN</allowedValue>
 				<allowedValue>DV</allowedValue>
 				<allowedValue>MINI-DV</allowedValue>
@@ -178,7 +178,7 @@ feature provided by your editor.
 			<name>TransportPlaySpeed</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList withVendorDefines="True">
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>1</allowedValue>
 			</allowedValueList>
 			<defaultValue>1</defaultValue>
@@ -208,7 +208,7 @@ feature provided by your editor.
 			<name>PossibleRecordQualityModes</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList withVendorDefines="True">
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>0:EP</allowedValue>
 				<allowedValue>1:LP</allowedValue>
 				<allowedValue>2:SP</allowedValue>
@@ -224,7 +224,7 @@ feature provided by your editor.
 			<name>NumberOfTracks</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui4</dataType>
-			<allowedValueRange withVendorDefines="True">
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<maximum></maximum>
 			</allowedValueRange>
@@ -234,7 +234,7 @@ feature provided by your editor.
 			<name>CurrentTrack</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui4</dataType>
-			<allowedValueRange withVendorDefines="True">
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<maximum></maximum>
 				<step>1</step>
