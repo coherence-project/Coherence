@@ -12,7 +12,7 @@ This includes disabling any automatic tab-to-space conversion
 feature provided by your editor. 
 ================================================================-->
 <scpd>
-	<serviceStateTable>
+	<serviceStateTable xmlns:coherence="urn:schemas-beebits-org:service-1-0">
 		<stateVariable>
 			<name>LastChange</name>
 			<sendEventsAttribute>yes</sendEventsAttribute>
@@ -30,10 +30,12 @@ feature provided by your editor.
 			<name>Brightness</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -41,10 +43,12 @@ feature provided by your editor.
 			<name>Contrast</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -52,10 +56,12 @@ feature provided by your editor.
 			<name>Sharpness</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -63,10 +69,12 @@ feature provided by your editor.
 			<name>RedVideoGain</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -74,10 +82,12 @@ feature provided by your editor.
 			<name>GreenVideoGain</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -85,10 +95,12 @@ feature provided by your editor.
 			<name>BlueVideoGain</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -96,10 +108,12 @@ feature provided by your editor.
 			<name>RedVideoBlackLevel</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -107,10 +121,12 @@ feature provided by your editor.
 			<name>GreenVideoBlackLevel</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -118,10 +134,12 @@ feature provided by your editor.
 			<name>BlueVideoBlackLevel</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -129,10 +147,12 @@ feature provided by your editor.
 			<name>ColorTemperature</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -140,9 +160,12 @@ feature provided by your editor.
 			<name>HorizontalKeystone</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>i2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
+				<minimum></minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -150,9 +173,12 @@ feature provided by your editor.
 			<name>VerticalKeystone</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>i2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
+				<minimum></minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -160,6 +186,7 @@ feature provided by your editor.
 			<name>Mute</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>boolean</dataType>
+			<defaultValue>False</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -167,10 +194,12 @@ feature provided by your editor.
 			<name>Volume</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>ui2</dataType>
-			<allowedValueRange>
+			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
+				<maximum></maximum>
 			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -178,6 +207,12 @@ feature provided by your editor.
 			<name>VolumeDB</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>i2</dataType>
+			<allowedValueRange coherence:X_withVendorDefines="True">
+				<minimum></minimum>
+				<step></step>
+				<maximum></maximum>
+			</allowedValueRange>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -185,6 +220,7 @@ feature provided by your editor.
 			<name>Loudness</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>boolean</dataType>
+			<defaultValue>False</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -192,8 +228,21 @@ feature provided by your editor.
 			<name>A_ARG_TYPE_Channel</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList>
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>Master</allowedValue>
+				<allowedValue>LF</allowedValue>
+				<allowedValue>RF</allowedValue>
+				<allowedValue>CF</allowedValue>
+				<allowedValue>LFE</allowedValue>
+				<allowedValue>LS</allowedValue>
+				<allowedValue>RS</allowedValue>
+				<allowedValue>LFC</allowedValue>
+				<allowedValue>RFC</allowedValue>
+				<allowedValue>SD</allowedValue>
+				<allowedValue>SL</allowedValue>
+				<allowedValue>SR </allowedValue>
+				<allowedValue>T</allowedValue>
+				<allowedValue>B</allowedValue>
 			</allowedValueList>
 		</stateVariable>
 
@@ -207,8 +256,9 @@ feature provided by your editor.
 			<name>A_ARG_TYPE_PresetName</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
-			<allowedValueList>
+			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>FactoryDefaults</allowedValue>
+				<allowedValue>InstallationDefaults</allowedValue>
 			</allowedValueList>
 		</stateVariable>
 

@@ -24,6 +24,7 @@ class UPnPPublisher(soap.SOAPPublisher):
     different way than the SOAPPublisher class does."""
 
     def _sendResponse(self, request, response, status=200):
+        #print '_sendResponse', status, response
         request.setResponseCode(status)
 
         if self.encoding is not None:
@@ -51,6 +52,7 @@ class UPnPPublisher(soap.SOAPPublisher):
         self._sendResponse(request, response)
 
     def _gotError(self, failure, request, methodName):
+        #print '_gotError', failure, failure.value
         e = failure.value
         status = 500
         if isinstance(e, SOAPpy.faultType):

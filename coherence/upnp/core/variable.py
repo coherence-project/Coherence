@@ -22,11 +22,11 @@ class StateVariable:
         self.instance = instance
         self.name = name
         self.implementation = implementation
+        self.data_type = data_type
+        self.allowed_values = values
         self.old_value = ''
         self.value = ''
         self.send_events = send_events
-        self.data_type = data_type
-        self.allowed_values = values
         self._callbacks = []
         if isinstance( self.service, service.Server):
             self.moderated = self.service.is_variable_moderated(name)
@@ -62,9 +62,37 @@ class StateVariable:
                     else:
                         self.value = value
             else:
-                self.value = value
+                if self.data_type == 'string':
+                    value = str(value)
+                    if len(self.allowed_values):
+                        if value.upper() in [v.upper() for v in self.allowed_values]:
+                            self.value = value
+                        else:
+                            print "Variable %s update, value %s doesn't fit for variable" % (self.name, value)
+                    else:
+                        self.value = value
+                elif self.data_type == 'boolean':
+                    if value in [1,'1','true','True','yes','Yes']:
+                        self.value = '1'
+                    else:
+                        self.value = '0'
+                else:
+                    self.value = int(value)
         else:
-            self.value = value
+            if self.data_type == 'string':
+                value = str(value)
+                if len(self.allowed_values):
+                    if value.upper() in [v.upper() for v in self.allowed_values]:
+                        self.value = value
+                else:
+                    self.value = value
+            elif self.data_type == 'boolean':
+                if value in [1,'true','True','yes','Yes']:
+                    self.value = '1'
+                else:
+                    self.value = '0'
+            else:
+                self.value = int(value)
         if isinstance( self.service, service.Service):
             self.notify()
         elif self.moderated:

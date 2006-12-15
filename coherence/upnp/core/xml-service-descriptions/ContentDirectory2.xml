@@ -36,6 +36,7 @@ feature provided by your editor.
 			<name>SystemUpdateID</name>
 			<sendEventsAttribute>yes</sendEventsAttribute>
 			<dataType>ui4</dataType>
+			<defaultValue>0</defaultValue>
 		</stateVariable>
 
 		<stateVariable>

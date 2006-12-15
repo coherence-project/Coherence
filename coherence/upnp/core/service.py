@@ -419,6 +419,9 @@ class Server:
                                                            implementation,
                                                            instance, send_events,
                                                            data_type, values)
+            default_value = var_node.findtext('defaultValue')
+            if default_value:
+                self._variables.get(instance)[name].update(default_value)
 
 class scpdXML(static.Data):
 
@@ -524,9 +527,15 @@ class ServiceControl:
                 return callback( **kwargs)
             return result
             
+        def failure(x):
+            #print 'failure', x
+            #log.err()
+            log.msg('soap__generic error during call processing')
+            return x
+
         # call plugin method for this action
         d = defer.maybeDeferred( callit, *args, **kwargs)
         d.addCallback( self.get_action_results, action)
-        d.addErrback(log.err)
+        d.addErrback(failure)
         return d
 
