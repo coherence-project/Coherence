@@ -11,7 +11,7 @@ from twisted.internet import reactor
 from twisted.internet import threads
 from twisted.web import xmlrpc, static
 from twisted.web import resource, server
-from twisted.python import log, failure, util
+from twisted.python import util
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
@@ -23,6 +23,9 @@ from coherence.upnp.services.servers.media_receiver_registrar_server import Fake
 from coherence.backends.fs_storage import FSStore
 from coherence.backends.elisa_storage import ElisaMediaStore
 
+from coherence.extern.logger import Logger
+log = Logger('MediaServer')
+
 class MSRoot(resource.Resource):
 
     def __init__(self, server, store):
@@ -31,16 +34,17 @@ class MSRoot(resource.Resource):
         self.store = store
         
     def getChildWithDefault(self, path, request):
-        print 'MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client
+        log.info('%s getChildWithDefault, %s, %s %s' % (self.server.device_type,
+                                path, request.uri, request.client))
         headers = request.getAllHeaders()
-        print 'headers', request.getAllHeaders()
+        log.msg( request.getAllHeaders())
         
         if( headers.has_key('user-agent') and
             headers['user-agent'].find('Xbox/') == 0 and
             path in ['description-1.xml','description-2.xml']):
-            print 'XBox alert, we need to simulate a Windows Media Connect server'
+            log.info('XBox alert, we need to simulate a Windows Media Connect server')
             if self.children.has_key('xbox-description-1.xml'):
-                print 'returning xbox-description-1.xml'
+                log.msg( 'returning xbox-description-1.xml')
                 return self.children['xbox-description-1.xml']
 
         if self.children.has_key(path):
@@ -50,17 +54,17 @@ class MSRoot(resource.Resource):
         return self.getChild(path, request)
         
     def requestFinished(self, result, id):
-        print "finished, remove %d from connection table" % id
+        log.info("finished, remove %d from connection table" % id)
         self.server.connection_manager_server.remove_connection(id)
 
     def getChild(self, name, request):
-        print 'MSRoot getChild', name, request
+        log.info('getChild %s, %s' % name, request)
         ch = self.store.get_by_id(name)
         if ch != None:
             p = ch.get_path()
             if os.path.exists(p):
                 new_id = self.server.connection_manager_server.add_connection()
-                print "startup, add %d to connection table" % new_id
+                log.msg("startup, add %d to connection table" % new_id)
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
@@ -69,11 +73,11 @@ class MSRoot(resource.Resource):
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
-        print 'MSRoot ch', ch
+        log.info('MSRoot ch %s', ch)
         return ch
         
     def listchilds(self, uri):
-        print 'listchilds', uri
+        log.info('listchilds %s' % uri)
         cl = ''
         sep = ''
         if uri[-1] != '/':
@@ -170,8 +174,8 @@ class MediaServer:
         if urlbase[-1] != '/':
             urlbase += '/'
         self.urlbase = urlbase + str(self.uuid)[5:]
-
-        print 'MediaServer urlbase', urlbase
+        
+        log.msg('MediaServer urlbase %s' % urlbase)
 
         p = 'tests/content'
 
@@ -181,7 +185,11 @@ class MediaServer:
         d = threads.deferToThread(FSStore, 'my content', p, self.urlbase, (), self)
         #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', 'localhost, self.urlbase, (), self)
         d.addCallback(self.backend_ready)
-        d.addErrback(log.err)
+        
+        def failure(x):
+            log.msg('backend not installed, MediaServer activation aborted')
+            
+        d.addErrback(failure)
         
     def backend_ready(self, backend):
         self._services = []
@@ -234,7 +242,7 @@ class MediaServer:
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
-        #print '%s register' % self.device_type
+        log.msg('%s register' % self.device_type)
         # we need to do this after the children are there, since we send notifies
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,

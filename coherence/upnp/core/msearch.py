@@ -13,6 +13,9 @@ from coherence.upnp.core import utils
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
 
+from coherence.extern.logger import Logger
+log = Logger('MSEARCH')
+
 class MSearch(DatagramProtocol):
 
     def __init__(self, ssdp_server):
@@ -24,11 +27,11 @@ class MSearch(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         cmd, headers = utils.parse_http_response(data)
-        #print 'MSEARCH datagramReceived from %s:%d, code %s' % (host, port, cmd[1])
+        log.msg('datagramReceived from %s:%d, code %s' % (host, port, cmd[1]))
         if cmd[0] == 'HTTP/1.1' and cmd[1] == '200':
-            #print 'for', headers['usn']
+            log.msg('for', headers['usn'])
             if not self.ssdp_server.isKnown(headers['usn']):
-                print 'MSEARCH register as remote', headers['usn'], headers['st'], headers['location']
+                log.msg('register as remote %s, %s, %s' % (headers['usn'], headers['st'], headers['location']))
                 self.ssdp_server.register('remote',
                                             headers['usn'], headers['st'],
                                             headers['location'],
@@ -37,7 +40,7 @@ class MSearch(DatagramProtocol):
 
     def double_discover(self):
         " Because it's worth it (with UDP's reliability) "
-        #print 'send out MSEARCH discovery for ssdp:all'
+        log.msg('send out discovery for ssdp:all')
         self.discover()
         self.discover()
         

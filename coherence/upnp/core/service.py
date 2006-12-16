@@ -20,10 +20,13 @@ from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tos
 
 from twisted.web import static
 from twisted.internet import defer
-from twisted.python import log, failure, util
+from twisted.python import failure, util
 from twisted.internet import task
 
 import louie
+
+from coherence.extern.logger import Logger
+log = Logger('Service')
 
 global subscribers
 subscribers = {}

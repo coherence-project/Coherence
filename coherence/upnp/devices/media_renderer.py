@@ -15,6 +15,8 @@ from coherence.upnp.services.servers.av_transport_server import AVTransportServe
 
 from coherence.backends.gstreamer_audio_player import Player
 
+from coherence.extern.logger import Logger
+log = Logger('MediaRenderer')
 
 class MRRoot(resource.Resource):
 
@@ -23,7 +25,7 @@ class MRRoot(resource.Resource):
         self.server = server
         
     def getChildWithDefault(self, path, request):
-        print 'MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client
+        log.info('MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
         if self.children.has_key(path):
             return self.children[path]
         if request.uri == '/':
@@ -32,12 +34,12 @@ class MRRoot(resource.Resource):
 
         
     def getChild(self, name, request):
-        print 'MSRoot getChild', name, request
+        log.info('MSRoot %s getChild %s' % name, request)
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
-        print 'MSRoot ch', ch
+        log.info('MSRoot ch', ch)
         return ch
         
     def listchilds(self, uri):

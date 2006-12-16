@@ -5,9 +5,9 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import os
 import string
 import socket
+import os, sys
 
 from zope.interface import implements, Interface
 from twisted.python import log, filepath, util
@@ -19,12 +19,13 @@ from twisted.web import resource
 
 import louie
 
-from coherence.upnp.core import service
-
 from coherence.upnp.core.ssdp import SSDPServer
 from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
 from coherence.upnp.core.utils import parse_xml
+
+from coherence.extern.logger import Logger
+log = Logger('Coherence')
 
 class IWeb(Interface):
 
@@ -62,7 +63,7 @@ Coherence - a Python UPnP A/V framework
         self.coherence = self.rootObject.coherence
 
     def childFactory(self, ctx, name):
-        #print 'WebUI childFactory:', name
+        log.info('WebUI childFactory: %s' % name)
         try:
             return self.rootObject.coherence.children[name]
         except:
@@ -75,7 +76,7 @@ Coherence - a Python UPnP A/V framework
         
     def render_listchilds(self, ctx, data):
         cl = []
-        #print 'children:', self.coherence.children
+        log.info('children: %s' % self.coherence.children)
         for c in self.coherence.children:
             device = self.coherence.get_device_with_id(c)
             if device != None:
@@ -105,23 +106,37 @@ class WebServer:
         self.site = appserver.NevowSite( self.web_root_resource)
         reactor.listenTCP( port, self.site)
         
-        print "WebServer on port %d ready" % port
+        log.msg( "WebServer on port %d ready" % port)
 
 
 class Coherence:
 
     def __init__(self):
-        print "Coherence UPnP framework starting..."
         self.enable_log = False
         self.devices = []
         
         self.children = {}
         self._callbacks = {}
-
+        
+        logmode = 'info'        # FIXME: get this from the config file
+                                #               and have one for every module
+        self.enable_log = True  # FIXME: set this to True if a logmode != 'none'
+        
+        log.disable(name='Coherence')
+        log.disable(name='SSDP')
+        log.disable(name='MSEARCH')
+        log.disable(name='Service')
+        log.disable(name='MediaServer')
+        log.disable(name='MediaRenderer')
+        
+        log.enable(name='Coherence')
+        log.enable(name='SSDP')
+        
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
 
-        self.ssdp_server = SSDPServer(self.enable_log)
+        log.msg("Coherence UPnP framework starting...")
+        self.ssdp_server = SSDPServer()
         louie.connect( self.add_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.remove_device', louie.Any)
         louie.connect( self.receiver, 'Coherence.UPnP.Device.detection_completed', louie.Any)
@@ -137,7 +152,7 @@ class Coherence:
         self.web_server_port = 30020
         self.hostname = socket.gethostbyname(socket.gethostname())
         #FIXME this doesn't work on systems with more than one network interface
-        print 'running on host:', self.hostname
+        log.msg('running on host: %s' % self.hostname)
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
         self.web_server = WebServer( self.web_server_port, self)
@@ -152,7 +167,7 @@ class Coherence:
             from coherence.upnp.devices.control_point import ControlPoint
             #ControlPoint( self)
         except ImportError:
-            print "Can't enable ControlPoint functions, sub-system not available."
+            log.msg("Can't enable ControlPoint functions, sub-system not available.")
 
         
         # are we supposed to start a MediaServer?
@@ -160,7 +175,7 @@ class Coherence:
             from coherence.upnp.devices.media_server import MediaServer
             MediaServer( self,version=2)
         except ImportError:
-            print "Can't enable MediaServer functions, sub-system not available."
+            log.msg("Can't enable MediaServer functions, sub-system not available.")
 
 
         # are we supposed to start a MediaRenderer?
@@ -168,7 +183,7 @@ class Coherence:
             from coherence.upnp.devices.media_renderer import MediaRenderer
             MediaRenderer( self)
         except ImportError:
-            print "Can't enable MediaRenderer functions, sub-system not available."
+            log.msg("Can't enable MediaRenderer functions, sub-system not available.")
         
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
@@ -186,7 +201,7 @@ class Coherence:
             for device in root_device.get_devices():
                 device.unsubscribe_service_subscriptions()
         self.ssdp_server.shutdown()
-        print 'Coherence UPnP framework shutdown'
+        log.msg('Coherence UPnP framework shutdown')
         
     def check_devices(self):
         """ iterate over devices and their embedded ones and renew subscriptions """
