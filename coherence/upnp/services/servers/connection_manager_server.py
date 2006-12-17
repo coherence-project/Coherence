@@ -31,7 +31,7 @@ class ConnectionManagerServer(service.Server, resource.Resource):
             backend = self.device.backend
         resource.Resource.__init__(self)
         service.Server.__init__(self, 'ConnectionManager', self.device.version, backend)
-
+        
         self.control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
@@ -43,10 +43,19 @@ class ConnectionManagerServer(service.Server, resource.Resource):
         self.set_variable(0, 'SinkProtocolInfo', '')
         self.set_variable(0, 'CurrentConnectionIDs', '')
         
-    def add_connection(self):
+    def add_connection(self, RemoteProtocolInfo,
+                             Direction,
+                             PeerConnectionID,
+                             PeerConnectionManager):
         id = self.next_connection_id
         self.next_connection_id += 1
-        self.connections[id] = {}
+        self.connections[id] = {'ProtocolInfo':RemoteProtocolInfo,
+                                'Direction':Direction,
+                                'PeerConnectionID':PeerConnectionID,
+                                'PeerConnectionManager':PeerConnectionManager,
+                                'AVTransportID':0,
+                                'RcsID':0,
+                                'Status':'OK'} #FIXME: get other services real ids
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         return id
@@ -58,6 +67,25 @@ class ConnectionManagerServer(service.Server, resource.Resource):
             pass
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
+        
+    def lookup_connection(self,id):
+        try:
+            print 'lookup_connection', self.connections[id]
+            return self.connections[id]
+        except:
+            return None
+            
+    def lookup_avt_id(self,id):
+        try:
+            return self.connections[id]['AVTransportID']
+        except:
+            return 0
+        
+    def lookup_rcs_id(self,id):
+        try:
+            return self.connections[id]['RcsID']
+        except:
+            return 0
         
     def listchilds(self, uri):
         cl = ''

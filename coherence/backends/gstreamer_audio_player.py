@@ -5,6 +5,7 @@
 
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
+from twisted.python import failure
 
 from coherence.upnp.core.soap_service import errorCode
 
@@ -80,14 +81,10 @@ class Player:
                 #print "player (%s) state_change:" %(message.src.get_path_string()), old, new, pending
                 if new == gst.STATE_PLAYING:
                     self.playing = True
-                    if self.server:
-                        self.connection_id = self.server.connection_manager_server.add_connection()
                     self.update_LC.start( 1, False)
                     self.update()
                 elif old == gst.STATE_PLAYING:
                     self.playing = False
-                    if self.server:
-                        self.server.connection_manager_server.remove_connection(self.connection_id)
                     self.update_LC.stop()
                     self.update()
                 #elif new == gst.STATE_READY:
@@ -176,7 +173,7 @@ class Player:
         #self.player.set_state(gst.STATE_PAUSED)
         self.player.set_state(gst.STATE_READY)
         self.server.av_transport_server.set_variable(0, 'CurrentTrackURI', uri)
-        self.server.av_transport_server.set_variable(0, 'TransportState', 'TRANSITIONING')
+        #self.server.av_transport_server.set_variable(0, 'TransportState', 'TRANSITIONING')
         self.server.av_transport_server.set_variable(0, 'AVTransportURIMetaData', 'NOT_IMPLEMENTED')
         self.server.av_transport_server.set_variable(0, 'CurrentTransportActions',
                                                             'Play,Stop,Pause,Seek,Next,Previous')
@@ -333,6 +330,70 @@ class Player:
         self.start(CurrentURI)
         return {}
 
+    def upnp_PrepareForConnection(self, *args, **kwargs):
+        """ check if we really support that mimetype """
+        RemoteProtocolInfo = kwargs['RemoteProtocolInfo']
+        """ if we are a MR and this in not 'Input'
+            then there is something strange going on
+        """
+        Direction = kwargs['Direction']
+        """ the InstanceID of the MS ? """
+        PeerConnectionID = kwargs['PeerConnectionID']
+        """ ??? """
+        PeerConnectionManager = kwargs['PeerConnectionManager']
+        if self.server:
+            self.connection_id = \
+                    self.server.connection_manager_server.add_connection(RemoteProtocolInfo,
+                                                                            Direction,
+                                                                            PeerConnectionID,
+                                                                            PeerConnectionManager)
+
+        return {'ConnectionID': self.connection_id, 'AVTransportID': 0, 'RcsID': 0}
+
+    def upnp_ConnectionComplete(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        """ remove this InstanceID
+            and the associated InstanceIDs @ AVTransportID and RcsID
+        """
+        if self.server:
+            self.server.connection_manager_server.remove_connection(self.connection_id)
+        return {}
+
+    def upnp_GetCurrentConnectionInfo(self, *args, **kwargs):
+        ConnectionID = int(kwargs['ConnectionID'])
+        """ return for this ConnectionID
+            the associated InstanceIDs @ AVTransportID and RcsID
+            ProtocolInfo
+            PeerConnectionManager
+            PeerConnectionID
+            Direction
+            Status
+            
+            or send a 706 if there isn't such a ConnectionID
+        """
+        connection = self.server.connection_manager_server.lookup_connection(ConnectionID)
+        print "upnp_GetCurrentConnectionInfo", connection
+        if connection == None:
+            return failure.Failure(errorCode(706))
+        else:
+            return {'AVTransportID':connection['AVTransportID'],
+                    'RcsID':connection['RcsID'],
+                    'ProtocolInfo':connection['ProtocolInfo'],
+                    'PeerConnectionManager':connection['PeerConnectionManager'],
+                    'PeerConnectionID':connection['PeerConnectionID'],
+                    'Direction':connection['Direction'],
+                    'Status':connection['Status'],
+                    }
+            
+    def upnp_GetPositionInfo(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        """ get track info for this InstanceID
+        
+            or send a 718 if there isn't such a InstanceID
+        """
+        return failure.Failure(errorCode(718))
+        return {}
+            
 if __name__ == '__main__':
 
     import sys
