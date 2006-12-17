@@ -26,15 +26,15 @@ class MRRoot(resource.Resource):
         
     def getChildWithDefault(self, path, request):
         log.info('MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
+        log.info( request.getAllHeaders())
         if self.children.has_key(path):
             return self.children[path]
         if request.uri == '/':
             return self
         return self.getChild(path, request)
 
-        
     def getChild(self, name, request):
-        log.info('MSRoot %s getChild %s' % name, request)
+        log.info('MSRoot %s getChild %s' % (name, request))
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):

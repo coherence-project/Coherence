@@ -270,6 +270,7 @@ feature provided by your editor.
 			<name>CurrentTrackMetaData</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
+			<defaultValue>NOT_IMPLEMENTED</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
@@ -300,6 +301,7 @@ feature provided by your editor.
 			<name>NextAVTransportURIMetaData</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
+			<defaultValue>NOT_IMPLEMENTED</defaultValue>
 		</stateVariable>
 
 		<stateVariable>

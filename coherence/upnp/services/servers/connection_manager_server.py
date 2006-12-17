@@ -35,7 +35,7 @@ class ConnectionManagerServer(service.Server, resource.Resource):
         self.control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
-        self.next_connection_id = 1
+        self.next_connection_id = 0
         
         self.connections = {}
         
@@ -70,7 +70,6 @@ class ConnectionManagerServer(service.Server, resource.Resource):
         
     def lookup_connection(self,id):
         try:
-            print 'lookup_connection', self.connections[id]
             return self.connections[id]
         except:
             return None

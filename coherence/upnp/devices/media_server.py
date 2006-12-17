@@ -76,7 +76,7 @@ class MSRoot(resource.Resource):
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
-        log.info('MSRoot ch %s', ch)
+        log.info('MSRoot ch', ch)
         return ch
         
     def listchilds(self, uri):

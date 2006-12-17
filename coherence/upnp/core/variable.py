@@ -24,9 +24,13 @@ class StateVariable:
         self.implementation = implementation
         self.data_type = data_type
         self.allowed_values = values
+        self.has_vendor_values = False
         self.old_value = ''
         self.value = ''
-        self.send_events = send_events
+        if send_events in [1,'1','true','True','yes','Yes']:
+            self.send_events = True
+        else:
+            self.send_events = False
         self._callbacks = []
         if isinstance( self.service, service.Server):
             self.moderated = self.service.is_variable_moderated(name)
@@ -34,6 +38,8 @@ class StateVariable:
 
     def update(self, value):
         self.old_value = self.value
+        # MOD if value == self.value:
+        #    return
         #print "variable update", self.name, value, self.service
         if not isinstance( self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
@@ -65,7 +71,9 @@ class StateVariable:
                 if self.data_type == 'string':
                     value = str(value)
                     if len(self.allowed_values):
-                        if value.upper() in [v.upper() for v in self.allowed_values]:
+                        if self.has_vendor_values:
+                            self.value = value
+                        elif value.upper() in [v.upper() for v in self.allowed_values]:
                             self.value = value
                         else:
                             print "Variable %s update, value %s doesn't fit for variable" % (self.name, value)
@@ -95,10 +103,12 @@ class StateVariable:
                 self.value = int(value)
         if isinstance( self.service, service.Service):
             self.notify()
-        elif self.moderated:
+        else:
             self.updated = True
-            if hasattr(self.service,'last_change'):
+            #print self.service.last_change
+            if self.service.last_change != None:
                 self.service.last_change.updated = True
+                #print self.service.last_change.updated
         #print "variable update", self.name, self.value, self.moderated
 
     def subscribe(self, callback):

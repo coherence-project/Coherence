@@ -233,9 +233,9 @@ class Server:
         self._variables = {0: {}}
         self._subscribers = {}
         
+        self.last_change = None
         self.init_var_and_actions()
 
-        self.last_change = None
         try:
             if 'LastChange' in moderated_variables[self.service_type]:
                 self.last_change = self._variables[0]['LastChange']
@@ -249,8 +249,8 @@ class Server:
         
         if moderated_variables.has_key(self.service_type):
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
-            self.check_moderated_loop.start(5.0, now=False)
-            #self.check_moderated_loop.start(0.5, now=False)
+            #self.check_moderated_loop.start(5.0, now=False)
+            self.check_moderated_loop.start(0.5, now=False)
 
         #simulation_loop = task.LoopingCall(self.simulate_notification)
         #simulation_loop.start(60.0, now=False)
@@ -269,7 +269,7 @@ class Server:
 
     def new_subscriber(self, subscriber):
         instance = 0
-        notify = [v for v in self._variables[instance].values() if v.send_events == 'yes']
+        notify = [v for v in self._variables[instance].values() if v.send_events == True]
         log.info("new_subscriber", subscriber, notify)
         if len(notify) <= 0:
             return
@@ -298,7 +298,9 @@ class Server:
         try:
             variable = self._variables[instance][variable_name]
             variable.update(value)
-            if(variable.send_events and variable.moderated == False and len(self._subscribers) > 0):
+            if(variable.send_events == True and
+                variable.moderated == False and
+                len(self._subscribers) > 0):
                 xml = self.build_single_notification(instance, variable_name, variable.value)
                 for s in self._subscribers.values():
                     event.send_notification(s, xml)
@@ -363,10 +365,11 @@ class Server:
         #print self._subscribers
         if len(self._subscribers) <= 0:
             return
-        #print "check_moderated for %s" % self.id
         variables = moderated_variables[self.get_type()]
+        #print variables
         notify = []
         for v in variables:
+            #print self._variables[0][v].name, self._variables[0][v].updated
             if self._variables[0][v].updated == True:
                 self._variables[0][v].updated = False
                 notify.append(self._variables[0][v])
@@ -425,6 +428,12 @@ class Server:
             default_value = var_node.findtext('defaultValue')
             if default_value:
                 self._variables.get(instance)[name].update(default_value)
+            allowed_value_list = var_node.find('allowedValueList')
+            if allowed_value_list:
+                vendor_values = allowed_value_list.attrib.get(
+                                    '{urn:schemas-beebits-org:service-1-0}X_withVendorDefines',
+                                    False)
+                self._variables.get(instance)[name].has_vendor_values = vendor_values
 
 class scpdXML(static.Data):
 
@@ -450,9 +459,13 @@ class scpdXML(static.Data):
         e = SubElement( root, 'serviceStateTable')
         for var in server._variables[0].values():
             s = SubElement( e, 'stateVariable')
-            s.attrib['sendEvents'] = var.send_events
+            if var.send_events == True:
+                s.attrib['sendEvents'] = 'yes'
+            else:
+                s.attrib['sendEvents'] = 'no'
             SubElement( s, 'name').text = var.name
             SubElement( s, 'dataType').text = var.data_type
+            #if(not var.has_vendor_values and len(var.allowed_values)):
             if len(var.allowed_values):
                 v = SubElement( s, 'allowedValueList')
                 for value in var.allowed_values:
@@ -493,7 +506,7 @@ class ServiceControl:
                     #print "r", r
             self.service.propagate_notification(notify)
         r= { '%sResponse'%action.name: r}
-        #print 'action_results', r
+        log.info( 'action_results', r)
         return r
         
     def soap__generic(self, *args, **kwargs):

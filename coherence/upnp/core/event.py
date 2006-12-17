@@ -14,6 +14,10 @@ from twisted.internet.protocol import Protocol, ClientCreator
 
 from coherence.upnp.core import utils
 
+from coherence.extern.logger import Logger
+log = Logger('Event')
+
+
 global hostname, web_server_port
 hostname = None
 web_server_port = None
@@ -30,11 +34,10 @@ class EventServer(resource.Resource):
         web_server_port = self.coherence.web_server_port
 
     def render_NOTIFY(self, request):
-        #print "EventServer received request, code:", request.code
+        log.debug("EventServer received request, code:", request.code)
         data = request.content.getvalue()
         if request.code != 200:
-            print "data:"
-            print data
+            log.info("data:", data)
         else:
             headers = request.getAllHeaders()
             sid = headers['sid']
@@ -74,14 +77,15 @@ class EventSubscriptionServer(resource.Resource):
         self.subscribers = service.get_subscribers()
         
     def render_SUBSCRIBE(self, request):
-        #print "EventSubscriptionServer %s received request, code: %d" % (self.service.id, request.code)
+        headers = request.getAllHeaders()
+        log.debug( "EventSubscriptionServer %s received request from %s, code: %d" % (self.service.id, request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
-            print "data:"
-            print data
+            log.info("data:", data)
         else:
-            headers = request.getAllHeaders()
             try:
+                #print self.subscribers
+                #print headers['sid']
                 if self.subscribers.has_key(headers['sid']):
                     s = self.subscribers[headers['sid']]
                 elif not headers.has_key('callback'):
@@ -108,11 +112,10 @@ class EventSubscriptionServer(resource.Resource):
         return ""
         
     def render_UNSUBSCRIBE(self, request):
-        #print "EventSubscriptionServer received request, code:", request.code
+        log.debug("EventSubscriptionServer received request, code:", request.code)
         data = request.content.getvalue()
         if request.code != 200:
-            print "data:"
-            print data
+            log.info("data:", data)
         else:
             headers = request.getAllHeaders()
             try:
@@ -257,7 +260,7 @@ def send_notification(s, xml):
                     xml]
 
         request = '\r\n'.join(request)
-        #print "event.send_notification.send_request", request
+        log.debug("send_notification.send_request to %s:%d" % (host,port), request)
         s['seq'] += 1
         return p.transport.write(request)
 

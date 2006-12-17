@@ -9,6 +9,8 @@ from twisted.python import failure
 
 from coherence.upnp.core.soap_service import errorCode
 
+import string
+
 import pygst
 pygst.require('0.10')
 import gst
@@ -56,12 +58,10 @@ class Player:
                                     timeout=1)
             if message == None:
                 return
-            if message.src.get_name() == self.player.get_name():
-                # FIXME: isn't there some other way to get only messages regarding our element?
-                self.on_message(self.bus, message)
+            self.on_message(self.bus, message)
             
     def on_message(self, bus, message):
-        print "on_message", message
+        #print "on_message", message
         #print "from", message.src.get_name()
         t = message.type
         #print t
@@ -95,14 +95,14 @@ class Player:
             self.seek('-0')
         
     def query_position( self):
-        print "query_position"
+        #print "query_position"
         try:
             position, format = self.player.query_position(gst.FORMAT_TIME)
         except:
             print "CLOCK_TIME_NONE", gst.CLOCK_TIME_NONE
             position = gst.CLOCK_TIME_NONE
             position = 0
-        print position
+        #print position
 
         if self.duration == None:
             try:
@@ -110,7 +110,7 @@ class Player:
             except:
                 self.duration = gst.CLOCK_TIME_NONE
                 self.duration = 0
-        print self.duration
+        #print self.duration
             
         r = {}
         if self.duration == 0:
@@ -131,6 +131,7 @@ class Player:
 
 
     def update( self):
+        #print "update"
         _, current,_ = self.player.get_state()
         if( current != gst.STATE_PLAYING and current != gst.STATE_PAUSED and current != gst.STATE_READY):
             print "I'm out"
@@ -143,24 +144,31 @@ class Player:
             state = 'idle'
 
         position = self.query_position()
+        #print position
 
         for view in self.view:
             view.status( self.status( position))
 
-        try:
-            if position[u'raw']:
-                print "%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
-                                                string.atol(position[u'raw'][u'position'])/1000000000,
-                                                string.atol(position[u'raw'][u'remaining'])/1000000000,
-                                                string.atol(position[u'raw'][u'duration'])/1000000000,
-                                                position[u'percent'][u'position'],
-                                                position[u'percent'][u'remaining'],
-                                                position[u'human'][u'position'],
-                                                position[u'human'][u'remaining'],
-                                                position[u'human'][u'duration'])
-        except:
-            pass
-                                                
+        if position.has_key(u'raw'):
+            print "%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
+                            string.atol(position[u'raw'][u'position'])/1000000000,
+                            string.atol(position[u'raw'][u'remaining'])/1000000000,
+                            string.atol(position[u'raw'][u'duration'])/1000000000,
+                            position[u'percent'][u'position'],
+                            position[u'percent'][u'remaining'],
+                            position[u'human'][u'position'],
+                            position[u'human'][u'remaining'],
+                            position[u'human'][u'duration'])
+            self.server.av_transport_server.set_variable(0, 'CurrentTrack', 0)
+            duration = string.atol(position[u'raw'][u'duration'])
+            m,s = divmod( duration/1000000000, 60)
+            h,m = divmod(m,60)
+            self.server.av_transport_server.set_variable(0, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
+            position = string.atol(position[u'raw'][u'position'])
+            m,s = divmod( position/1000000000, 60)
+            h,m = divmod(m,60)
+            self.server.av_transport_server.set_variable(0, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
+            self.server.av_transport_server.set_variable(0, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
         
     def load( self, uri):
         print "load -->", uri
@@ -372,7 +380,6 @@ class Player:
             or send a 706 if there isn't such a ConnectionID
         """
         connection = self.server.connection_manager_server.lookup_connection(ConnectionID)
-        print "upnp_GetCurrentConnectionInfo", connection
         if connection == None:
             return failure.Failure(errorCode(706))
         else:
@@ -385,7 +392,7 @@ class Player:
                     'Status':connection['Status'],
                     }
             
-    def upnp_GetPositionInfo(self, *args, **kwargs):
+    def Xupnp_GetPositionInfo(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         """ get track info for this InstanceID
         
