@@ -120,7 +120,7 @@ class ElisaMediaStore:
             return r
     
         def errback(r):
-            raise errorCode(701)
+            return failure.Failure(errorCode(701))
 
         id = ObjectID
         if id == 0:
