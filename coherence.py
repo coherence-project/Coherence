@@ -126,11 +126,17 @@ class Coherence:
         log.disable(name='SSDP')
         log.disable(name='MSEARCH')
         log.disable(name='Service')
+        log.disable(name='SOAP')
         log.disable(name='MediaServer')
         log.disable(name='MediaRenderer')
         
         log.enable(name='Coherence')
-        log.enable(name='SSDP')
+        log.enable(name='MediaServer')
+        log.set_level(name='MediaServer')
+        #log.enable(name='Service')
+        log.set_level(name='SOAP')
+        #log.enable(name='SOAP')
+        log.set_level(name='Service')
         
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
@@ -151,7 +157,7 @@ class Coherence:
 
         self.web_server_port = 30020
         self.hostname = socket.gethostbyname(socket.gethostname())
-        #FIXME this doesn't work on systems with more than one network interface
+        #FIXME: this doesn't work on systems with more than one network interface
         log.msg('running on host: %s' % self.hostname)
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 

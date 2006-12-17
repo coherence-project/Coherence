@@ -13,6 +13,9 @@ from twisted.internet import defer
 
 import SOAPpy
 
+from coherence.extern.logger import Logger
+log = Logger('SOAP')
+
 class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
@@ -24,7 +27,7 @@ class UPnPPublisher(soap.SOAPPublisher):
     different way than the SOAPPublisher class does."""
 
     def _sendResponse(self, request, response, status=200):
-        #print '_sendResponse', status, response
+        log.info('_sendResponse', status, response)
         request.setResponseCode(status)
 
         if self.encoding is not None:
@@ -47,12 +50,12 @@ class UPnPPublisher(soap.SOAPPublisher):
         self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName):
-        #print '_gotResult', result, request, methodName
+        log.info('_gotResult', result, request, methodName)
         response = SOAPpy.buildSOAP(kw=result, encoding=self.encoding)
         self._sendResponse(request, response)
 
     def _gotError(self, failure, request, methodName):
-        #print '_gotError', failure, failure.value
+        log.info('_gotError', failure, failure.value)
         e = failure.value
         status = 500
         if isinstance(e, SOAPpy.faultType):
@@ -61,7 +64,7 @@ class UPnPPublisher(soap.SOAPPublisher):
             if isinstance(e, errorCode):
                 status = e.status
             else:
-                failure.printTraceback(file = log.logfile)
+                failure.printTraceback()
             fault = SOAPpy.faultType("%s:Server" % SOAPpy.NS.ENV_T, "Method %s failed." % methodName)
         response = SOAPpy.buildSOAP(fault, encoding=self.encoding)
         self._sendResponse(request, response, status=status)
@@ -79,7 +82,7 @@ class UPnPPublisher(soap.SOAPPublisher):
         """Handle a SOAP command."""
         data = request.content.read()
         headers = request.getAllHeaders()
-        print 'soap_request:', headers
+        log.info('soap_request:', headers)
 
         p, header, body, attrs = SOAPpy.parseSOAPRPC(data, 1, 1, 1)
         methodName, args, kwargs, ns = p._name, p._aslist, p._asdict, p._ns

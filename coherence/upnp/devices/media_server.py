@@ -187,6 +187,7 @@ class MediaServer:
         d.addCallback(self.backend_ready)
         
         def failure(x):
+            log.msg(x)
             log.msg('backend not installed, MediaServer activation aborted')
             
         d.addErrback(failure)

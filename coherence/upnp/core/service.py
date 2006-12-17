@@ -270,7 +270,7 @@ class Server:
     def new_subscriber(self, subscriber):
         instance = 0
         notify = [v for v in self._variables[instance].values() if v.send_events == 'yes']
-        #print "new_subscriber", subscriber, notify
+        log.info("new_subscriber", subscriber, notify)
         if len(notify) <= 0:
             return
         
@@ -473,7 +473,7 @@ class ServiceControl:
                             if no:  get StateVariable values and
                                     add them to result dict
         """
-        #print 'get_action_results', result
+        log.info('get_action_results', result)
         #print 'get_action_results', action
         r = result
         notify = []
@@ -506,7 +506,7 @@ class ServiceControl:
         except:
             return failure.Failure(errorCode(401))
         
-        print "soap__generic", action, __name__, kwargs
+        log.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
 
         in_arguments = action.get_in_arguments()
@@ -515,10 +515,11 @@ class ServiceControl:
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                print "argument %s not valid for action %s" % (arg_name,action.name)
+                log.critical('argument %s not valid for action %s' % (arg_name,action.name))
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
-            print "argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],action.name)
+            log.critical('argument %s missing for action %s' %
+                                ([ a.get_name() for a in in_arguments],action.name))
             return failure.Failure(errorCode(402))
         
         def callit( *args, **kwargs):
@@ -533,7 +534,7 @@ class ServiceControl:
         def failure(x):
             #print 'failure', x
             #log.err()
-            log.msg('soap__generic error during call processing')
+            log.error('soap__generic error during call processing')
             return x
 
         # call plugin method for this action
