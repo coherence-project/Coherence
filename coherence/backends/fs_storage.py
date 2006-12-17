@@ -11,6 +11,7 @@ import mimetypes
 mimetypes.init()
 
 from twisted.python.filepath import FilePath
+from twisted.python import failure
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 from coherence.upnp.core.soap_service import errorCode
@@ -283,7 +284,7 @@ class FSStore:
             root_id = 1000
             item = self.get_by_id(root_id)
             if item  == None:
-                raise errorCode(701)
+                return failure.Failure(errorCode(701))
                 
             items = []
             containers = [item]
@@ -305,7 +306,7 @@ class FSStore:
 
             item = self.get_by_id(root_id)
             if item  == None:
-                raise errorCode(701)
+                return failure.Failure(errorCode(701))
                 
             items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
             total = item.child_count
@@ -338,7 +339,7 @@ class FSStore:
         item = self.get_by_id(root_id)
         
         if item  == None:
-            raise errorCode(701)
+            return failure.Failure(errorCode(701))
             
         didl = DIDLElement()
 
