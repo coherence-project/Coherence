@@ -58,12 +58,15 @@ class MSRoot(resource.Resource):
         self.server.connection_manager_server.remove_connection(id)
 
     def getChild(self, name, request):
-        log.info('getChild %s, %s' % name, request)
+        log.info('getChild %s, %s' % (name, request))
         ch = self.store.get_by_id(name)
         if ch != None:
             p = ch.get_path()
             if os.path.exists(p):
-                new_id = self.server.connection_manager_server.add_connection()
+                new_id = self.server.connection_manager_server.add_connection('',
+                                                                            'Output',
+                                                                            -1,
+                                                                            '')
                 log.msg("startup, add %d to connection table" % new_id)
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
