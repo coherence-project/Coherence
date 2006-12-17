@@ -109,44 +109,45 @@ class IWatchPoint:
             if callback != None:
                 callback[0](self, filename, events, callback[1])
 
-class INotify(FileDescriptor):
+class INotify(FileDescriptor, object):
     __instance = None  # Singleton
-    
-    def __new__(cls):
-        if not INotify.__instance:
-            INotify.__instance = object.__new__(cls)
 
-        return INotify.__instance
+    def __new__(cls, *args, **kwargs):
+        obj = getattr(cls,'_instance_',None)
+        if obj is not None:
+            return obj
+        else:
+            obj = super(INotify, cls).__new__(cls, *args, **kwargs)
+            cls._instance_ = obj
+            if ctypes == None:
+                raise SystemError, "ctypes not detected on this system, INotify support disabled"
+            try:
+                obj.libc = ctypes.CDLL("libc.so.6")
+            except:
+                raise SystemError, "libc not found, INotify support disabled"
+                
+            machine = platform.machine()
+            try:
+                obj._init_syscall_id = _inotify_syscalls[machine][0]
+                obj._add_watch_syscall_id = _inotify_syscalls[machine][1]
+                obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
+            except:
+                raise SystemError, "unknown system, INotify support disabled"
         
-    def __init__(self):
-        if ctypes == None:
-            raise SystemError, "ctypes not detected on this system, INotify support disabled"
-        try:
-            self.libc = ctypes.CDLL("libc.so.6")
-        except:
-            raise SystemError, "libc not found, INotify support disabled"
+            FileDescriptor.__init__(obj)
+
+            obj._fd = obj.inotify_init()
+            if obj._fd < 0:
+                raise SystemError, "INotify support not detected on this system."
+
+            fdesc.setNonBlocking(obj._fd) # FIXME do we need this?
             
-        machine = platform.machine()
-        try:
-            self._init_syscall_id = _inotify_syscalls[machine][0]
-            self._add_watch_syscall_id = _inotify_syscalls[machine][1]
-            self._rm_watch_syscall_id = _inotify_syscalls[machine][2]
-        except:
-            raise SystemError, "unknown system, INotify support disabled"
-    
-        FileDescriptor.__init__(self)
+            reactor.addReader(obj)
 
-        self._fd = self.inotify_init()
-        if self._fd < 0:
-            raise SystemError, "INotify support not detected on this system."
+            obj._buffer = ''
+            obj._watchpoints = {}
+            return obj
 
-        fdesc.setNonBlocking(self._fd) # FIXME do we need this?
-        
-        reactor.addReader(self)
-
-        self._buffer = ''
-        self._watchpoints = {}
-        
     def __del__(self):
         if os and self._fd >= 0:
             os.close(self._fd)
@@ -171,8 +172,8 @@ class INotify(FileDescriptor):
         return s
 
     def notify(self, iwp, filename, mask, parameter=None):
-        print "Event %s on %s %s" % (
-            ', '.join(self._flag_to_human(mask)), iwp.path, filename)
+        print "event %s on %s %s" % (
+            ', '.join(self.flag_to_human(mask)), iwp.path, filename)
 
     def doRead(self):
         self._buffer += os.read(self._fd, 1024)
@@ -238,6 +239,10 @@ class INotify(FileDescriptor):
 if __name__ == '__main__':
 
     i = INotify()
+    print i
     i.watch('/tmp', auto_add = True, callbacks=(i.notify,None))
 
+    i2 = INotify()
+    print i2
+    i2.watch('/', auto_add = True, callbacks=(i.notify,None))
     reactor.run()
