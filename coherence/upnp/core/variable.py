@@ -97,7 +97,7 @@ class StateVariable:
             self.notify()
         elif self.moderated:
             self.updated = True
-            if self.service.last_change:
+            if hasattr(self.service,'last_change'):
                 self.service.last_change.updated = True
         #print "variable update", self.name, self.value, self.moderated
 
