@@ -35,7 +35,7 @@ class ConnectionManagerServer(service.Server, resource.Resource):
         self.control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
-        self.next_connection_id = 0
+        self.next_connection_id = 1
         
         self.connections = {}
         

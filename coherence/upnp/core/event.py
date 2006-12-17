@@ -77,12 +77,12 @@ class EventSubscriptionServer(resource.Resource):
         self.subscribers = service.get_subscribers()
         
     def render_SUBSCRIBE(self, request):
-        headers = request.getAllHeaders()
         log.debug( "EventSubscriptionServer %s received request from %s, code: %d" % (self.service.id, request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
             log.info("data:", data)
         else:
+            headers = request.getAllHeaders()
             try:
                 #print self.subscribers
                 #print headers['sid']
