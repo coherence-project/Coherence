@@ -1,0 +1,22 @@
+#! /usr/bin/env python
+#
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2006, Frank Scholz <coherence@beebits.net>
+
+from twisted.internet import reactor
+from coherence.base import Coherence
+
+from coherence.upnp.devices.control_point import ControlPoint
+from coherence.upnp.devices.media_server import MediaServer
+from coherence.upnp.devices.media_renderer import MediaRenderer
+
+def main():
+
+    # get settings or options
+    Coherence(plugins=[MediaServer,MediaRenderer])
+    reactor.run()
+    
+if __name__ == '__main__':
+    main()

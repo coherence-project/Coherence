@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-#
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -111,7 +109,7 @@ class WebServer:
 
 class Coherence:
 
-    def __init__(self):
+    def __init__(self, plugins=[]):
         self.enable_log = False
         self.devices = []
         
@@ -173,8 +171,12 @@ class Coherence:
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-
-    
+        for plugin in plugins:
+            try:
+                plugin(self)
+            except:
+                log.critical("Can't enable %s plugin, sub-system not available.", plugin)
+        """
         # are we supposed to start a ControlPoint?
         try:
             from coherence.upnp.devices.control_point import ControlPoint
@@ -197,6 +199,13 @@ class Coherence:
             MediaRenderer( self)
         except ImportError:
             log.msg("Can't enable MediaRenderer functions, sub-system not available.")
+        """
+        
+    def add_plugin(self, plugin):
+        try:
+            plugin(self)
+        except:
+            log.critical("Can't enable %s plugin, sub-system not available.", plugin)
         
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
@@ -289,12 +298,3 @@ class Coherence:
     def remove_web_resource(self, name):
         # XXX implement me
         pass
-        
-def main():
-
-    # get settings or options
-    Coherence()
-    reactor.run()
-    
-if __name__ == '__main__':
-    main()
