@@ -175,9 +175,15 @@ class Coherence:
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-        while plugins:
-            plugin = plugins.pop(0)
-            arguments = plugins.pop(0)
+        for p in plugins:
+            if len(p) == 1:
+                plugin = p[0]
+                arguments = {}
+            elif len(p) == 2:
+                plugin, arguments = p
+            else:
+                log.critical("Problem with plugin definition, skipping it!")
+                continue
             if not isinstance(arguments, dict):
                 arguments = {}
             self.add_plugin(plugin, **arguments)

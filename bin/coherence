@@ -17,7 +17,8 @@ def main():
 
     # get settings or options
     
-    c = Coherence(plugins=[FSStore, {'content_directory':'tests/content'}, Player, {}])
+    c = Coherence(plugins=[ (FSStore, {'content_directory':'tests/content'}),
+                            (Player, {})])
     #c.add_plugin(FSStore, content_directory='tests/content', version=1)
     
 if __name__ == '__main__':
