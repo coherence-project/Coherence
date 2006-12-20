@@ -166,7 +166,11 @@ class RootDeviceXML(static.Data):
         
 class MediaServer:
 
-    def __init__(self, coherence, version=2):
+    def __init__(self, coherence, backend,
+                    version=2,
+                    name='my content',
+                    content_directory='tests/content',
+                    exclude_patterns=()):
         self.coherence = coherence
         self.device_type = 'MediaServer'
         self.version = version
@@ -180,13 +184,10 @@ class MediaServer:
         
         log.msg('MediaServer urlbase %s' % urlbase)
 
-        p = 'tests/content'
-
-        
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
-        d = threads.deferToThread(FSStore, 'my content', p, self.urlbase, (), self)
-        #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', 'localhost, self.urlbase, (), self)
+        d = threads.deferToThread(backend, name, content_directory, self.urlbase, exclude_patterns, self)
+        #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', localhost, self.urlbase, (), self)
         d.addCallback(self.backend_ready)
         
         def failure(x):

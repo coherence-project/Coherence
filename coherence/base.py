@@ -22,6 +22,10 @@ from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
 from coherence.upnp.core.utils import parse_xml
 
+from coherence.upnp.devices.control_point import ControlPoint
+from coherence.upnp.devices.media_server import MediaServer
+from coherence.upnp.devices.media_renderer import MediaRenderer
+
 from coherence.extern.logger import Logger
 log = Logger('Coherence')
 
@@ -171,42 +175,23 @@ class Coherence:
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-        for plugin in plugins:
+        while plugins:
+            plugin = plugins.pop(0)
+            arguments = plugins.pop(0)
+            if not isinstance(arguments, dict):
+                arguments = {}
+            self.add_plugin(plugin, **arguments)
+        
+    def add_plugin(self, plugin, **kwargs):
+        for device in plugin.implements:
+            device_class=globals().get(device)
             try:
-                plugin(self)
+                device_class(self, plugin, **kwargs)
+            except KeyError:
+                log.critical("Can't enable %s plugin, sub-system %s unknown!" % (plugin, device))
             except:
-                log.critical("Can't enable %s plugin, sub-system not available.", plugin)
-        """
-        # are we supposed to start a ControlPoint?
-        try:
-            from coherence.upnp.devices.control_point import ControlPoint
-            #ControlPoint( self)
-        except ImportError:
-            log.msg("Can't enable ControlPoint functions, sub-system not available.")
-
-        
-        # are we supposed to start a MediaServer?
-        try:
-            from coherence.upnp.devices.media_server import MediaServer
-            MediaServer( self,version=2)
-        except ImportError:
-            log.msg("Can't enable MediaServer functions, sub-system not available.")
-
-
-        # are we supposed to start a MediaRenderer?
-        try:
-            from coherence.upnp.devices.media_renderer import MediaRenderer
-            MediaRenderer( self)
-        except ImportError:
-            log.msg("Can't enable MediaRenderer functions, sub-system not available.")
-        """
-        
-    def add_plugin(self, plugin):
-        try:
-            plugin(self)
-        except:
-            log.critical("Can't enable %s plugin, sub-system not available.", plugin)
-        
+                log.critical("Can't enable %s plugin, sub-system %s not available!" % (plugin, device))
+            
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
         #print kwargs

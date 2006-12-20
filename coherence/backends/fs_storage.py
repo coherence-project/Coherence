@@ -116,6 +116,8 @@ class FSItem:
 
 class FSStore:
 
+    implements = ['MediaServer']
+    
     def __init__(self, name, path, urlbase, ignore_patterns, server):
         self.next_id = 1000
         self.name = name

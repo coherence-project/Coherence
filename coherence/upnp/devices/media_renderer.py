@@ -112,7 +112,9 @@ class RootDeviceXML(static.Data):
         
 class MediaRenderer:
 
-    def __init__(self, coherence, version=2):
+    def __init__(self, coherence, backend,
+                    version=2,
+                    name='my player'):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
         self.version = version

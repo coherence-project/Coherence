@@ -8,15 +8,18 @@
 from twisted.internet import reactor
 from coherence.base import Coherence
 
-from coherence.upnp.devices.control_point import ControlPoint
-from coherence.upnp.devices.media_server import MediaServer
-from coherence.upnp.devices.media_renderer import MediaRenderer
+from coherence.backends.fs_storage import FSStore
+from coherence.backends.elisa_storage import ElisaMediaStore
+
+from coherence.backends.gstreamer_audio_player import Player
 
 def main():
 
     # get settings or options
-    Coherence(plugins=[MediaServer,MediaRenderer])
-    reactor.run()
+    
+    c = Coherence(plugins=[FSStore, {'content_directory':'tests/content'}, Player, {}])
+    #c.add_plugin(FSStore, content_directory='tests/content', version=1)
     
 if __name__ == '__main__':
-    main()
+    reactor.callWhenRunning(main)
+    reactor.run()

@@ -33,6 +33,7 @@ class Player:
 
     """
 
+    implements = ['MediaRenderer']
 
     def __init__(self, server):
         self.player = gst.element_factory_make("playbin", "myplayer")
