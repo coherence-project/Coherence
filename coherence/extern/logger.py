@@ -32,11 +32,14 @@ class _Logger(object):
             obj.log = logging.getLogger('.')
             obj.log.setLevel(logging.INFO)
             obj.feeds = {}
+            obj.master_level = None
             return obj
 
     def __init__(self,name='',level=LOG_DEBUG):
         """ a LOG feed registers with us """
         if not self.feeds.has_key(name):
+            if self.master_level:
+                level = self.master_level
             self.feeds[name] = {'active':True,'level':level}
         
     def send(self, name, level, *args):
@@ -66,6 +69,11 @@ class _Logger(object):
             self.feeds[name]['level'] = level
         except KeyError:
             self.feeds[name] = {'active':False,'level':level}
+            
+    def set_master_level(self,level):
+        self.master_level = level
+        for feed in self.feeds.values():
+            feed['level'] = level
         
 class Logger:
     
@@ -108,6 +116,19 @@ class Logger:
         if name == None:
             name=self.name
         self.log.set_level(name,level)
+        
+    def set_warning_level(self, name=None):
+        if name == None:
+            name=self.name
+        self.log.set_level(name,LOG_WARNING)
+        
+    def set_critical_level(self, name=None):
+        if name == None:
+            name=self.name
+        self.log.set_level(name,LOG_CRITICAL)
+        
+    def set_master_level(self, level=LOG_DEBUG):
+        self.log.set_master_level(level)
         
     def overwrite(self,name,level=None,active=None):
         if level:
