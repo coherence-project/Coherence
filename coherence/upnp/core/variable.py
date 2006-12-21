@@ -6,13 +6,16 @@
 
 from coherence.upnp.core import utils
 try:
-    #FIXME
+    #FIXME:
     # there is some circular import, service imports variable, variable imports service
-    # how is this done properly
+    # how is this done properly?
     #
     from coherence.upnp.core import service
 except ImportError:
     import service
+    
+from coherence.extern.logger import Logger
+log = Logger('Variable')
 
 class StateVariable:
 
@@ -32,7 +35,7 @@ class StateVariable:
         else:
             self.send_events = False
         self._callbacks = []
-        if isinstance( self.service, service.Server):
+        if isinstance( self.service, service.ServiceServer):
             self.moderated = self.service.is_variable_moderated(name)
             self.updated = False
 
@@ -76,7 +79,7 @@ class StateVariable:
                         elif value.upper() in [v.upper() for v in self.allowed_values]:
                             self.value = value
                         else:
-                            print "Variable %s update, value %s doesn't fit for variable" % (self.name, value)
+                            log.warning("Variable %s update, value %s doesn't fit for variable" % (self.name, value))
                     else:
                         self.value = value
                 elif self.data_type == 'boolean':

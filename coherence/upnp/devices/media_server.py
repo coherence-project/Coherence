@@ -15,6 +15,8 @@ from twisted.python import util
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
+from coherence.upnp.core.service import ServiceServer
+
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
 from coherence.upnp.services.servers.media_receiver_registrar_server import MediaReceiverRegistrarServer
@@ -188,13 +190,15 @@ class MediaServer:
             as we can't tell for sure that every backend is implemented properly """
         d = threads.deferToThread(backend, name, content_directory, self.urlbase, exclude_patterns, self)
         #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', localhost, self.urlbase, (), self)
-        d.addCallback(self.backend_ready)
         
-        def failure(x):
-            log.msg(x)
-            log.msg('backend not installed, MediaServer activation aborted')
+        def backend_failure(x):
+            log.critical('backend not installed, MediaServer activation aborted')
             
-        d.addErrback(failure)
+        def service_failure(x):
+            log.critical('required service not available, MediaServer activation aborted')
+            
+        d.addCallback(self.backend_ready).addErrback(service_failure)
+        d.addErrback(backend_failure)
         
     def backend_ready(self, backend):
         self._services = []
@@ -202,15 +206,26 @@ class MediaServer:
         
         self.backend = backend
         
-        self.connection_manager_server = ConnectionManagerServer(self)
-        self._services.append(self.connection_manager_server)
+        try:
+            self.connection_manager_server = ConnectionManagerServer(self)
+            self._services.append(self.connection_manager_server)
+        except LookupError,msg:
+            log.warning( 'ConnectionManagerServer', msg)
+            raise LookupError,msg
         
-        self.content_directory_server = ContentDirectoryServer(self)
-        self._services.append(self.content_directory_server)
+        try:
+            self.content_directory_server = ContentDirectoryServer(self)
+            self._services.append(self.content_directory_server)
+        except LookupError,msg:
+            log.warning( 'ContentDirectoryServer', msg)
+            raise LookupError,msg
         
-        self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,
+        try:
+            self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,
                                                         backend=FakeMediaReceiverRegistrarBackend())
-        self._services.append(self.media_receiver_registrar_server)
+            self._services.append(self.media_receiver_registrar_server)
+        except LookupError,msg:
+            log.warning( 'MediaReceiverRegistrarServer (optional)', msg)
         
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:

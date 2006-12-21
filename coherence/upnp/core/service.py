@@ -209,7 +209,7 @@ moderated_variables = \
             ['LastChange'],
         }
 
-class Server:
+class ServiceServer:
 
     def __init__(self, id, version, backend):
         self.id = id
@@ -398,18 +398,39 @@ class Server:
             if action_node.find('Optional') != None:
                 implementation = 'optional'
             arguments = []
+            needs_callback = False
             for argument in action_node.findall('.//argument'):
                 arg_name = argument.findtext('name')
                 arg_direction = argument.findtext('direction')
                 arg_state_var = argument.findtext('relatedStateVariable')
                 arguments.append(action.Argument(arg_name, arg_direction,
                                                  arg_state_var))
+                if( arg_state_var[0:11] == 'A_ARG_TYPE_' and
+                    arg_direction == 'out'):
+                    """ checking for out is probably unnecessary """
+                    needs_callback = True
+                #print arg_name, arg_direction, needs_callback
+                    
+            callback = getattr(self.backend, "upnp_%s" % name, None)
+            if( needs_callback == True and
+                callback == None):
+                """ we have one or more 'A_ARG_TYPE_' variables
+                    issue a warning for now
+                """
+                if implementation == 'optional':
+                    log.warning('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                    continue
+                else:
+                    log.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
+                    raise LookupError,"missing callback"
+
             new_action = action.Action(self, name, implementation, arguments)
             self._actions[name] = new_action
-            callback = getattr(self.backend, "upnp_%s" % self._actions[name].get_name(), None)
             if callback != None:
                 new_action.set_callback(callback)
-            
+                log.info('Add callback %s for %s/%s' % (callback, self.id, name))
+                    
+ 
         for var_node in tree.findall('.//stateVariable'):
             instance = 0
             name = var_node.findtext('name')

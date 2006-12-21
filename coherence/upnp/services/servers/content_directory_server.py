@@ -26,14 +26,14 @@ class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class ContentDirectoryServer(service.Server, resource.Resource):
+class ContentDirectoryServer(service.ServiceServer, resource.Resource):
 
     def __init__(self, device, backend=None):
         self.device = device
         if backend == None:
             backend = self.device.backend
         resource.Resource.__init__(self)
-        service.Server.__init__(self, 'ContentDirectory', self.device.version, backend)
+        service.ServiceServer.__init__(self, 'ContentDirectory', self.device.version, backend)
         
         self.control = ContentDirectoryControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.control))

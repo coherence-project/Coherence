@@ -26,7 +26,7 @@ from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
 from coherence.upnp.devices.media_renderer import MediaRenderer
 
-from coherence.extern.logger import Logger
+from coherence.extern.logger import Logger, LOG_WARNING
 log = Logger('Coherence')
 
 class IWeb(Interface):
@@ -108,7 +108,7 @@ class WebServer:
         self.site = appserver.NevowSite( self.web_root_resource)
         reactor.listenTCP( port, self.site)
         
-        log.msg( "WebServer on port %d ready" % port)
+        log.warning( "WebServer on port %d ready" % port)
 
 
 class Coherence:
@@ -124,33 +124,16 @@ class Coherence:
                                 #               and have one for every module
         self.enable_log = True  # FIXME: set this to True if a logmode != 'none'
         
-        log.disable(name='Coherence')
-        log.disable(name='SSDP')
-        log.disable(name='MSEARCH')
-        log.disable(name='Service')
-        log.disable(name='SOAP')
-        log.disable(name='MediaServer')
-        log.disable(name='MediaRenderer')
-        log.disable(name='Event')
+        log.set_master_level(LOG_WARNING)
         
-        log.enable(name='Coherence')
-        #log.enable(name='MediaServer')
-        log.set_level(name='MediaServer')
-        #log.enable(name='MediaRenderer')
-        log.set_level(name='MediaRenderer')
-        #log.enable(name='SOAP')
-        log.set_level(name='SOAP')
-        #log.enable(name='Service')
-        log.set_level(name='Service')
-        #log.enable(name='MSEARCH')
-        log.set_level(name='MSEARCH')
-        #log.enable(name='Event')
-        log.set_level(name='Event')
-        
+        #log.disable(name='Variable')
+        #log.enable(name='Variable')
+        #log.set_level(name='Variable')
+
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
 
-        log.msg("Coherence UPnP framework starting...")
+        log.warning("Coherence UPnP framework starting...")
         self.ssdp_server = SSDPServer()
         louie.connect( self.add_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.remove_device', louie.Any)
@@ -167,7 +150,7 @@ class Coherence:
         self.web_server_port = 30020
         self.hostname = socket.gethostbyname(socket.gethostname())
         #FIXME: this doesn't work on systems with more than one network interface
-        log.msg('running on host: %s' % self.hostname)
+        log.warning('running on host: %s' % self.hostname)
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
         self.web_server = WebServer( self.web_server_port, self)
@@ -190,13 +173,14 @@ class Coherence:
         
     def add_plugin(self, plugin, **kwargs):
         for device in plugin.implements:
-            device_class=globals().get(device)
             try:
+                device_class=globals().get(device)
                 device_class(self, plugin, **kwargs)
             except KeyError:
-                log.critical("Can't enable %s plugin, sub-system %s unknown!" % (plugin, device))
+                log.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
             except:
-                log.critical("Can't enable %s plugin, sub-system %s not available!" % (plugin, device))
+                log.critical("Can't enable %s plugin for sub-system %s!" % (plugin, device))
+            
             
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
@@ -214,7 +198,7 @@ class Coherence:
             for device in root_device.get_devices():
                 device.unsubscribe_service_subscriptions()
         self.ssdp_server.shutdown()
-        log.msg('Coherence UPnP framework shutdown')
+        log.warning('Coherence UPnP framework shutdown')
         
     def check_devices(self):
         """ iterate over devices and their embedded ones and renew subscriptions """

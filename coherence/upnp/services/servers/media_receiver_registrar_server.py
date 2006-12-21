@@ -26,6 +26,11 @@ class FakeMediaReceiverRegistrarBackend:
         r = { 'Result': 1}
         return r
 
+    def upnp_RegisterDevice(self, *args, **kwargs):
+        """ FIXME: check with WMC and WMP """
+        r = { 'RegistrationRespMsg': 'WTF should be in here?'}
+        return r
+
 class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):
 
     def __init__(self, server):
@@ -34,7 +39,7 @@ class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):
         self.actions = server.get_actions()
         
 
-class MediaReceiverRegistrarServer(service.Server, resource.Resource):
+class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
 
     def __init__(self, device, backend=None):
         self.device = device
@@ -43,7 +48,7 @@ class MediaReceiverRegistrarServer(service.Server, resource.Resource):
         resource.Resource.__init__(self)
         version = 1
         self.namespace = 'microsoft.com'
-        service.Server.__init__(self, 'X_MS_MediaReceiverRegistrar', version, backend)
+        service.ServiceServer.__init__(self, 'X_MS_MediaReceiverRegistrar', version, backend)
         
         self.control = MediaReceiverRegistrarControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
