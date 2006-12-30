@@ -13,6 +13,14 @@ LOG_DEBUG       = 20
 LOG_WARNING     = 30
 LOG_ERROR       = 40
 LOG_CRITICAL    = 50
+LOG_NONE        = 100
+
+log_levels = { 'info': LOG_INFO,
+               'debug': LOG_DEBUG,
+               'warning': LOG_WARNING,
+               'error': LOG_ERROR,
+               'critical': LOG_CRITICAL,
+               'none': LOG_NONE}
 
 class _Logger(object):
     """ a singleton LOG class
@@ -115,6 +123,11 @@ class Logger:
     def set_level(self, name=None, level=LOG_INFO):
         if name == None:
             name=self.name
+        if isinstance( level, str):
+            try:
+                level=log_levels[level]
+            except:
+                level=LOG_INFO
         self.log.set_level(name,level)
         
     def set_warning_level(self, name=None):
@@ -128,6 +141,11 @@ class Logger:
         self.log.set_level(name,LOG_CRITICAL)
         
     def set_master_level(self, level=LOG_DEBUG):
+        if isinstance( level, str):
+            try:
+                level=log_levels[level]
+            except:
+                level=LOG_DEBUG
         self.log.set_master_level(level)
         
     def overwrite(self,name,level=None,active=None):
