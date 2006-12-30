@@ -11,6 +11,8 @@ import cStringIO
 import string
 from twisted.python import log
 import socket
+import fcntl
+import struct
 
 def parse_xml(data, encoding="iso-8859-1"):
     p = cElementTree.XMLParser(encoding=encoding)
@@ -30,3 +32,22 @@ def parse_http_response(data):
     headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
     return cmd, headers
+
+
+def get_ip_address(ifname):
+    """
+    determine the IP address by interface name
+    
+    http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/439094
+    (c) Paul Cannon
+    Uses the Linux SIOCGIFADDR ioctl to find the IP address associated
+    with a network interface, given the name of that interface, e.g. "eth0".
+    The address is returned as a string containing a dotted quad.
+    """
+    
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915,  # SIOCGIFADDR
+        struct.pack('256s', ifname[:15])
+    )[20:24])

@@ -20,11 +20,16 @@ import louie
 from coherence.upnp.core.ssdp import SSDPServer
 from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
-from coherence.upnp.core.utils import parse_xml
+from coherence.upnp.core.utils import parse_xml, get_ip_address
 
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
 from coherence.upnp.devices.media_renderer import MediaRenderer
+
+from coherence.backends.fs_storage import FSStore
+from coherence.backends.elisa_storage import ElisaMediaStore
+
+from coherence.backends.gstreamer_audio_player import Player
 
 from coherence.extern.logger import Logger, LOG_WARNING
 log = Logger('Coherence')
@@ -113,18 +118,18 @@ class WebServer:
 
 class Coherence:
 
-    def __init__(self, plugins=[]):
-        self.enable_log = False
+    def __init__(self, config):
         self.devices = []
         
         self.children = {}
         self._callbacks = {}
         
-        logmode = 'info'        # FIXME: get this from the config file
-                                #               and have one for every module
-        self.enable_log = True  # FIXME: set this to True if a logmode != 'none'
+        try:
+            logmode = config['logmode']
+        except:
+            logmode = 'info'
         
-        log.set_master_level(LOG_WARNING)
+        log.set_master_level(logmode)
         
         #log.disable(name='Variable')
         #log.enable(name='Variable')
@@ -157,29 +162,38 @@ class Coherence:
                                 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
-
-        for p in plugins:
-            if len(p) == 1:
-                plugin = p[0]
-                arguments = {}
-            elif len(p) == 2:
-                plugin, arguments = p
-            else:
-                log.critical("Problem with plugin definition, skipping it!")
-                continue
-            if not isinstance(arguments, dict):
-                arguments = {}
-            self.add_plugin(plugin, **arguments)
+        
+        try:
+            plugins = config['plugins']
+            for p,a in plugins.items():
+                plugin = p
+                arguments = a
+                if not isinstance(arguments, dict):
+                    arguments = {}
+                self.add_plugin(plugin, **arguments)
+        except KeyError:
+            log.warning("No plugin defined!")
+        except Exception, msg:
+                print Exception, msg
         
     def add_plugin(self, plugin, **kwargs):
-        for device in plugin.implements:
-            try:
-                device_class=globals().get(device)
-                device_class(self, plugin, **kwargs)
-            except KeyError:
-                log.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
-            except:
-                log.critical("Can't enable %s plugin for sub-system %s!" % (plugin, device))
+        try:
+            plugin_class=globals().get(plugin)
+            for device in plugin_class.implements:
+                try:
+                    device_class=globals().get(device)
+                    log.critical("Activating %s plugin as %s..." % (plugin, device))
+                    device_class(self, plugin_class, **kwargs)
+                except KeyError:
+                    log.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
+                except Exception, msg:
+                    print msg
+                    log.critical("Can't enable %s plugin for sub-system %s!" % (plugin, device))
+        except KeyError:
+            log.critical("Can't enable %s plugin, not found!" % plugin)
+        except Exception, msg:
+            print msg
+            log.critical("Can't enable %s plugin!" % plugin)
             
             
     def receiver( self, signal, *args, **kwargs):

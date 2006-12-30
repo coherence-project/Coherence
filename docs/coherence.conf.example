@@ -1,0 +1,12 @@
+# config file for coherence
+#
+# keywords are case-sensitive
+
+logmode = warning               # none, critical, error, warning, info, debug
+#interface = eth0
+
+[plugins]
+    [[FSStore]]
+    content_directory = tests/content
+    [[Player]]
+

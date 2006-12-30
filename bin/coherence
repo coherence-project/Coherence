@@ -5,22 +5,49 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import os, sys
+
 from twisted.internet import reactor
+from twisted.python import usage
+
 from coherence.base import Coherence
 
-from coherence.backends.fs_storage import FSStore
-from coherence.backends.elisa_storage import ElisaMediaStore
+from configobj import ConfigObj
 
-from coherence.backends.gstreamer_audio_player import Player
+class Options(usage.Options):
+    optParameters = [['configfile', 'c', '', 'path to configfile'],
+                    ]
 
-def main():
+def main(options):
 
     # get settings or options
-    
-    c = Coherence(plugins=[ (FSStore, {'content_directory':'tests/content'}),
-                            (Player, {})])
-    #c.add_plugin(FSStore, content_directory='tests/content', version=1)
+    def setConfigFile(filename):
+        def findConfigDir():
+            try: 
+                configDir = os.path.expanduser('~')
+            except:
+                configDir = os.getcwd()
+            return configDir
+
+        if filename is '':
+            filename = os.path.join( findConfigDir(), '.coherence')
+        return filename
+
+    config = ConfigObj( setConfigFile( options['configfile']))
+    c = Coherence(config)
+    #c = Coherence(plugins={'FSStore': {'content_directory':'tests/content'},
+    #                       'Player': {})
+    #c.add_plugin('FSStore', content_directory='tests/content', version=1)
     
 if __name__ == '__main__':
-    reactor.callWhenRunning(main)
+
+    options = Options()
+    try:
+        options.parseOptions()
+    except usage.UsageError, errortext:
+        print '%s: %s' % (sys.argv[0], errortext)
+        print '%s: Try --help for usage details.' % (sys.argv[0])
+        sys.exit(1)
+
+    reactor.callWhenRunning(main, options)
     reactor.run()
