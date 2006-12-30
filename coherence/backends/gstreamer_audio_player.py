@@ -368,31 +368,6 @@ class Player:
             self.server.connection_manager_server.remove_connection(self.connection_id)
         return {}
 
-    def upnp_GetCurrentConnectionInfo(self, *args, **kwargs):
-        ConnectionID = int(kwargs['ConnectionID'])
-        """ return for this ConnectionID
-            the associated InstanceIDs @ AVTransportID and RcsID
-            ProtocolInfo
-            PeerConnectionManager
-            PeerConnectionID
-            Direction
-            Status
-            
-            or send a 706 if there isn't such a ConnectionID
-        """
-        connection = self.server.connection_manager_server.lookup_connection(ConnectionID)
-        if connection == None:
-            return failure.Failure(errorCode(706))
-        else:
-            return {'AVTransportID':connection['AVTransportID'],
-                    'RcsID':connection['RcsID'],
-                    'ProtocolInfo':connection['ProtocolInfo'],
-                    'PeerConnectionManager':connection['PeerConnectionManager'],
-                    'PeerConnectionID':connection['PeerConnectionID'],
-                    'Direction':connection['Direction'],
-                    'Status':connection['Status'],
-                    }
-            
     def Xupnp_GetPositionInfo(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         """ get track info for this InstanceID

@@ -364,7 +364,7 @@ class FSStore:
 
         return r
 
-    def upnp_GetCurrentConnectionInfo(self, *args, **kwargs):
+    def upnp_XGetCurrentConnectionInfo(self, *args, **kwargs):
         ConnectionID = int(kwargs['ConnectionID'])
         """ return for this ConnectionID
             the associated InstanceIDs @ AVTransportID and RcsID

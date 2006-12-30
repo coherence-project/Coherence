@@ -407,11 +407,16 @@ class ServiceServer:
                                                  arg_state_var))
                 if( arg_state_var[0:11] == 'A_ARG_TYPE_' and
                     arg_direction == 'out'):
-                    """ checking for out is probably unnecessary """
                     needs_callback = True
                 #print arg_name, arg_direction, needs_callback
                     
+            """ check for action in backend """
             callback = getattr(self.backend, "upnp_%s" % name, None)
+            
+            if callback == None:
+                """ check for action in ServiceServer """
+                callback = getattr(self, "upnp_%s" % name, None)
+            
             if( needs_callback == True and
                 callback == None):
                 """ we have one or more 'A_ARG_TYPE_' variables
