@@ -5,7 +5,6 @@
 
 # Connection Manager service
 
-from twisted.python import log
 from twisted.web import resource, static, soap
 from twisted.internet import defer
 from twisted.python import failure
@@ -48,24 +47,35 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
                              Direction,
                              PeerConnectionID,
                              PeerConnectionManager):
+                             
+
         id = self.next_connection_id
         self.next_connection_id += 1
+        
+        """ this is the place to instantiate AVTransport and RenderingControl
+            for this connection
+        """
+        avt_id = 0
+        rcs_id = 0
+        # FIXME: get other services real ids
         self.connections[id] = {'ProtocolInfo':RemoteProtocolInfo,
                                 'Direction':Direction,
                                 'PeerConnectionID':PeerConnectionID,
                                 'PeerConnectionManager':PeerConnectionManager,
-                                'AVTransportID':0,
-                                'RcsID':0,
-                                'Status':'OK'} #FIXME: get other services real ids
+                                'AVTransportID':avt_id,
+                                'RcsID':rcs_id,
+                                'Status':'OK'}
+        print "add_connection", self.connections
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
-        return id
+        return id, avt_id, rcs_id
         
     def remove_connection(self,id):
         try:
             del self.connections[id]
         except:
             pass
+        print "remove_connection", self.connections
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         
@@ -97,7 +107,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
         
 
-    def upnp_XPrepareForConnection(self, *args, **kwargs):
+    def upnp_PrepareForConnection(self, *args, **kwargs):
         """ check if we really support that mimetype """
         RemoteProtocolInfo = kwargs['RemoteProtocolInfo']
         """ if we are a MR and this in not 'Input'
@@ -108,22 +118,19 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         PeerConnectionID = kwargs['PeerConnectionID']
         """ ??? """
         PeerConnectionManager = kwargs['PeerConnectionManager']
-        if self.server:
-            self.connection_id = \
-                    self.server.connection_manager_server.add_connection(RemoteProtocolInfo,
-                                                                            Direction,
-                                                                            PeerConnectionID,
-                                                                            PeerConnectionManager)
+        connection_id, avt_id, rcs_id = \
+            self..add_connection(RemoteProtocolInfo,
+                                    Direction,
+                                    PeerConnectionID,
+                                    PeerConnectionManager)
+        return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
 
-        return {'ConnectionID': self.connection_id, 'AVTransportID': 0, 'RcsID': 0}
-
-    def upnp_XConnectionComplete(self, *args, **kwargs):
-        InstanceID = int(kwargs['InstanceID'])
-        """ remove this InstanceID
-            and the associated InstanceIDs @ AVTransportID and RcsID
+    def upnp_ConnectionComplete(self, *args, **kwargs):
+        ConnectionID = int(kwargs['ConnectionID'])
+        """ remove this ConnectionID
+            and the associated instances @ AVTransportID and RcsID
         """
-        if self.server:
-            self.server.connection_manager_server.remove_connection(self.connection_id)
+        self.remove_connection(ConnectionID)
         return {}
 
     def upnp_GetCurrentConnectionInfo(self, *args, **kwargs):
