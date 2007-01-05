@@ -119,7 +119,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         """ ??? """
         PeerConnectionManager = kwargs['PeerConnectionManager']
         connection_id, avt_id, rcs_id = \
-            self..add_connection(RemoteProtocolInfo,
+            self.add_connection(RemoteProtocolInfo,
                                     Direction,
                                     PeerConnectionID,
                                     PeerConnectionManager)
