@@ -28,9 +28,10 @@ class StateVariable:
         self.data_type = data_type
         self.allowed_values = values
         self.has_vendor_values = False
+        self.default_value = ''
         self.old_value = ''
         self.value = ''
-        if send_events in [1,'1','true','True','yes','Yes']:
+        if send_events in [True,1,'1','true','True','yes','Yes']:
             self.send_events = True
         else:
             self.send_events = False
@@ -39,6 +40,10 @@ class StateVariable:
             self.moderated = self.service.is_variable_moderated(name)
             self.updated = False
 
+    def set_default_value(self, value):
+        self.update(value)
+        self.default_value = self.value
+        
     def update(self, value):
         self.old_value = self.value
         # MOD if value == self.value:
@@ -120,4 +125,16 @@ class StateVariable:
     def notify(self):
         for callback in self._callbacks:
             callback( self)
-        
+            
+    def __repr__(self):
+        return "Variable: %s, %s, %d, %s, %s, %s, %s, %s, %s" % \
+                        (self.name,
+                         str(self.service),
+                         self.instance,
+                         self.implementation,
+                         self.data_type,
+                         str(self.allowed_values),
+                         str(self.default_value),
+                         str(self.value),
+                         str(self.send_events))
+
