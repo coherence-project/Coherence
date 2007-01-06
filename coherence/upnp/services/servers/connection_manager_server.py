@@ -36,6 +36,8 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
         self.next_connection_id = 1
+        self.next_avt_id = 1
+        self.next_rcs_id = 1
         
         self.connections = {}
         
@@ -52,29 +54,40 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         id = self.next_connection_id
         self.next_connection_id += 1
         
-        """ this is the place to instantiate AVTransport and RenderingControl
-            for this connection
-        """
         avt_id = 0
         rcs_id = 0
-        # FIXME: get other services real ids
-        self.connections[id] = {'ProtocolInfo':RemoteProtocolInfo,
-                                'Direction':Direction,
-                                'PeerConnectionID':PeerConnectionID,
-                                'PeerConnectionManager':PeerConnectionManager,
-                                'AVTransportID':avt_id,
-                                'RcsID':rcs_id,
-                                'Status':'OK'}
-        print "add_connection", self.connections
+        
+        if self.device == 'MediaRenderer':
+            """ this is the place to instantiate AVTransport and RenderingControl
+                for this connection
+            """
+            avt_id = self.next_avt_id
+            self.next_avt_id += 1
+            self.device.av_transport_server.create_new_instance(avt_id)
+            rcs_id = self.next_rcs_id
+            self.next_rcs_id += 1
+            self.device.rendering_control_server.create_new_instance(rcs_id)
+            self.connections[id] = {'ProtocolInfo':RemoteProtocolInfo,
+                                    'Direction':Direction,
+                                    'PeerConnectionID':PeerConnectionID,
+                                    'PeerConnectionManager':PeerConnectionManager,
+                                    'AVTransportID':avt_id,
+                                    'RcsID':rcs_id,
+                                    'Status':'OK'}
+            self.backend.current_connection_id = id
+
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         return id, avt_id, rcs_id
         
     def remove_connection(self,id):
         try:
+            self.device.av_transport_server.remove_instance(self.lookup_avt_id(id))
+            self.device.rendering_control_server.remove_instance(self.lookup_rcs_id(id))
             del self.connections[id]
         except:
             pass
+        self.backend.current_connection_id = None
         print "remove_connection", self.connections
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)

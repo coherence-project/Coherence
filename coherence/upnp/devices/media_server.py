@@ -65,7 +65,7 @@ class MSRoot(resource.Resource):
         if ch != None:
             p = ch.get_path()
             if os.path.exists(p):
-                new_id = self.server.connection_manager_server.add_connection('',
+                new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                             'Output',
                                                                             -1,
                                                                             '')

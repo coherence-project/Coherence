@@ -12,7 +12,7 @@ This includes disabling any automatic tab-to-space conversion
 feature provided by your editor. 
 ================================================================-->
 <scpd>
-	<serviceStateTable xmlns:coherence="urn:schemas-beebits-org:service-1-0">
+	<serviceStateTable xmlns:coherence="urn:schemas-beebits-net:service-1-0">
 		<stateVariable>
 			<name>TransportState</name>
 			<sendEventsAttribute>no</sendEventsAttribute>

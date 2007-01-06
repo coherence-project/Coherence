@@ -256,8 +256,9 @@ class FSStore:
         return ret
         
     def upnp_init(self):
+        self.current_connection_id = None
         if self.server:
-            self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+            self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*',default=True)
 
     def upnp_Search(self, *args, **kwargs):
         ContainerID = kwargs['ContainerID']
@@ -363,32 +364,6 @@ class FSStore:
             r['UpdateID'] = self.update_id
 
         return r
-
-    def upnp_XGetCurrentConnectionInfo(self, *args, **kwargs):
-        ConnectionID = int(kwargs['ConnectionID'])
-        """ return for this ConnectionID
-            the associated InstanceIDs @ AVTransportID and RcsID
-            ProtocolInfo
-            PeerConnectionManager
-            PeerConnectionID
-            Direction
-            Status
-            
-            or send a 706 if there isn't such a ConnectionID
-        """
-        connection = self.server.connection_manager_server.lookup_connection(ConnectionID)
-        if connection == None:
-            return failure.Failure(errorCode(706))
-        else:
-            return {'AVTransportID':connection['AVTransportID'],
-                    'RcsID':connection['RcsID'],
-                    'ProtocolInfo':connection['ProtocolInfo'],
-                    'PeerConnectionManager':connection['PeerConnectionManager'],
-                    'PeerConnectionID':connection['PeerConnectionID'],
-                    'Direction':connection['Direction'],
-                    'Status':connection['Status'],
-                    }
-
 
 if __name__ == '__main__':
     p = '/data/images'

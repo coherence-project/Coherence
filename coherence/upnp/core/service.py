@@ -252,9 +252,6 @@ class ServiceServer:
             #self.check_moderated_loop.start(5.0, now=False)
             self.check_moderated_loop.start(0.5, now=False)
 
-        #simulation_loop = task.LoopingCall(self.simulate_notification)
-        #simulation_loop.start(60.0, now=False)
-
     def get_action(self, action_name):
         return self._actions[action_name]
 
@@ -268,8 +265,10 @@ class ServiceServer:
         return self._subscribers
 
     def new_subscriber(self, subscriber):
-        instance = 0
-        notify = [v for v in self._variables[instance].values() if v.send_events == True]
+        notify = []
+        for vdict in self._variables.values():
+            notify += [v for v in vdict.values() if v.send_events == True]
+            
         log.info("new_subscriber", subscriber, notify)
         if len(notify) <= 0:
             return
@@ -280,7 +279,7 @@ class ServiceServer:
         for n in notify:
             e = SubElement( root, 'property')
             if n.name == 'LastChange':
-                SubElement( e, n.name).text = self.build_last_change_event()
+                SubElement( e, n.name).text = self.build_last_change_event(n.instance)
             else:
                 SubElement( e, n.name).text = str(n.value)
             
@@ -294,10 +293,36 @@ class ServiceServer:
     def get_type(self):
         return self.service_type
         
-    def set_variable(self, instance, variable_name, value):
+    def create_new_instance(self, instance):
+        self._variables[instance] = {}
+        for v in self._variables[0].values():
+            print v
+            self._variables[instance][v.name] = variable.StateVariable( v.service,
+                                                                        v.name,
+                                                                        v.implementation,
+                                                                        instance,
+                                                                        v.send_events,
+                                                                        v.data_type,
+                                                                        v.allowed_values)
+            self._variables[instance][v.name].has_vendor_values = v.has_vendor_values
+            self._variables[instance][v.name].default_value = v.default_value
+            self._variables[instance][v.name].value = v.default_value
+
+            print self._variables[instance][v.name]
+        #print "create_new_instance", self._variables
+        
+    def remove_instance(self, instance):
+        if instance == 0:
+            return
+        del(self._variables[instance])
+        #print "remove_instance", self._variables
+        
+    def set_variable(self, instance, variable_name, value, default=False):
         try:
             variable = self._variables[instance][variable_name]
             variable.update(value)
+            if default == True:
+                variable.default_value = variable.value
             if(variable.send_events == True and
                 variable.moderated == False and
                 len(self._subscribers) > 0):
@@ -317,13 +342,14 @@ class ServiceServer:
     def build_last_change_event(self, instance=0):
         root = Element('Event')
         root.attrib['xmlns']=self.event_metadata
-        e = SubElement( root, 'InstanceID')
-        e.attrib['val']=str(instance)
-        for variable in self._variables[instance].values():
-            if( variable.name != 'LastChange' and
-                variable.name[0:11] != 'A_ARG_TYPE_'):
-                s = SubElement( e, variable.name)
-                s.attrib['val'] = str(variable.value)
+        for instance, vdict in self._variables.items():
+            e = SubElement( root, 'InstanceID')
+            e.attrib['val']=str(instance)
+            for variable in vdict.values():
+                if( variable.name != 'LastChange' and
+                    variable.name[0:11] != 'A_ARG_TYPE_'):
+                    s = SubElement( e, variable.name)
+                    s.attrib['val'] = str(variable.value)
         return tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
@@ -342,7 +368,7 @@ class ServiceServer:
         for n in notify:
             e = SubElement( root, 'property')
             if n.name == 'LastChange':
-                SubElement( e, n.name).text = self.build_last_change_event()
+                SubElement( e, n.name).text = self.build_last_change_event(instance=n.instance)
             else:
                 SubElement( e, n.name).text = str(n.value)
             
@@ -370,9 +396,10 @@ class ServiceServer:
         notify = []
         for v in variables:
             #print self._variables[0][v].name, self._variables[0][v].updated
-            if self._variables[0][v].updated == True:
-                self._variables[0][v].updated = False
-                notify.append(self._variables[0][v])
+            for vdict in self._variables.values():
+                if vdict[v].updated == True:
+                    vdict[v].updated = False
+                    notify.append(vdict[v])
         self.propagate_notification(notify)
 
     def is_variable_moderated(self, name):
@@ -453,11 +480,11 @@ class ServiceServer:
                                                            data_type, values)
             default_value = var_node.findtext('defaultValue')
             if default_value:
-                self._variables.get(instance)[name].update(default_value)
+                self._variables.get(instance)[name].set_default_value(default_value)
             allowed_value_list = var_node.find('allowedValueList')
             if allowed_value_list:
                 vendor_values = allowed_value_list.attrib.get(
-                                    '{urn:schemas-beebits-org:service-1-0}X_withVendorDefines',
+                                    '{urn:schemas-beebits-net:service-1-0}X_withVendorDefines',
                                     False)
                 self._variables.get(instance)[name].has_vendor_values = vendor_values
 
@@ -503,7 +530,7 @@ class scpdXML(static.Data):
 
 class ServiceControl:
 
-    def get_action_results(self, result, action):
+    def get_action_results(self, result, action, instance):
         """ check for out arguments
             if yes: check if there are related ones to StateVariables with
                     non A_ARG_TYPE_ prefix
@@ -513,20 +540,20 @@ class ServiceControl:
                                     add them to result dict
         """
         log.info('get_action_results', result)
-        #print 'get_action_results', action
+        #print 'get_action_results', action, instance
         r = result
         notify = []
         for argument in action.get_out_arguments():
             #print 'get_state_variable_contents', argument.name
             if argument.name[0:11] != 'A_ARG_TYPE_':
                 if action.get_callback() != None:
-                    variable = self.variables[0][argument.get_state_variable()]
+                    variable = self.variables[instance][argument.get_state_variable()]
                     variable.update(r[argument.name])
                     #print 'update state variable contents', variable.name, variable.value, variable.send_events
                     if(variable.send_events == 'yes' and variable.moderated == False):
                         notify.append(variable)
                 else:
-                    variable = self.variables[0][argument.get_state_variable()]
+                    variable = self.variables[instance][argument.get_state_variable()]
                     #print 'get state variable contents', variable.name, variable.value
                     r[argument.name] = variable.value
                     #print "r", r
@@ -545,6 +572,11 @@ class ServiceControl:
         except:
             return failure.Failure(errorCode(401))
         
+        try:
+            instance = int(kwargs['InstanceID'])
+        except:
+            instance = 0
+            
         log.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
 
@@ -578,7 +610,7 @@ class ServiceControl:
 
         # call plugin method for this action
         d = defer.maybeDeferred( callit, *args, **kwargs)
-        d.addCallback( self.get_action_results, action)
+        d.addCallback( self.get_action_results, action, instance)
         d.addErrback(failure)
         return d
 
