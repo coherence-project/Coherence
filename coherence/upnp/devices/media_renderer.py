@@ -124,7 +124,7 @@ class MediaRenderer:
         self._services = []
         self._devices = []
         
-        self.backend = Player(self)
+        self.backend = backend(self)
         
         self.connection_manager_server = ConnectionManagerServer(self)
         self._services.append(self.connection_manager_server)
