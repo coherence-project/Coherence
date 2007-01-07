@@ -4,6 +4,8 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import time
+
 from coherence.upnp.core import utils
 try:
     #FIXME:
@@ -31,6 +33,7 @@ class StateVariable:
         self.default_value = ''
         self.old_value = ''
         self.value = ''
+        self.last_time_touched = time.time()
         if send_events in [True,1,'1','true','True','yes','Yes']:
             self.send_events = True
         else:
@@ -46,6 +49,7 @@ class StateVariable:
         
     def update(self, value):
         self.old_value = self.value
+        self.last_time_touched = time.time()
         # MOD if value == self.value:
         #    return
         #print "variable update", self.name, value, self.service

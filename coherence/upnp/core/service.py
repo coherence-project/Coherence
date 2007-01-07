@@ -296,7 +296,6 @@ class ServiceServer:
     def create_new_instance(self, instance):
         self._variables[instance] = {}
         for v in self._variables[0].values():
-            print v
             self._variables[instance][v.name] = variable.StateVariable( v.service,
                                                                         v.name,
                                                                         v.implementation,
@@ -308,14 +307,10 @@ class ServiceServer:
             self._variables[instance][v.name].default_value = v.default_value
             self._variables[instance][v.name].value = v.default_value
 
-            print self._variables[instance][v.name]
-        #print "create_new_instance", self._variables
-        
     def remove_instance(self, instance):
         if instance == 0:
             return
         del(self._variables[instance])
-        #print "remove_instance", self._variables
         
     def set_variable(self, instance, variable_name, value, default=False):
         try:

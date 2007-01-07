@@ -4,14 +4,17 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 # Connection Manager service
+import time
 
 from twisted.web import resource, static, soap
 from twisted.internet import defer
 from twisted.python import failure
+from twisted.internet import task
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from coherence.upnp.core.soap_service import UPnPPublisher
+from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core import service
 
@@ -45,6 +48,10 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         self.set_variable(0, 'SinkProtocolInfo', '')
         self.set_variable(0, 'CurrentConnectionIDs', '')
         
+        self.remove_lingering_connections_loop = task.LoopingCall(self.remove_lingering_connections)
+        self.remove_lingering_connections_loop.start(180.0, now=False)
+
+        
     def add_connection(self, RemoteProtocolInfo,
                              Direction,
                              PeerConnectionID,
@@ -57,7 +64,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         avt_id = 0
         rcs_id = 0
         
-        if self.device == 'MediaRenderer':
+        if self.device.device_type == 'MediaRenderer':
             """ this is the place to instantiate AVTransport and RenderingControl
                 for this connection
             """
@@ -88,15 +95,46 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         except:
             pass
         self.backend.current_connection_id = None
-        print "remove_connection", self.connections
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         
+    def remove_lingering_connections(self):
+        """ check if we have a connection that hasn't a StateVariable change
+            within the last 300 seconds, if so remove it
+        """
+        if self.device.device_type != 'MediaRenderer':
+            return
+            
+        now = time.time()
+            
+        for id, connection in self.connections.items():
+            avt_id = connection['AVTransportID']
+            rcs_id = connection['RcsID']
+            avt_active = True
+            rcs_active = True
+            
+            #print "remove_lingering_connections", id, avt_id, rcs_id
+            if avt_id > 0:
+                avt_variables = self.device.av_transport_server.get_variables().get(avt_id)
+                if avt_variables:
+                    avt_active = False
+                    for variable in avt_variables.values():
+                        if variable.last_time_touched+300 >= now:
+                            avt_active = True
+                            break
+            if rcs_id > 0:
+                rcs_variables = self.device.rendering_control_server.get_variables().get(rcs_id)
+                if rcs_variables:
+                    rcs_active = False
+                    for variable in rcs_variables.values():
+                        if variable.last_time_touched+300 >= now:
+                            rcs_active = True
+                            break
+            if( avt_active == False and rcs_active == False):
+                self.remove_connection(id)
+        
     def lookup_connection(self,id):
-        try:
-            return self.connections[id]
-        except:
-            return None
+        return self.connections.get(id)
             
     def lookup_avt_id(self,id):
         try:
