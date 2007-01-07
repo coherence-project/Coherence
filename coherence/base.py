@@ -6,6 +6,7 @@
 import string
 import socket
 import os, sys
+import traceback
 
 from zope.interface import implements, Interface
 from twisted.python import log, filepath, util
@@ -174,7 +175,7 @@ class Coherence:
         except KeyError:
             log.warning("No plugin defined!")
         except Exception, msg:
-                print Exception, msg
+            log.critical("Can't enable plugins, %s!" % (plugin, msg))
         
     def add_plugin(self, plugin, **kwargs):
         try:
@@ -187,13 +188,13 @@ class Coherence:
                 except KeyError:
                     log.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
-                    print msg
-                    log.critical("Can't enable %s plugin for sub-system %s!" % (plugin, device))
+                    log.critical(traceback.print_exc())
+                    log.critical("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
         except KeyError:
             log.critical("Can't enable %s plugin, not found!" % plugin)
         except Exception, msg:
-            print msg
-            log.critical("Can't enable %s plugin!" % plugin)
+            log.critical(traceback.print_exc())
+            log.critical("Can't enable %s plugin, %s!" % (plugin, msg))
             
             
     def receiver( self, signal, *args, **kwargs):

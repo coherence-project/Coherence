@@ -34,6 +34,7 @@ class Player:
     """
 
     implements = ['MediaRenderer']
+    vendor_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
 
     def __init__(self, server):
         self.player = gst.element_factory_make("playbin", "myplayer")
@@ -311,15 +312,39 @@ class Player:
             self.player.set_state(state)
             if state == gst.STATE_PAUSED:
                 self.update()
-                
+
+    def mute(self):
+        self.player.set_property('mute', True)
+        rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
+        self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
+        
+    def unmute(self):
+        self.player.set_property('mute', False)
+        rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
+        self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
+        
+    def get_mute(self):
+        return self.player.get_property('mute')
+        
+    def get_volume(self):
+        return self.player.get_property('volume')
+        
+    def set_volume(self, volume):
+        if volume < 0:
+            volume=0
+        if volume > 100:
+            volume=100
+        self.player.set_property('volume', volume)
+        rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
+        self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
+        
     def upnp_init(self):
         self.current_connection_id = None
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo', 'http-get:*:audio/mpeg:*', default=True)
-        avt_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-        self.server.av_transport_server.set_variable(avt_id, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
-        self.server.av_transport_server.set_variable(avt_id, 'TransportStatus', 'OK', default=True)
-        self.server.av_transport_server.set_variable(avt_id, 'CurrentPlayMode', 'NORMAL', default=True)
-        self.server.av_transport_server.set_variable(avt_id, 'CurrentTransportActions', '', default=True)
+        self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
+        self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
+        self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL', default=True)
+        self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '', default=True)
 
     def upnp_Play(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
@@ -344,7 +369,24 @@ class Player:
         self.start(CurrentURI)
         return {}
 
+    def upnp_SetMute(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        Channel = kwargs['Channel']
+        DesiredMute = kwargs['DesiredMute']
+        if DesiredMute in ['TRUE', 'True', 'true', '1','Yes','yes']:
+            self.mute()
+        else:
+            self.unmute()
+        return {}
 
+    def upnp_SetVolume(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        Channel = kwargs['Channel']
+        DesiredVolume = int(kwargs['DesiredVolume'])
+        self.set_volume(DesiredVolume)
+        return {}
+
+        
 if __name__ == '__main__':
 
     import sys

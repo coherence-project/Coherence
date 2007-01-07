@@ -458,6 +458,11 @@ class ServiceServer:
                 log.info('Add callback %s for %s/%s' % (callback, self.id, name))
                     
  
+        backend_vendor_defaults = getattr(self.backend, "vendor_defaults", None)
+        service_defaults = None
+        if backend_vendor_defaults:
+            service_defaults = backend_vendor_defaults.get(self.id)
+                    
         for var_node in tree.findall('.//stateVariable'):
             instance = 0
             name = var_node.findtext('name')
@@ -481,6 +486,11 @@ class ServiceServer:
                 vendor_values = allowed_value_list.attrib.get(
                                     '{urn:schemas-beebits-net:service-1-0}X_withVendorDefines',
                                     False)
+                if service_defaults:
+                    variable_defaults = service_defaults.get(name)
+                    if variable_defaults:
+                        self._variables.get(instance)[name].set_allowed_values(variable_defaults)
+
                 self._variables.get(instance)[name].has_vendor_values = vendor_values
 
 class scpdXML(static.Data):

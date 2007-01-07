@@ -47,6 +47,11 @@ class StateVariable:
         self.update(value)
         self.default_value = self.value
         
+    def set_allowed_values(self, values):
+        if not isinstance(values,list):
+            values = [values]
+        self.allowed_values = values
+        
     def update(self, value):
         self.old_value = self.value
         self.last_time_touched = time.time()
