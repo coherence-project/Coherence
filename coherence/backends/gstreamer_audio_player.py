@@ -314,17 +314,36 @@ class Player:
                 self.update()
 
     def mute(self):
-        self.player.set_property('mute', True)
+        if has_attr(self,'stored_volume'):
+            self.stored_volume = self.player.get_property('volume')
+            self.player.set_property('volume', 0)
+        else:
+            self.player.set_property('mute', True)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
         
     def unmute(self):
-        self.player.set_property('mute', False)
+        if has_attr(self,'stored_volume'):
+            self.player.set_property('volume', self.stored_volume)
+        else:
+            self.player.set_property('mute', False)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
         
     def get_mute(self):
-        return self.player.get_property('mute')
+        if hasattr(self,'stored_volume'):
+            muted = self.player.get_property('volume') == 0
+        else:
+            try:
+                muted = self.player.get_property('mute')
+            except TypeError:
+                if not hasattr(self,'stored_volume'):
+                    self.stored_volume = self.player.get_property('volume')
+                muted = self.stored_volume == 0
+            except:
+                muted = False
+                print "can't get mute state"
+        return muted
         
     def get_volume(self):
         return self.player.get_property('volume')
@@ -345,6 +364,8 @@ class Player:
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '', default=True)
+        self.server.rendering_control_server.set_variable(0, 'Volume', self.get_volume())
+        self.server.rendering_control_server.set_variable(0, 'Mute', self.get_mute())
 
     def upnp_Play(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
