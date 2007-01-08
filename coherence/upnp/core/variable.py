@@ -97,7 +97,7 @@ class StateVariable:
                     else:
                         self.value = value
                 elif self.data_type == 'boolean':
-                    if value in [1,'1','true','True','yes','Yes']:
+                    if value in [True,1,'1','true','True','yes','Yes']:
                         self.value = '1'
                     else:
                         self.value = '0'
