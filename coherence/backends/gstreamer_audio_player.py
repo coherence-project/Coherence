@@ -314,7 +314,7 @@ class Player:
                 self.update()
 
     def mute(self):
-        if has_attr(self,'stored_volume'):
+        if hasattr(self,'stored_volume'):
             self.stored_volume = self.player.get_property('volume')
             self.player.set_property('volume', 0)
         else:
@@ -323,7 +323,7 @@ class Player:
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
         
     def unmute(self):
-        if has_attr(self,'stored_volume'):
+        if hasattr(self,'stored_volume'):
             self.player.set_property('volume', self.stored_volume)
         else:
             self.player.set_property('mute', False)
