@@ -187,6 +187,7 @@ feature provided by your editor.
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>boolean</dataType>
 			<defaultValue>False</defaultValue>
+			<coherence:X_dependantVariable>A_ARG_TYPE_Channel</coherence:X_dependantVariable>
 		</stateVariable>
 
 		<stateVariable>
@@ -197,9 +198,10 @@ feature provided by your editor.
 			<allowedValueRange coherence:X_withVendorDefines="True">
 				<minimum>0</minimum>
 				<step>1</step>
-				<maximum></maximum>
+				<maximum>100</maximum>
 			</allowedValueRange>
 			<defaultValue>0</defaultValue>
+			<coherence:X_dependantVariable>A_ARG_TYPE_Channel</coherence:X_dependantVariable>
 		</stateVariable>
 
 		<stateVariable>
@@ -213,6 +215,7 @@ feature provided by your editor.
 				<maximum></maximum>
 			</allowedValueRange>
 			<defaultValue>0</defaultValue>
+			<coherence:X_dependantVariable>A_ARG_TYPE_Channel</coherence:X_dependantVariable>
 		</stateVariable>
 
 		<stateVariable>
@@ -221,6 +224,7 @@ feature provided by your editor.
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>boolean</dataType>
 			<defaultValue>False</defaultValue>
+			<coherence:X_dependantVariable>A_ARG_TYPE_Channel</coherence:X_dependantVariable>
 		</stateVariable>
 
 		<stateVariable>
