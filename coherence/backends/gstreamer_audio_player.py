@@ -34,7 +34,8 @@ class Player:
     """
 
     implements = ['MediaRenderer']
-    vendor_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
+    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
+    vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, server):
         self.player = gst.element_factory_make("playbin", "myplayer")
@@ -346,13 +347,18 @@ class Player:
         return muted
         
     def get_volume(self):
-        return self.player.get_property('volume')
+        """ playbin volume is a double from 0.0 - 10.0
+        """
+        volume = self.player.get_property('volume')
+        return int(volume*10)
         
     def set_volume(self, volume):
+        volume = int(volume)
         if volume < 0:
             volume=0
         if volume > 100:
             volume=100
+        volume = float(volume)/10
         self.player.set_property('volume', volume)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)

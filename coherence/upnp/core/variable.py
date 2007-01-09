@@ -30,10 +30,12 @@ class StateVariable:
         self.data_type = data_type
         self.allowed_values = values
         self.has_vendor_values = False
+        self.dependant_variable = None
         self.default_value = ''
         self.old_value = ''
         self.value = ''
         self.last_time_touched = time.time()
+        self.allowed_value_range = None
         if send_events in [True,1,'1','true','True','yes','Yes']:
             self.send_events = True
         else:
@@ -51,6 +53,12 @@ class StateVariable:
         if not isinstance(values,list):
             values = [values]
         self.allowed_values = values
+        
+    def set_allowed_value_range(self, **kwargs):
+        self.allowed_value_range = kwargs
+        
+    def get_allowed_values(self):
+        return self.allowed_values
         
     def update(self, value):
         self.old_value = self.value
@@ -88,7 +96,7 @@ class StateVariable:
                 if self.data_type == 'string':
                     value = str(value)
                     if len(self.allowed_values):
-                        if self.has_vendor_values:
+                        if self.has_vendor_values == True:
                             self.value = value
                         elif value.upper() in [v.upper() for v in self.allowed_values]:
                             self.value = value

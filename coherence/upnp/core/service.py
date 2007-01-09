@@ -305,7 +305,10 @@ class ServiceServer:
                                                                         v.allowed_values)
             self._variables[instance][v.name].has_vendor_values = v.has_vendor_values
             self._variables[instance][v.name].default_value = v.default_value
-            self._variables[instance][v.name].value = v.default_value
+            #self._variables[instance][v.name].value = v.default_value # FIXME
+            self._variables[instance][v.name].old_value = v.old_value
+            self._variables[instance][v.name].value = v.value
+            self._variables[instance][v.name].dependant_variable = v.dependant_variable
 
     def remove_instance(self, instance):
         if instance == 0:
@@ -345,6 +348,10 @@ class ServiceServer:
                     variable.name[0:11] != 'A_ARG_TYPE_'):
                     s = SubElement( e, variable.name)
                     s.attrib['val'] = str(variable.value)
+                    if variable.dependant_variable != None:
+                        dependants = variable.dependant_variable.get_allowed_values()
+                        if dependants != None and len(dependants) > 0:
+                            s.attrib['channel']=dependants[0]
         return tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
@@ -365,7 +372,11 @@ class ServiceServer:
             if n.name == 'LastChange':
                 SubElement( e, n.name).text = self.build_last_change_event(instance=n.instance)
             else:
-                SubElement( e, n.name).text = str(n.value)
+                s = SubElement( e, n.name).text = str(n.value)
+                if n.dependant_variable != None:
+                    dependants = n.dependant_variable.get_allowed_values()
+                    if dependants != None and len(dependants) > 0:
+                        s.attrib['channel']=dependants[0]
             
         xml = tostring( root, encoding='utf-8')
         #print "propagate_notification", xml
@@ -458,11 +469,16 @@ class ServiceServer:
                 log.info('Add callback %s for %s/%s' % (callback, self.id, name))
                     
  
-        backend_vendor_defaults = getattr(self.backend, "vendor_defaults", None)
-        service_defaults = None
-        if backend_vendor_defaults:
-            service_defaults = backend_vendor_defaults.get(self.id)
+        backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
+        service_value_defaults = None
+        if backend_vendor_value_defaults:
+            service_value_defaults = backend_vendor_value_defaults.get(self.id)
                     
+        backend_vendor_range_defaults = getattr(self.backend, "vendor_range_defaults", None)
+        service_range_defaults = None
+        if backend_vendor_range_defaults:
+            service_range_defaults = backend_vendor_range_defaults.get(self.id)
+            
         for var_node in tree.findall('.//stateVariable'):
             instance = 0
             name = var_node.findtext('name')
@@ -481,18 +497,46 @@ class ServiceServer:
             default_value = var_node.findtext('defaultValue')
             if default_value:
                 self._variables.get(instance)[name].set_default_value(default_value)
+            dependant_variable = var_node.findtext('{urn:schemas-beebits-net:service-1-0}X_dependantVariable')
+            if dependant_variable:
+                self._variables.get(instance)[name].dependant_variable = dependant_variable
             allowed_value_list = var_node.find('allowedValueList')
             if allowed_value_list:
                 vendor_values = allowed_value_list.attrib.get(
                                     '{urn:schemas-beebits-net:service-1-0}X_withVendorDefines',
-                                    False)
-                if service_defaults:
-                    variable_defaults = service_defaults.get(name)
-                    if variable_defaults:
-                        self._variables.get(instance)[name].set_allowed_values(variable_defaults)
+                                    None)
+                if service_value_defaults:
+                    variable_value_defaults = service_value_defaults.get(name)
+                    if variable_value_defaults:
+                        self._variables.get(instance)[name].set_allowed_values(variable_value_defaults)
 
-                self._variables.get(instance)[name].has_vendor_values = vendor_values
-
+                if vendor_values != None:
+                    self._variables.get(instance)[name].has_vendor_values = True
+                    
+            allowed_value_range = var_node.find('allowedValueRange')
+            if allowed_value_range:
+                vendor_values = allowed_value_range.attrib.get(
+                                    '{urn:schemas-beebits-net:service-1-0}X_withVendorDefines',
+                                    None)
+                range = {}
+                for e in list(allowed_value_range):
+                    range[e.tag] = e.text
+                    if( vendor_values != None):
+                        if service_range_defaults:
+                            variable_range_defaults = service_range_defaults.get(name)
+                            if( variable_range_defaults != None and
+                                variable_range_defaults.get(e.tag) != None):
+                                print "overwriting %s attribute %s with %s" % (name,
+                                                               e.tag, str(variable_range_defaults[e.tag]))
+                                range[e.tag] = variable_range_defaults[e.tag]
+                            elif e.text == None:
+                                print "missing vendor definition for %s, attribute %s" % (name, e.tag)
+                self._variables.get(instance)[name].set_allowed_value_range(**range)
+                
+        for v in self._variables.get(0).values():
+            if isinstance( v.dependant_variable, str):
+                v.dependant_variable = self._variables.get(instance).get(v.dependant_variable)
+                
 class scpdXML(static.Data):
 
     def __init__(self, server, control):
@@ -528,6 +572,18 @@ class scpdXML(static.Data):
                 v = SubElement( s, 'allowedValueList')
                 for value in var.allowed_values:
                     SubElement( v, 'allowedValue').text = value
+                    
+            if( var.allowed_value_range != None and
+                len(var.allowed_value_range) > 0):
+                complete = True
+                for name,value in var.allowed_value_range.items():
+                    if value == None:
+                        complete = False
+                if complete == True:
+                    avl = SubElement( s, 'allowedValueRange')
+                    for name,value in var.allowed_value_range.items():
+                         if value != None:
+                            SubElement( avl, name).text = str(value)
 
         self.xml = tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
