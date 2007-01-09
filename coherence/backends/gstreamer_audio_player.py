@@ -358,8 +358,7 @@ class Player:
             volume=0
         if volume > 100:
             volume=100
-        volume = float(volume)/10
-        self.player.set_property('volume', volume)
+        self.player.set_property('volume', float(volume)/10)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
         
