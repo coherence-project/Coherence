@@ -65,7 +65,8 @@ class ElisaMediaStore:
 
 
     def upnp_init(self):
-        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+        pass
+        # self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
 
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])

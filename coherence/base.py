@@ -175,7 +175,7 @@ class Coherence:
         except KeyError:
             log.warning("No plugin defined!")
         except Exception, msg:
-            log.critical("Can't enable plugins, %s!" % (plugin, msg))
+            log.critical("Can't enable plugins, %s: %s!" % (plugin, msg))
         
     def add_plugin(self, plugin, **kwargs):
         try:
