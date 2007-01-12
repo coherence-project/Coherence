@@ -7,6 +7,9 @@ from coherence.upnp.services.clients.connection_manager_client import Connection
 from coherence.upnp.services.clients.rendering_control_client import RenderingControlClient
 from coherence.upnp.services.clients.av_transport_client import AVTransportClient
 
+from coherence.extern.logger import Logger
+log = Logger('MRClient')
+
 class MediaRendererClient:
 
     def __init__(self, device):
@@ -24,9 +27,9 @@ class MediaRendererClient:
             if service.get_type() in ["urn:schemas-upnp-org:service:AVTransport:1",
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
                 self.av_transport = AVTransportClient( service)
-        print "MediaRenderer %s:" % (self.device.get_friendly_name())
+        log.warning("MediaRenderer %s" % (self.device.get_friendly_name()))
         if self.rendering_control:
-            print "RenderingControl available"
+            log.info("RenderingControl available")
             """
             actions =  self.rendering_control.service.get_actions()
             print actions
@@ -40,16 +43,16 @@ class MediaRendererClient:
             #self.rendering_control.get_volume()
             #self.rendering_control.set_mute(desired_mute=1)
         else:
-            print "RenderingControl not available, device not implemented properly according to the UPnP specification"
+            log.warning("RenderingControl not available, device not implemented properly according to the UPnP specification")
             return
         if self.connection_manager:
-            print "ConnectionManager available"
+            log.info("ConnectionManager available")
             #self.connection_manager.get_protocol_info()
         else:
-            print "ConnectionManager not available, device not implemented properly according to the UPnP specification"
+            log.warning("ConnectionManager not available, device not implemented properly according to the UPnP specification")
             return
         if self.av_transport:
-            print "AVTransport (optional) available"
+            log.info("AVTransport (optional) available")
             self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('TransportState', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('CurrentTransportActions', 0, self.state_variable_change)
@@ -57,5 +60,5 @@ class MediaRendererClient:
             #self.av_transport.get_current_transport_actions()
 
     def state_variable_change( self, variable):
-        print variable.name, 'changed from', variable.old_value, 'to', variable.value
+        log.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
 

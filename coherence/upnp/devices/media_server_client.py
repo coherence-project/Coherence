@@ -7,6 +7,9 @@ from coherence.upnp.services.clients.connection_manager_client import Connection
 from coherence.upnp.services.clients.content_directory_client import ContentDirectoryClient
 from coherence.upnp.services.clients.av_transport_client import AVTransportClient
 
+from coherence.extern.logger import Logger
+log = Logger('MSClient')
+
 class MediaServerClient:
 
     def __init__(self, device):
@@ -28,31 +31,30 @@ class MediaServerClient:
             #if service.get_type()  in ["urn:schemas-upnp-org:service:ScheduledRecording:1",
             #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:    
             #    self.scheduled_recording = ScheduledRecordingClient( service)
-        print "MediaServer %s:" % (self.device.get_friendly_name())
+        log.warning("MediaServer %s" % (self.device.get_friendly_name()))
         if self.content_directory:
-            print "ContentDirectory available"
+            log.info("ContentDirectory available")
         else:
-            print "ContentDirectory not available, device not implemented properly according to the UPnP specification"
+            log.warning("ContentDirectory not available, device not implemented properly according to the UPnP specification")
             return
         if self.connection_manager:
-            print "ConnectionManager available"
+            log.info("ConnectionManager available")
         else:
-            print "ConnectionManager not available, device not implemented properly according to the UPnP specification"
+            log.warning("ConnectionManager not available, device not implemented properly according to the UPnP specification")
             return
         if self.av_transport:
-            print "AVTransport (optional) available"
+            log.info("AVTransport (optional) available")
         if self.scheduled_recording:
-            print "ScheduledRecording (optional) available"
+            log.info("ScheduledRecording (optional) available")
             
         #d = self.content_directory.browse(0, recursive=False) # browse top level
         #d.addCallback( self.process_meta)
         
     def state_variable_change( self, variable):
-        print variable.name, 'changed from', variable.old_value, 'to', variable.value
+        log.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
 
     def print_results(self, results):
-        print "results="
-        print results
+        log.info("results=", results)
 
     def process_meta( self, results):
         for k,v in results.iteritems():

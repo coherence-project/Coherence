@@ -19,6 +19,9 @@ from coherence.upnp.core.utils import parse_xml
 
 import louie
 
+from coherence.extern.logger import Logger
+log = Logger('ControlPoint')
+
 class ControlPoint:
 
     def __init__(self, coherence):
@@ -48,17 +51,17 @@ class ControlPoint:
         return self.coherence.get_device_with_id(id)
 
     def check_device( self, device):
-        print "found device %s of type %s" %(device.get_friendly_name(),
-                                                device.get_device_type())
+        log.info("found device %s of type %s" %(device.get_friendly_name(),
+                                                device.get_device_type()))
         if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
                                   "urn:schemas-upnp-org:device:MediaServer:2"]:
-            print "identified MediaServer", device.get_friendly_name()
+            log.warning("identified MediaServer", device.get_friendly_name())
             client = MediaServerClient(device)
             device.set_client( client)
 
         if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
                                   "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
-            print "identified MediaRenderer", device.get_friendly_name()
+            log.warning("identified MediaRenderer", device.get_friendly_name())
             client = MediaRendererClient(device)
             device.set_client( client)
                 
@@ -197,10 +200,14 @@ def startXMLRPC( control_point, port):
                     
 if __name__ == '__main__':
 
+    from coherence.base import Coherence
     from coherence.upnp.devices.media_server_client import MediaServerClient
     from coherence.upnp.devices.media_renderer_client import MediaRendererClient
+    
+    config = {}
+    config['logmode'] = 'warning'
 
-    ctrl = ControlPoint()
+    ctrl = ControlPoint(Coherence(config))
 
 
     reactor.run()
