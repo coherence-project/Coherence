@@ -13,6 +13,9 @@ from coherence.upnp.core import utils
 
 import louie
 
+from coherence.extern.logger import Logger
+log = Logger('Device')
+
 class Device:
 
     def __init__(self, infos, parent=None):
@@ -84,8 +87,8 @@ class Device:
         for service in self.get_services():
             if service.get_sid():
                 if service.get_timeout() < now:
-                    print "wow, we lost an event subscription for %s, " % service.get_id()+ \
-                          "maybe we need to rethink the loop time and timeout calculation?"
+                    log.warning("wow, we lost an event subscription for %s, " % service.get_id(), 
+                          "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
         
@@ -99,7 +102,6 @@ class Device:
         from twisted.web.client import getPage
                                      
         def gotPage(x):
-            #print "gotPage"
             tree = utils.parse_xml(x, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:device-1-0"
             
@@ -119,13 +121,24 @@ class Device:
                 eventSubUrl = service.findtext('{%s}eventSubURL' % ns) 
                 presentationUrl = service.findtext('{%s}presentationURL' % ns)
                 scpdUrl = service.findtext('{%s}SCPDURL' % ns)
+                """ check if values are somehow reasonable
+                """
+                if len(scpdUrl) == 0:
+                    log.warning("service has no uri for its description")
+                    continue
+                if len(eventSubUrl) == 0:
+                    log.warning("service has no uri for eventing")
+                    continue
+                if len(controlUrl) == 0:
+                    log.warning("service has no uri for controling")
+                    continue
                 self.add_service(Service(serviceType, serviceId, self.location,
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
             
         def gotError(failure, url):
-            print "error requesting", url
-            print failure
+            log.warning("error requesting", url)
+            log.info(failure)
 
         getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 
@@ -137,9 +150,9 @@ class RootDevice(Device):
         self.devices = []
 
     def add_device(self, device):
-        #print "RootDevice add_device", device
+        log.info("RootDevice add_device", device)
         self.devices.append(device)
 
     def get_devices(self):
-        #print "RootDevice get_devices:", self.devices
+        log.info("RootDevice get_devices:", self.devices)
         return self.devices
