@@ -51,3 +51,16 @@ def get_ip_address(ifname):
         0x8915,  # SIOCGIFADDR
         struct.pack('256s', ifname[:15])
     )[20:24])
+
+def get_host_address():
+    route_file = '/proc/net/route'
+    route = open(route_file)
+    if (route):
+        tmp = route.readline() #skip first line
+        while (tmp != ''):
+            tmp = route.readline()
+            l = tmp.split('\t')
+            if (len(l) > 2):
+                if l[2] != '00000000': #default gateway...
+                    route.close()
+                    return get_ip_address(l[0])

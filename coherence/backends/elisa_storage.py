@@ -7,6 +7,7 @@ import re
 
 from twisted.spread import pb
 from twisted.internet import reactor
+from twisted.python import failure
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 from coherence.upnp.core.soap_service import errorCode
@@ -34,6 +35,8 @@ class ElisaMediaStore:
             size = in bytes (OPTIONAL)
     """
 
+    implements = ['MediaServer']
+
     def __init__(self, name, host, urlbase, ignore_patterns, server):
         self.name = name
         self.host = host
@@ -49,7 +52,13 @@ class ElisaMediaStore:
         factory = pb.PBClientFactory()
         reactor.connectTCP(self.host, 8789, factory)
         return factory.getRootObject()
-        
+
+    def get_by_id(self,id):
+        try:
+            return self.store[int(id)]
+        except:
+            return None        
+
     def set_root_id( self, id):
         self.root_id = id
 
@@ -83,7 +92,7 @@ class ElisaMediaStore:
             if isinstance(upnp_item, Container):
                 upnp_item.childCount = len(elisa_item.get('children',[]))
             else:
-                url = self.urlbase + elisa_item['location'] # FIXME
+                url = elisa_item['location']
                 upnp_item.res = Resource(url,
                                          'http-get:*:%s:*' % elisa_item['mimetype'])
                 try:

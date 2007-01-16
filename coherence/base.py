@@ -21,7 +21,7 @@ import louie
 from coherence.upnp.core.ssdp import SSDPServer
 from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
-from coherence.upnp.core.utils import parse_xml, get_ip_address
+from coherence.upnp.core.utils import parse_xml, get_ip_address, get_host_address
 
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
@@ -129,6 +129,11 @@ class Coherence:
             logmode = config['logmode']
         except:
             logmode = 'info'
+
+        try:
+            network_if = config['interface']
+        except:
+            network_if = None
         
         log.set_master_level(logmode)
         
@@ -154,8 +159,12 @@ class Coherence:
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown)
 
         self.web_server_port = 30020
-        self.hostname = socket.gethostbyname(socket.gethostname())
-        #FIXME: this doesn't work on systems with more than one network interface
+
+        if (network_if):
+            self.hostname = get_ip_address(network_if)
+        else:
+            self.hostname = get_host_address() 
+
         log.warning('running on host: %s' % self.hostname)
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
