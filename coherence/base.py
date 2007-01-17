@@ -160,10 +160,13 @@ class Coherence:
 
         self.web_server_port = 30020
 
-        if (network_if):
+        if network_if:
             self.hostname = get_ip_address(network_if)
         else:
-            self.hostname = get_host_address() 
+            self.hostname = socket.gethostbyname(socket.gethostname())
+            if self.hostname == '127.0.0.1':
+                """ use interface detection via routing table as last resort """
+                self.hostname = get_host_address() 
 
         log.warning('running on host: %s' % self.hostname)
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)

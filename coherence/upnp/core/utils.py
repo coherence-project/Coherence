@@ -64,3 +64,5 @@ def get_host_address():
                 if l[2] != '00000000': #default gateway...
                     route.close()
                     return get_ip_address(l[0])
+    """ return localhost if we havn't found anything """
+    return '127.0.0.1'
