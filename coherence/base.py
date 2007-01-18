@@ -29,6 +29,7 @@ from coherence.upnp.devices.media_renderer import MediaRenderer
 
 from coherence.backends.fs_storage import FSStore
 from coherence.backends.elisa_storage import ElisaMediaStore
+from coherence.backends.flickr_storage import FlickrStore
 
 from coherence.backends.gstreamer_audio_player import Player
 
@@ -173,7 +174,7 @@ class Coherence:
 
         log.warning('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
-            log.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited'
+            log.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
         self.web_server = WebServer( self.web_server_port, self)

@@ -8,6 +8,7 @@ logmode = warning               # none, critical, error, warning, info, debug
 
 [plugins]
     [[FSStore]]
-    content_directory = tests/content
+        content_directory = tests/content
     [[Player]]
+    #[[FlickrStore]]
 

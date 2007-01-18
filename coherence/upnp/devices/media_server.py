@@ -168,14 +168,10 @@ class RootDeviceXML(static.Data):
         
 class MediaServer:
 
-    def __init__(self, coherence, backend,
-                    version=2,
-                    name='my content',
-                    content_directory='tests/content',
-                    exclude_patterns=()):
+    def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaServer'
-        self.version = version
+        self.version = kwargs.get('version',2)
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
@@ -184,17 +180,20 @@ class MediaServer:
             urlbase += '/'
         self.urlbase = urlbase + str(self.uuid)[5:]
         
-        log.msg('MediaServer urlbase %s' % urlbase)
+        log.msg('MediaServer urlbase %s' % self.urlbase)
+        
+        kwargs['urlbase'] = self.urlbase
 
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
-        d = threads.deferToThread(backend, name, content_directory, self.urlbase, exclude_patterns, self)
+        d = threads.deferToThread(backend, self, **kwargs)
         #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', localhost, self.urlbase, (), self)
         
         def backend_failure(x):
             log.critical('backend not installed, MediaServer activation aborted')
             
         def service_failure(x):
+            print x
             log.critical('required service not available, MediaServer activation aborted')
             
         d.addCallback(self.backend_ready).addErrback(service_failure)

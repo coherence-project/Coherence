@@ -37,12 +37,14 @@ class ElisaMediaStore:
 
     implements = ['MediaServer']
 
-    def __init__(self, name, host, urlbase, ignore_patterns, server):
-        self.name = name
-        self.host = host
-        if urlbase[len(urlbase)-1] != '/':
-            urlbase += '/'
-        self.urlbase = urlbase
+    def __init__(self, server, **kwargs):
+        self.name = kwargs.get('name','my media')
+        self.host = kwargs.get('host','127.0.0.1')
+        self.urlbase = kwargs.get('urlbase','')
+        ignore_patterns = kwargs.get('ignore_patterns',[])
+
+        if self.urlbase[len(self.urlbase)-1] != '/':
+            self.urlbase += '/'
         self.server = server
         self.update_id = 0
         self.root_id = 0

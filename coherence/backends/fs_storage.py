@@ -118,16 +118,17 @@ class FSStore:
 
     implements = ['MediaServer']
     
-    def __init__(self, name, path, urlbase, ignore_patterns, server):
+    def __init__(self, server, **kwargs):
         self.next_id = 1000
-        self.name = name
-        self.path = path
-        if urlbase[len(urlbase)-1] != '/':
-            urlbase += '/'
-        self.urlbase = urlbase
+        self.name = kwargs.get('name','my media')
+        self.path = kwargs.get('path','tests/content')
+        self.urlbase = kwargs.get('urlbase','')
+        ignore_patterns = kwargs.get('ignore_patterns',[])
+
+        if self.urlbase[len(self.urlbase)-1] != '/':
+            self.urlbase += '/'
         self.server = server
         self.store = {}
-        
         
         self.inotify = INotify()
         
