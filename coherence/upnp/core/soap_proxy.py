@@ -16,17 +16,18 @@ from elementtree import ElementTree
 
 class SOAPProxy(soap.Proxy):
 
-    def __init__(self, url, namespace=None, header=None, soapaction=None):
+    def __init__(self, url, namespace=None, envelope_attrib=None, header=None, soapaction=None):
         soap.Proxy.__init__(self, url, namespace, header)
         self.soapaction = soapaction
+        self.envelope_attrib = envelope_attrib
 
-    def callRemote(self, method, *args, **kwargs):
-        soapaction = self.soapaction or method
+    def callRemote(self, soapmethod, *args, **kwargs):
+        soapaction = self.soapaction or soapmethod
 
         ns = self.namespace
         ElementTree._namespace_map.update({ns[1]:ns[0]})
 
-        request = SoapRequest("{%s}%s" % (ns[1], method))
+        request = SoapRequest("{%s}%s" % (ns[1], soapmethod))
 
         type_map = {str: 'xsd:string',
                     int: 'xsd:int',
@@ -44,8 +45,12 @@ class SOAPProxy(soap.Proxy):
         #for n, v in soap_namespaces.iteritems():
         #    envelope.attrib.update({"xmlns:%s" % v : n})
         
-        envelope.attrib.update({'s:encodingStyle' : "http://schemas.xmlsoap.org/soap/encoding/"})
-        envelope.attrib.update({'xmlns:s' :"http://schemas.xmlsoap.org/soap/envelope/"})
+        if self.envelope_attrib:
+            for n in self.envelope_attrib:
+                envelope.attrib.update({n[0] : n[1]})
+        else:
+            envelope.attrib.update({'s:encodingStyle' : "http://schemas.xmlsoap.org/soap/encoding/"})
+            envelope.attrib.update({'xmlns:s' :"http://schemas.xmlsoap.org/soap/envelope/"})
         body = SubElement(envelope, "s:Body")
         body.append(request)
 
@@ -68,7 +73,9 @@ class SOAPProxy(soap.Proxy):
                               ).addCallbacks(self._cbGotResult, gotError, None, None, [self.url], None)
 
     def _cbGotResult(self, result):
+        #print "_cbGotResult 1", result
         result = SOAPpy.parseSOAPRPC(result)            
+        #print "_cbGotResult 2", result
         if len(result) == 1:
             return result[0]
         else:
@@ -76,5 +83,7 @@ class SOAPProxy(soap.Proxy):
         """
         tree = ElementTree.fromstring(result)
         body = tree.find('%sBody' % NS_SOAP_ENV)
-        return decode(body)
+        r = decode(body)
+        print "_cbGotResult 3", r
+        return r
         """
