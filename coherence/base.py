@@ -135,6 +135,11 @@ class Coherence:
         except:
             network_if = None
         
+        try:
+            self.web_server_port = config['serverport']
+        except:
+            self.web_server_port = 30020
+            
         log.set_master_level(logmode)
         
         #log.disable(name='Variable')
@@ -158,8 +163,6 @@ class Coherence:
 
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown)
 
-        self.web_server_port = 30020
-
         if network_if:
             self.hostname = get_ip_address(network_if)
         else:
@@ -169,6 +172,8 @@ class Coherence:
                 self.hostname = get_host_address() 
 
         log.warning('running on host: %s' % self.hostname)
+        if self.hostname == '127.0.0.1':
+            log.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited'
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
         self.web_server = WebServer( self.web_server_port, self)
