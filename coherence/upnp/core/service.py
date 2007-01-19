@@ -472,7 +472,7 @@ class ServiceServer:
         backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
         service_value_defaults = None
         if backend_vendor_value_defaults:
-            service_value_defaults = backend_vendor_value_defaults.get(self.id)
+            service_value_defaults = backend_vendor_value_defaults.get(self.id,None)
                     
         backend_vendor_range_defaults = getattr(self.backend, "vendor_range_defaults", None)
         service_range_defaults = None
@@ -501,13 +501,15 @@ class ServiceServer:
             if dependant_variable:
                 self._variables.get(instance)[name].dependant_variable = dependant_variable
             allowed_value_list = var_node.find('allowedValueList')
-            if allowed_value_list:
+            if allowed_value_list != None:
                 vendor_values = allowed_value_list.attrib.get(
                                     '{urn:schemas-beebits-net:service-1-0}X_withVendorDefines',
                                     None)
                 if service_value_defaults:
-                    variable_value_defaults = service_value_defaults.get(name)
+                    variable_value_defaults = service_value_defaults.get(name, None)
                     if variable_value_defaults:
+                        print "overwriting %s default value with %s" % (name,
+                                                               variable_value_defaults)
                         self._variables.get(instance)[name].set_allowed_values(variable_value_defaults)
 
                 if vendor_values != None:
