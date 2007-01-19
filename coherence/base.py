@@ -196,6 +196,7 @@ class Coherence:
             log.critical("Can't enable plugins, %s: %s!" % (plugin, msg))
         
     def add_plugin(self, plugin, **kwargs):
+        log.info("adding plugin", plugin)
         try:
             plugin_class=globals().get(plugin)
             for device in plugin_class.implements:
