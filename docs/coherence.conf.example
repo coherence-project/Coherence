@@ -10,5 +10,5 @@ logmode = warning               # none, critical, error, warning, info, debug
     [[FSStore]]
         content_directory = tests/content
     [[Player]]
-    #[[FlickrStore]]
+    [[FlickrStore]]
 
