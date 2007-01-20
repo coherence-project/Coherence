@@ -49,6 +49,9 @@ class ElisaMediaStore:
         self.update_id = 0
         self.root_id = 0
         self.get_root_id()
+        
+    def __repr__(self):
+        return "Elisa storage"
 
     def get_store(self):
         factory = pb.PBClientFactory()

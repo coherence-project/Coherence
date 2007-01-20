@@ -49,6 +49,9 @@ class Player:
         self.poll_LC = LoopingCall( self.poll_gst_bus)
         self.poll_LC.start( 0.3)
         self.update_LC = LoopingCall( self.update)
+        
+    def __repr__(self):
+        return "GStreamer audio player"
 
     def poll_gst_bus( self):
         # FIXME: isn't there any better way to do this?

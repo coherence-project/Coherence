@@ -12,6 +12,8 @@ from twisted.internet import threads
 from twisted.web import xmlrpc, static
 from twisted.web import resource, server
 from twisted.python import util
+from twisted.python.filepath import FilePath
+
 
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
@@ -74,12 +76,41 @@ class MSRoot(resource.Resource):
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
                 ch = static.File(p)
+            else:
+                return self.list_content(name, ch, request)
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
         log.info('MSRoot ch', ch)
         return ch
+        
+    def list_content(self, name, item, request):
+        page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
+                                            (item.get_name(),item.get_name())
+        
+        if item.mimetype == 'directory':
+            uri = request.uri
+            if uri[-1] != '/':
+                uri += '/'
+
+            page += """<ul>"""
+            for c in item.children:
+                # FIXME: there has to be a better solution for this decoding stupidity
+                path = c.get_path().encode('utf-8').encode('string_escape')
+                title = c.get_name().encode('string_escape')
+                page += '<li><a href=%s>%s</a></li>' % \
+                                    (path, title)
+            page += """</ul>"""
+        elif item.mimetype.find('image/') == 0:
+            path = item.get_path().encode('utf-8').encode('string_escape')
+            title = item.get_name().encode('string_escape')
+            page += """<p><img src="%s" alt="%s"></p>""" % \
+                                    (path, title)
+        else:
+            pass
+        page += """</body></html>"""
+        return page
         
     def listchilds(self, uri):
         log.info('listchilds %s' % uri)
@@ -92,7 +123,9 @@ class MSRoot(resource.Resource):
         return cl
 
     def render(self,request):
-        return '<html><p>root of the MediaServer</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
+        return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>'% \
+                                        (self.server.backend,
+                                         self.listchilds(request.uri))
 
 
 class RootDeviceXML(static.Data):
@@ -257,6 +290,8 @@ class MediaServer:
         self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
 
         self.register()
+        log.critical("%s Mediaserver activated" % self.backend)
+
 
     def register(self):
         s = self.coherence.ssdp_server

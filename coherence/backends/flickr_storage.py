@@ -27,14 +27,14 @@ class FlickrItem:
         else:
             self.name = obj.get('title').encode('utf-8')
             if len(self.name) == 0:
-                self.name = u'untitled'
+                self.name = 'untitled'
             self.mimetype = 'image/jpeg'
             
         self.parent = parent
         if parent:
             parent.add_child(self,update=update)
   
-        if mimetype == 'directory':
+        if self.mimetype == 'directory':
             if( len(urlbase) and urlbase[-1] != '/'):
                 urlbase += '/'
             self.url = urlbase + str(self.id)
@@ -54,7 +54,7 @@ class FlickrItem:
         self.child_count = 0
         self.children = []
 
-        if mimetype == 'directory':
+        if self.mimetype == 'directory':
             self.update_id = 0
         else:
             self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
@@ -147,6 +147,9 @@ class FlickrStore:
         self.flickr_api_key = '837718c8a622c699edab0ea55fcec224'
         self.store = {}
         
+    def __repr__(self):
+        return "Flickr storage"
+            
     def append( self, obj, parent):
         if isinstance(obj, str):
             mimetype = 'directory'
@@ -183,8 +186,11 @@ class FlickrStore:
         return len(self.store)
         
     def get_by_id(self,id):
+        id = int(id)
+        if id == 0:
+            id = 1000
         try:
-            return self.store[int(id)]
+            return self.store[id]
         except:
             return None
             
@@ -254,98 +260,6 @@ class FlickrStore:
         d = self.flickr_interestingness()
         d.addCallback(self.append_flickr_result, parent)
 
-
-    def old_upnp_Browse(self, *args, **kwargs):
-        ObjectID = int(kwargs['ObjectID'])
-        BrowseFlag = kwargs['BrowseFlag']
-        Filter = kwargs['Filter']
-        StartingIndex = int(kwargs['StartingIndex'])
-        RequestedCount = int(kwargs['RequestedCount'])
-        SortCriteria = kwargs['SortCriteria']
-        
-        def build_upnp_item(photo, id):
-            title = photo.get('title').encode('utf-8')
-            if len(title) == 0:
-                title = u'untitled'
-            
-            url = u"http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
-                        photo.get('farm').encode('utf-8'),
-                        photo.get('server').encode('utf-8'),
-                        photo.get('id').encode('utf-8'),
-                        photo.get('secret').encode('utf-8'))
-            
-            UPnPClass = classChooser('image/jpeg')
-            upnp_item = UPnPClass(id, 0, title)
-            upnp_item.res = Resource(url, 'http-get:*:image/jpeg:*')
-            upnp_item.res.size = None
-            upnp_item.res = [ upnp_item.res ]
-            return upnp_item
-        
-        def got_result(result):
-            didl = DIDLElement()
-            total = 0
-            for photo in result.getiterator('photo'):
-                if BrowseFlag == 'BrowseDirectChildren':
-                    total += 1
-                    didl.addItem(build_upnp_item(photo, total))
-                else:
-                    total = 1
-                    didl.addItem(build_upnp_item(photo, total))
-                    break
-
-            r = { 'Result': didl.toString(), 'TotalMatches': total,
-                  'NumberReturned': didl.numItems()}
-
-            r['UpdateID'] = self.update_id
-
-            return r
-    
-        def got_error(r):
-            return failure.Failure(errorCode(701))
-
-        d = self.flickr_interestingness(per_page=RequestedCount)
-        d.addCallback(got_result)
-        d.addErrback(got_error)
-        return d
-        
-    def upnp_Browse(self, *args, **kwargs):
-        ObjectID = int(kwargs['ObjectID'])
-        BrowseFlag = kwargs['BrowseFlag']
-        Filter = kwargs['Filter']
-        StartingIndex = int(kwargs['StartingIndex'])
-        RequestedCount = int(kwargs['RequestedCount'])
-        SortCriteria = kwargs['SortCriteria']
-
-        root_id = ObjectID
-        if root_id == 0:
-            root_id = 1000
-        item = self.get_by_id(root_id)
-        
-        if item  == None:
-            return failure.Failure(errorCode(701))
-            
-        didl = DIDLElement()
-
-        if BrowseFlag == 'BrowseDirectChildren':
-            childs = item.get_children(StartingIndex, StartingIndex + RequestedCount)
-            for i in childs:
-                didl.addItem(i.item)
-            total = item.child_count
-        else:
-            didl.addItem(item.item)
-            total = 1
-
-        r = { 'Result': didl.toString(), 'TotalMatches': total,
-            'NumberReturned': didl.numItems()}
-
-        if hasattr(item, 'update_id'):
-            r['UpdateID'] = item.update_id
-        else:
-            r['UpdateID'] = self.update_id
-
-        return r
-
-        
 def main():
 
     f = FlickrStore(None)
@@ -368,18 +282,18 @@ def main():
         print "upnp", result
         
     #d = f.flickr_test_echo(name='Coherence')
-    #d = f.flickr_interestingness()
-    #d.addCallback(got_flickr_result)
+    d = f.flickr_interestingness()
+    d.addCallback(got_flickr_result)
     
-    f.upnp_init()
-    print f.store
-    r = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
-                        RequestedCount=0,
-                        StartingIndex=0,
-                        ObjectID=0,
-                        SortCriteria='*',
-                        Filter='')
-    got_upnp_result(r)
+    #f.upnp_init()
+    #print f.store
+    #r = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
+    #                    RequestedCount=0,
+    #                    StartingIndex=0,
+    #                    ObjectID=0,
+    #                    SortCriteria='*',
+    #                    Filter='')
+    #got_upnp_result(r)
 
 
 if __name__ == '__main__':
