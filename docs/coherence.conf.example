@@ -9,6 +9,9 @@ logmode = warning               # none, critical, error, warning, info, debug
 [plugins]
     [[FSStore]]
         content_directory = tests/content
+        name = Coherence Test Content
     [[Player]]
+        name = GStreamer Audio Player
     [[FlickrStore]]
+        name = Flickr Images
 

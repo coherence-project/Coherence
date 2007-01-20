@@ -273,6 +273,7 @@ class MediaServer:
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
+                                    friendly_name=self.backend.name,
                                     services=self._services,
                                     devices=self._devices))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
@@ -280,6 +281,7 @@ class MediaServer:
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
+                                    friendly_name=self.backend.name,
                                     xbox_hack=True,
                                     services=self._services,
                                     devices=self._devices))
@@ -290,7 +292,7 @@ class MediaServer:
         self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
 
         self.register()
-        log.critical("%s Mediaserver activated" % self.backend)
+        log.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
 
 
     def register(self):

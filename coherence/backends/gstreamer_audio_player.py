@@ -37,7 +37,9 @@ class Player:
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
-    def __init__(self, server):
+    def __init__(self, server, **kwargs):
+        self.name = kwargs.get('name','GStreamer Audio Player')
+
         self.player = gst.element_factory_make("playbin", "myplayer")
         self.playing = False
         self.duration = None
@@ -51,7 +53,7 @@ class Player:
         self.update_LC = LoopingCall( self.update)
         
     def __repr__(self):
-        return "GStreamer audio player"
+        return str(self.__class__).split('.')[-1]
 
     def poll_gst_bus( self):
         # FIXME: isn't there any better way to do this?

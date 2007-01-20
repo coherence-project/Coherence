@@ -148,7 +148,7 @@ class FlickrStore:
         self.store = {}
         
     def __repr__(self):
-        return "Flickr storage"
+        return str(self.__class__).split('.')[-1]
             
     def append( self, obj, parent):
         if isinstance(obj, str):

@@ -38,7 +38,7 @@ class ElisaMediaStore:
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        self.name = kwargs.get('name','my media')
+        self.name = kwargs.get('name','Elisa')
         self.host = kwargs.get('host','127.0.0.1')
         self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])

@@ -151,6 +151,7 @@ class MediaRenderer:
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
+                                    friendly_name=self.backend.name,
                                     services=self._services,
                                     devices=self._devices))
             version -= 1
@@ -162,7 +163,7 @@ class MediaRenderer:
 
 
         self.register()
-
+        log.critical("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
         
     def register(self):
         s = self.coherence.ssdp_server

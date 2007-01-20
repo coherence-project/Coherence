@@ -140,7 +140,7 @@ class FSStore:
         self.update_id = 0
         
     def __repr__(self):
-        return "FileSystem storage"
+        return str(self.__class__).split('.')[-1]
 
     def len(self):
         return len(self.store)
