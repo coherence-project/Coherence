@@ -114,12 +114,11 @@ class MSRoot(resource.Resource):
         
     def listchilds(self, uri):
         log.info('listchilds %s' % uri)
-        cl = ''
-        sep = ''
         if uri[-1] != '/':
-            sep = '/'
+            uri += '/'
+        cl = '<p><a href=%s0>content</a></p>' % uri
         for c in self.children:
-                cl += '<li><a href=%s%s%s>%s</a></li>' % (uri,sep,c,c)
+                cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
 
     def render(self,request):

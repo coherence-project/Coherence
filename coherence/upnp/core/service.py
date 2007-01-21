@@ -667,7 +667,6 @@ class ServiceControl:
             
         def failure(x):
             #print 'failure', x
-            #log.err()
             log.error('soap__generic error during call processing')
             return x
 

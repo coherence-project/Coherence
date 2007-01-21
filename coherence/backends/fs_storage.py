@@ -118,6 +118,8 @@ class FSStore:
 
     implements = ['MediaServer']
     
+    wmc_mapping = {'4':1000}
+
     def __init__(self, server, **kwargs):
         self.next_id = 1000
         self.name = kwargs.get('name','my media')

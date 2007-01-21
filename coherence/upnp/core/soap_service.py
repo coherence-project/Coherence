@@ -44,7 +44,7 @@ class UPnPPublisher(soap.SOAPPublisher):
         request.finish()
         
     def _methodNotFound(self, request, methodName):
-        response = SOAPpy.buildSOAP(SOAPpy.faultType("%s:Client" % SOAPpy.NS.ENV_T,
+        response = SOAPpy.buildSOAP(SOAPpy.faultType("%s:Server" % SOAPpy.NS.ENV_T,
                                                  "Method %s not found" % methodName),
                                   encoding=self.encoding)
         self._sendResponse(request, response, status=401)
@@ -65,7 +65,7 @@ class UPnPPublisher(soap.SOAPPublisher):
                 status = e.status
             else:
                 failure.printTraceback()
-            fault = SOAPpy.faultType("%s:Server" % SOAPpy.NS.ENV_T, "Method %s failed." % methodName)
+            fault = SOAPpy.faultType("%s:Server" % SOAPpy.NS.ENV_T, "Method %s failed with %d." % (methodName,status))
         response = SOAPpy.buildSOAP(fault, encoding=self.encoding)
         self._sendResponse(request, response, status=status)
 

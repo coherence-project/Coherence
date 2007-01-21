@@ -16,6 +16,7 @@ from twisted.python import reflect
 from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from coherence.upnp.core.soap_service import UPnPPublisher
+from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core.DIDLLite import DIDLElement
 
 from coherence.upnp.core import service
@@ -62,46 +63,43 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         SearchCriteria = kwargs['SearchCriteria']
         
         total = 0
+        root_id = 0
+        item = None
+        items = []
 
+        # FIXME: we need this only if that call comes from an XBox
+        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         """ fake a Windows Media Connect Server
             and return for the moment an empty results
             for the things we can't support now
         """
-        if ContainerID in ['1','2','3','5','6','7','8','9',
-                           '10','11','12','13','14','15','16','17',
-                           'A','B','C','D','E','F']:
-            didl = DIDLElement()
-            r = { 'Result': didl.toString(), 'TotalMatches': 0,
-                  'UpdateID': self.update_id, 'NumberReturned': didl.numItems()}
-            return r
-        
-        """ a request for all music items served by a Windows Media Connect Server """
-        if ContainerID == '4':
-            root_id = 1000
-            item = self.get_by_id(root_id)
-            if item  == None:
-                return failure.Failure(errorCode(701))
-                
-            items = []
-            containers = [item]
-            while len(containers)>0:
-                container = containers.pop()
-                if container.mimetype != 'directory':
-                    continue
-                for child in container.get_children(0,0):
-                    if child.mimetype == 'directory':
-                        containers.append(child)
-                    else:
-                        items.append(child)
-                        total += 1
-
+        if( wmc_mapping != None and
+            wmc_mapping.has_key(ContainerID)):
+            root_id = wmc_mapping[ContainerID]
+            if ContainerID in ['4','8','13','B']: # _all_ items
+                item = self.backend.get_by_id(root_id)
+                if item  == None:
+                    return failure.Failure(errorCode(701))
+                    
+                containers = [item]
+                while len(containers)>0:
+                    container = containers.pop()
+                    if container.mimetype != 'directory':
+                        continue
+                    for child in container.get_children(0,0):
+                        if child.mimetype == 'directory':
+                            containers.append(child)
+                        else:
+                            items.append(child)
+                            total += 1
         else:
-            ContainerID = int(ContainerID)
-            if ContainerID == 0:
-                root_id = 1000
+            try:
+                root_id = int(ContainerID)
+            except:
+                pass
 
-            item = self.get_by_id(root_id)
-            if item  == None:
+            item = self.backend.get_by_id(root_id)
+            if item == None:
                 return failure.Failure(errorCode(701))
                 
             items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
@@ -114,10 +112,10 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         r = { 'Result': didl.toString(), 'TotalMatches': total,
             'NumberReturned': didl.numItems()}
 
-        if hasattr(item, 'update_id'):
+        if(item != None and hasattr(item, 'update_id')):
             r['UpdateID'] = item.update_id
         else:
-            r['UpdateID'] = self.update_id
+            r['UpdateID'] = self.backend.update_id # FIXME
 
         return r
 
@@ -131,7 +129,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
 
         item = self.backend.get_by_id(ObjectID)
         
-        if item  == None:
+        if item == None:
             return failure.Failure(errorCode(701))
             
         didl = DIDLElement()

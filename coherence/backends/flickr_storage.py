@@ -129,6 +129,8 @@ class FlickrStore:
 
     implements = ['MediaServer']
 
+    wmc_mapping = {'B': 1000}
+    
     def __init__(self, server, **kwargs):
         self.next_id = 1000
         self.name = kwargs.get('name','Flickr')
