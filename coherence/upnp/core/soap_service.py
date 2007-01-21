@@ -11,7 +11,27 @@ from twisted.web import soap, server
 from twisted.python import log, failure
 from twisted.internet import defer
 
+from elementtree.ElementTree import Element, SubElement, tostring
+
 import SOAPpy
+
+UPNPERRORS = {401:'Invalid Action',
+              402:'Invalid Args',
+              501:'Action Failed',
+              600:'Argument Value Invalid',
+              601:'Argument Value Out of Range',
+              602:'Optional Action Not Implemented',
+              603:'Out Of Memory',
+              604:'Human Intervention Required',
+              605:'String Argument Too Long',
+              606:'Action Not Authorized',
+              607:'Signature Failure',
+              608:'Signature Missing',
+              609:'Not Encrypted',
+              610:'Invalid Sequence',
+              611:'Invalid Control URL',
+              612:'No Such Session',}
+
 
 from coherence.extern.logger import Logger
 log = Logger('SOAP')
@@ -20,6 +40,29 @@ class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
         self.status = status
+        
+class UPnPError:
+
+    def __init__(self,status,description='without words'):
+        root = Element('s:Envelope')
+        root.attrib['xmlns']='s=http://schemas.xmlsoap.org/soap/envelope/'
+        root.attrib['s:encodingStyle']='s=http://schemas.xmlsoap.org/soap/encoding/'
+        e = SubElement(root,'s:Body')
+        e = SubElement(e,'s:Fault')
+        SubElement(e,'faultcode').text='s:Client'
+        SubElement(e,'faultstring').text='UPnPError'
+        e = SubElement(e,'detail')
+        e = SubElement(e, 'UPnPError')
+        e.attrib['xmlns']='urn:schemas-upnp-org:control-1-0'
+        SubElement(e,'errorCode').text=str(status)
+        try:
+            SubElement(e,'errorDescription').text=UPNPERRORS[status]
+        except:
+            SubElement(e,'errorDescription').text=description
+        self.xml = tostring( root, encoding='utf-8')
+        
+    def get_xml(self):
+        return self.xml
 
 class UPnPPublisher(soap.SOAPPublisher):
     """UPnP requires headers and OUT parameters to be returned
@@ -28,7 +71,11 @@ class UPnPPublisher(soap.SOAPPublisher):
 
     def _sendResponse(self, request, response, status=200):
         log.info('_sendResponse', status, response)
-        request.setResponseCode(status)
+        #request.setResponseCode(status)
+        if status == 200:
+            request.setResponseCode(200)
+        else:
+            request.setResponseCode(500)
 
         if self.encoding is not None:
             mimeType = 'text/xml; charset="%s"' % self.encoding
@@ -44,9 +91,13 @@ class UPnPPublisher(soap.SOAPPublisher):
         request.finish()
         
     def _methodNotFound(self, request, methodName):
-        response = SOAPpy.buildSOAP(SOAPpy.faultType("%s:Server" % SOAPpy.NS.ENV_T,
-                                                 "Method %s not found" % methodName),
-                                  encoding=self.encoding)
+        """
+        response = SOAPpy.buildSOAP(SOAPpy.faultType("%s:Client" % SOAPpy.NS.ENV_T,
+                                                        "UPnPError",
+                                                        UPnPErrorDetail(401)),
+                                                        encoding=self.encoding)
+        """
+        response = UPnPError(401).get_xml()
         self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName):
@@ -65,8 +116,13 @@ class UPnPPublisher(soap.SOAPPublisher):
                 status = e.status
             else:
                 failure.printTraceback()
-            fault = SOAPpy.faultType("%s:Server" % SOAPpy.NS.ENV_T, "Method %s failed with %d." % (methodName,status))
-        response = SOAPpy.buildSOAP(fault, encoding=self.encoding)
+            """
+            fault = SOAPpy.faultType("%s:Client" % SOAPpy.NS.ENV_T,
+                                     "UPnPError",
+                                    UPnPErrorDetail(status))
+            """
+        #response = SOAPpy.buildSOAP(fault, encoding=self.encoding)
+        response = UPnPError(status).get_xml()
         self._sendResponse(request, response, status=status)
 
     def lookupFunction(self, functionName):
