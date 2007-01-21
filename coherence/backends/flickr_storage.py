@@ -229,7 +229,8 @@ class FlickrStore:
             date = time.strftime( "%Y-%m-%d", time.localtime(time.time()-86400))
         if per_page > 500:
             per_page = 500
-        d = self.flickr_call('flickr.interestingness.getList', date=date, per_page=per_page)
+        #d = self.flickr_call('flickr.interestingness.getList', date=date, per_page=per_page)
+        d = self.flickr_call('flickr.interestingness.getList', per_page=per_page)
         return d
         
     def soap_flickr_test_echo(self, value):
