@@ -169,7 +169,7 @@ class Service:
                 self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
             for var_node in tree.findall('.//{%s}stateVariable' % ns):
-                send_events = var_node.attrib["sendEvents"]
+                send_events = var_node.attrib.get('sendEvents','False')
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
@@ -665,7 +665,7 @@ class ServiceControl:
                 return callback( **kwargs)
             return result
             
-        def failure(x):
+        def got_error(x):
             #print 'failure', x
             log.error('soap__generic error during call processing')
             return x
@@ -673,6 +673,6 @@ class ServiceControl:
         # call plugin method for this action
         d = defer.maybeDeferred( callit, *args, **kwargs)
         d.addCallback( self.get_action_results, action, instance)
-        d.addErrback(failure)
+        d.addErrback(got_error)
         return d
 
