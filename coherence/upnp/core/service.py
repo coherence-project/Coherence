@@ -642,9 +642,19 @@ class ServiceControl:
             
         log.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
+        if( kwargs.has_key('X_UPnPClient') and
+                kwargs['X_UPnPClient'] == 'XBox'):
+            if(action.name == 'Browse' and
+                    kwargs.has_key('ContainerID')):
+                """ XXX: THIS IS SICK """
+                kwargs['ObjectID'] = kwargs['ContainerID']
+                del kwargs['ContainerID']
 
         in_arguments = action.get_in_arguments()
         for arg_name, arg in kwargs.iteritems():
+            if arg_name.find('X_') == 0:
+                in_arguments.remove(arg_name)
+                continue
             l = [ a for a in in_arguments if arg_name == a.get_name()] 
             if len(l) > 0:
                 in_arguments.remove(l[0])

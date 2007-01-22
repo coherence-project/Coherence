@@ -163,6 +163,10 @@ class UPnPPublisher(soap.SOAPPublisher):
             return server.NOT_DONE_YET
         else:
             keywords = {'soap_methodName':methodName}
+            if(headers.has_key('user-agent') and
+                    headers['user-agent'].find('Xbox/') == 0):
+                keywords['X_UPnPClient'] = 'XBox'
+
             for k, v in kwargs.items():
                 keywords[str(k)] = v
             if hasattr(function, "useKeywords"):

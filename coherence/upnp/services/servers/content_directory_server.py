@@ -67,13 +67,13 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         item = None
         items = []
 
-        # FIXME: we need this only if that call comes from an XBox
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         """ fake a Windows Media Connect Server
-            and return for the moment an empty results
+            and return for the moment an error
             for the things we can't support now
         """
-        if( wmc_mapping != None and
+        if( kwargs.get('X_UPnPClient', '') == 'XBox' and
+            wmc_mapping != None and
             wmc_mapping.has_key(ContainerID)):
             root_id = wmc_mapping[ContainerID]
             if ContainerID in ['4','8','13','B']: # _all_ items
@@ -120,14 +120,26 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         return r
 
     def upnp_Browse(self, *args, **kwargs):
-        ObjectID = int(kwargs['ObjectID'])
+        ObjectID = kwargs['ObjectID']
         BrowseFlag = kwargs['BrowseFlag']
         Filter = kwargs['Filter']
         StartingIndex = int(kwargs['StartingIndex'])
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
+        
+        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
+        """ fake a Windows Media Connect Server
+            and return for the moment an error
+            for the things we can't support now
+        """
+        if( kwargs.get('X_UPnPClient', '') == 'XBox' and
+                wmc_mapping != None and
+                wmc_mapping.has_key(ObjectID)):
+            root_id = wmc_mapping[ObjectID]
+        else:
+            root_id = int(ObjectID)
 
-        item = self.backend.get_by_id(ObjectID)
+        item = self.backend.get_by_id(root_id)
         
         if item == None:
             return failure.Failure(errorCode(701))
