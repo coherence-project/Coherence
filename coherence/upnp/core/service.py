@@ -653,7 +653,6 @@ class ServiceControl:
         in_arguments = action.get_in_arguments()
         for arg_name, arg in kwargs.iteritems():
             if arg_name.find('X_') == 0:
-                in_arguments.remove(arg_name)
                 continue
             l = [ a for a in in_arguments if arg_name == a.get_name()] 
             if len(l) > 0:
