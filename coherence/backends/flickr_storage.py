@@ -212,7 +212,7 @@ class FlickrStore:
 
         def got_error(error):
             log.info(error)
-            log.error("connection to Flickr service failed!)
+            log.error("connection to Flickr service failed!")
             return error
         
         args = {}
