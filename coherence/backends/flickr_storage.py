@@ -17,6 +17,9 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 
+from coherence.extern.logger import Logger
+log = Logger('FlickrStore')
+
 class FlickrItem:
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
@@ -208,7 +211,8 @@ class FlickrStore:
             return result
 
         def got_error(error):
-            print 'error', error
+            log.info(error)
+            log.error("connection to Flickr service failed!)
             return error
         
         args = {}
