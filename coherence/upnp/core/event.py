@@ -244,8 +244,12 @@ def send_notification(s, xml):
     """
 
     _,host_port,path,_,_ = urlsplit(s['callback'])
-    host,port = tuple(host_port.split(':'))
-    port = int(port)
+    if host_port.find(':') != -1:
+        host,port = tuple(host_port.split(':'))
+        port = int(port)
+    else:
+        host = host_port
+        port = 80
 
     def send_request(p):
         request = ['NOTIFY %s HTTP/1.1' % path,
