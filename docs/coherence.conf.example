@@ -14,4 +14,6 @@ logmode = warning               # none, critical, error, warning, info, debug
         name = GStreamer Audio Player
     [[FlickrStore]]
         name = Flickr Images
+        proxy = yes             # if set to yes coherence will fetch the images
+                                #  from Flickr for your client
 

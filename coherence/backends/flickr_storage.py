@@ -7,6 +7,7 @@ import time
 import re
 
 from twisted.python import failure
+from twisted.web import proxy
 from twisted.web.xmlrpc import Proxy
 
 from elementtree.ElementTree import fromstring
@@ -20,9 +21,25 @@ from coherence.upnp.core.soap_service import errorCode
 from coherence.extern.logger import Logger
 log = Logger('FlickrStore')
 
+from urlparse import urlsplit
+
+class ProxyImage(proxy.ReverseProxyResource):
+
+    def __init__(self, uri):
+        self.uri = uri
+        _,host_port,path,_,_ = urlsplit(uri)
+        if host_port.find(':') != -1:
+            host,port = tuple(host_port.split(':'))
+            port = int(port)
+        else:
+            host = host_port
+            port = 80
+
+        proxy.ReverseProxyResource.__init__(self, host, port, path)
+        
 class FlickrItem:
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False,proxy=False):
         self.id = id
         if mimetype == 'directory':
             self.name = obj
@@ -37,16 +54,25 @@ class FlickrItem:
         if parent:
             parent.add_child(self,update=update)
   
+        if( len(urlbase) and urlbase[-1] != '/'):
+            urlbase += '/'
+                
         if self.mimetype == 'directory':
-            if( len(urlbase) and urlbase[-1] != '/'):
-                urlbase += '/'
             self.url = urlbase + str(self.id)
         else:
-            self.url = u"http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
-                    obj.get('farm').encode('utf-8'),
-                    obj.get('server').encode('utf-8'),
-                    obj.get('id').encode('utf-8'),
-                    obj.get('secret').encode('utf-8'))
+            if proxy == True:
+                self.url = urlbase + str(self.id)
+                self.location = ProxyImage("http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
+                                                obj.get('farm'),
+                                                obj.get('server'),
+                                                obj.get('id'),
+                                                obj.get('secret')))
+            else:
+                self.url = u"http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
+                        obj.get('farm').encode('utf-8'),
+                        obj.get('server').encode('utf-8'),
+                        obj.get('id').encode('utf-8'),
+                        obj.get('secret').encode('utf-8'))
 
         if parent == None:
             parent_id = -1
@@ -132,11 +158,16 @@ class FlickrStore:
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'B': 1000}
+    wmc_mapping = {'16': 1000}
     
     def __init__(self, server, **kwargs):
         self.next_id = 1000
         self.name = kwargs.get('name','Flickr')
+        self.proxy = kwargs.get('proxy','false')
+        if self.proxy in [1,'Yes','yes','True','true']:
+            self.proxy = True
+        else:
+            self.proxy = False
         
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
@@ -167,7 +198,8 @@ class FlickrStore:
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase, UPnPClass, update=update)
+        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+                                        UPnPClass, update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:

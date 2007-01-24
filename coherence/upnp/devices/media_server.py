@@ -4,13 +4,13 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import os
-import urllib, urlparse
 
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.internet import threads
 from twisted.web import xmlrpc, static
 from twisted.web import resource, server
+from twisted.web import proxy
 from twisted.python import util
 from twisted.python.filepath import FilePath
 
@@ -65,6 +65,10 @@ class MSRoot(resource.Resource):
         log.info('getChild %s, %s' % (name, request))
         ch = self.store.get_by_id(name)
         if ch != None:
+            if hasattr(ch, "location"):
+                if isinstance(ch.location, proxy.ReverseProxyResource):
+                    log.info('getChild proxy %s to %s' % (name, ch.location.uri))
+                    return ch.location
             p = ch.get_path()
             if os.path.exists(p):
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
