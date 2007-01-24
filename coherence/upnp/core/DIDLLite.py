@@ -29,12 +29,12 @@ from coherence.upnp.core import utils
 def classChooser(mimetype):
 
     if mimetype == 'root':
-        return Container
+        return StorageFolder
     if mimetype == 'directory':
-        return Container
+        return StorageFolder
     else:
         if string.find (mimetype,'image/') == 0:
-            return ImageItem
+            return Photo
         if string.find (mimetype,'audio/') == 0:
             return AudioItem
         if string.find (mimetype,'video/') == 0:
