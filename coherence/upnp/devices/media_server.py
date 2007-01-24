@@ -68,6 +68,14 @@ class MSRoot(resource.Resource):
             if hasattr(ch, "location"):
                 if isinstance(ch.location, proxy.ReverseProxyResource):
                     log.info('getChild proxy %s to %s' % (name, ch.location.uri))
+                    new_id,_,_ = self.server.connection_manager_server.add_connection('',
+                                                                                'Output',
+                                                                                -1,
+                                                                                '')
+                    log.info("startup, add %d to connection table" % new_id)
+                    d = request.notifyFinish()
+                    d.addCallback(self.requestFinished, new_id)
+                    d.addErrback(self.requestFinished, new_id)
                     return ch.location
             p = ch.get_path()
             if os.path.exists(p):
