@@ -123,7 +123,7 @@ class FSStore:
     def __init__(self, server, **kwargs):
         self.next_id = 1000
         self.name = kwargs.get('name','my media')
-        self.path = kwargs.get('path','tests/content')
+        self.path = kwargs.get('content','tests/content')
         self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])
 
@@ -289,4 +289,4 @@ if __name__ == '__main__':
                         StartingIndex = '0',
                         SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
                         SortCriteria = '+dc:title')
-    
+
