@@ -31,7 +31,10 @@ from coherence.backends.fs_storage import FSStore
 from coherence.backends.elisa_storage import ElisaMediaStore
 from coherence.backends.flickr_storage import FlickrStore
 
-from coherence.backends.gstreamer_audio_player import Player
+try:
+    from coherence.backends.gstreamer_audio_player import Player
+except:
+    pass
 
 from coherence.extern.logger import Logger, LOG_WARNING
 log = Logger('Coherence')
