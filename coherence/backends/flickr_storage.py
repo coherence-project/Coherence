@@ -9,6 +9,7 @@ import re
 from twisted.python import failure
 from twisted.web import proxy
 from twisted.web.xmlrpc import Proxy
+from twisted.internet import task
 
 from elementtree.ElementTree import fromstring
 
@@ -58,8 +59,10 @@ class FlickrItem:
             urlbase += '/'
                 
         if self.mimetype == 'directory':
+            self.flickr_id = None
             self.url = urlbase + str(self.id)
         else:
+            self.flickr_id = obj.get('id')
             if proxy == True:
                 self.url = urlbase + str(self.id)
                 self.location = ProxyImage("http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
@@ -110,7 +113,7 @@ class FlickrItem:
 
             
     def remove_child(self, child):
-        #print "remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name())
+        print "remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name())
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):
@@ -142,6 +145,15 @@ class FlickrItem:
     def get_name(self):
         return self.name
         
+    def get_flickr_id(self):
+        return self.flickr_id
+        
+    def get_child_by_flickr_id(self, flickr_id):
+        for c in self.children:
+            if flickr_id == c.flickr_id:
+                return c
+        return None
+            
     def get_parent(self):
         return self.parent
 
@@ -164,6 +176,7 @@ class FlickrStore:
         self.next_id = 1000
         self.name = kwargs.get('name','Flickr')
         self.proxy = kwargs.get('proxy','false')
+        self.refresh = int(kwargs.get('refresh',60))*60
         if self.proxy in [1,'Yes','yes','True','true']:
             self.proxy = True
         else:
@@ -182,6 +195,10 @@ class FlickrStore:
         self.flickr = Proxy('http://api.flickr.com/services/xmlrpc/')
         self.flickr_api_key = '837718c8a622c699edab0ea55fcec224'
         self.store = {}
+        
+        self.refresh_store_loop = task.LoopingCall(self.refresh_store)
+        self.refresh_store_loop.start(self.refresh, now=False)
+
         
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -214,10 +231,31 @@ class FlickrStore:
             return self.store[id]
             
         return None
-        
+
+    def remove(self, id):
+        #print 'FlickrStore remove id', id
+        try:
+            item = self.store[int(id)]
+            parent = item.get_parent()
+            item.remove()
+            del self.store[int(id)]
+            if hasattr(self, 'update_id'):
+                self.update_id += 1
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
+                value = (parent.get_id(),parent.get_update_id())
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+        except:
+            pass
+
     def append_flickr_result(self, result, parent):
+        count = 0
         for photo in result.getiterator('photo'):
             self.append(photo, parent)
+            count += 1
+        log.warning("initialized photo set %s with %d images" % (parent.get_name(), count))
 
     def len(self):
         return len(self.store)
@@ -235,6 +273,41 @@ class FlickrStore:
         ret = self.next_id
         self.next_id += 1
         return ret
+        
+    def refresh_store(self):
+        log.info("refresh_store")
+        
+        def update_flickr_result(result, parent):
+            """ - is in in the store, but not in the update,
+                  remove it from the store
+                - the photo is already in the store, skip it
+                - if in the update, but not in the store,
+                  append it to the store
+            """
+            old_ones = {}
+            new_ones = {}
+            for child in parent.get_children():
+                old_ones[child.get_flickr_id()] = child
+            for photo in result.findall('photo'):
+                new_ones[photo.get('id')] = photo
+            for id,child in old_ones.items():
+                if new_ones.has_key(id):
+                    log.debug(id, "already there")
+                    del new_ones[id]
+                else:
+                    log.debug(child.get_flickr_id(), "needs removal")
+                    del old_ones[id]
+                    self.remove(child.get_id())
+            log.info("refresh pass 1:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+            for photo in new_ones.values():
+                self.append(photo, parent)
+            
+            log.info("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+            if len(new_ones) > 0:
+                log.warning("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
+                
+        d = self.flickr_interestingness()
+        d.addCallback(update_flickr_result, self.most_wanted)
 
     def flickr_call(self, method, **kwargs):
         def got_result(result):
@@ -295,9 +368,9 @@ class FlickrStore:
                                                                     'http-get:*:image/png:*',
                                                                     default=True)
         parent = self.append( 'Flickr', None)
-        parent = self.append( 'Most Wanted', parent)
+        self.most_wanted = self.append( 'Most Wanted', parent)
         d = self.flickr_interestingness()
-        d.addCallback(self.append_flickr_result, parent)
+        d.addCallback(self.append_flickr_result, self.most_wanted)
 
 def main():
 
@@ -316,7 +389,7 @@ def main():
                         photo.get('id').encode('utf-8'),
                         photo.get('secret').encode('utf-8'))
             print photo.get('id').encode('utf-8'), title, url
-        
+            
     def got_upnp_result(result):
         print "upnp", result
         
