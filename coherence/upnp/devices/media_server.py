@@ -65,7 +65,6 @@ class MSRoot(resource.Resource):
 
     def getChild(self, name, request):
         log.info('getChild %s, %s' % (name, request))
-        print 'getChild %s, %s' % (name, request)
         ch = self.store.get_by_id(name)
         if ch != None:
             if request.method == 'GET':
