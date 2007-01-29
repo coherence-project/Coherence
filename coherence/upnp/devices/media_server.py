@@ -70,14 +70,14 @@ class MSRoot(resource.Resource):
             if request.method == 'GET':
                 headers = request.getAllHeaders()
                 if headers.has_key('content-length'):
-                    log.warning('GET request with content-length %d header - sanitizing' % headers['content-length'])
+                    log.warning('GET request with content-length %s header - sanitizing' % headers['content-length'])
                     del request.received_headers['content-length']
                 log.debug('data', )
                 if len(request.content.getvalue()) > 0:
                     """ shall we remove that?
                         can we remove that?
                     """
-                    log.warning('GET request with %d bytes of message-body - sanitizing', len(request.content.getvalue()))
+                    log.warning('GET request with %d bytes of message-body - sanitizing' % len(request.content.getvalue()))
                     request.content = StringIO()
 
             if hasattr(ch, "location"):
