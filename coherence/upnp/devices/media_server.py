@@ -4,6 +4,8 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import os
+from StringIO import StringIO
+
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -63,8 +65,22 @@ class MSRoot(resource.Resource):
 
     def getChild(self, name, request):
         log.info('getChild %s, %s' % (name, request))
+        print 'getChild %s, %s' % (name, request)
         ch = self.store.get_by_id(name)
         if ch != None:
+            if request.method == 'GET':
+                headers = request.getAllHeaders()
+                if headers.has_key('content-length'):
+                    log.warning('GET request with content-length %d header - sanitizing' % headers['content-length'])
+                    del request.received_headers['content-length']
+                log.debug('data', )
+                if len(request.content.getvalue()) > 0:
+                    """ shall we remove that?
+                        can we remove that?
+                    """
+                    log.warning('GET request with %d bytes of message-body - sanitizing', len(request.content.getvalue()))
+                    request.content = StringIO()
+
             if hasattr(ch, "location"):
                 if isinstance(ch.location, proxy.ReverseProxyResource):
                     log.info('getChild proxy %s to %s' % (name, ch.location.uri))
