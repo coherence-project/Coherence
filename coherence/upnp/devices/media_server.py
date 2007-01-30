@@ -67,17 +67,22 @@ class MSRoot(resource.Resource):
         log.info('getChild %s, %s' % (name, request))
         ch = self.store.get_by_id(name)
         if ch != None:
-            if request.method == 'GET':
+            if( request.method == 'GET' or
+                request.method == 'HEAD'):
                 headers = request.getAllHeaders()
                 if headers.has_key('content-length'):
-                    log.warning('GET request with content-length %s header - sanitizing' % headers['content-length'])
+                    log.warning('%s request with content-length %s header - sanitizing' % (
+                                    request.method,
+                                    headers['content-length']))
                     del request.received_headers['content-length']
                 log.debug('data', )
                 if len(request.content.getvalue()) > 0:
                     """ shall we remove that?
                         can we remove that?
                     """
-                    log.warning('GET request with %d bytes of message-body - sanitizing' % len(request.content.getvalue()))
+                    log.warning('%s request with %d bytes of message-body - sanitizing' % (
+                                    request.method,
+                                    len(request.content.getvalue())))
                     request.content = StringIO()
 
             if hasattr(ch, "location"):
