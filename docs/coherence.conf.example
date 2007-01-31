@@ -7,8 +7,17 @@ logmode = warning               # none, critical, error, warning, info, debug
 #serverport = 12345             # if not specified coherence will use 30020
 
 [subsystem_log]
-#Event = info
-SSDP = info
+#Coherence = info
+#SSDP = info
+#MSEARCH = info
+#SOAP = info
+#Variable = info
+#Service = info
+#Device = info
+#MediaServer= info
+#MediaRenderer= info
+#FlickrStore = info
+
 
 [plugins]
     [[FSStore]]
