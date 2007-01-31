@@ -13,8 +13,6 @@ from coherence.upnp.services.servers.connection_manager_server import Connection
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
 from coherence.upnp.services.servers.av_transport_server import AVTransportServer
 
-from coherence.backends.gstreamer_audio_player import Player
-
 from coherence.extern.logger import Logger
 log = Logger('MediaRenderer')
 
