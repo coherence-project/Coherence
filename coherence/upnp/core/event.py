@@ -11,6 +11,7 @@ from urlparse import urlsplit
 from twisted.internet import reactor
 from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
+from twisted.python import failure
 
 from coherence.upnp.core import utils
 
@@ -77,10 +78,13 @@ class EventSubscriptionServer(resource.Resource):
         self.subscribers = service.get_subscribers()
         
     def render_SUBSCRIBE(self, request):
-        log.debug( "EventSubscriptionServer %s received request from %s, code: %d" % (self.service.id, request.client, request.code))
+        log.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d" % (
+                            self.service.id,
+                            self.service.backend.name,
+                            request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
-            log.info("data:", data)
+            log.debug("data:", data)
         else:
             headers = request.getAllHeaders()
             try:
@@ -112,10 +116,13 @@ class EventSubscriptionServer(resource.Resource):
         return ""
         
     def render_UNSUBSCRIBE(self, request):
-        log.debug("EventSubscriptionServer received request, code:", request.code)
+        log.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d" % (
+                            self.service.id,
+                            self.service.backend.name,
+                            request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
-            log.info("data:", data)
+            log.debug("data:", data)
         else:
             headers = request.getAllHeaders()
             try:
@@ -168,12 +175,15 @@ def subscribe(service, action='subscribe'):
     send a subscribe/renewal/unsubscribe request to a service
     return the device response
     """
-    #print "event.subscribe, action:", action 
-    service_url = service.get_base_url()
+    log.info("event.subscribe, action:", action)
     
-    host_port = service_url.split('//')[1]
-    host,port = tuple(host_port.split(':'))
-    port = int(port)
+    _,host_port,path,_,_ = urlsplit(service.get_base_url())
+    if host_port.find(':') != -1:
+        host,port = tuple(host_port.split(':'))
+        port = int(port)
+    else:
+        host = host_port
+        port = 80
 
     def send_request(p, action):
         #print "event.subscribe.send_request, action:", action 
@@ -204,11 +214,17 @@ def subscribe(service, action='subscribe'):
         request = '\r\n'.join(request)
         #print "event.subscribe.send_request", request
         return p.transport.write(request)
+        
+    def got_error(failure, action):
+        log.warning("error on %s request with %s" % service.get_base_url())
+        log.debug(failure)
 
     def prepare_connection( service, action):
         #print "event.subscribe.prepare_connection action:", action
         c = ClientCreator(reactor, EventProtocol, service=service, action=action)
-        d = c.connectTCP(host, port).addCallback(send_request, action=action)
+        d = c.connectTCP(host, port)
+        d.addCallback(send_request, action=action)
+        d.addErrback(got_error, action)
         return d
 
     if action == 'unsubscribe':
@@ -264,11 +280,17 @@ def send_notification(s, xml):
                     xml]
 
         request = '\r\n'.join(request)
-        log.debug("send_notification.send_request to %s:%d" % (host,port), request)
+        log.info("send_notification.send_request to", s['callback'])
+        log.debug("request:", request)
         s['seq'] += 1
         return p.transport.write(request)
+        
+    def got_error(failure):
+        log.info("error sending notification to", s['callback'])
+        log.debug(failure)
 
     c = ClientCreator(reactor, NotificationProtocol)
-    d = c.connectTCP(host, port).addCallback(send_request)
-
+    d = c.connectTCP(host, port)
+    d.addCallback(send_request)
+    d.addErrback(got_error)
 
