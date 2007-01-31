@@ -6,6 +6,10 @@ logmode = warning               # none, critical, error, warning, info, debug
 #interface = eth0
 #serverport = 12345             # if not specified coherence will use 30020
 
+[subsystem_log]
+#Event = info
+SSDP = info
+
 [plugins]
     [[FSStore]]
         content = tests/content

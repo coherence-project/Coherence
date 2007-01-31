@@ -146,6 +146,15 @@ class Coherence:
             
         log.set_master_level(logmode)
         
+        try:
+            subsystem_log = config['subsystem_log']
+        except:
+            subsystem_log = {}
+            
+        for subsystem,level in subsystem_log.items():
+            log.warning( "setting log-level for subsystem %s to %s" % (subsystem,level))
+            log.set_level(name=subsystem,level=level)
+            
         #log.disable(name='Variable')
         #log.enable(name='Variable')
         #log.set_level(name='Variable')
