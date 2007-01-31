@@ -110,7 +110,7 @@ class IWatchPoint:
                 callback[0](self, filename, events, callback[1])
 
 class INotify(FileDescriptor, object):
-    __instance = None  # Singleton
+    _instance_ = None  # Singleton
 
     def __new__(cls, *args, **kwargs):
         obj = getattr(cls,'_instance_',None)
