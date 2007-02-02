@@ -49,23 +49,143 @@ class Web(object):
     def __init__(self, coherence):
         super(Web, self).__init__()
         self.coherence = coherence
+        
+class MenuFragment(athena.LiveFragment):
+
+    jsClass = u'Coherence.Base'
+
+    docFactory = loaders.stan(
+        tags.div(render=tags.directive('liveFragment'))[
+            tags.div(id="coherence_menu_box",class_="coherence_menu_box")[""],
+        ]
+        )
+
+    def __init__(self, page):
+        super(MenuFragment, self).__init__()
+        self.page = page
+        self.coherence = page.coherence
+        
+    def going_live(self):
+        log.info("add a view to the MenuFragment")
+        d = self.page.notifyOnDisconnect()
+        d.addCallback( self.remove_me)
+        d.addErrback( self.remove_me)
+        return ({u'title':u'Devices',u'active':u'yes'},
+                {u'title':u'Logging',u'active':u'no'})
+    athena.expose(going_live)
+    
+    def remove_me(self, result):
+        log.info("remove view from MenuFragment")
+
+class DevicesFragment(athena.LiveFragment):
+
+    jsClass = u'Coherence.Devices'
+
+    docFactory = loaders.stan(
+        tags.div(render=tags.directive('liveFragment'))[
+            tags.div(id="Devices-container",class_="coherence_container")[""],
+        ]
+        )
+
+    def __init__(self, page):
+        super(DevicesFragment, self).__init__()
+        self.page = page
+        self.coherence = page.coherence
+
+    def going_live(self):
+        log.info("add a view to the DevicesFragment")
+        d = self.page.notifyOnDisconnect()
+        d.addCallback( self.remove_me)
+        d.addErrback( self.remove_me)
+        devices = []
+        for device in self.coherence.get_devices():
+            if device != None:
+                _,_,_,device_type,version = device.get_device_type().split(':')
+                name = unicode("%s:%s %s" % (device_type,version,device.get_friendly_name()))
+                usn = unicode(device.get_usn())
+                devices.append({u'name':name,u'usn':usn})
+        louie.connect( self.add_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect( self.remove_device, 'Coherence.UPnP.Device.removed', louie.Any)
+        return devices
+    athena.expose(going_live)
+        
+    def remove_me(self, result):
+        log.info("remove view from the DevicesFragment")
+        
+    def add_device(self, device):
+        log.info("DevicesFragment found device %s %s of type %s" %(
+                                                device.get_usn(),
+                                                device.get_friendly_name(),
+                                                device.get_device_type()))
+        _,_,_,device_type,version = device.get_device_type().split(':')
+        name = unicode("%s:%s %s" % (device_type,version,device.get_friendly_name()))
+        usn = unicode(device.get_usn())
+        self.callRemote('addDevice', {u'name':name,u'usn':usn})
+                                                
+    def remove_device(self, usn):
+        log.info("DevicesFragment remove device",usn)
+        self.callRemote('removeDevice', unicode(usn))
+    
+    def render_devices(self, ctx, data):
+        cl = []
+        log.info('children: %s' % self.coherence.children)
+        for c in self.coherence.children:
+            device = self.coherence.get_device_with_id(c)
+            if device != None:
+                _,_,_,device_type,version = device.get_device_type().split(':')
+                cl.append( tags.li[tags.a(href='/'+c)[device_type,
+                                                      ':',
+                                                      version,
+                                                      ' ',
+                                                      device.get_friendly_name()]])
+            else:
+                cl.append( tags.li[c])
+        return ctx.tag[tags.ul[cl]]
+        
+class LoggingFragment(athena.LiveFragment):
+
+    jsClass = u'Coherence.Logging'
+    docFactory = loaders.stan(
+        tags.div(render=tags.directive('liveFragment'))[
+            tags.div(id="Logging-container",class_="coherence_container")[""],
+        ]
+        )
+
+    def __init__(self, page):
+        super(LoggingFragment, self).__init__()
+        self.page = page
+        self.coherence = page.coherence
+        
+    def going_live(self):
+        log.info("add a view to the LoggingFragment")
+        d = self.page.notifyOnDisconnect()
+        d.addCallback( self.remove_me)
+        d.addErrback( self.remove_me)
+        return {}
+    athena.expose(going_live)
+        
+    def remove_me(self, result):
+        log.info("remove view from the LoggingFragment")
 
 class WebUI(athena.LivePage):
     """
     """
+    
+    jsClass = u'Coherence'
 
     addSlash = True
     docFactory = loaders.xmlstr("""\
 <html xmlns:nevow="http://nevow.com/ns/nevow/0.1">
 <head>
 <nevow:invisible nevow:render="liveglue" />
-<link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="web/main.css" />
 </head>
 <body>
-Coherence - a Python UPnP A/V framework
-<p>
-<div nevow:render="listchilds"></div>
-</p>
+<div id="coherence_header"><div class="coherence_title">Coherence</div><div nevow:render="menu"></div></div>
+<div id="coherence_body">
+<span nevow:render="devices" />
+<span nevow:render="logging" />
+</div>
 </body>
 </html>
 """)
@@ -73,6 +193,19 @@ Coherence - a Python UPnP A/V framework
     def __init__(self, *a, **kw):
         super(WebUI, self).__init__( *a, **kw)
         self.coherence = self.rootObject.coherence
+        
+        self.jsModules.mapping.update({
+            'MochiKit': filepath.FilePath(__file__).parent().child('web').child('MochiKit.js').path})
+
+        self.jsModules.mapping.update({
+            'Coherence': filepath.FilePath(__file__).parent().child('web').child('Coherence.js').path})
+        self.jsModules.mapping.update({
+            'Coherence.Base': filepath.FilePath(__file__).parent().child('web').child('Coherence.Base.js').path})
+        self.jsModules.mapping.update({
+            'Coherence.Devices': filepath.FilePath(__file__).parent().child('web').child('Coherence.Devices.js').path})
+
+        self.jsModules.mapping.update({
+            'Coherence.Logging': filepath.FilePath(__file__).parent().child('web').child('Coherence.Logging.js').path})
 
     def childFactory(self, ctx, name):
         log.info('WebUI childFactory: %s' % name)
@@ -82,10 +215,17 @@ Coherence - a Python UPnP A/V framework
             ch = super(WebUI, self).childFactory(ctx, name)
             if ch is None:
                 p = util.sibpath(__file__, name)
+                log.info('looking for file',p)
                 if os.path.exists(p):
                     ch = static.File(p)
             return ch
         
+    def render_listmenu(self, ctx, data):
+        l = []
+        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/'+'devices',class_="coherence_menu_link")['Devices']])
+        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/'+'logging',class_="coherence_menu_link")['Logging']])
+        return ctx.tag[l]
+    
     def render_listchilds(self, ctx, data):
         cl = []
         log.info('children: %s' % self.coherence.children)
@@ -102,6 +242,19 @@ Coherence - a Python UPnP A/V framework
                 cl.append( tags.li[c])
         return ctx.tag[tags.ul[cl]]
         
+    def render_menu(self, ctx, data):
+        log.info('render_menu')
+        return MenuFragment(self)
+        
+    def render_devices(self, ctx, data):
+        log.info('render_devices')
+        return DevicesFragment(self)
+        
+    def render_logging(self, ctx, data):
+        log.info('render_logging')
+        return LoggingFragment(self)
+        
+
 class WebServer:
 
     def __init__(self, port, coherence):
@@ -165,7 +318,7 @@ class Coherence:
         log.warning("Coherence UPnP framework starting...")
         self.ssdp_server = SSDPServer()
         louie.connect( self.add_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
-        louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.remove_device', louie.Any)
+        louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
         louie.connect( self.receiver, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         #louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', louie.Any)
 
@@ -290,7 +443,9 @@ class Coherence:
         return self.devices
 
     def add_device(self, device_type, infos):
+        log.info("adding",infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
+            log.info("adding upnp:rootdevice",infos['USN'])
             root = RootDevice(infos)
             self.devices.append(root)
         else:
@@ -304,10 +459,13 @@ class Coherence:
 
 
     def remove_device(self, device_type, infos):
+        log.info("removed device",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
             self.devices.remove(device)
+            del device
             if infos['ST'] == 'upnp:rootdevice':
+                louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
                 self.callback("removed_device", infos['ST'], infos['USN'])
 
             
