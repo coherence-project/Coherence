@@ -76,11 +76,15 @@ class EventSubscriptionServer(resource.Resource):
     def __init__(self, service):
         self.service = service
         self.subscribers = service.get_subscribers()
+        try:
+            self.backend_name = self.service.backend.name
+        except AttributeError:
+            self.backend_name = self.service.backend
         
     def render_SUBSCRIBE(self, request):
         log.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d" % (
                             self.service.id,
-                            self.service.backend.name,
+                            self.backend_name,
                             request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
@@ -118,7 +122,7 @@ class EventSubscriptionServer(resource.Resource):
     def render_UNSUBSCRIBE(self, request):
         log.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d" % (
                             self.service.id,
-                            self.service.backend.name,
+                            self.backend_name,
                             request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
