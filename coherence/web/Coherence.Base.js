@@ -53,6 +53,9 @@ function clickTab(self, Event) {
 
 function addTab(self, tab) {
     log('addTab '+tab['title']);
+    if( $('coherence_menu_box').build_done == 'no')
+        return;
+
     appendChildNodes($('coherence_menu_box'),
         DIV({'id':tab['title']+'-tab','class':'coherence_menu_item'}, tab['title']
         )
@@ -62,7 +65,7 @@ function addTab(self, tab) {
     //    DIV({'id':tab['title']+'-container','class':'coherence_container'}
     //    )
     //)
-    if(tab['active'] == 'yes'){
+    if(tab['active'] == 'yes') {
         log('addTab set active '+tab['title']);
         Coherence.Base.prototype.setTab($(tab['title']+'-tab'), 'on');
     }
@@ -71,6 +74,7 @@ function addTab(self, tab) {
 
 function buildMenu(self, result) {
     log('buildMenu ' + result.length);
+    $('coherence_menu_box').build_done = 'yes'
     for(var i=0; i<result.length;++i) {
         log('buildMenu ' + i + ' ' + result[i]);
         Coherence.Base.prototype.addTab(result[i]);
@@ -79,6 +83,7 @@ function buildMenu(self, result) {
 
 function __init__(self, node) {
     Coherence.Base.upcall(self, '__init__', node);
+    $('coherence_menu_box').build_done = 'no'
     var d = self.callRemote('going_live');
     d.addCallback(Coherence.Base.prototype.buildMenu);
 }

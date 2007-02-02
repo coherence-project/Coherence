@@ -64,16 +64,26 @@ class MenuFragment(athena.LiveFragment):
         super(MenuFragment, self).__init__()
         self.page = page
         self.coherence = page.coherence
+        self.tabs = []
         
     def going_live(self):
         log.info("add a view to the MenuFragment")
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
         d.addErrback( self.remove_me)
-        return ({u'title':u'Devices',u'active':u'yes'},
-                {u'title':u'Logging',u'active':u'no'})
+        return self.tabs
     athena.expose(going_live)
     
+    def add_tab(self,title,active):
+        log.info("add tab %s to the MenuFragment" % title)
+        new_tab = {u'title':unicode(title),
+                   u'active':unicode(active)}
+        for t in self.tabs:
+            if t['title'] == new_tab['title']:
+                return
+        self.tabs.append(new_tab)
+        self.callRemote('addTab', new_tab)
+
     def remove_me(self, result):
         log.info("remove view from MenuFragment")
 
@@ -87,10 +97,11 @@ class DevicesFragment(athena.LiveFragment):
         ]
         )
 
-    def __init__(self, page):
+    def __init__(self, page, active):
         super(DevicesFragment, self).__init__()
         self.page = page
         self.coherence = page.coherence
+        self.page.menu.add_tab('Devices',active)
 
     def going_live(self):
         log.info("add a view to the DevicesFragment")
@@ -151,11 +162,12 @@ class LoggingFragment(athena.LiveFragment):
         ]
         )
 
-    def __init__(self, page):
+    def __init__(self, page, active):
         super(LoggingFragment, self).__init__()
         self.page = page
         self.coherence = page.coherence
-        
+        self.page.menu.add_tab('Logging','no')
+
     def going_live(self):
         log.info("add a view to the LoggingFragment")
         d = self.page.notifyOnDisconnect()
@@ -206,6 +218,7 @@ class WebUI(athena.LivePage):
 
         self.jsModules.mapping.update({
             'Coherence.Logging': filepath.FilePath(__file__).parent().child('web').child('Coherence.Logging.js').path})
+        self.menu = MenuFragment(self)
 
     def childFactory(self, ctx, name):
         log.info('WebUI childFactory: %s' % name)
@@ -244,15 +257,15 @@ class WebUI(athena.LivePage):
         
     def render_menu(self, ctx, data):
         log.info('render_menu')
-        return MenuFragment(self)
+        return self.menu
         
     def render_devices(self, ctx, data):
         log.info('render_devices')
-        return DevicesFragment(self)
+        return DevicesFragment(self,'yes')
         
     def render_logging(self, ctx, data):
         log.info('render_logging')
-        return LoggingFragment(self)
+        return LoggingFragment(self,'no')
         
 
 class WebServer:
