@@ -156,6 +156,9 @@ class Logger:
                 self.log.enable(name)
             else:
                 self.log.disable(name)
+                
+    def get_feeds(self):
+        return self.log.feeds()
     
 if __name__ == '__main__':
 
