@@ -169,6 +169,7 @@ class UPnPPublisher(soap.SOAPPublisher):
 
             for k, v in kwargs.items():
                 keywords[str(k)] = v
+            log.info('call', methodName, keywords)
             if hasattr(function, "useKeywords"):
                 d = defer.maybeDeferred(function, **keywords)
             else:
