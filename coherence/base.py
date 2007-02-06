@@ -299,9 +299,7 @@ class Coherence(object):
             cls._instance_ = obj
             return obj
                 
-    def __init__(self, config=None):
-        if not config:
-            config = {}
+    def __init__(self, config={}):
             
         self.devices = []
         self.children = {}
@@ -359,20 +357,17 @@ class Coherence(object):
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-        plugins = config.get('plugins',[])
-        if not plugins:
+        plugins = config.get('plugins',None)
+        if plugins is None:
             log.warning("No plugin defined!")
         else:
-            for p,a in plugins.items():
+            for plugin,arguments in plugins.items():
                 try:
-                    plugin = p
-                    arguments = a
                     if not isinstance(arguments, dict):
                         arguments = {}
-                        self.add_plugin(plugin, **arguments)
+                    self.add_plugin(plugin, **arguments)
                 except Exception, msg:
                     log.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
-                    continue
         
     def add_plugin(self, plugin, **kwargs):
         log.info("adding plugin", plugin)
