@@ -61,10 +61,6 @@ function addTab(self, tab) {
         )
     )
     $(tab['title']+'-tab').addEventListener("click", Coherence.Base.prototype.clickTab, false);
-    //appendChildNodes($('coherence_body'),
-    //    DIV({'id':tab['title']+'-container','class':'coherence_container'}
-    //    )
-    //)
     if(tab['active'] == 'yes') {
         log('addTab set active '+tab['title']);
         Coherence.Base.prototype.setTab($(tab['title']+'-tab'), 'on');
