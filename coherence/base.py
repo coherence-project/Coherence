@@ -287,35 +287,34 @@ class WebServer:
         log.warning( "WebServer on port %d ready" % port)
 
 
-class Coherence:
+class Coherence(object):
+    _instance_ = None  # Singleton
 
-    def __init__(self, config):
+    def __new__(cls, *args, **kwargs):
+        obj = getattr(cls, '_instance_', None)
+        if obj is not None:
+            return obj
+        else:
+            obj = super(Coherence, cls).__new__(cls, *args, **kwargs)
+            cls._instance_ = obj
+            return obj
+                
+    def __init__(self, config=None):
+        if not config:
+            config = {}
+            
         self.devices = []
-        
         self.children = {}
         self._callbacks = {}
-        
-        try:
-            logmode = config['logmode']
-        except:
-            logmode = 'info'
 
-        try:
-            network_if = config['interface']
-        except:
-            network_if = None
+        logmode = config.get('logmode', 'info')
+        network_if = config.get('interface')
         
-        try:
-            self.web_server_port = config['serverport']
-        except:
-            self.web_server_port = 30020
+        self.web_server_port = config.get('serverport', 30020)
             
         log.set_master_level(logmode)
         
-        try:
-            subsystem_log = config['subsystem_log']
-        except:
-            subsystem_log = {}
+        subsystem_log = config.get('subsystem_log',{})
             
         for subsystem,level in subsystem_log.items():
             log.warning( "setting log-level for subsystem %s to %s" % (subsystem,level))
@@ -359,19 +358,21 @@ class Coherence:
                                 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
-        
-        try:
-            plugins = config['plugins']
-            for p,a in plugins.items():
-                plugin = p
-                arguments = a
-                if not isinstance(arguments, dict):
-                    arguments = {}
-                self.add_plugin(plugin, **arguments)
-        except KeyError:
+
+        plugins = config.get('plugins',[])
+        if not plugins:
             log.warning("No plugin defined!")
-        except Exception, msg:
-            log.critical("Can't enable plugins, %s: %s!" % (plugin, msg))
+        else:
+            for p,a in plugins.items():
+                try:
+                    plugin = p
+                    arguments = a
+                    if not isinstance(arguments, dict):
+                        arguments = {}
+                        self.add_plugin(plugin, **arguments)
+                except Exception, msg:
+                    log.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
+                    continue
         
     def add_plugin(self, plugin, **kwargs):
         log.info("adding plugin", plugin)
