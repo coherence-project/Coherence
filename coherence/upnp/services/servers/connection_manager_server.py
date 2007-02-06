@@ -18,6 +18,9 @@ from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core import service
 
+from coherence.extern.logger import Logger
+log = Logger('ConnectionManagerServer')
+
 class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 
     def __init__(self, server):
@@ -159,22 +162,37 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         
 
     def upnp_PrepareForConnection(self, *args, **kwargs):
+        log.info('upnp_PrepareForConnection')
         """ check if we really support that mimetype """
         RemoteProtocolInfo = kwargs['RemoteProtocolInfo']
         """ if we are a MR and this in not 'Input'
             then there is something strange going on
         """
         Direction = kwargs['Direction']
+        if( self.device.device_type == 'MediaRenderer' and
+            Direction == 'Output'):
+            return failure.Failure(errorCode(702))
+        if( self.device.device_type == 'MediaServer' and
+            Direction != 'Input'):
+            return failure.Failure(errorCode(702))
         """ the InstanceID of the MS ? """
         PeerConnectionID = kwargs['PeerConnectionID']
         """ ??? """
         PeerConnectionManager = kwargs['PeerConnectionManager']
-        connection_id, avt_id, rcs_id = \
-            self.add_connection(RemoteProtocolInfo,
-                                    Direction,
-                                    PeerConnectionID,
-                                    PeerConnectionManager)
-        return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
+        protocolinfo = None
+        if self.device.device_type == 'MediaRenderer':
+            local_protocol_info = self.get_variable('SinkProtocolInfo').value
+        if self.device.device_type == 'MediaServer':
+            local_protocol_info = self.get_variable('SourceProtocolInfo').value
+        log.info(RemoteProtocolInfo, '--', local_protocol_info)
+        if RemoteProtocolInfo in local_protocol_info.split(','):
+            connection_id, avt_id, rcs_id = \
+                self.add_connection(RemoteProtocolInfo,
+                                        Direction,
+                                        PeerConnectionID,
+                                        PeerConnectionManager)
+            return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
+        return failure.Failure(errorCode(701))
 
     def upnp_ConnectionComplete(self, *args, **kwargs):
         ConnectionID = int(kwargs['ConnectionID'])

@@ -8,6 +8,7 @@ from twisted.internet.task import LoopingCall
 from twisted.python import failure
 
 from coherence.upnp.core.soap_service import errorCode
+from coherence.upnp.core import DIDLLite
 
 import string
 
@@ -391,8 +392,15 @@ class Player:
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        self.load(CurrentURI)
-        return {}
+        local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
+        if elt.numItems() == 1:
+            item = elt.getItems()[0]
+            for res in item.res:
+                if res.protocolInfo in local_protocol_info:
+                    self.load(CurrentURI)
+                    return {}
+        return failure.Failure(errorCode(714))
 
     def upnp_SetMute(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
