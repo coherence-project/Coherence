@@ -297,9 +297,13 @@ class Coherence(object):
         else:
             obj = super(Coherence, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
+            obj.setup(*args, **kwargs)
             return obj
+            
+    def __init__(self, *args, **kwargs):
+        pass
                 
-    def __init__(self, config={}):
+    def setup(self, config={}):
             
         self.devices = []
         self.children = {}
