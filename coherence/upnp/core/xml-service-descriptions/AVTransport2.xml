@@ -263,6 +263,10 @@ feature provided by your editor.
 			<name>CurrentMediaDuration</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
+			<allowedValueList coherence:X_withVendorDefines="True">
+				<allowedValue>00:00:00</allowedValue>
+				<allowedValue>NOT_IMPLEMENTED</allowedValue>
+			</allowedValueList>
 			<defaultValue>00:00:00</defaultValue>
 		</stateVariable>
 
