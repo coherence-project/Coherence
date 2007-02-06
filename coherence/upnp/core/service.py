@@ -329,6 +329,12 @@ class ServiceServer:
                     event.send_notification(s, xml)
         except:
             pass
+            
+    def get_variable(self, variable_name, instance=0):
+        try:
+            return self._variables[instance][variable_name]
+        except:
+            return None
 
     def build_single_notification(self, instance, variable_name, value):
         root = Element('propertyset')
