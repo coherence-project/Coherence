@@ -175,6 +175,7 @@ class Player:
             m,s = divmod( duration/1000000000, 60)
             h,m = divmod(m,60)
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
             position = string.atol(position[u'raw'][u'position'])
             m,s = divmod( position/1000000000, 60)
             h,m = divmod(m,60)
@@ -186,6 +187,8 @@ class Player:
         _,state,_ = self.player.get_state()
         if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
             self.stop()
+        else:
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
         self.player.set_property('uri', uri)
         self.duration = None
         self.tags = {}
@@ -194,10 +197,14 @@ class Player:
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackURI', uri)
         #self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AVTransportURIMetaData', 'NOT_IMPLEMENTED')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions',
-                                                            'Play,Stop,Pause,Seek,Next,Previous')
+        #self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
+        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause')
+        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NumberOfTracks',1)
+        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTracks',1)
         self.update()
         print "load <--"
+        if state == gst.STATE_PLAYING:
+            self.play()
 
     def status( self, position):
         uri = self.player.get_property('uri')
@@ -242,25 +249,12 @@ class Player:
         
     def play( self):   
         print "play -->"
-        _,state,_ = self.player.get_state()
-        #if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
-        if state == gst.STATE_PLAYING:
-            print 'we are already playing, so this means probably to stop'
-            self.stop()
-            return
         print 'Playing:', self.player.get_property('uri')
         self.player.set_state(gst.STATE_PLAYING)
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
         print "play <--"
 
     def pause( self):
-        _,state,_ = self.player.get_state()
-        if state == gst.STATE_PAUSED:
-            print 'we are already paused, so this means probably to play again'
-            self.play()
-            return
-        if state == gst.STATE_READY:
-            return
         print 'Pausing:', self.player.get_property('uri')
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
         self.player.set_state(gst.STATE_PAUSED)
@@ -390,14 +384,14 @@ class Player:
         
     def upnp_Stop(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
-        self.pause()
+        self.stop()
         return {}
         
     def upnp_SetAVTransportURI(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        self.start(CurrentURI)
+        self.load(CurrentURI)
         return {}
 
     def upnp_SetMute(self, *args, **kwargs):
