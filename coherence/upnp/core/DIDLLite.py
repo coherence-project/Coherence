@@ -12,6 +12,7 @@ TODO:
 """
 import os
 import string
+from datetime import datetime
 
 my_namespaces = {'http://purl.org/dc/elements/1.1/' : 'dc',
                  'urn:schemas-upnp-org:metadata-1-0/upnp/': 'upnp'
@@ -189,10 +190,54 @@ class Item(Object):
 
 class ImageItem(Item):
     upnp_class = Item.upnp_class + '.imageItem'
+    
+    description = None
+    longDescription = None
+    rating = None
+    storageMedium = None
+    publisher = None
+    date = None
+    rights = None
+    
+    def toElement(self):
+        root = Item.toElement(self)
+        if self.description is not None:
+            SubElement(root, 'dc:description').text = self.description
 
+        if self.longDescription is not None:
+            SubElement(root, 'upnp:longDescription').text = self.longDescription
+
+        if self.rating is not None:
+            SubElement(root, 'upnp:rating').text = self.rating
+            
+        if self.storageMedium is not None:
+            SubElement(root, 'upnp:storageMedium').text = self.storageMedium
+
+        if self.publisher is not None:
+            SubElement(root, 'dc:publisher').text = self.contributor
+            
+        if self.date is not None:
+            #print self.date, isinstance(self.date, datetime)
+            if isinstance(self.date, datetime):
+                SubElement(root, 'dc:date').text = self.date.isoformat()
+            else:
+                SubElement(root, 'dc:date').text = self.date
+                
+        if self.rights is not None:
+            SubElement(root, 'dc:rights').text = self.rights
+
+        return root
+    
 class Photo(ImageItem):
     upnp_class = ImageItem.upnp_class + '.photo'
-
+    album = None
+    
+    def toElement(self):
+        root = ImageItem.toElement(self)
+        if self.album is not None:
+            SubElement(root, 'upnp:album').text = self.album
+        return root
+            
 class AudioItem(Item):
     """A piece of content that when rendered generates some audio."""
 

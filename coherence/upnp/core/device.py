@@ -24,6 +24,7 @@ class Device:
         self.server = infos['SERVER']
         self.st = infos['ST']
         self.location = infos['LOCATION']
+        self.manifestation = infos['MANIFESTATION']
         self.services = []
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
@@ -34,7 +35,17 @@ class Device:
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
 
         self.parse_description()
+        
+    def is_local(self):
+        if self.manifestation == 'local':
+            return True
+        return False
 
+    def is_remote(self):
+        if self.manifestation != 'local':
+            return True
+        return False
+        
     def receiver( self, signal, *args, **kwargs):
         #print "Device receiver called with", signal
         if self.detection_completed == True:

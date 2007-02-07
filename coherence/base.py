@@ -373,6 +373,9 @@ class Coherence(object):
                 except Exception, msg:
                     log.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
         
+        if config.get('controlpoint', 'no') == 'yes':
+            self.ctrl = ControlPoint(self)
+
     def add_plugin(self, plugin, **kwargs):
         log.info("adding plugin", plugin)
         try:
@@ -455,6 +458,9 @@ class Coherence(object):
     def get_devices(self):
         return self.devices
 
+    def get_nonlocal_devices(self):
+        return [d for d in self.devices if d.manifestation == 'remote']
+        
     def add_device(self, device_type, infos):
         log.info("adding",infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':

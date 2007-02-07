@@ -6,16 +6,22 @@ logmode = warning               # none, critical, error, warning, info, debug
 #interface = eth0
 #serverport = 12345             # if not specified coherence will use 30020
 
+controlpoint = yes              # if set to yes coherence will activate its
+                                # internal ControlPoint
+
 [subsystem_log]
 #Coherence = info
 #SSDP = info
 #MSEARCH = info
 #SOAP = info
 #Variable = info
+#Event = info
 #Service = info
 #Device = info
+#ConnectionManagerServer = info
 #MediaServer= info
 #MediaRenderer= info
+#ControlPoint = info
 #FlickrStore = info
 
 
