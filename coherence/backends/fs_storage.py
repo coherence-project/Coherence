@@ -6,6 +6,7 @@
 import os
 import time
 import re
+from datetime import datetime
 
 import mimetypes
 mimetypes.init()
@@ -49,6 +50,8 @@ class FSItem:
             self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             self.item.res.size = self.location.getsize()
             self.item.res = [ self.item.res ]
+            self.item.date = datetime.fromtimestamp(self.location.getmtime())
+            # FIXME: getmtime is deprecated in Twisted 2.6
             
     def __del__(self):
         #print "FSItem __del__", self.id, self.get_name()

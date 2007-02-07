@@ -10,6 +10,9 @@ import codecs
 import cStringIO
 import string
 from twisted.python import log
+from twisted.web import client
+from twisted.internet import reactor
+
 import socket
 import fcntl
 import struct
@@ -66,3 +69,51 @@ def get_host_address():
                     return get_ip_address(l[0])
     """ return localhost if we havn't found anything """
     return '127.0.0.1'
+
+class myHTTPPageGetter(client.HTTPPageGetter):
+
+    def handleResponse(self, response):
+        if self.quietLoss:
+            return
+        if self.failed:
+            self.factory.noPage(
+                failure.Failure(
+                    error.Error(
+                        self.status, self.message, response)))
+        elif self.factory.method != 'HEAD' and self.length != None and self.length != 0:
+            self.factory.noPage(failure.Failure(
+                client.PartialDownloadError(self.status, self.message, response)))
+        else:
+            self.factory.page(response)
+        # server might be stupid and not close connection. admittedly
+        # the fact we do only one request per connection is also
+        # stupid...
+        self.transport.loseConnection()
+        
+class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
+
+    protocol = myHTTPPageGetter
+
+    def page(self, page):
+        if self.waiting:
+            self.waiting = 0
+            self.deferred.callback((page, self.response_headers))
+
+def getPage(url, contextFactory=None, *args, **kwargs):
+    """Download a web page as a string.
+
+    Download a page. Return a deferred, which will callback with a
+    page (as a string) or errback with a description of the error.
+
+    See HTTPClientFactory to see what extra args can be passed.
+    """
+    scheme, host, port, path = client._parse(url)
+    factory = HeaderAwareHTTPClientFactory(url, *args, **kwargs)
+    if scheme == 'https':
+        from twisted.internet import ssl
+        if contextFactory is None:
+            contextFactory = ssl.ClientContextFactory()
+        reactor.connectSSL(host, port, factory, contextFactory)
+    else:
+        reactor.connectTCP(host, port, factory)
+    return factory.deferred

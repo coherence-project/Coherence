@@ -91,6 +91,7 @@ class Object:
     creator = None
     #res = None
     writeStatus = None
+    date = None
 
     def __init__(self, id=None, parentID=None, title=None, restricted = False,
                  creator = None):
@@ -127,6 +128,13 @@ class Object:
 
         if self.writeStatus is not None:
             SubElement(root, 'upnp:writeStatus').text = self.writeStatus
+            
+        if self.date is not None:
+            if isinstance(self.date, datetime):
+                SubElement(root, 'dc:date').text = self.date.isoformat()
+            else:
+                SubElement(root, 'dc:date').text = self.date
+                
 
         return root
 
@@ -196,7 +204,6 @@ class ImageItem(Item):
     rating = None
     storageMedium = None
     publisher = None
-    date = None
     rights = None
     
     def toElement(self):
@@ -216,13 +223,6 @@ class ImageItem(Item):
         if self.publisher is not None:
             SubElement(root, 'dc:publisher').text = self.contributor
             
-        if self.date is not None:
-            #print self.date, isinstance(self.date, datetime)
-            if isinstance(self.date, datetime):
-                SubElement(root, 'dc:date').text = self.date.isoformat()
-            else:
-                SubElement(root, 'dc:date').text = self.date
-                
         if self.rights is not None:
             SubElement(root, 'dc:rights').text = self.rights
 
@@ -302,7 +302,6 @@ class MusicTrack(AudioItem):
     playlist = None
     storageMedium = None
     contributor = None
-    date = None
 
     def toElement(self):
 
@@ -326,9 +325,6 @@ class MusicTrack(AudioItem):
 
         if self.contributor is not None:
             SubElement(root, 'dc:contributor').text = self.contributor
-
-        if self.date is not None:
-            SubElement(root, 'dc:date').text = self.date
 
         return root
 

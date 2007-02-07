@@ -5,6 +5,8 @@
 
 import time
 import re
+from datetime import datetime
+from email.Utils import parsedate_tz
 
 from twisted.python import failure
 from twisted.web import proxy
@@ -24,6 +26,12 @@ log = Logger('FlickrStore')
 
 from urlparse import urlsplit
 
+def myGetPage(url, contextFactory=None, *args, **kwargs):
+    scheme, host, port, path = _parse(url)
+    factory = HTTPClientFactory(url, *args, **kwargs)
+    reactor.connectTCP(host, port, factory)
+    return factory
+
 class ProxyImage(proxy.ReverseProxyResource):
 
     def __init__(self, uri):
@@ -42,6 +50,7 @@ class FlickrItem:
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False,proxy=False):
         self.id = id
+        self.real_url = None
         if mimetype == 'directory':
             self.name = obj
             self.mimetype = mimetype
@@ -63,13 +72,15 @@ class FlickrItem:
             self.url = urlbase + str(self.id)
         else:
             self.flickr_id = obj.get('id')
+            self.real_url = "http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
+                            obj.get('farm'),
+                            obj.get('server'),
+                            obj.get('id'),
+                            obj.get('secret'))
+
             if proxy == True:
                 self.url = urlbase + str(self.id)
-                self.location = ProxyImage("http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
-                                                obj.get('farm'),
-                                                obj.get('server'),
-                                                obj.get('id'),
-                                                obj.get('secret')))
+                self.location = ProxyImage(self.real_url)
             else:
                 self.url = u"http://farm%s.static.flickr.com/%s/%s_%s_o.jpg" % (
                         obj.get('farm').encode('utf-8'),
@@ -92,10 +103,31 @@ class FlickrItem:
             self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             self.item.res.size = None
             self.item.res = [ self.item.res ]
+            self.set_item_size_and_date()
             
     def __del__(self):
         #print "FSItem __del__", self.id, self.get_name()
         pass
+        
+    def set_item_size_and_date(self):
+        from coherence.upnp.core.utils import getPage
+        
+        def gotPhoto(result):
+            log.debug("gotPhoto", result)
+            _, headers = result
+            length = headers.get('content-length',None)
+            modified = headers.get('last-modified',None)
+            if length != None:
+                self.item.res[0].size = int(length[0])
+            if modified != None:
+                """ Tue, 06 Feb 2007 15:56:32 GMT """
+                self.item.date = datetime(*parsedate_tz(modified[0])[0:6])
+
+        def gotError(failure, url):
+            log.warning("error requesting", failure, url)
+            log.info(failure)
+
+        getPage(self.real_url,method='HEAD').addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
 
     def remove(self):
         #print "FSItem remove", self.id, self.get_name(), self.parent
@@ -230,6 +262,16 @@ class FlickrStore:
         if mimetype == 'directory':
             return self.store[id]
             
+            
+        def update_photo_details(result, photo):
+            dates = result.find('dates')
+            log.info("update_photo_details", dates.get('posted'), dates.get('taken'))
+            photo.item.date = datetime(*time.strptime(dates.get('taken'),
+                                               "%Y-%m-%d %H:%M:%S")[0:6])
+
+        #d = self.flickr_photos_getInfo(obj.get('id'),obj.get('secret'))
+        #d.addCallback(update_photo_details, self.store[id])
+        
         return None
 
     def remove(self, id):
@@ -331,6 +373,10 @@ class FlickrStore:
 
     def flickr_test_echo(self, name='Test'):
         d = self.flickr_call('flickr.test.echo', **kwargs)
+        return d
+        
+    def flickr_photos_getInfo(self, photo_id=None, secret=None):
+        d = self.flickr_call('flickr.photos.getInfo', photo_id=photo_id, secret=secret)
         return d
 
     def flickr_interestingness(self, date=None, per_page=100):
