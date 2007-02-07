@@ -17,3 +17,6 @@
 # The contents of the svn:ignoreproperty on the branch root.
 *.pyc
 *.pyo
+build
+Coherence.egg-info
+dist

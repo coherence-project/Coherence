@@ -1,14 +1,13 @@
-
-import sys
-import os
-
-import setuptools
 from setuptools import setup, find_packages
 
 setup(
-      name="coherence",
-      version="0.1",
-      description="""Coherence quoi""",
-      author="not me",
-      packages=find_packages()
+      name="Coherence",
+      version="0.2",
+      description="""Coherence - Python framework for the digital living""",
+      author="Frank Scholz",
+      author_email='coherence@beebits.net',
+      license = "MIT",
+      packages=find_packages(),
+      scripts = ['bin/coherence'],
+      url = "http://coherence.beebits.net",
       )
