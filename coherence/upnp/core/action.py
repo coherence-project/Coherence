@@ -87,7 +87,9 @@ class Action:
             return
             
         def got_error(failure):
-            log.warning("error on %s request with %s %s" % (self.name,self.service_type,self.control_url))
+            log.warning("error on %s request with %s %s" % (self.name,self.
+                                                            service.service_type,
+                                                            self.service.control_url))
             log.info(failure)
         
         client = self._get_client()
