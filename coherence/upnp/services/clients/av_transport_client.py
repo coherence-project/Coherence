@@ -11,6 +11,17 @@ class AVTransportClient:
         self.url = service.get_control_url()
         self.service.subscribe()
         #print "AVTransportClient __init__", self.url
+        
+    def __del__(self):
+        #print "AVTransportClient deleted"
+        pass
+        
+    def remove(self):
+        self.service.remove()
+        self.service = None
+        self.namespace = None
+        self.url = None
+        del self
 
     def set_av_transport_uri(self, instance_id=0, current_uri='', current_uri_metadata=''):
         action = self.service.get_action('SetAVTransportURI')

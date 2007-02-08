@@ -36,7 +36,8 @@ class ControlPoint:
         for device in self.coherence.get_nonlocal_devices():
             self.check_device( device)
             
-        louie.connect( self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
     def browse( self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
@@ -59,15 +60,22 @@ class ControlPoint:
                 log.warning("identified MediaServer", device.get_friendly_name())
                 client = MediaServerClient(device)
                 device.set_client( client)
-                louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None, client=client)
+                louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
+                                   client=client,usn=device.get_usn())
 
             if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
                                       "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
                 log.warning("identified MediaRenderer", device.get_friendly_name())
                 client = MediaRendererClient(device)
                 device.set_client( client)
-                louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None, client=client)
-                
+                louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
+                                   client=client,usn=device.get_usn())
+
+    def remove_client(self, usn, client):
+        log.warning("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
+        louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
+        client.remove()
+    
     def propagate(self, event):
         #print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():

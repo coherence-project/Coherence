@@ -14,6 +14,7 @@ controlpoint = yes              # if set to yes coherence will activate its
 #SSDP = info
 #MSEARCH = info
 #SOAP = info
+#Action = info
 #Variable = info
 #Event = info
 #Service = info
@@ -22,6 +23,7 @@ controlpoint = yes              # if set to yes coherence will activate its
 #MediaServer= info
 #MediaRenderer= info
 #ControlPoint = info
+#MSClient = info
 #FlickrStore = info
 
 

@@ -468,6 +468,7 @@ class Coherence(object):
             root = RootDevice(infos)
             self.devices.append(root)
         else:
+            log.info("adding device/service",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
@@ -482,7 +483,7 @@ class Coherence(object):
         device = self.get_device_with_usn(infos['USN'])
         if device:
             self.devices.remove(device)
-            del device
+            device.remove()
             if infos['ST'] == 'upnp:rootdevice':
                 louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
                 self.callback("removed_device", infos['ST'], infos['USN'])

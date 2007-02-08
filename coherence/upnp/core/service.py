@@ -69,6 +69,14 @@ class Service:
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
+        log.info("%s %s inizialized" % (self.service_type,self.id))
+        
+    def __repr__(self):
+        return "Service %s %s" % (self.service_type,self.id)
+        
+    def __del__(self):
+        #print "Service deleted"
+        pass
 
     def _get_client(self, name):
         url = self.get_control_url()
@@ -76,6 +84,23 @@ class Service:
         action = "%s#%s" % (namespace, name)
         client = SOAPProxy( url, namespace=("u",namespace), soapaction=action)
         return client
+        
+    def remove(self):
+        log.info("remove myself", self.service_type, self.id)
+        self.unsubscribe()
+        for name,action in self._actions.items():
+            log.info("remove", name,action)
+            del self._actions[name]
+            del action
+        for instance,variables in self._variables.items():
+            for name, variable in variables.items():
+                del variables[name]
+                del variable
+            if variables.has_key(instance):
+                del variables[instance]
+            del variables
+        del self.device
+        del self
 
     def get_device(self):
         return self.device
@@ -136,6 +161,8 @@ class Service:
         
     def unsubscribe(self):
         event.unsubscribe(self)
+        global subscribers
+        del subscribers[self.get_sid()]
 
     def subscribe_for_variable(self, var_name, instance=0, callback=None):
         variable = self.get_state_variable(var_name)
@@ -145,8 +172,7 @@ class Service:
     def renew_subscription(self):
         event.subscribe(self)
 
-    
-    
+
     def parse_actions(self):
 
         from twisted.web.client import getPage

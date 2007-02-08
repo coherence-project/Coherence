@@ -36,6 +36,21 @@ class Device:
 
         self.parse_description()
         
+    def __del__(self):
+        #print "Device removal completed"
+        pass
+        
+    def remove(self):
+        log.info(self.usn, "removal started")
+        while len(self.services)>0:
+            service = self.services.pop()
+            log.info("try to remove", service)
+            service.remove()
+        if self.client != None:
+            louie.send('Coherence.UPnP.Device.remove_client', None, self.usn, self.client)
+            self.client = None
+        del self
+        
     def is_local(self):
         if self.manifestation == 'local':
             return True
@@ -78,6 +93,7 @@ class Device:
         for service in self.services:
             if service.get_usn() == service_usn:
                 self.services.remove(service)
+                service.remove()
                 break
 
     def get_friendly_name(self):

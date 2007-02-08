@@ -14,6 +14,7 @@ class MediaServerClient:
 
     def __init__(self, device):
         self.device = device
+        self.device_type,self.version = device.get_device_type().split(':')[3:5]
         self.scheduled_recording = None
         self.content_directory = None
         self.connection_manager = None
@@ -31,7 +32,7 @@ class MediaServerClient:
             #if service.get_type()  in ["urn:schemas-upnp-org:service:ScheduledRecording:1",
             #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:    
             #    self.scheduled_recording = ScheduledRecordingClient( service)
-        log.warning("MediaServer %s" % (self.device.get_friendly_name()))
+        log.info("MediaServer %s" % (self.device.get_friendly_name()))
         if self.content_directory:
             log.info("ContentDirectory available")
         else:
@@ -49,6 +50,22 @@ class MediaServerClient:
             
         #d = self.content_directory.browse(0, recursive=False) # browse top level
         #d.addCallback( self.process_meta)
+        
+    def __del__(self):
+        #print "MediaServerClient deleted"
+        pass
+        
+    def remove(self):
+        log.info("removal of MediaServerClient started")
+        if self.content_directory != None:
+            del self.content_directory
+        if self.connection_manager != None:
+            del self.connection_manager
+        if self.av_transport != None:
+            del self.av_transport
+        if self.scheduled_recording != None:
+            del self.scheduled_recording
+        del self
         
     def state_variable_change( self, variable):
         log.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

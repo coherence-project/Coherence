@@ -26,6 +26,17 @@ class ContentDirectoryClient:
         self.service.subscribe()
         #print "ContentDirectoryClient __init__", self.url
 
+    def __del__(self):
+        #print "ContentDirectoryClient deleted"
+        pass
+        
+    def remove(self):
+        self.service.remove()
+        self.service = None
+        self.namespace = None
+        self.url = None
+        del self
+
     def get_search_capabilities(self):
         action = self.service.get_action('GetSearchCapabilities')
         return action.call()

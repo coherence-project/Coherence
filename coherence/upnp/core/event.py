@@ -151,22 +151,29 @@ class EventProtocol(Protocol):
     def __init__(self, service, action):
         self.service = service
         self.action = action
+        
+    def __del__(self):
+        pass
+        #print "EventProtocol deleted"
 
     def dataReceived(self, data):
-        #print "response received from the Service Events HTTP server "
-        #print data
+        log.info("response received from the Service Events HTTP server ")
+        log.info(data)
         cmd, headers = utils.parse_http_response(data)
-        #print cmd, headers
+        log.debug(cmd, headers)
         try:
             self.service.set_sid(headers['sid'])
             timeout = headers['timeout']
-            #print headers['sid'], headers['timeout']
+            log.debug(headers['sid'], headers['timeout'])
             if timeout.startswith('Second-'):
                 timeout = int(timeout[len('Second-'):])
                 self.service.set_timeout(time.time() + timeout)
         except:
             #print headers
             pass
+        
+        del self.service
+        del self
             
     def connectionLost( self, reason):
         #print "connection closed from the Service Events HTTP server"
@@ -191,7 +198,7 @@ def subscribe(service, action='subscribe'):
         port = 80
 
     def send_request(p, action):
-        #print "event.subscribe.send_request, action:", action 
+        log.info("event.subscribe.send_request, action:", action )
         if action == 'subscribe':
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
@@ -217,28 +224,34 @@ def subscribe(service, action='subscribe'):
         request.append( "")
         request.append( "")
         request = '\r\n'.join(request)
-        #print "event.subscribe.send_request", request
+        log.info("event.subscribe.send_request", request)
         return p.transport.write(request)
         
     def got_error(failure, action):
-        log.warning("error on %s request with %s" % (action,service.get_base_url()))
+        log.info("error on %s request with %s" % (action,service.get_base_url()))
         log.debug(failure)
+        
+    def teardown_connection(c, d):
+        log.info("event.subscribe.teardown_connection")
+        del d
+        del c
 
     def prepare_connection( service, action):
-        #print "event.subscribe.prepare_connection action:", action
+        log.info("event.subscribe.prepare_connection action:", action)
         c = ClientCreator(reactor, EventProtocol, service=service, action=action)
         d = c.connectTCP(host, port)
         d.addCallback(send_request, action=action)
         d.addErrback(got_error, action)
+        reactor.callLater(3, teardown_connection, c, d)
         return d
 
-    if action == 'unsubscribe':
-        """ I'm uncertain if this is really the right way to do this,
-            but so far it seems to work
-        """
+    """ FIXME:
+        we need to find a way to be sure that our unsubscribe calls get through
+        on shutdown
         reactor.addSystemEventTrigger( 'before', 'shutdown', prepare_connection, service, action)
-    else:
-        prepare_connection(service, action)
+    """
+        
+    prepare_connection(service, action)
 
     #print "event.subscribe finished"
     
