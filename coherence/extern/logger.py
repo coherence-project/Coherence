@@ -8,8 +8,8 @@ import os, sys, logging
 #from twisted.python import log
 
 LOG_UNSET       =  0
-LOG_INFO        = 10
-LOG_DEBUG       = 20
+LOG_DEBUG       = 10
+LOG_INFO        = 20
 LOG_WARNING     = 30
 LOG_ERROR       = 40
 LOG_CRITICAL    = 50
