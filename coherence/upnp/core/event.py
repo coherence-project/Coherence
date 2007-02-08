@@ -221,7 +221,7 @@ def subscribe(service, action='subscribe'):
         return p.transport.write(request)
         
     def got_error(failure, action):
-        log.warning("error on %s request with %s" % service.get_base_url())
+        log.warning("error on %s request with %s" % (action,service.get_base_url()))
         log.debug(failure)
 
     def prepare_connection( service, action):

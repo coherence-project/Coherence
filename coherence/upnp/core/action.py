@@ -4,6 +4,11 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from twisted.python import failure
+
+from coherence.extern.logger import Logger
+log = Logger('Action')
+
 class Argument:
 
     def __init__(self, name, direction, state_variable):
@@ -64,37 +69,40 @@ class Action:
             return None
         
     def call(self, *args, **kwargs):
-        #print "calling", self.name
+        log.info("calling", self.name)
         in_arguments = self.get_in_arguments()
-        #print "in arguments", [a.get_name() for a in in_arguments]
+        log.info("in arguments", [a.get_name() for a in in_arguments])
         instance_id = 0
         for arg_name, arg in kwargs.iteritems():
             l = [ a for a in in_arguments if arg_name == a.get_name()] 
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                print "argument %s not valid for action %s" % (arg_name,self.name)
+                log.error("argument %s not valid for action %s" % (arg_name,self.name))
                 return
             if arg_name == 'InstanceID':
                 instance_id = arg
         if len(in_arguments) > 0:
-            print "argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],self.name)
+            log.error("argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],self.name))
             return
             
+        def got_error(failure):
+            log.warning("error on %s request with %s %s" % (self.name,self.service_type,self.control_url))
+            log.info(failure)
+        
         client = self._get_client()
-        d = client.callRemote( self.name,
-                                **kwargs)
-        d.addCallback( self.got_results, instance_id=instance_id)
+        d = client.callRemote(self.name, **kwargs)
+        d.addCallback(self.got_results, instance_id=instance_id)
+        d.addErrback(got_error)
         return d
 
     def got_results( self, results, instance_id):
         out_arguments = self.get_out_arguments()
-        # print "call %s (instance %d) returns %d arguments: %r" % (self.name,
-        #                                                            instance_id,
-        #                                                            len(out_arguments),
-        #                                                            results)
-        #
-        #
+        log.info( "call %s (instance %d) returns %d arguments: %r" % (self.name,
+                                                                    instance_id,
+                                                                    len(out_arguments),
+                                                                    results))
+
         # XXX A_ARG_TYPE_ arguments probably don't need a variable update
         if len(out_arguments) == 1:
             self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
