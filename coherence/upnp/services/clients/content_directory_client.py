@@ -69,12 +69,19 @@ class ContentDirectoryClient:
                             
         def processResults( results):
             global work, pending
+            if not results:
+                finished.callback({})
+                return
 
-            returned_nb = results['NumberReturned']
+            try:
+                returned_nb = results['NumberReturned']
+            except:
+                finished.callback({})
+                return
             total_matches = results['TotalMatches']
 
-            print "Browsing returned %s results. Total matches: %s" % (returned_nb,
-                                                                total_matches)
+            #print "Browsing returned %s results. Total matches: %s" % (returned_nb,
+            #                                                    total_matches)
             elt = DIDLLite.DIDLElement.fromString(results['Result'])
             work.extend(elt.getItems())
 
@@ -89,11 +96,11 @@ class ContentDirectoryClient:
                                    'childCount': childCount,
                                    'parentID': item.parentID}
                 title = item.title.encode('iso-8859-15')
-                print "%s <- %s : %s (%s)" % (item.parentID, item.id,
-                                                title, childCount)
+                #print "%s <- %s : %s (%s)" % (item.parentID, item.id,
+                #                                title, childCount)
                 if isinstance(item, DIDLLite.Container):
-                    print 'Folder "%s" with %s children' % (title,
-                                                              item.childCount)
+                    #print 'Folder "%s" with %s children' % (title,
+                    #                                          item.childCount)
                     _infos[item.id].update({'search_class': item.searchClass})
                     if recursive:
                         next_deferred = action.call( ObjectID=item.id,
