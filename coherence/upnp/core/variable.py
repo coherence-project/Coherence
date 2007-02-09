@@ -94,7 +94,10 @@ class StateVariable:
                         self.value = value
             else:
                 if self.data_type == 'string':
-                    value = str(value)
+                    if type(value) == unicode:
+                        value = value.encode('utf-8')
+                    else:
+                        value = str(value)
                     if len(self.allowed_values):
                         if self.has_vendor_values == True:
                             self.value = value
