@@ -19,8 +19,17 @@ import struct
 
 def parse_xml(data, encoding="iso-8859-1"):
     p = cElementTree.XMLParser(encoding=encoding)
-    p.feed(data.encode(encoding))
-    return cElementTree.ElementTree(p.close())
+    data = data.encode(encoding)
+
+    # Guess from who we're getting this?
+    data = data.replace('\x00','')
+    try:
+        p.feed(data)
+    except Exception, error:
+        print error, repr(data)
+        return None
+    else:
+        return cElementTree.ElementTree(p.close())
 
 def parse_http_response(data):
         

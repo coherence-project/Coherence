@@ -117,9 +117,10 @@ class ElisaMediaStore:
                 else:
                     childs = children[StartingIndex:StartingIndex+RequestedCount]
                 for child in childs:
-                    didl.addItem(build_upnp_item(child))
+                    if child is not None:
+                        didl.addItem(build_upnp_item(child))
                 total = len(children)
-            else:
+            elif elisa_item:
                 didl.addItem(build_upnp_item(elisa_item))
                 total = 1
 
