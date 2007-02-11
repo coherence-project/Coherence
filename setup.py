@@ -10,4 +10,11 @@ setup(
       packages=find_packages(),
       scripts = ['bin/coherence'],
       url = "http://coherence.beebits.net",
+
+    #package_dir = {'':'coherence'},   # tell distutils packages are under src
+
+    package_data = {
+        'coherence': ['upnp/core/xml-service-descriptions/*.xml',
+		'web/*.css','web/*.js'],
+    }
       )
