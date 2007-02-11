@@ -12,6 +12,7 @@ import string
 from twisted.python import log
 from twisted.web import client
 from twisted.internet import reactor
+from twisted.python import failure
 
 import socket
 import fcntl
