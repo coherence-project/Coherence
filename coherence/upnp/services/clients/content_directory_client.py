@@ -95,7 +95,8 @@ class ContentDirectoryClient:
                 _infos[item.id] = {'title': item.title,
                                    'childCount': childCount,
                                    'parentID': item.parentID}
-                title = item.title.encode('iso-8859-15')
+                title = item.title.encode('utf-8')
+                #title = item.title.encode('iso-8859-15')
                 #print "%s <- %s : %s (%s)" % (item.parentID, item.id,
                 #                                title, childCount)
                 if isinstance(item, DIDLLite.Container):
