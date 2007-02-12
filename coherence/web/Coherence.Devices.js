@@ -6,7 +6,7 @@
 // import Nevow.Athena
 
 // import MochiKit
-// import MochiKit.DOM
+
 
 if(typeof(Coherence) == "undefined") {
     Coherence = {};
@@ -17,32 +17,34 @@ Coherence.Devices = Nevow.Athena.Widget.subclass('Coherence.Devices');
 Coherence.Devices.methods(
 
 function addDevice(self, device) {
-    log('addDevice '+device['name']);
-    appendChildNodes($('Devices-container'),
+    Divmod.debug("device",'addDevice '+device['name']);
+    // self.nodeById('Devices-container')
+    appendChildNodes(self.nodeById('Devices-container'),
         DIV({'id':device['usn']}, device['name']
         )
     )
 },
 
 function removeDevice(self, usn) {
-    log('removeDevice '+usn);
-    $('Devices-container').removeChild($(usn));
+    Divmod.debug("device",'removeDevice '+usn);
+    self.nodeById('Devices-container').removeChild($(usn));
 },
 
 
 function listDevices(self, result) {
-    log('listDevices ' + result.length);
+    Divmod.debug("device",'listDevices ' + result.length);
     for(var i=0; i<result.length;++i) {
-        log('listDevices ' + i + ' ' + result[i]);
-        Coherence.Devices.prototype.addDevice(result[i]);
+        Divmod.debug("device",'listDevices ' + i + ' ' + result[i]);
+        self.addDevice(result[i]);
     }
 },
 
 function __init__(self, node) {
-    log('Coherence.Devices __init__');
+    Divmod.debug("device",'Coherence.Devices __init__');
     Coherence.Devices.upcall(self, '__init__', node);
     var d = self.callRemote('going_live');
-    d.addCallback(self.listDevices);
-}
+    d.addCallback(function (result) { self.listDevices(result); });
+    Divmod.debug("device",'Coherence.Devices __init__ done');
+ }
 
 );

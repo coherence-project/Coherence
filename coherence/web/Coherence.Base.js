@@ -6,44 +6,46 @@
 // import Nevow.Athena
 
 // import MochiKit
-// import MochiKit.DOM
 
 if(typeof(Coherence) == "undefined") {
     Coherence = {};
 }
 
-//MochiKit.LoggingPane.createLoggingPane()
-
 Coherence.Base = Nevow.Athena.Widget.subclass('Coherence.Base');
 Coherence.Base.activeTab = 0;
+Coherence.Base.build_done = 'no';
 
 Coherence.Base.methods(
 
 function setTab(self, tab, active) {
-    log("setTab " + tab.id + " " + active);
+    Divmod.debug("base", "setTab " + tab.id + " " + active);
+    log('tab_item ' + tab.id.split('-')[0]+'-'+tab.id.split('-')[1]+'-container');
+    tab_item = $(tab.id.split('-')[0]+'-'+tab.id.split('-')[1]+'-container')
+    log('tab_item ' + tab_item);
     if( active == 'on') {
         if( Coherence.Base.activeTab != 0) {
             Coherence.Base.activeTab.style.color ='#FFFFFF'
             Coherence.Base.activeTab.style.backgroundColor ='#404040'
-            $(Coherence.Base.activeTab.id.split('-')[0]+'-container').style.visibility = 'hidden'
+            c = $(Coherence.Base.activeTab.id.split('-')[0]+'-'+Coherence.Base.activeTab.id.split('-')[1]+'-container')
+            c.style.visibility = 'hidden'
         }
         tab.style.color ='#000000'
         tab.style.backgroundColor ='#C0C0C0'
-        log("set " + tab.id.split('-')[0]+'-container' + " " + 'visible');
-        $(tab.id.split('-')[0]+'-container').style.visibility = 'visible'
+        log("set " + tab.id.split('-')[0]+'-'+tab.id.split('-')[1]+'-container' + " " + 'visible');
+        tab_item.style.visibility = 'visible'
         Coherence.Base.activeTab = tab
     }
     else
     {
         tab.style.color ='#FFFFFF'
         tab.style.backgroundColor ='#404040'
-        $(tab.id.split('-')[0]+'-container').style.visibility = 'hidden'
+        tab_item.style.visibility = 'hidden'
         Coherence.Base.activeTab = 0
     }
 },
 
 function clickTab(self, Event) {
-    log("clickTab " + Event.target.id);
+    Divmod.debug("base", "clickTab " + Event.target.id);
     if( Event.target.className != 'coherence_menu_item')
         return;
     if( Coherence.Base.activeTab == Event.target)
@@ -52,36 +54,40 @@ function clickTab(self, Event) {
 },
 
 function addTab(self, tab) {
-    log('addTab '+tab['title']);
-    if( $('coherence_menu_box').build_done == 'no')
+    Divmod.debug("base", 'addTab '+tab['title']+' '+tab['athenaid']);
+    if( Coherence.Base.build_done == 'no') {
+        Divmod.debug("base", 'Base.build_done == no');
         return;
-
-    appendChildNodes($('coherence_menu_box'),
-        DIV({'id':tab['title']+'-tab','class':'coherence_menu_item'}, tab['title']
+    }
+    appendChildNodes(self.nodeById('coherence_menu_box'),
+        DIV({'id':tab['athenaid']+'-'+tab['title']+'-tab','class':'coherence_menu_item'}, tab['title']
         )
     )
-    $(tab['title']+'-tab').addEventListener("click", Coherence.Base.prototype.clickTab, false);
+    $(tab['athenaid']+'-'+tab['title']+'-tab').addEventListener("click", Coherence.Base.prototype.clickTab, false);
+    //self.nodeById(tab['title']+'-tab').addEventListener("click", Coherence.Base.prototype.clickTab, false);
     if(tab['active'] == 'yes') {
-        log('addTab set active '+tab['title']);
-        Coherence.Base.prototype.setTab($(tab['title']+'-tab'), 'on');
+        Divmod.debug("base", 'addTab set active '+tab['title']);
+        self.setTab($(tab['athenaid']+'-'+tab['title']+'-tab'), 'on');
     }
     // MochiKit.Visual.roundElement( $(channel+'-box'));
 },
 
 function buildMenu(self, result) {
-    log('buildMenu ' + result.length);
-    $('coherence_menu_box').build_done = 'yes'
+    Divmod.debug("base", 'buildMenu ' + result.length);
+    Coherence.Base.build_done = 'yes'
     for(var i=0; i<result.length;++i) {
-        log('buildMenu ' + i + ' ' + result[i]);
-        Coherence.Base.prototype.addTab(result[i]);
+        Divmod.debug("base", 'buildMenu ' + i + ' ' + result[i]);
+        self.addTab(result[i]);
+
     }
 },
 
 function __init__(self, node) {
+    Divmod.debug("base",'Coherence.Base __init__');
     Coherence.Base.upcall(self, '__init__', node);
-    $('coherence_menu_box').build_done = 'no'
     var d = self.callRemote('going_live');
-    d.addCallback(Coherence.Base.prototype.buildMenu);
+    d.addCallback(function (result) { self.buildMenu(result); });
+    Divmod.debug("base",'Coherence.Base __init__ done');
 }
 
 );

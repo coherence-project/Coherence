@@ -50,36 +50,46 @@ class Web(object):
         super(Web, self).__init__()
         self.coherence = coherence
         
-class MenuFragment(athena.LiveFragment):
+class MenuFragment(athena.LiveElement):
 
     jsClass = u'Coherence.Base'
-
+    fragmentName = 'coherence-menu'
+        
     docFactory = loaders.stan(
-        tags.div(render=tags.directive('liveFragment'))[
+        tags.div(render=tags.directive('liveElement'))[
             tags.div(id="coherence_menu_box",class_="coherence_menu_box")[""],
         ]
         )
 
     def __init__(self, page):
         super(MenuFragment, self).__init__()
+        self.setFragmentParent(page)
         self.page = page
         self.coherence = page.coherence
         self.tabs = []
-        
+
+                
     def going_live(self):
         log.info("add a view to the MenuFragment")
+        
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
         d.addErrback( self.remove_me)
-        return self.tabs
+        print "going_live", self.tabs
+        if len(self.tabs):
+            return self.tabs
+        else:
+            return {}
     athena.expose(going_live)
     
-    def add_tab(self,title,active):
+    def add_tab(self,title,active,id):
         log.info("add tab %s to the MenuFragment" % title)
         new_tab = {u'title':unicode(title),
-                   u'active':unicode(active)}
+                   u'active':unicode(active),
+                   u'athenaid':u'athenaid:%d' % id}
+        print "add_tab", self.tabs
         for t in self.tabs:
-            if t['title'] == new_tab['title']:
+            if t[u'title'] == new_tab[u'title']:
                 return
         self.tabs.append(new_tab)
         self.callRemote('addTab', new_tab)
@@ -87,24 +97,27 @@ class MenuFragment(athena.LiveFragment):
     def remove_me(self, result):
         log.info("remove view from MenuFragment")
 
-class DevicesFragment(athena.LiveFragment):
+class DevicesFragment(athena.LiveElement):
 
     jsClass = u'Coherence.Devices'
-
+    fragmentName = 'coherence-devices'
+    
     docFactory = loaders.stan(
-        tags.div(render=tags.directive('liveFragment'))[
+        tags.div(render=tags.directive('liveElement'))[
             tags.div(id="Devices-container",class_="coherence_container")[""],
         ]
         )
 
     def __init__(self, page, active):
         super(DevicesFragment, self).__init__()
+        self.setFragmentParent(page)
         self.page = page
         self.coherence = page.coherence
-        self.page.menu.add_tab('Devices',active)
-
+        self.active = active
+        
     def going_live(self):
-        log.info("add a view to the DevicesFragment")
+        log.info("add a view to the DevicesFragment",self._athenaID)
+        self.page.menu.add_tab('Devices',self.active,self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
         d.addErrback( self.remove_me)
@@ -153,23 +166,27 @@ class DevicesFragment(athena.LiveFragment):
                 cl.append( tags.li[c])
         return ctx.tag[tags.ul[cl]]
         
-class LoggingFragment(athena.LiveFragment):
+class LoggingFragment(athena.LiveElement):
 
     jsClass = u'Coherence.Logging'
+    fragmentName = 'coherence-logging'
+    
     docFactory = loaders.stan(
-        tags.div(render=tags.directive('liveFragment'))[
+        tags.div(render=tags.directive('liveElement'))[
             tags.div(id="Logging-container",class_="coherence_container")[""],
         ]
         )
 
     def __init__(self, page, active):
         super(LoggingFragment, self).__init__()
+        self.setFragmentParent(page)
         self.page = page
         self.coherence = page.coherence
-        self.page.menu.add_tab('Logging','no')
-
+        self.active = active
+        
     def going_live(self):
-        log.info("add a view to the LoggingFragment")
+        log.info("add a view to the LoggingFragment",self._athenaID)
+        self.page.menu.add_tab('Logging',self.active,self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
         d.addErrback( self.remove_me)
@@ -195,8 +212,8 @@ class WebUI(athena.LivePage):
 <body>
 <div id="coherence_header"><div class="coherence_title">Coherence</div><div nevow:render="menu"></div></div>
 <div id="coherence_body">
-<span nevow:render="devices" />
-<span nevow:render="logging" />
+<div nevow:render="devices" />
+<div nevow:render="logging" />
 </div>
 </body>
 </html>
@@ -215,7 +232,6 @@ class WebUI(athena.LivePage):
             'Coherence.Base': filepath.FilePath(__file__).parent().child('web').child('Coherence.Base.js').path})
         self.jsModules.mapping.update({
             'Coherence.Devices': filepath.FilePath(__file__).parent().child('web').child('Coherence.Devices.js').path})
-
         self.jsModules.mapping.update({
             'Coherence.Logging': filepath.FilePath(__file__).parent().child('web').child('Coherence.Logging.js').path})
         self.menu = MenuFragment(self)
@@ -261,11 +277,13 @@ class WebUI(athena.LivePage):
         
     def render_devices(self, ctx, data):
         log.info('render_devices')
-        return DevicesFragment(self,'yes')
+        f = DevicesFragment(self,'yes')
+        return f
         
     def render_logging(self, ctx, data):
         log.info('render_logging')
-        return LoggingFragment(self,'no')
+        f = LoggingFragment(self,'no')
+        return f
         
 
 class WebServer:
