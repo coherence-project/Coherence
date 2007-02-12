@@ -162,7 +162,8 @@ class Service:
     def unsubscribe(self):
         event.unsubscribe(self)
         global subscribers
-        del subscribers[self.get_sid()]
+        if subscribers.has_key(self.get_sid()):
+            del subscribers[self.get_sid()]
 
     def subscribe_for_variable(self, var_name, instance=0, callback=None):
         variable = self.get_state_variable(var_name)
