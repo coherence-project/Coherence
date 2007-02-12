@@ -9,8 +9,12 @@ logmode = warning               # none, critical, error, warning, info, debug
 controlpoint = yes              # if set to yes coherence will activate its
                                 # internal ControlPoint
 
+web-ui = no                     # set this to yes to enable some interactive
+                                # Web-UI
+
 [subsystem_log]
 #Coherence = info
+#WebUI = info
 #SSDP = info
 #MSEARCH = info
 #SOAP = info
@@ -33,9 +37,9 @@ controlpoint = yes              # if set to yes coherence will activate its
         name = Coherence Test Content
     [[Player]]
         name = GStreamer Audio Player
-    [[FlickrStore]]
-        name = Flickr Images
-        proxy = yes             # if set to yes coherence will fetch the images
+    #[[FlickrStore]]
+        #name = Flickr Images
+        #proxy = yes             # if set to yes coherence will fetch the images
                                 #  from Flickr for your client
-        refresh = 60            # check every 60 minutes with Flickr for new images in the set
+        #refresh = 60            # check every 60 minutes with Flickr for new images in the set
 

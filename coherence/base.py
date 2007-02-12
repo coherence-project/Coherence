@@ -8,13 +8,10 @@ import socket
 import os, sys
 import traceback
 
-from zope.interface import implements, Interface
-from twisted.python import log, filepath, util
-from twisted.python.components import registerAdapter
+from twisted.python import filepath, util
 from twisted.internet import task, address
 from twisted.internet import reactor
-from nevow import athena, inevow, loaders, tags, static
-from twisted.web import resource
+from twisted.web import server, resource
 
 import louie
 
@@ -39,269 +36,73 @@ except:
 from coherence.extern.logger import Logger, LOG_WARNING
 log = Logger('Coherence')
 
-class IWeb(Interface):
 
-    def goingLive(self):
-        pass
-
-class Web(object):
+class SimpleRoot(resource.Resource):
+    addSlash = True
 
     def __init__(self, coherence):
-        super(Web, self).__init__()
-        self.coherence = coherence
-        
-class MenuFragment(athena.LiveElement):
-
-    jsClass = u'Coherence.Base'
-    fragmentName = 'coherence-menu'
-        
-    docFactory = loaders.stan(
-        tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="coherence_menu_box",class_="coherence_menu_box")[""],
-        ]
-        )
-
-    def __init__(self, page):
-        super(MenuFragment, self).__init__()
-        self.setFragmentParent(page)
-        self.page = page
-        self.coherence = page.coherence
-        self.tabs = []
-
-                
-    def going_live(self):
-        log.info("add a view to the MenuFragment")
-        
-        d = self.page.notifyOnDisconnect()
-        d.addCallback( self.remove_me)
-        d.addErrback( self.remove_me)
-        print "going_live", self.tabs
-        if len(self.tabs):
-            return self.tabs
-        else:
-            return {}
-    athena.expose(going_live)
-    
-    def add_tab(self,title,active,id):
-        log.info("add tab %s to the MenuFragment" % title)
-        new_tab = {u'title':unicode(title),
-                   u'active':unicode(active),
-                   u'athenaid':u'athenaid:%d' % id}
-        print "add_tab", self.tabs
-        for t in self.tabs:
-            if t[u'title'] == new_tab[u'title']:
-                return
-        self.tabs.append(new_tab)
-        self.callRemote('addTab', new_tab)
-
-    def remove_me(self, result):
-        log.info("remove view from MenuFragment")
-
-class DevicesFragment(athena.LiveElement):
-
-    jsClass = u'Coherence.Devices'
-    fragmentName = 'coherence-devices'
-    
-    docFactory = loaders.stan(
-        tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="Devices-container",class_="coherence_container")[""],
-        ]
-        )
-
-    def __init__(self, page, active):
-        super(DevicesFragment, self).__init__()
-        self.setFragmentParent(page)
-        self.page = page
-        self.coherence = page.coherence
-        self.active = active
-        
-    def going_live(self):
-        log.info("add a view to the DevicesFragment",self._athenaID)
-        self.page.menu.add_tab('Devices',self.active,self._athenaID)
-        d = self.page.notifyOnDisconnect()
-        d.addCallback( self.remove_me)
-        d.addErrback( self.remove_me)
-        devices = []
-        for device in self.coherence.get_devices():
-            if device != None:
-                _,_,_,device_type,version = device.get_device_type().split(':')
-                name = unicode("%s:%s %s" % (device_type,version,device.get_friendly_name()))
-                usn = unicode(device.get_usn())
-                devices.append({u'name':name,u'usn':usn})
-        louie.connect( self.add_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
-        louie.connect( self.remove_device, 'Coherence.UPnP.Device.removed', louie.Any)
-        return devices
-    athena.expose(going_live)
-        
-    def remove_me(self, result):
-        log.info("remove view from the DevicesFragment")
-        
-    def add_device(self, device):
-        log.info("DevicesFragment found device %s %s of type %s" %(
-                                                device.get_usn(),
-                                                device.get_friendly_name(),
-                                                device.get_device_type()))
-        _,_,_,device_type,version = device.get_device_type().split(':')
-        name = unicode("%s:%s %s" % (device_type,version,device.get_friendly_name()))
-        usn = unicode(device.get_usn())
-        self.callRemote('addDevice', {u'name':name,u'usn':usn})
-                                                
-    def remove_device(self, usn):
-        log.info("DevicesFragment remove device",usn)
-        self.callRemote('removeDevice', unicode(usn))
-    
-    def render_devices(self, ctx, data):
-        cl = []
-        log.info('children: %s' % self.coherence.children)
-        for c in self.coherence.children:
-            device = self.coherence.get_device_with_id(c)
-            if device != None:
-                _,_,_,device_type,version = device.get_device_type().split(':')
-                cl.append( tags.li[tags.a(href='/'+c)[device_type,
-                                                      ':',
-                                                      version,
-                                                      ' ',
-                                                      device.get_friendly_name()]])
-            else:
-                cl.append( tags.li[c])
-        return ctx.tag[tags.ul[cl]]
-        
-class LoggingFragment(athena.LiveElement):
-
-    jsClass = u'Coherence.Logging'
-    fragmentName = 'coherence-logging'
-    
-    docFactory = loaders.stan(
-        tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="Logging-container",class_="coherence_container")[""],
-        ]
-        )
-
-    def __init__(self, page, active):
-        super(LoggingFragment, self).__init__()
-        self.setFragmentParent(page)
-        self.page = page
-        self.coherence = page.coherence
-        self.active = active
-        
-    def going_live(self):
-        log.info("add a view to the LoggingFragment",self._athenaID)
-        self.page.menu.add_tab('Logging',self.active,self._athenaID)
-        d = self.page.notifyOnDisconnect()
-        d.addCallback( self.remove_me)
-        d.addErrback( self.remove_me)
-        return {}
-    athena.expose(going_live)
-        
-    def remove_me(self, result):
-        log.info("remove view from the LoggingFragment")
-
-class WebUI(athena.LivePage):
-    """
-    """
-    
-    jsClass = u'Coherence'
-
-    addSlash = True
-    docFactory = loaders.xmlstr("""\
-<html xmlns:nevow="http://nevow.com/ns/nevow/0.1">
-<head>
-<nevow:invisible nevow:render="liveglue" />
-<link rel="stylesheet" type="text/css" href="web/main.css" />
-</head>
-<body>
-<div id="coherence_header"><div class="coherence_title">Coherence</div><div nevow:render="menu"></div></div>
-<div id="coherence_body">
-<div nevow:render="devices" />
-<div nevow:render="logging" />
-</div>
-</body>
-</html>
-""")
-
-    def __init__(self, *a, **kw):
-        super(WebUI, self).__init__( *a, **kw)
-        self.coherence = self.rootObject.coherence
-        
-        self.jsModules.mapping.update({
-            'MochiKit': filepath.FilePath(__file__).parent().child('web').child('MochiKit.js').path})
-
-        self.jsModules.mapping.update({
-            'Coherence': filepath.FilePath(__file__).parent().child('web').child('Coherence.js').path})
-        self.jsModules.mapping.update({
-            'Coherence.Base': filepath.FilePath(__file__).parent().child('web').child('Coherence.Base.js').path})
-        self.jsModules.mapping.update({
-            'Coherence.Devices': filepath.FilePath(__file__).parent().child('web').child('Coherence.Devices.js').path})
-        self.jsModules.mapping.update({
-            'Coherence.Logging': filepath.FilePath(__file__).parent().child('web').child('Coherence.Logging.js').path})
-        self.menu = MenuFragment(self)
-
-    def childFactory(self, ctx, name):
-        log.info('WebUI childFactory: %s' % name)
+        resource.Resource.__init__(self)
+        self.coherence = coherence  
+         
+    def getChild(self, name, request):
+        log.info('SimpleRoot getChild %s, %s' % (name, request))
         try:
-            return self.rootObject.coherence.children[name]
+            return self.coherence.children[name]
         except:
-            ch = super(WebUI, self).childFactory(ctx, name)
-            if ch is None:
-                p = util.sibpath(__file__, name)
-                log.info('looking for file',p)
-                if os.path.exists(p):
-                    ch = static.File(p)
-            return ch
-        
-    def render_listmenu(self, ctx, data):
-        l = []
-        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/'+'devices',class_="coherence_menu_link")['Devices']])
-        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/'+'logging',class_="coherence_menu_link")['Logging']])
-        return ctx.tag[l]
-    
-    def render_listchilds(self, ctx, data):
-        cl = []
-        log.info('children: %s' % self.coherence.children)
+            return self
+            
+    def listchilds(self, uri):
+        log.info('listchilds %s' % uri)
+        if uri[-1] != '/':
+            uri += '/'
+        cl = ''
         for c in self.coherence.children:
             device = self.coherence.get_device_with_id(c)
             if device != None:
                 _,_,_,device_type,version = device.get_device_type().split(':')
-                cl.append( tags.li[tags.a(href='/'+c)[device_type,
-                                                      ':',
-                                                      version,
-                                                      ' ',
-                                                      device.get_friendly_name()]])
-            else:
-                cl.append( tags.li[c])
-        return ctx.tag[tags.ul[cl]]
+                cl +=  '<li><a href=%s%s>%s:%s %s</a></li>' % (
+                                        uri,c,
+                                        device_type.encode('utf-8'), version.encode('utf-8'),
+                                        device.get_friendly_name().encode('utf-8'))
+
+        for c in self.children:
+                cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
+        return cl
         
-    def render_menu(self, ctx, data):
-        log.info('render_menu')
-        return self.menu
-        
-    def render_devices(self, ctx, data):
-        log.info('render_devices')
-        f = DevicesFragment(self,'yes')
-        return f
-        
-    def render_logging(self, ctx, data):
-        log.info('render_logging')
-        f = LoggingFragment(self,'no')
-        return f
-        
+    def render(self,request):
+        return """<html><head><title>Coherence</title></head><body>
+<a href="http://coherence.beebits.net">Coherence</a> - a Python UPnP A/V framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
+
 
 class WebServer:
 
-    def __init__(self, port, coherence):
-        from nevow import appserver
+    def __init__(self, ui, port, coherence):
+        try:
+            if ui != 'yes':
+                """ use this to jump out here if we do not want
+                    the web ui """
+                raise ImportError
+                
+            from nevow import __version_info__, __version__
+            if __version_info__ <(0,9,17):
+                log.warning( "Nevow version %s too old, disabling WebUI" % __version__)
+                raise ImportError
+                
+            from nevow import appserver, inevow
+            from coherence.web.ui import Web, IWeb, WebUI
+            from twisted.python.components import registerAdapter
+                
+            def ResourceFactory( original):
+                return WebUI( IWeb, original)
 
-        def ResourceFactory( original):
-            return WebUI( IWeb, original)
+            registerAdapter(ResourceFactory, Web, inevow.IResource)
 
-        registerAdapter(ResourceFactory, Web, inevow.IResource)
+            self.web_root_resource = Web(coherence)
+            self.site = appserver.NevowSite( self.web_root_resource)
+        except ImportError:
+            self.site = server.Site(SimpleRoot(coherence))
 
-        self.web_root_resource = Web(coherence)
-        #self.web_root_resource = inevow.IResource( web)
-        #print self.web_root_resource
-        self.site = appserver.NevowSite( self.web_root_resource)
         reactor.listenTCP( port, self.site)
-        
         log.warning( "WebServer on port %d ready" % port)
 
 
@@ -374,7 +175,7 @@ class Coherence(object):
             log.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
-        self.web_server = WebServer( self.web_server_port, self)
+        self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
                                 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)

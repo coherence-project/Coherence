@@ -15,6 +15,6 @@ setup(
 
     package_data = {
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
-		'web/*.css','web/*.js'],
+		'web/static/*.css','web/static/*.js'],
     }
       )
