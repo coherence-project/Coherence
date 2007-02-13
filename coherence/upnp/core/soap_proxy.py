@@ -9,10 +9,8 @@ from twisted.web import soap
 from twisted.web import client
 
 from coherence.extern.elementsoap.ElementSOAP import SoapRequest, SoapElement
-from coherence.extern.elementsoap.ElementSOAP import NS_SOAP_ENV, soap_namespaces, decode
 
-from elementtree.ElementTree import tostring, Element, SubElement
-from elementtree import ElementTree
+from coherence.extern.et import ET, namespace_map_update
 
 class SOAPProxy(soap.Proxy):
 
@@ -25,7 +23,7 @@ class SOAPProxy(soap.Proxy):
         soapaction = self.soapaction or soapmethod
 
         ns = self.namespace
-        ElementTree._namespace_map.update({ns[1]:ns[0]})
+        namespace_map_update({ns[1]:ns[0]})
 
         request = SoapRequest("{%s}%s" % (ns[1], soapmethod))
 
@@ -41,9 +39,7 @@ class SOAPProxy(soap.Proxy):
             #SoapElement(request, arg_name, arg_type, arg_val)
             SoapElement(request, arg_name, '', arg_val)
 
-        envelope = Element("s:Envelope")
-        #for n, v in soap_namespaces.iteritems():
-        #    envelope.attrib.update({"xmlns:%s" % v : n})
+        envelope = ET.Element("s:Envelope")
         
         if self.envelope_attrib:
             for n in self.envelope_attrib:
@@ -51,11 +47,11 @@ class SOAPProxy(soap.Proxy):
         else:
             envelope.attrib.update({'s:encodingStyle' : "http://schemas.xmlsoap.org/soap/encoding/"})
             envelope.attrib.update({'xmlns:s' :"http://schemas.xmlsoap.org/soap/envelope/"})
-        body = SubElement(envelope, "s:Body")
+        body = ET.SubElement(envelope, "s:Body")
         body.append(request)
 
         preambule = """<?xml version="1.0" encoding="utf-8"?>"""
-        payload = preambule + tostring(envelope)
+        payload = preambule + ET.tostring(envelope)
         
         #print "soapaction:", soapaction
         #print "callRemote:", payload
@@ -81,7 +77,7 @@ class SOAPProxy(soap.Proxy):
         else:
             return result
         """
-        tree = ElementTree.fromstring(result)
+        tree = ET.fromstring(result)
         body = tree.find('%sBody' % NS_SOAP_ENV)
         r = decode(body)
         print "_cbGotResult 3", r

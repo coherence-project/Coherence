@@ -4,7 +4,6 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import cElementTree
 import time
 import urllib2
 from coherence.upnp.core import action
@@ -16,7 +15,7 @@ from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core.event import EventSubscriptionServer
 
-from elementtree.ElementTree import Element, SubElement, ElementTree, parse, tostring
+from coherence.extern.et import ET
 
 from twisted.web import static
 from twisted.internet import defer
@@ -300,17 +299,17 @@ class ServiceServer:
         if len(notify) <= 0:
             return
         
-        root = Element('propertyset')
+        root = ET.Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
 
         for n in notify:
-            e = SubElement( root, 'property')
+            e = ET.SubElement( root, 'property')
             if n.name == 'LastChange':
-                SubElement( e, n.name).text = self.build_last_change_event(n.instance)
+                ET.SubElement( e, n.name).text = self.build_last_change_event(n.instance)
             else:
-                SubElement( e, n.name).text = str(n.value)
+                ET.SubElement( e, n.name).text = str(n.value)
             
-        xml = tostring( root, encoding='utf-8')
+        xml = ET.tostring( root, encoding='utf-8')
         event.send_notification(subscriber, xml)
         self._subscribers[subscriber['sid']] = subscriber
         
@@ -364,28 +363,28 @@ class ServiceServer:
             return None
 
     def build_single_notification(self, instance, variable_name, value):
-        root = Element('propertyset')
+        root = ET.Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
-        e = SubElement( root, 'property')
-        s = SubElement( e, variable_name).text = str(value)
-        return tostring( root, encoding='utf-8')
+        e = ET.SubElement( root, 'property')
+        s = ET.SubElement( e, variable_name).text = str(value)
+        return ET.tostring( root, encoding='utf-8')
         
     def build_last_change_event(self, instance=0):
-        root = Element('Event')
+        root = ET.Element('Event')
         root.attrib['xmlns']=self.event_metadata
         for instance, vdict in self._variables.items():
-            e = SubElement( root, 'InstanceID')
+            e = ET.SubElement( root, 'InstanceID')
             e.attrib['val']=str(instance)
             for variable in vdict.values():
                 if( variable.name != 'LastChange' and
                     variable.name[0:11] != 'A_ARG_TYPE_'):
-                    s = SubElement( e, variable.name)
+                    s = ET.SubElement( e, variable.name)
                     s.attrib['val'] = str(variable.value)
                     if variable.dependant_variable != None:
                         dependants = variable.dependant_variable.get_allowed_values()
                         if dependants != None and len(dependants) > 0:
                             s.attrib['channel']=dependants[0]
-        return tostring( root, encoding='utf-8')
+        return ET.tostring( root, encoding='utf-8')
         
     def propagate_notification(self, notify):
         #print "propagate_notification", notify
@@ -394,24 +393,24 @@ class ServiceServer:
         if len(notify) <= 0:
             return
             
-        root = Element('propertyset')
+        root = ET.Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
 
         if isinstance( notify, variable.StateVariable):
             notify = [notify,]
 
         for n in notify:
-            e = SubElement( root, 'property')
+            e = ET.SubElement( root, 'property')
             if n.name == 'LastChange':
-                SubElement( e, n.name).text = self.build_last_change_event(instance=n.instance)
+                ET.SubElement( e, n.name).text = self.build_last_change_event(instance=n.instance)
             else:
-                s = SubElement( e, n.name).text = str(n.value)
+                s = ET.SubElement( e, n.name).text = str(n.value)
                 if n.dependant_variable != None:
                     dependants = n.dependant_variable.get_allowed_values()
                     if dependants != None and len(dependants) > 0:
                         s.attrib['channel']=dependants[0]
             
-        xml = tostring( root, encoding='utf-8')
+        xml = ET.tostring( root, encoding='utf-8')
         #print "propagate_notification", xml
         for s in self._subscribers.values():
             event.send_notification(s, xml)
@@ -456,7 +455,7 @@ class ServiceServer:
         
     def init_var_and_actions(self):
         desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, self.version))
-        tree = parse(desc_file)
+        tree = ET.parse(desc_file)
         
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')
@@ -576,37 +575,37 @@ class scpdXML(static.Data):
 
     def __init__(self, server, control):
     
-        root = Element('scpd')
+        root = ET.Element('scpd')
         root.attrib['xmlns']='urn:schemas-upnp-org:service-1-0'
-        e = SubElement(root, 'specVersion')
-        SubElement( e, 'major').text = '1'
-        SubElement( e, 'minor').text = '0'
+        e = ET.SubElement(root, 'specVersion')
+        ET.SubElement( e, 'major').text = '1'
+        ET.SubElement( e, 'minor').text = '0'
 
-        e = SubElement( root, 'actionList')
+        e = ET.SubElement( root, 'actionList')
         for action in server._actions.values():
-            s = SubElement( e, 'action')
-            SubElement( s, 'name').text = action.get_name()
-            al = SubElement( s, 'argumentList')
+            s = ET.SubElement( e, 'action')
+            ET.SubElement( s, 'name').text = action.get_name()
+            al = ET.SubElement( s, 'argumentList')
             for argument in action.get_arguments_list():
-                a = SubElement( al, 'argument')
-                SubElement( a, 'name').text = argument.get_name()
-                SubElement( a, 'direction').text = argument.get_direction()
-                SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
+                a = ET.SubElement( al, 'argument')
+                ET.SubElement( a, 'name').text = argument.get_name()
+                ET.SubElement( a, 'direction').text = argument.get_direction()
+                ET.SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
 
-        e = SubElement( root, 'serviceStateTable')
+        e = ET.SubElement( root, 'serviceStateTable')
         for var in server._variables[0].values():
-            s = SubElement( e, 'stateVariable')
+            s = ET.SubElement( e, 'stateVariable')
             if var.send_events == True:
                 s.attrib['sendEvents'] = 'yes'
             else:
                 s.attrib['sendEvents'] = 'no'
-            SubElement( s, 'name').text = var.name
-            SubElement( s, 'dataType').text = var.data_type
+            ET.SubElement( s, 'name').text = var.name
+            ET.SubElement( s, 'dataType').text = var.data_type
             #if(not var.has_vendor_values and len(var.allowed_values)):
             if len(var.allowed_values):
-                v = SubElement( s, 'allowedValueList')
+                v = ET.SubElement( s, 'allowedValueList')
                 for value in var.allowed_values:
-                    SubElement( v, 'allowedValue').text = value
+                    ET.SubElement( v, 'allowedValue').text = value
                     
             if( var.allowed_value_range != None and
                 len(var.allowed_value_range) > 0):
@@ -615,12 +614,12 @@ class scpdXML(static.Data):
                     if value == None:
                         complete = False
                 if complete == True:
-                    avl = SubElement( s, 'allowedValueRange')
+                    avl = ET.SubElement( s, 'allowedValueRange')
                     for name,value in var.allowed_value_range.items():
                          if value != None:
-                            SubElement( avl, name).text = str(value)
+                            ET.SubElement( avl, name).text = str(value)
 
-        self.xml = tostring( root, encoding='utf-8')
+        self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 

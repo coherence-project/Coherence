@@ -6,12 +6,9 @@
 # Connection Manager service
 import time
 
-from twisted.web import resource, static, soap
-from twisted.internet import defer
+from twisted.web import resource
 from twisted.python import failure
 from twisted.internet import task
-
-from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
 
 from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core.soap_service import errorCode

@@ -16,8 +16,7 @@ from twisted.web import proxy
 from twisted.python import util
 from twisted.python.filepath import FilePath
 
-
-from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
+from coherence.extern.et import ET
 
 from coherence.upnp.core.service import ServiceServer
 
@@ -169,65 +168,65 @@ class RootDeviceXML(static.Data):
                         services=[],
                         devices=[]):
         uuid = str(uuid)
-        root = Element('root')
+        root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
         device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
-        e = SubElement(root, 'specVersion')
-        SubElement( e, 'major').text = '1'
-        SubElement( e, 'minor').text = '0'
+        e = ET.SubElement(root, 'specVersion')
+        ET.SubElement( e, 'major').text = '1'
+        ET.SubElement( e, 'minor').text = '0'
 
-        SubElement(root, 'URLBase').text = urlbase
+        ET.SubElement(root, 'URLBase').text = urlbase
 
-        d = SubElement(root, 'device')
-        x = SubElement( d, 'dlna:X_DLNADOC')
+        d = ET.SubElement(root, 'device')
+        x = ET.SubElement( d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'DMS-1.50'
-        x = SubElement( d, 'dlna:X_DLNADOC')
+        x = ET.SubElement( d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'M-DMS-1.50'
-        x=SubElement( d, 'dlna:X_DLNACAP')
+        x=ET.SubElement( d, 'dlna:X_DLNACAP')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'av-upload,image-upload,audio-upload'
-        SubElement( d, 'deviceType').text = device_type
+        ET.SubElement( d, 'deviceType').text = device_type
         if xbox_hack == False:
-            SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
-            SubElement( d, 'friendlyName').text = friendly_name
+            ET.SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
+            ET.SubElement( d, 'friendlyName').text = friendly_name
         else:
-            SubElement( d, 'modelName').text = 'Windows Media Connect'
-            SubElement( d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
-        SubElement( d, 'manufacturer').text = 'beebits.net'
-        SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
-        SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        SubElement( d, 'modelNumber').text = '0.1'
-        SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
-        SubElement( d, 'serialNumber').text = '0000001'
-        SubElement( d, 'UDN').text = uuid
-        SubElement( d, 'UPC').text = ''
-        SubElement( d, 'presentationURL').text = ''
+            ET.SubElement( d, 'modelName').text = 'Windows Media Connect'
+            ET.SubElement( d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
+        ET.SubElement( d, 'manufacturer').text = 'beebits.net'
+        ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
+        ET.SubElement( d, 'modelNumber').text = '0.1'
+        ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'serialNumber').text = '0000001'
+        ET.SubElement( d, 'UDN').text = uuid
+        ET.SubElement( d, 'UPC').text = ''
+        ET.SubElement( d, 'presentationURL').text = ''
 
         if len(services):
-            e = SubElement( d, 'serviceList')
+            e = ET.SubElement( d, 'serviceList')
             for service in services:
                 id = service.get_id()
-                s = SubElement( e, 'service')
+                s = ET.SubElement( e, 'service')
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                ET.SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'upnp-org'
-                SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                ET.SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                ET.SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(services):
-            e = SubElement( d, 'deviceList')
+            e = ET.SubElement( d, 'deviceList')
 
-        self.xml = tostring( root, encoding='utf-8')
+        self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
         
 class MediaServer:
@@ -251,7 +250,6 @@ class MediaServer:
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
         d = threads.deferToThread(backend, self, **kwargs)
-        #d = threads.deferToThread(ElisaMediaStore, 'Elisas content', localhost, self.urlbase, (), self)
         
         def backend_failure(x):
             log.critical('backend not installed, MediaServer activation aborted')

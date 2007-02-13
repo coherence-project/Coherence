@@ -11,7 +11,8 @@ from twisted.web import soap, server
 from twisted.python import log, failure
 from twisted.internet import defer
 
-from elementtree.ElementTree import Element, SubElement, tostring
+from coherence.extern.et import ET
+#from elementtree.ElementTree import Element, SubElement, tostring
 
 import SOAPpy
 
@@ -44,22 +45,22 @@ class errorCode(Exception):
 class UPnPError:
 
     def __init__(self,status,description='without words'):
-        root = Element('s:Envelope')
+        root = ET.Element('s:Envelope')
         root.attrib['xmlns']='s=http://schemas.xmlsoap.org/soap/envelope/'
         root.attrib['s:encodingStyle']='s=http://schemas.xmlsoap.org/soap/encoding/'
-        e = SubElement(root,'s:Body')
-        e = SubElement(e,'s:Fault')
-        SubElement(e,'faultcode').text='s:Client'
-        SubElement(e,'faultstring').text='UPnPError'
-        e = SubElement(e,'detail')
-        e = SubElement(e, 'UPnPError')
+        e = ET.SubElement(root,'s:Body')
+        e = ET.SubElement(e,'s:Fault')
+        ET.SubElement(e,'faultcode').text='s:Client'
+        ET.SubElement(e,'faultstring').text='UPnPError'
+        e = ET.SubElement(e,'detail')
+        e = ET.SubElement(e, 'UPnPError')
         e.attrib['xmlns']='urn:schemas-upnp-org:control-1-0'
-        SubElement(e,'errorCode').text=str(status)
+        ET.SubElement(e,'errorCode').text=str(status)
         try:
-            SubElement(e,'errorDescription').text=UPNPERRORS[status]
+            ET.SubElement(e,'errorDescription').text=UPNPERRORS[status]
         except:
-            SubElement(e,'errorDescription').text=description
-        self.xml = tostring( root, encoding='utf-8')
+            ET.SubElement(e,'errorDescription').text=description
+        self.xml = ET.tostring( root, encoding='utf-8')
         
     def get_xml(self):
         return self.xml

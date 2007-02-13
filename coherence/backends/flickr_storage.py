@@ -13,8 +13,6 @@ from twisted.web import proxy
 from twisted.web.xmlrpc import Proxy
 from twisted.internet import task
 
-from elementtree.ElementTree import fromstring
-
 from coherence.upnp.core.utils import parse_xml
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
