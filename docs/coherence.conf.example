@@ -4,7 +4,8 @@
 
 logmode = warning               # none, critical, error, warning, info, debug
 #interface = eth0
-#serverport = 12345             # if not specified coherence will use 30020
+#serverport = 30020             # if not specified or set to 0
+                                # coherence will let the OS choose the port
 
 controlpoint = yes              # if set to yes coherence will activate its
                                 # internal ControlPoint
