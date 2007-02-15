@@ -102,8 +102,10 @@ class WebServer:
         except ImportError:
             self.site = server.Site(SimpleRoot(coherence))
 
-        reactor.listenTCP( port, self.site)
-        log.warning( "WebServer on port %d ready" % port)
+        port = reactor.listenTCP( port, self.site)
+        coherence.web_server_port = port._realPortNumber
+        # XXX: is this the right way to do it?
+        log.warning( "WebServer on port %d ready" % coherence.web_server_port)
 
 
 class Coherence(object):
@@ -131,7 +133,7 @@ class Coherence(object):
         logmode = config.get('logmode', 'info')
         network_if = config.get('interface')
         
-        self.web_server_port = config.get('serverport', 30020)
+        self.web_server_port = config.get('serverport', 0)
             
         log.set_master_level(logmode)
         
@@ -173,10 +175,10 @@ class Coherence(object):
         log.warning('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
             log.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
+        self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
+
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
-        self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
-                                
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
