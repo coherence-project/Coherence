@@ -1,6 +1,6 @@
 #
 # ElementSOAP
-# $Id: //modules/elementtree/demo/HTTPClient.py#1 $
+# $Id: HTTPClient.py 2924 2006-11-19 22:24:22Z fredrik $
 #
 # a simple XML-over-HTTP client
 #
@@ -14,8 +14,10 @@
 # 2002-07-17 fl   changed constructor to take a full URI
 # 2003-05-13 fl   added parser argument
 # 2003-11-16 fl   added HTTPError exception
+# 2006-11-19 fl   added HTTPS support (based on a patch by Florent Aide).
+# 2006-11-19 fl   use parser as callable, not parser class
 #
-# Copyright (c) 1999-2003 by Fredrik Lundh.  All rights reserved.
+# Copyright (c) 1999-2006 by Fredrik Lundh.  All rights reserved.
 #
 # fredrik@pythonware.com
 # http://www.pythonware.com
@@ -23,7 +25,7 @@
 # --------------------------------------------------------------------
 # The ElementSOAP library is
 #
-# Copyright (c) 1999-2003 by Fredrik Lundh
+# Copyright (c) 1999-2006 by Fredrik Lundh
 #
 # By obtaining, using, and/or copying this software and/or its
 # associated documentation, you agree that you have read, understood,
@@ -52,10 +54,10 @@
 # This module implements a simple XML-over-HTTP transport layer.
 ##
 
-from httplib import HTTP
-
-from elementtree import ElementTree
+from httplib import HTTP, HTTPS
 import StringIO, urlparse
+
+import ElementTree as ET
 
 ##
 # HTTP exception.  This exception contains the error code, the error
@@ -77,10 +79,11 @@ class HTTPClient:
     def __init__(self, url):
 
         scheme, host, path, params, query, fragment = urlparse.urlparse(url)
-        if scheme != "http":
-            raise ValueError("only supports HTTP requests")
+        if scheme != "http" and scheme != "https":
+            raise ValueError("unsupported scheme (%s)" % scheme)
 
         self.host = host
+        self.scheme = scheme
 
         if not path:
             path = "/"
@@ -102,8 +105,8 @@ class HTTPClient:
     #    default is <b>text/xml</b>.
     # @keyparam extra_headers List of additional HTTP header fields.
     #    The list should contain (field, value)-tuples.
-    # @keyparam parser Optional parser override.  If omitted, the
-    #    standard ElementTree parser is used.
+    # @keyparam parser Optional parser function.  If omitted, the
+    #    standard ElementTree <b>parse</b> function is used.
     # @return An ElementTree instance containing the HTTP response.
     # @defreturn ElementTree
     # @throws HTTPError If the server returned an HTTP error code.
@@ -111,7 +114,6 @@ class HTTPClient:
     #    exception object.
 
     def do_request(self, body,
-                   # optional keyword arguments follow:
                    path=None,
                    method="POST",
                    content_type="text/xml",
@@ -122,14 +124,18 @@ class HTTPClient:
             # use default path from constructor
             path = self.path
 
-        if isinstance(body, ElementTree.ElementTree):
+        if isinstance(body, ET.ElementTree):
             # serialize element tree
             file = StringIO.StringIO()
             body.write(file)
             body = file.getvalue()
 
         # send request
-        h = HTTP(self.host)
+        if self.scheme == "https":
+            h = HTTPS(self.host)
+        else:
+            h = HTTP(self.host)
+
         h.putrequest(method, path)
         h.putheader("User-Agent", self.user_agent)
         h.putheader("Host", self.host)
@@ -148,4 +154,7 @@ class HTTPClient:
         if errcode != 200:
             raise HTTPError(errcode, errmsg, headers, h.getfile())
 
-        return ElementTree.parse(h.getfile(), parser=parser)
+        if parser:
+            return parser(h.getfile())
+
+        return ET.parse(h.getfile())

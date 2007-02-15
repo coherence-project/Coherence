@@ -1,4 +1,4 @@
-# $Id: //modules/elementsoap/elementsoap/__init__.py#1 $
+# $Id: __init__.py 2924 2006-11-19 22:24:22Z fredrik $
 # elementsoap
 
 # --------------------------------------------------------------------

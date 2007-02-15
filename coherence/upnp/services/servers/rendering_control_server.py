@@ -5,11 +5,7 @@
 
 # RenderingControl service
 
-from twisted.python import log
-from twisted.web import resource, static, soap
-from twisted.internet import defer
-
-from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
+from twisted.web import resource
 
 from coherence.upnp.core.soap_service import UPnPPublisher
 

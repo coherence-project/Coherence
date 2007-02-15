@@ -17,13 +17,8 @@ from datetime import datetime
 my_namespaces = {'http://purl.org/dc/elements/1.1/' : 'dc',
                  'urn:schemas-upnp-org:metadata-1-0/upnp/': 'upnp'
                  }
-try:
-    from cElementTree import ElementTree, Element, SubElement, fromstring, tostring, _ElementInterface
-    ElementTree._namespace_map.update(my_namespaces)
-except ImportError:
-    from elementtree.ElementTree import ElementTree, Element, SubElement, fromstring, tostring, _ElementInterface
-    import elementtree
-    elementtree.ElementTree._namespace_map.update(my_namespaces)
+from coherence.extern.et import ET, namespace_map_update, ElementInterface
+namespace_map_update(my_namespaces)
 
 from coherence.upnp.core import utils
 
@@ -54,7 +49,7 @@ class Resource:
 
     def toElement(self):
 
-        root = Element('res')
+        root = ET.Element('res')
         root.attrib['protocolInfo'] = self.protocolInfo
         root.text = self.data
 
@@ -74,7 +69,7 @@ class Resource:
 
 
     def toString(self):
-        return tostring(self.toElement())
+        return ET.tostring(self.toElement())
 
     @classmethod
     def fromString(cls, aString):
@@ -111,35 +106,35 @@ class Object:
 
     def toElement(self):
 
-        root = Element(self.elementName)
+        root = ET.Element(self.elementName)
 
         root.attrib['id'] = str(self.id)
         root.attrib['parentID'] = str(self.parentID)
-        SubElement(root, 'dc:title').text = self.title
-        SubElement(root, 'upnp:class').text = self.upnp_class
+        ET.SubElement(root, 'dc:title').text = self.title
+        ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         root.attrib['restricted'] = self.restricted
 
         if self.creator is not None:
-            SubElement(root, 'dc:creator').text = self.creator
+            ET.SubElement(root, 'dc:creator').text = self.creator
 
         for res in self.res:
             root.append(res.toElement())
 
         if self.writeStatus is not None:
-            SubElement(root, 'upnp:writeStatus').text = self.writeStatus
+            ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
             
         if self.date is not None:
             if isinstance(self.date, datetime):
-                SubElement(root, 'dc:date').text = self.date.isoformat()
+                ET.SubElement(root, 'dc:date').text = self.date.isoformat()
             else:
-                SubElement(root, 'dc:date').text = self.date
+                ET.SubElement(root, 'dc:date').text = self.date
                 
 
         return root
 
     def toString(self):
-        return tostring(self.toElement())
+        return ET.tostring(self.toElement())
 
     def fromElement(self, elt):
         """
@@ -158,7 +153,7 @@ class Object:
             elif child.tag.endswith('class'):
                 self.upnp_class = child.text
             elif child.tag.endswith('res'):
-                res = Resource.fromString(tostring(child))
+                res = Resource.fromString(ET.tostring(child))
                 self.res.append(res)
 
 
@@ -184,7 +179,7 @@ class Item(Object):
         root = Object.toElement(self)
 
         if self.refID is not None:
-            SubElement(root, 'refID').text = self.refID
+            ET.SubElement(root, 'refID').text = self.refID
 
         return root
 
@@ -209,22 +204,22 @@ class ImageItem(Item):
     def toElement(self):
         root = Item.toElement(self)
         if self.description is not None:
-            SubElement(root, 'dc:description').text = self.description
+            ET.SubElement(root, 'dc:description').text = self.description
 
         if self.longDescription is not None:
-            SubElement(root, 'upnp:longDescription').text = self.longDescription
+            ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
 
         if self.rating is not None:
-            SubElement(root, 'upnp:rating').text = self.rating
+            ET.SubElement(root, 'upnp:rating').text = self.rating
             
         if self.storageMedium is not None:
-            SubElement(root, 'upnp:storageMedium').text = self.storageMedium
+            ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
 
         if self.publisher is not None:
-            SubElement(root, 'dc:publisher').text = self.contributor
+            ET.SubElement(root, 'dc:publisher').text = self.contributor
             
         if self.rights is not None:
-            SubElement(root, 'dc:rights').text = self.rights
+            ET.SubElement(root, 'dc:rights').text = self.rights
 
         return root
     
@@ -235,7 +230,7 @@ class Photo(ImageItem):
     def toElement(self):
         root = ImageItem.toElement(self)
         if self.album is not None:
-            SubElement(root, 'upnp:album').text = self.album
+            ET.SubElement(root, 'upnp:album').text = self.album
         return root
             
 class AudioItem(Item):
@@ -259,26 +254,26 @@ class AudioItem(Item):
         root = Item.toElement(self)
 
         if self.genre is not None:
-            SubElement(root, 'upnp:genre').text = self.genre
+            ET.SubElement(root, 'upnp:genre').text = self.genre
 
         if self.description is not None:
-            SubElement(root, 'dc:description').text = self.description
+            ET.SubElement(root, 'dc:description').text = self.description
 
         if self.longDescription is not None:
-            SubElement(root, 'upnp:longDescription').text = \
+            ET.SubElement(root, 'upnp:longDescription').text = \
                              self.longDescription
 
         if self.publisher is not None:
-            SubElement(root, 'dc:publisher').text = self.publisher
+            ET.SubElement(root, 'dc:publisher').text = self.publisher
 
         if self.language is not None:
-            SubElement(root, 'dc:language').text = self.language
+            ET.SubElement(root, 'dc:language').text = self.language
 
         if self.relation is not None:
-            SubElement(root, 'dc:relation').text = self.relation
+            ET.SubElement(root, 'dc:relation').text = self.relation
 
         if self.rights is not None:
-            SubElement(root, 'dc:rights').text = self.rights
+            ET.SubElement(root, 'dc:rights').text = self.rights
 
         return root
 
@@ -308,23 +303,23 @@ class MusicTrack(AudioItem):
         root = AudioItem.toElement(self)
 
         if self.artist is not None:
-            SubElement(root, 'upnp:artist').text = self.artist
+            ET.SubElement(root, 'upnp:artist').text = self.artist
 
         if self.album is not None:
-            SubElement(root, 'upnp:album').text = self.album
+            ET.SubElement(root, 'upnp:album').text = self.album
 
         if self.originalTrackNumber is not None:
-            SubElement(root, 'upnp:originalTrackNumber').text = \
+            ET.SubElement(root, 'upnp:originalTrackNumber').text = \
                              self.originalTrackNumber
 
         if self.playlist is not None:
-            SubElement(root, 'upnp:playlist').text = self.playlist
+            ET.SubElement(root, 'upnp:playlist').text = self.playlist
 
         if self.storageMedium is not None:
-            SubElement(root, 'upnp:storageMedium').text = self.storageMedium
+            ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
 
         if self.contributor is not None:
-            SubElement(root, 'dc:contributor').text = self.contributor
+            ET.SubElement(root, 'dc:contributor').text = self.contributor
 
         return root
 
@@ -374,12 +369,12 @@ class Container(Object):
         root.attrib['childCount'] = str(self.childCount)
 
         if self.createClass is not None:
-            SubElement(root, 'upnp:createclass').text = self.createClass
+            ET.SubElement(root, 'upnp:createclass').text = self.createClass
 
         if not isinstance(self.searchClass, (list, tuple)):
             self.searchClass = ['searchClass']
         for i in self.searchClass:
-            SubElement(root, 'upnp:searchclass').text = i
+            ET.SubElement(root, 'upnp:searchclass').text = i
 
         if self.searchable is not None:
             root.attrib['searchable'] = str(self.searchable)
@@ -435,9 +430,9 @@ class StorageVolume(Container):
 class StorageFolder(Container):
     upnp_class = Container.upnp_class + '.storageFolder'
 
-class DIDLElement(_ElementInterface):
+class DIDLElement(ElementInterface):
     def __init__(self):
-        _ElementInterface.__init__(self, 'DIDL-Lite', {})
+        ElementInterface.__init__(self, 'DIDL-Lite', {})
         self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
         self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp'
@@ -458,7 +453,7 @@ class DIDLElement(_ElementInterface):
         return self._items
 
     def toString(self):
-        return tostring(self)
+        return ET.tostring(self)
 
     @classmethod
     def fromString(cls, aString):
@@ -468,6 +463,6 @@ class DIDLElement(_ElementInterface):
         for node in elt.getchildren():
             upnp_class_name = node.tag[node.tag.find('}')+1:].title()
             upnp_class = eval(upnp_class_name)
-            new_node = upnp_class.fromString(tostring(node))
+            new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance

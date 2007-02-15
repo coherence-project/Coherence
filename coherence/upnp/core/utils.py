@@ -4,7 +4,7 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import cElementTree
+from coherence.extern.et import ET
 import urllib2
 import codecs
 import cStringIO
@@ -19,7 +19,7 @@ import fcntl
 import struct
 
 def parse_xml(data, encoding="iso-8859-1"):
-    p = cElementTree.XMLParser(encoding=encoding)
+    p = ET.XMLParser(encoding=encoding)
     data = data.encode(encoding)
 
     # Guess from who we're getting this?
@@ -30,7 +30,7 @@ def parse_xml(data, encoding="iso-8859-1"):
         print error, repr(data)
         return None
     else:
-        return cElementTree.ElementTree(p.close())
+        return ET.ElementTree(p.close())
 
 def parse_http_response(data):
         

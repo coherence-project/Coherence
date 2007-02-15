@@ -14,7 +14,7 @@ mimetypes.init()
 from twisted.python.filepath import FilePath
 from twisted.python import failure
 
-from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
+from coherence.upnp.core.DIDLLite import classChooser, Container, Resource
 from coherence.upnp.core.soap_service import errorCode
 
 from coherence.extern.inotify import INotify

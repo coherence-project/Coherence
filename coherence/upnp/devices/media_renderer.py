@@ -7,7 +7,7 @@ from twisted.internet import task
 from twisted.internet import reactor
 from twisted.web import xmlrpc, resource, static
 
-from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
+from coherence.extern.et import ET
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
@@ -59,53 +59,53 @@ class RootDeviceXML(static.Data):
                         services=[],
                         devices=[]):
         uuid = str(uuid)
-        root = Element('root')
+        root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
         device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
-        e = SubElement(root, 'specVersion')
-        SubElement( e, 'major').text = '1'
-        SubElement( e, 'minor').text = '0'
+        e = ET.SubElement(root, 'specVersion')
+        ET.SubElement( e, 'major').text = '1'
+        ET.SubElement( e, 'minor').text = '0'
 
-        SubElement(root, 'URLBase').text = urlbase
+        ET.SubElement(root, 'URLBase').text = urlbase
 
-        d = SubElement(root, 'device')
-        SubElement( d, 'deviceType').text = device_type
-        SubElement( d, 'friendlyName').text = friendly_name
-        SubElement( d, 'manufacturer').text = 'beebits.net'
-        SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
-        SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
-        SubElement( d, 'modelName').text = 'Coherence  UPnP A/V MediaRenderer'
-        SubElement( d, 'modelNumber').text = '0.1'
-        SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
-        SubElement( d, 'serialNumber').text = '0000001'
-        SubElement( d, 'UDN').text = uuid
-        SubElement( d, 'UPC').text = ''
-        SubElement( d, 'presentationURL').text = ''
+        d = ET.SubElement(root, 'device')
+        ET.SubElement( d, 'deviceType').text = device_type
+        ET.SubElement( d, 'friendlyName').text = friendly_name
+        ET.SubElement( d, 'manufacturer').text = 'beebits.net'
+        ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
+        ET.SubElement( d, 'modelName').text = 'Coherence  UPnP A/V MediaRenderer'
+        ET.SubElement( d, 'modelNumber').text = '0.1'
+        ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'serialNumber').text = '0000001'
+        ET.SubElement( d, 'UDN').text = uuid
+        ET.SubElement( d, 'UPC').text = ''
+        ET.SubElement( d, 'presentationURL').text = ''
 
         if len(services):
-            e = SubElement( d, 'serviceList')
+            e = ET.SubElement( d, 'serviceList')
             for service in services:
                 id = service.get_id()
-                s = SubElement( e, 'service')
+                s = ET.SubElement( e, 'service')
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                ET.SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'upnp-org'
-                SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                ET.SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                ET.SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(services):
-            e = SubElement( d, 'deviceList')
+            e = ET.SubElement( d, 'deviceList')
 
         #indent( root, 0)
-        self.xml = tostring( root, encoding='utf-8')
+        self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
         
 class MediaRenderer:

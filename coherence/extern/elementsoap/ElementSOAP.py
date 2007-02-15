@@ -1,6 +1,6 @@
 #
 # ElementSOAP
-# $Id: //modules/elementsoap/elementsoap/ElementSOAP.py#4 $
+# $Id: ElementSOAP.py 2925 2006-11-19 22:26:45Z fredrik $
 #
 # a simple SOAP library based on element trees
 #
@@ -9,8 +9,12 @@
 # 2003-11-18 fl   added fault handling
 # 2003-11-22 fl   added qname handling, decoder stub
 # 2003-11-23 fl   handle type attributes, decode basic types
+# 2005-03-09 mk   added SoapUsernameToken, SoapHeader, SoapSecurity
+# 2006-11-19 fl   updated to use iterparse, Python 2.5, etc
 #
-# Copyright (c) 2003 by Fredrik Lundh.  All rights reserved.
+# Copyright (c) 2003-2006 by Fredrik Lundh.  All rights reserved.
+#
+# With contributions by Michael Kenney, Florent Aide, and others.
 #
 # fredrik@pythonware.com
 # http://www.pythonware.com
@@ -20,31 +24,10 @@
 # This module provides helper classes for SOAP client implementations.
 ##
 
-from elementtree import ElementTree
-from elementtree import XMLTreeBuilder
-from elementtree.ElementTree import Element, QName, SubElement, tostring
+import ElementTree as ET
+
 from HTTPClient import HTTPClient, HTTPError
-
-# --------------------------------------------------------------------
-
-def sanitycheck():
-    # check that we have a version of ElementTree without the
-    # "duplicate namespace prefix" bug
-    elem = Element("doc")
-    subelem = Element("tag")
-    subelem.attrib["{url1}key"] = QName("{url2}value")
-    elem.append(subelem)
-    elem.append(subelem)
-    try:
-        ElementTree.fromstring(tostring(elem))
-    except:
-        import warnings
-        warnings.warn(
-            "This library requires ElementTree 1.2a5 or newer",
-            RuntimeWarning
-            )
-
-sanitycheck()
+import time, sha, random, binascii
 
 # --------------------------------------------------------------------
 
@@ -54,16 +37,12 @@ NS_SOAP_ENC = "{http://schemas.xmlsoap.org/soap/encoding/}"
 NS_XSI = "{http://www.w3.org/1999/XMLSchema-instance}"
 NS_XSD = "{http://www.w3.org/1999/XMLSchema}"
 
+SOAP_ENCODING = "http://schemas.xmlsoap.org/soap/encoding/"
 
-soap_namespaces = {NS_SOAP_ENV[1:-1] : 'SOAP-ENV',
-                   NS_SOAP_ENC[1:-1] : 'SOAP-ENC',
-                   NS_XSI[1:-1]      : 'xsi',
-                   NS_XSD[1:-1]      : 'xsd'
-                   }
-
-ElementTree._namespace_map.update(soap_namespaces)
-
-
+# Namespaces for UsernameToken based authentication
+WS_SEC = "http://schemas.xmlsoap.org/ws/2002/07/secext"
+NS_WS_SEC = "{" + WS_SEC + "}"
+NS_WS_UTIL = "{http://schemas.xmlsoap.org/ws/2002/07/utility}"
 
 ##
 # SOAP fault exception.
@@ -106,17 +85,65 @@ class SoapFault(Exception):
 # SOAP request factory.
 #
 # @param request SOAP request URL.
+# @param encodingStyle SOAP encoding style.  Defaults to SOAP
+#     encoding.  To create a request without an encodingStyle
+#     attribute, pass in None.
 # @return A SOAP request element structure.
 # @defreturn Element
 
-def SoapRequest(request):
+def SoapRequest(request, encodingStyle=SOAP_ENCODING):
     # create a SOAP request element
-    request = Element(request)
-##     request.set(
-##         NS_SOAP_ENV + "encodingStyle",
-##         "http://schemas.xmlsoap.org/soap/encoding/"
-##         )
+    request = ET.Element(request)
+    if encodingStyle:
+        request.set(NS_SOAP_ENV + "encodingStyle", encodingStyle)
     return request
+
+##
+# SOAP header factory.
+#
+# @return A SOAP header element structure.
+# @defreturn Element
+
+def SoapHeader():
+    return ET.Element(NS_SOAP_ENV + 'Header')
+
+##
+# SOAP Security element factory.
+#
+# @param parent The parent element, usually a SoapHeader
+# @return A SOAP Security element structure.
+
+def SoapSecurity(parent):
+    return ET.SubElement(parent, NS_WS_SEC + 'Security')
+
+##
+# SOAP UsernameToken element factory.
+#
+# @param parent The parent element, usually a Soap:Security header
+# @param user username string
+# @param pword password string
+# @param expires expiration time in seconds realtive to now.
+# @return A SOAP UsernameToken element structure.
+
+def SoapUsernameToken(parent, user, pword, expires=180):
+    nonce = sha.new(str(random.random())).digest()
+    now = time.time()
+    created = time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(now))
+    expires = time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(now+expires))
+    digest = sha.new(nonce + created + pword).digest()
+    ut = ET.SubElement(parent, NS_WS_SEC + 'UsernameToken')
+    elem = ET.SubElement(ut, NS_WS_SEC + 'Username')
+    elem.text = user
+    elem = ET.SubElement(ut, NS_WS_SEC + 'Password')
+    elem.text = binascii.b2a_base64(digest)
+    elem.set('Type', ET.QName(WS_SEC, 'PasswordDigest'))
+    elem = ET.SubElement(ut, NS_WS_SEC + 'Nonce')
+    elem.text = binascii.b2a_base64(nonce)
+    elem = ET.SubElement(ut, NS_WS_UTIL + 'Created')
+    elem.text = created
+    elem = ET.SubElement(ut, NS_WS_UTIL + 'Expires')
+    elem.text = expires
+    return ut
 
 ##
 # SOAP element factory.  This creates a value element, and appends
@@ -133,12 +160,11 @@ def SoapRequest(request):
 
 def SoapElement(parent, name, type=None, text=None):
     # add a typed SOAP element to a request structure
-    elem = SubElement(parent, name)
+    elem = ET.SubElement(parent, name)
     if type:
-        #if not isinstance(type, QName):
-        #    type = QName("http://www.w3.org/1999/XMLSchema", type)
-        #elem.set(NS_XSI + "type", type)
-        elem.set("xsi:type", type)
+        if not isinstance(type, ET.QName):
+            type = ET.QName("http://www.w3.org/1999/XMLSchema", type)
+        elem.set(NS_XSI + "type", type)
     elem.text = text
     return elem
 
@@ -166,25 +192,26 @@ class SoapService:
     # @throws HTTPError If the server returned an HTTP error code
     #     other than 200 (OK) or 500 (SOAP error).
 
-    def call(self, action, request):
+    def call(self, action, request, header=None):
 
         # build SOAP envelope
-        envelope = Element(NS_SOAP_ENV + "Envelope")
-        body = SubElement(envelope, NS_SOAP_ENV + "Body")
+        envelope = ET.Element(NS_SOAP_ENV + "Envelope")
+        if header:
+            envelope.append(header)
+        body = ET.SubElement(envelope, NS_SOAP_ENV + "Body")
         body.append(request)
 
         # call the server
         try:
-            parser = NamespaceParser()
             response = self.__client.do_request(
-                tostring(envelope),
+                ET.tostring(envelope),
                 extra_headers=[("SOAPAction", action)],
-                parser=parser
+                parser=namespace_parse
                 )
         except HTTPError, v:
             if v[0] == 500:
                 # might be a SOAP fault
-                response = ElementTree.parse(v[3], parser)
+                response = namespace_parse(v[3])
 
         headers = response.findall(NS_SOAP_ENV + "Header")
         # FIXME: check mustunderstand attribute
@@ -196,13 +223,13 @@ class SoapService:
         for elem in response.getiterator():
             type = elem.get(NS_XSI + "type")
             if type:
-                elem.set(NS_XSI + "type", parser.qname(elem, type))
+                elem.set(NS_XSI + "type", namespace_qname(elem, type))
 
         # look for fault descriptors
         if response.tag == NS_SOAP_ENV + "Fault":
             faultcode = response.find("faultcode")
             raise SoapFault(
-                parser.qname(faultcode, faultcode.text),
+                namespace_qname(faultcode, faultcode.text),
                 response.findtext("faultstring"),
                 response.findtext("faultactor"),
                 response.find("detail")
@@ -215,7 +242,7 @@ class SoapService:
 ##
 # (Experimental) Element decoder for the standard SOAP encoding
 # scheme.  This function only decodes individual elements.  Use {@link
-# #decode} to handle nested data structures.
+# decode} to handle nested data structures.
 #
 # @param element Element.
 # @return A Python object, or None if the element argument was None.
@@ -270,32 +297,43 @@ def decode(element):
     return value
 
 ##
-# Namespace-aware parser.  This parser attaches a <b>namespaces</b>
-# attribute to all elements.
+# Namespace-aware parser.  This parser attaches a namespace attribute
+# to all elements.
+#
+# @param source Source (a file-like object).
+# @return A 2-tuple containing an annotated element tree, and a qname
+#     resolution helper.  The helper takes an element and a QName, and
+#     returns an expanded URL/local part string.
 
-class NamespaceParser(XMLTreeBuilder.FancyTreeBuilder):
+def namespace_parse(source):
+    events = ("start", "end", "start-ns", "end-ns")
+    ns = []
+    context = ET.iterparse(source, events=events)
+    for event, elem in context:
+        if event == "start-ns":
+            ns.append(elem)
+        elif event == "end-ns":
+            ns.pop()
+        elif event == "start":
+            elem.set("(xmlns)", tuple(ns))
+    return context.root
 
-    ##
-    # (Internal hook) Attach namespace attribute to element.
+##
+# Convert a QName string to an Element-style URL/local part string.
+# Note that the parser converts element tags and attribute names
+# during parsing; this method should only be used on attribute values
+# and text sections.
+#
+# @param element An element created by the {@link namespace_parse}
+#     function.
+# @param qname The QName string.
+# @return The expanded URL/local part string.
+# @throws SyntaxError If the QName prefix is not defined for this
+#     element.
 
-    def start(self, element):
-        element.namespaces = tuple(self.namespaces)
-
-    ##
-    # Convert a QName string to an Element-style URL/local part
-    # string.  Note that the parser converts element tags and
-    # attribute names during parsing; this method should only be used
-    # on attribute values and text sections.
-    #
-    # @param element An element created by this parser.
-    # @param qname The QName string.
-    # @return The expanded URL/local part string.
-    # @throws SyntaxError If the QName prefix is not defined for this
-    #     element.
-
-    def qname(self, element, qname):
-        prefix, local = qname.split(":")
-        for p, url in element.namespaces:
-            if prefix == p:
-                return "{%s}%s" % (url, local)
-        raise SyntaxError("unknown namespace prefix (%s)" % prefix)
+def namespace_qname(element, qname):
+    prefix, local = qname.split(":")
+    for p, url in element.get("(xmlns)"):
+        if prefix == p:
+            return "{%s}%s" % (url, local)
+    raise SyntaxError("unknown namespace prefix (%s)" % prefix)

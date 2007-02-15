@@ -7,13 +7,8 @@
 
 # Content Directory service
 
-from twisted.python import log
 from twisted.python import failure
-from twisted.web import resource, static, soap
-
-from twisted.python import reflect
-
-from elementtree.ElementTree import Element, SubElement, ElementTree, tostring
+from twisted.web import resource
 
 from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core.soap_service import errorCode
