@@ -127,3 +127,47 @@ def getPage(url, contextFactory=None, *args, **kwargs):
     else:
         reactor.connectTCP(host, port, factory)
     return factory.deferred
+    
+    
+from datetime import datetime, tzinfo, timedelta
+import random
+
+class CET(tzinfo):
+
+    def __init__(self):
+        self.__offset = timedelta(minutes=60)
+        self.__name = 'CET'
+
+    def utcoffset(self, dt):
+        return self.__offset
+
+    def tzname(self, dt):
+        return self.__name
+        
+    def dst(self,dt):
+        return timedelta(0)
+
+class CEST(tzinfo):
+
+    def __init__(self):
+        self.__offset = timedelta(minutes=120)
+        self.__name = 'CEST'
+
+    def utcoffset(self, dt):
+        return self.__offset
+
+    def tzname(self, dt):
+        return self.__name
+        
+    def dst(self,dt):
+        return timedelta(0)
+        
+bdates = [ datetime(1997,2,28,17,20,tzinfo=CET()),   # Sebastian Oliver
+           datetime(1999,9,19,4,12,tzinfo=CEST()),   # Patrick Niklas
+           datetime(2000,9,23,4,8,tzinfo=CEST()),    # Saskia Alexa
+           datetime(2003,7,23,1,18,tzinfo=CEST()),   # Mara Sophie
+                                                     # you are the best!
+         ]
+
+def datefaker():
+    return random.choice(bdates)

@@ -129,7 +129,8 @@ class Object:
                 ET.SubElement(root, 'dc:date').text = self.date.isoformat()
             else:
                 ET.SubElement(root, 'dc:date').text = self.date
-                
+        else:
+            ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()        
 
         return root
 
