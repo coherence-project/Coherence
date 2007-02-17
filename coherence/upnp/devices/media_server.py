@@ -120,7 +120,7 @@ class MSRoot(resource.Resource):
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
                                             (item.get_name(),item.get_name())
         
-        if item.mimetype == 'directory':
+        if item.mimetype in ['directory','root']:
             uri = request.uri
             if uri[-1] != '/':
                 uri += '/'

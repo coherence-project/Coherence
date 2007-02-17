@@ -21,6 +21,9 @@ from coherence.extern.inotify import INotify
 from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
 from coherence.extern.inotify import IN_CHANGED
 
+from coherence.extern.logger import Logger, LOG_WARNING
+log = Logger('FSStore')
+
 class FSItem:
 
     def __init__(self, id, parent, path, mimetype, urlbase, UPnPClass,update=False):
@@ -28,7 +31,10 @@ class FSItem:
         self.parent = parent
         if parent:
             parent.add_child(self,update=update)
-        self.location = FilePath(path)
+        if mimetype == 'root':
+            self.location = path
+        else:
+            self.location = FilePath(path)
         self.mimetype = mimetype
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -44,7 +50,7 @@ class FSItem:
         self.child_count = 0
         self.children = []
 
-        if mimetype == 'directory':
+        if mimetype in ['directory','root']:
             self.update_id = 0
         else:
             self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
@@ -100,11 +106,17 @@ class FSItem:
             return None
         
     def get_path(self):
-        return self.location.path
+        if isinstance( self.location,FilePath):
+            return self.location.path
+        else:
+            self.location
 
     def get_name(self):
-        return self.location.basename()
-        
+        if isinstance( self.location,FilePath):
+            return self.location.basename()
+        else:
+            self.location
+
     def get_parent(self):
         return self.parent
 
@@ -126,7 +138,9 @@ class FSStore:
     def __init__(self, server, **kwargs):
         self.next_id = 1000
         self.name = kwargs.get('name','my media')
-        self.path = kwargs.get('content','tests/content')
+        self.content = kwargs.get('content','tests/content')
+        if not isinstance( self.content, list):
+            self.content = [self.content]
         self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])
 
@@ -137,11 +151,18 @@ class FSStore:
         
         self.inotify = INotify()
         
-        #print 'FSStore', name, path, urlbase, ignore_patterns
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
-        if ignore_file_pattern.match(self.path):
-            return
-        self.walk(self.path, ignore_file_pattern)
+        parent = None
+        if len(self.content)>1:
+            UPnPClass = classChooser('root')
+            id = self.getnextID()
+            parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=False)
+                            
+        for path in self.content:
+            if ignore_file_pattern.match(path):
+                continue
+            self.walk(path, parent, ignore_file_pattern)
+
         self.update_id = 0
         
     def __repr__(self):
@@ -170,9 +191,9 @@ class FSStore:
             
         return None
             
-    def walk(self, path, ignore_file_pattern):
+    def walk(self, path, parent=None, ignore_file_pattern=''):
         containers = []
-        parent = self.append(path,None)
+        parent = self.append(path,parent)
         if parent != None:
             containers.append(parent)
         while len(containers)>0:
