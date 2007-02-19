@@ -342,9 +342,9 @@ class ServiceServer:
         del(self._variables[instance])
         
     def set_variable(self, instance, variable_name, value, default=False):
-        try:
-            variable = self._variables[instance][variable_name]
-            variable.update(value)
+
+        def process_value(result):
+            variable.update(result)
             if default == True:
                 variable.default_value = variable.value
             if(variable.send_events == True and
@@ -353,6 +353,13 @@ class ServiceServer:
                 xml = self.build_single_notification(instance, variable_name, variable.value)
                 for s in self._subscribers.values():
                     event.send_notification(s, xml)
+                               
+        try:
+            variable = self._variables[instance][variable_name]
+            if isinstance( value, defer.Deferred):
+                value.addCallback(process_value)
+            else:
+                process_value(value)
         except:
             pass
             
