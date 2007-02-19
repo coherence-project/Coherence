@@ -53,17 +53,10 @@ class ElisaPlayer:
             
             def result(player):
                 self.player = player
-                print "player", player
                 louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
                 
-                def got_infos(infos):
-                    print infos
-
-                dfr = self.player.callRemote("get_status_informations")
-                dfr.addCallback(got_infos)
-                
             def got_error(error):
-                print "connection to Elisa failed!"
+                log.warning("connection to Elisa failed!")
 
             d.addCallback(lambda object: object.callRemote("get_player"))
             d.addCallback(result)
@@ -207,28 +200,13 @@ class ElisaPlayer:
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
         
     def load( self, uri):
-        print "load -->", uri
-        _,state,_ = self.player.get_state()
-        if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
-            self.stop()
-        else:
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
-        self.player.set_property('uri', uri)
-        self.duration = None
-        self.tags = {}
-        #self.player.set_state(gst.STATE_PAUSED)
-        self.player.set_state(gst.STATE_READY)
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackURI', uri)
-        #self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AVTransportURIMetaData', 'NOT_IMPLEMENTED')
-        #self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NumberOfTracks',1)
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTracks',1)
-        self.update()
-        print "load <--"
-        if state == gst.STATE_PLAYING:
-            self.play()
+        def got_result(result):
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause')
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NumberOfTracks',1)
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTracks',1)
+
+        dfr = self.player.callRemote("set_uri", uri)
+        dfr.addCallback(got_result)
 
     def status( self, position):
         uri = self.player.get_property('uri')
@@ -265,24 +243,30 @@ class ElisaPlayer:
         self.play()
         
     def stop(self):
-        if self.player.get_property('uri') == None:
-            return
-        print 'Stopping:', self.player.get_property('uri')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
-        self.seek('-0')
+        def got_result(result):
+            self.server.av_transport_server.set_variable( \
+                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
+                                 'TransportState', 'STOPPED')        
+        dfr = self.player.callRemote("stop")
+        dfr.addCallback(got_result)
         
     def play( self):   
-        print "play -->"
-        print 'Playing:', self.player.get_property('uri')
-        self.player.set_state(gst.STATE_PLAYING)
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
-        print "play <--"
+        def got_result(result):
+            self.server.av_transport_server.set_variable( \
+                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
+                                 'TransportState', 'PLAYING')        
+        dfr = self.player.callRemote("play")
+        dfr.addCallback(got_result)
 
     def pause( self):
-        print 'Pausing:', self.player.get_property('uri')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
-        self.player.set_state(gst.STATE_PAUSED)
-        
+        def got_result(result):
+            self.server.av_transport_server.set_variable( \
+                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
+                                 'TransportState', 'PAUSED_PLAYBACK')        
+        dfr = self.player.callRemote("pause")
+        dfr.addCallback(got_result)
+
+
     def seek(self, location):
         """
         @param location:    simple number = time to seek to, in seconds
@@ -349,24 +333,22 @@ class ElisaPlayer:
         
     def get_mute(self):
         def got_infos(result):
-            print "get_mute", result
+            log.info("get_mute", result)
             return result
             
         dfr=self.player.callRemote("get_mute")
         dfr.addCallback(got_infos)
-        print "get_mute", dfr
         return dfr
         
     def get_volume(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
         def got_infos(result):
-            print "get_volume", result
+            log.info("get_volume", result)
             return result
             
         dfr=self.player.callRemote("get_volume")
         dfr.addCallback(got_infos)
-        print "get_volume", dfr
         return dfr
         
     def set_volume(self, volume):
