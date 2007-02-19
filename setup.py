@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
 
+from coherence import __version__
+
 setup(
       name="Coherence",
-      version="0.1.0",
+      version=__version__,
       description="""Coherence - Python framework for the digital living""",
       author="Frank Scholz",
       author_email='coherence@beebits.net',
