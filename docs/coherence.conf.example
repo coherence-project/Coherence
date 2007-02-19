@@ -38,6 +38,9 @@ web-ui = no                               # set this to yes to enable some inter
         name = Coherence Test Content
     [[Player]]
         name = GStreamer Audio Player
+    #[[ElisaPlayer]]
+    #    name = Elisa
+    #    host = localhost
     [[FlickrStore]]
         name = Flickr Images
         proxy = yes                       # if set to yes coherence will fetch the images

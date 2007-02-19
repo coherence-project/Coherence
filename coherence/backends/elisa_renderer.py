@@ -5,7 +5,10 @@
 
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
+from twisted.internet.defer import Deferred
 from twisted.python import failure
+
+from twisted.spread import pb
 
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import DIDLLite
@@ -18,22 +21,13 @@ import gst
 
 import louie
 
-class Player:
+from coherence.extern.logger import Logger
+log = Logger('ElisaPlayer')
 
-    """ a backend with a GStreamer based audio player
+class ElisaPlayer:
+
+    """ a backend to the Elisa player
     
-        needs gnomevfssrc from gst-plugins-base
-        unfortunately gnomevfs has way too much dependencies
-
-        # not working -> http://bugzilla.gnome.org/show_bug.cgi?id=384140
-        # needs the neonhttpsrc plugin from gst-plugins-bad
-        # tested with CVS version
-        # and with this patch applied
-        # --> http://bugzilla.gnome.org/show_bug.cgi?id=375264
-        # not working
-        
-        and id3demux from gst-plugins-good CVS too
-
     """
 
     implements = ['MediaRenderer']
@@ -41,21 +35,47 @@ class Player:
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, device, **kwargs):
-        self.name = kwargs.get('name','GStreamer Audio Player')
+        self.name = kwargs.get('name','Elisa MediaRenderer')
+        self.host = kwargs.get('host','localhost')
+        self.player = None
+        if self.host == 'internal':
+            try:
+                from elisa.core import common
+                self.player = common.get_application().get_player()
+                louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+            except:
+                log.warning("this works only from within Elisa")
+                raise ImportError
+        else:
+            factory = pb.PBClientFactory()
+            reactor.connectTCP(self.host, 8789, factory)
+            d = factory.getRootObject()
+            
+            def result(player):
+                self.player = player
+                print "player", player
+                louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+                
+                def got_infos(infos):
+                    print infos
 
-        self.player = gst.element_factory_make("playbin", "myplayer")
+                dfr = self.player.callRemote("get_status_informations")
+                dfr.addCallback(got_infos)
+                
+            def got_error(error):
+                print "connection to Elisa failed!"
+
+            d.addCallback(lambda object: object.callRemote("get_player"))
+            d.addCallback(result)
+            d.addErrback(got_error)
+
+    
         self.playing = False
         self.duration = None
         self.view = []
         self.tags = {}
         self.server = device
 
-        self.bus = self.player.get_bus()
-        self.poll_LC = LoopingCall( self.poll_gst_bus)
-        self.poll_LC.start( 0.3)
-        self.update_LC = LoopingCall( self.update)
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-        
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
@@ -318,42 +338,36 @@ class Player:
                 self.update()
 
     def mute(self):
-        if hasattr(self,'stored_volume'):
-            self.stored_volume = self.player.get_property('volume')
-            self.player.set_property('volume', 0)
-        else:
-            self.player.set_property('mute', True)
+        self.player.callRemote("mute")
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
         
     def unmute(self):
-        if hasattr(self,'stored_volume'):
-            self.player.set_property('volume', self.stored_volume)
-        else:
-            self.player.set_property('mute', False)
+        self.player.callRemote("un_mute")
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
         
     def get_mute(self):
-        if hasattr(self,'stored_volume'):
-            muted = self.player.get_property('volume') == 0
-        else:
-            try:
-                muted = self.player.get_property('mute')
-            except TypeError:
-                if not hasattr(self,'stored_volume'):
-                    self.stored_volume = self.player.get_property('volume')
-                muted = self.stored_volume == 0
-            except:
-                muted = False
-                print "can't get mute state"
-        return muted
+        def got_infos(result):
+            print "get_mute", result
+            return result
+            
+        dfr=self.player.callRemote("get_mute")
+        dfr.addCallback(got_infos)
+        print "get_mute", dfr
+        return dfr
         
     def get_volume(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
-        volume = self.player.get_property('volume')
-        return int(volume*10)
+        def got_infos(result):
+            print "get_volume", result
+            return result
+            
+        dfr=self.player.callRemote("get_volume")
+        dfr.addCallback(got_infos)
+        print "get_volume", dfr
+        return dfr
         
     def set_volume(self, volume):
         volume = int(volume)
@@ -361,7 +375,7 @@ class Player:
             volume=0
         if volume > 100:
             volume=100
-        self.player.set_property('volume', float(volume)/10)
+        self.player.callRemote("set_volume",volume)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
         
@@ -421,14 +435,20 @@ class Player:
         DesiredVolume = int(kwargs['DesiredVolume'])
         self.set_volume(DesiredVolume)
         return {}
-
         
+def main():
+
+    f = ElisaPlayer(None)
+
+    def call_player():
+        f.get_volume()
+        f.get_mute()
+    
+    reactor.callLater(2,call_player)
+    
 if __name__ == '__main__':
 
-    import sys
-    
-    p = Player(None)
-    if len(sys.argv) > 1:
-        reactor.callWhenRunning( p.start, sys.argv[1])
+    from twisted.internet import reactor
 
+    reactor.callWhenRunning(main)
     reactor.run()

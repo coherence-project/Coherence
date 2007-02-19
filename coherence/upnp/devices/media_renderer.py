@@ -5,6 +5,7 @@
 
 from twisted.internet import task
 from twisted.internet import reactor
+from twisted.internet import threads
 from twisted.web import xmlrpc, resource, static
 
 from coherence.extern.et import ET
@@ -15,6 +16,8 @@ from coherence.upnp.services.servers.av_transport_server import AVTransportServe
 
 from coherence.extern.logger import Logger
 log = Logger('MediaRenderer')
+
+import louie
 
 class MRRoot(resource.Resource):
 
@@ -110,29 +113,63 @@ class RootDeviceXML(static.Data):
         
 class MediaRenderer:
 
-    def __init__(self, coherence, backend,
-                    version=2,
-                    name='my player'):
+    def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
-        self.version = version
+        self.version = kwargs.get('version',2)
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
+        
+        """ this could take some time, put it in a  thread to be sure it doesn't block
+            as we can't tell for sure that every backend is implemented properly """
+        d = threads.deferToThread(backend, self, **kwargs)
+        
+        def backend_ready(backend):
+            self.backend = backend
+            
+        def backend_failure(x):
+            log.critical('backend not installed, MediaRenderer activation aborted')
+            
+        def service_failure(x):
+            print x
+            log.critical('required service not available, MediaRenderer activation aborted')
+            
+        d.addCallback(backend_ready).addErrback(service_failure)
+        d.addErrback(backend_failure)
+        
+        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+
+        # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
+        #        can close down this device
+        
+    def init_complete(self, backend):
+        if self.backend != backend:
+            return
         self._services = []
         self._devices = []
         
-        self.backend = backend(self)
-        
-        self.connection_manager_server = ConnectionManagerServer(self)
-        self._services.append(self.connection_manager_server)
-
-        self.rendering_control_server = RenderingControlServer(self)
-        self._services.append(self.rendering_control_server)
-
-        self.av_transport_server = AVTransportServer(self)
-        self._services.append(self.av_transport_server)
-        
+        try:
+            self.connection_manager_server = ConnectionManagerServer(self)
+            self._services.append(self.connection_manager_server)
+        except LookupError,msg:
+            log.warning( 'ConnectionManagerServer', msg)
+            raise LookupError,msg
+            
+        try:
+            self.rendering_control_server = RenderingControlServer(self)
+            self._services.append(self.rendering_control_server)
+        except LookupError,msg:
+            log.warning( 'RenderingControlServer', msg)
+            raise LookupError,msg
+            
+        try:
+            self.av_transport_server = AVTransportServer(self)
+            self._services.append(self.av_transport_server)
+        except LookupError,msg:
+            log.warning( 'AVTransportServer', msg)
+            raise LookupError,msg
+            
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:
             upnp_init()
