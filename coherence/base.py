@@ -27,6 +27,7 @@ from coherence.upnp.devices.media_renderer import MediaRenderer
 from coherence.backends.fs_storage import FSStore
 from coherence.backends.elisa_storage import ElisaMediaStore
 from coherence.backends.flickr_storage import FlickrStore
+from coherence.backends.elisa_renderer import ElisaPlayer
 
 try:
     from coherence.backends.gstreamer_audio_player import Player
@@ -200,10 +201,14 @@ class Coherence(object):
     def add_plugin(self, plugin, **kwargs):
         log.info("adding plugin", plugin)
         try:
-            plugin_class=globals().get(plugin)
+            plugin_class=globals().get(plugin,None)
+            if plugin_class == None:
+                raise KeyError
             for device in plugin_class.implements:
                 try:
-                    device_class=globals().get(device)
+                    device_class=globals().get(device,None)
+                    if device_class == None:
+                        raise KeyError
                     log.critical("Activating %s plugin as %s..." % (plugin, device))
                     device_class(self, plugin_class, **kwargs)
                 except KeyError:
