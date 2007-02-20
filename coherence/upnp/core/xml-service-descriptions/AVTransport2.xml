@@ -293,6 +293,7 @@ feature provided by your editor.
 			<name>AVTransportURIMetaData</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
+			<defaultValue>NOT_IMPLEMENTED</defaultValue>
 		</stateVariable>
 
 		<stateVariable>
