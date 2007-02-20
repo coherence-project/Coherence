@@ -46,6 +46,7 @@ class Resource:
         self.protocolInfo = protocolInfo
         self.bitrate = None
         self.size = None
+        self.duration = None
 
     def toElement(self):
 
@@ -58,7 +59,10 @@ class Resource:
 
         if self.size is not None:
             root.attrib['size'] = str(self.size)
-
+            
+        if self.duration is not None:
+            root.attrib['duration'] = self.duration
+            
         return root
 
     def fromElement(self, elt):
@@ -66,7 +70,7 @@ class Resource:
         self.data = elt.text
         self.bitrate = elt.attrib.get('bitrate')
         self.size = elt.attrib.get('size')
-
+        self.duration = elt.attrib.get('duration',None)
 
     def toString(self):
         return ET.tostring(self.toElement())
