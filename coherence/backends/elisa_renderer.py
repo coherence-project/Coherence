@@ -87,6 +87,9 @@ class ElisaPlayer:
                 transport_state = 'PLAYING'
             if result == 'PAUSED':                
                 transport_state = 'PAUSED_PLAYBACK'
+                
+            if transport_state == 'PLAYING':
+                self.query_position()
 
             if self.state != transport_state:
                 self.state = transport_state                             
@@ -99,84 +102,23 @@ class ElisaPlayer:
         
 
     def query_position( self):
-        #print "query_position"
-        try:
-            position, format = self.player.query_position(gst.FORMAT_TIME)
-        except:
-            print "CLOCK_TIME_NONE", gst.CLOCK_TIME_NONE
-            position = gst.CLOCK_TIME_NONE
-            position = 0
-        #print position
-
-        if self.duration == None:
-            try:
-                self.duration, format = self.player.query_duration(gst.FORMAT_TIME)
-            except:
-                self.duration = gst.CLOCK_TIME_NONE
-                self.duration = 0
-        #print self.duration
-            
-        r = {}
-        if self.duration == 0:
-            self.duration = None
-            return r
-        r[u'raw'] = {u'position':unicode(str(position)), u'remaining':unicode(str(self.duration - position)), u'duration':unicode(str(self.duration))}
-            
-        position_human = u'%d:%02d' % (divmod( position/1000000000, 60))
-        duration_human = u'%d:%02d' % (divmod( self.duration/1000000000, 60))
-        remaining_human = u'%d:%02d' % (divmod( (self.duration-position)/1000000000, 60))
-        
-        r[u'human'] = {u'position':position_human, u'remaining':remaining_human, u'duration':duration_human}
-        r[u'percent'] = {u'position':position*100/self.duration, u'remaining':100-(position*100/self.duration)}
-
-        #print r
-        return r
-
-
-
-    def update( self):
-        #print "update"
-        _, current,_ = self.player.get_state()
-        if( current != gst.STATE_PLAYING and current != gst.STATE_PAUSED and current != gst.STATE_READY):
-            print "I'm out"
-            return
-        if current == gst.STATE_PLAYING:
-            state = 'playing'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
-        elif current == gst.STATE_PAUSED:
-            state = 'paused'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
-        else:
-            state = 'idle'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
-
-        position = self.query_position()
-        #print position
-
-        for view in self.view:
-            view.status( self.status( position))
-
-        if position.has_key(u'raw'):
-            print "%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
-                            string.atol(position[u'raw'][u'position'])/1000000000,
-                            string.atol(position[u'raw'][u'remaining'])/1000000000,
-                            string.atol(position[u'raw'][u'duration'])/1000000000,
-                            position[u'percent'][u'position'],
-                            position[u'percent'][u'remaining'],
-                            position[u'human'][u'position'],
-                            position[u'human'][u'remaining'],
-                            position[u'human'][u'duration'])
+        def got_result(result):
+            print result
+            position, duration = result
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack', 0)
-            duration = string.atol(position[u'raw'][u'duration'])
             m,s = divmod( duration/1000000000, 60)
             h,m = divmod(m,60)
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
-            position = string.atol(position[u'raw'][u'position'])
             m,s = divmod( position/1000000000, 60)
             h,m = divmod(m,60)
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                    
+        dfr = self.player.callRemote("get_status")
+        dfr.addCallback(got_result)
+        
+        
         
     def load( self, uri):
         def got_result(result):
