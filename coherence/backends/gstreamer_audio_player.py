@@ -46,6 +46,7 @@ class Player:
         self.player = gst.element_factory_make("playbin", "myplayer")
         self.playing = False
         self.duration = None
+        self.metadata = None
         self.view = []
         self.tags = {}
         self.server = device
@@ -119,9 +120,28 @@ class Player:
         if self.duration == None:
             try:
                 self.duration, format = self.player.query_duration(gst.FORMAT_TIME)
+                # FIXME: duration breaks client parsing MetaData?
+                #elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                #for item in elt:
+                #    res = item.find('res')
+                #    m,s = divmod( self.duration/1000000000, 60)
+                #    h,m = divmod(m,60)
+                #    res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                #
+                #self.metadata = elt.toString()
+                #print self.metadata
+                #if self.server != None:
+                #    connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+                #    self.server.av_transport_server.set_variable(connection_id,
+                #                                'AVTransportURIMetaData',self.metadata)
+                #    self.server.av_transport_server.set_variable(connection_id,
+                #                                'CurrentTrackMetaData',self.metadata)
             except:
                 self.duration = gst.CLOCK_TIME_NONE
                 self.duration = 0
+                #import traceback
+                #print traceback.print_exc()
+                
         #print self.duration
             
         r = {}
@@ -186,25 +206,31 @@ class Player:
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
         
-    def load( self, uri):
+    def load( self, uri,metadata):
         print "load -->", uri
         _,state,_ = self.player.get_state()
+        connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
         if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
             self.stop()
         else:
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
+            self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'STOPPED')
         self.player.set_property('uri', uri)
         self.duration = None
+        self.metadata = metadata
         self.tags = {}
         #self.player.set_state(gst.STATE_PAUSED)
         self.player.set_state(gst.STATE_READY)
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackURI', uri)
-        #self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AVTransportURIMetaData', 'NOT_IMPLEMENTED')
-        #self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause')
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NumberOfTracks',1)
-        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTracks',1)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
+        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
+
+        #self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'TRANSITIONING')
+        #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
+        self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
         self.update()
         print "load <--"
         if state == gst.STATE_PLAYING:
@@ -401,7 +427,7 @@ class Player:
             item = elt.getItems()[0]
             for res in item.res:
                 if res.protocolInfo in local_protocol_info:
-                    self.load(CurrentURI)
+                    self.load(CurrentURI,CurrentURIMetaData)
                     return {}
         return failure.Failure(errorCode(714))
 

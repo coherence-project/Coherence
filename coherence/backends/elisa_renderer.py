@@ -105,60 +105,54 @@ class ElisaPlayer:
         def got_result(result):
             print result
             position, duration = result
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack', 0)
-            m,s = divmod( duration/1000000000, 60)
-            h,m = divmod(m,60)
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
-            m,s = divmod( position/1000000000, 60)
-            h,m = divmod(m,60)
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                    
+            if self.server != None:
+                connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
+                m,s = divmod( duration/1000000000, 60)
+                h,m = divmod(m,60)
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
+                m,s = divmod( position/1000000000, 60)
+                h,m = divmod(m,60)
+                self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                # FIXME: res.duration breaks client parsing MetaData?
+                #if self.duration is None:
+                #    elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                #    for item in elt:
+                #        res = item.find('res')
+                #        m,s = divmod( self.duration/1000000000, 60)
+                #        h,m = divmod(m,60)
+                #        res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                #
+                #    self.metadata = elt.toString()
+                #    self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+                #    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
+                                    
         dfr = self.player.callRemote("get_status")
         dfr.addCallback(got_result)
         
         
         
-    def load( self, uri):
+    def load( self, uri, metadata):
+
         def got_result(result):
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTransportActions','Play,Stop,Pause')
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NumberOfTracks',1)
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTracks',1)
+            self.duration = None
+            self.metadata = metadata
+            self.tags = {}
+            connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
+            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
         dfr = self.player.callRemote("set_uri", uri)
         dfr.addCallback(got_result)
 
-    def status( self, position):
-        uri = self.player.get_property('uri')
-        if uri == None:
-            return {u'state':u'idle',u'uri':u''}
-        else:
-            r = {u'uri':unicode(uri),
-                 u'position':position}
-            if self.tags != {}:
-                try:
-                    r[u'artist'] = unicode(self.tags['artist'])
-                except:
-                    pass
-                try:
-                    r[u'title'] = unicode(self.tags['title'])
-                except:
-                    pass
-                try:
-                    r[u'album'] = unicode(self.tags['album'])
-                except:
-                    pass
-                    
-            if self.player.get_state()[1] == gst.STATE_PLAYING:
-                r[u'state'] = u'playing'
-            elif self.player.get_state()[1] == gst.STATE_PAUSED:
-                r[u'state'] = u'paused'
-            else:
-                r[u'state'] = u'idle'
 
-            return r
-        
     def start( self, uri):
         self.load( uri)
         self.play()
@@ -287,7 +281,7 @@ class ElisaPlayer:
             item = elt.getItems()[0]
             for res in item.res:
                 if res.protocolInfo in local_protocol_info:
-                    self.load(CurrentURI)
+                    self.load(CurrentURI,CurrentURIMetaData)
                     return {}
         return failure.Failure(errorCode(714))
 
