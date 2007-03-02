@@ -66,8 +66,8 @@ class MediaRendererClient:
         
     def remove(self):
         log.info("removal of MediaRendererClient started")
-        if self.content_directory != None:
-            del self.content_directory
+        if self.rendering_control != None:
+            del self.rendering_control
         if self.connection_manager != None:
             del self.connection_manager
         if self.av_transport != None:
