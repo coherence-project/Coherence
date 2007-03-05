@@ -28,6 +28,7 @@ from coherence.backends.fs_storage import FSStore
 from coherence.backends.elisa_storage import ElisaMediaStore
 from coherence.backends.flickr_storage import FlickrStore
 from coherence.backends.elisa_renderer import ElisaPlayer
+from coherence.backends.axiscam_storage import AxisCamStore
 
 try:
     from coherence.backends.gstreamer_audio_player import Player
@@ -134,7 +135,7 @@ class Coherence(object):
         logmode = config.get('logmode', 'info')
         network_if = config.get('interface')
         
-        self.web_server_port = config.get('serverport', 0)
+        self.web_server_port = int(config.get('serverport', 0))
             
         log.set_master_level(logmode)
         
