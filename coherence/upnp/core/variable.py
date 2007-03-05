@@ -65,7 +65,7 @@ class StateVariable:
         self.last_time_touched = time.time()
         # MOD if value == self.value:
         #    return
-        #print "variable update", self.name, value, self.service
+        log.info("variable update", self.name, value, self.service)
         if not isinstance( self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
                 if self.updated == True:
@@ -94,19 +94,28 @@ class StateVariable:
                         self.value = value
             else:
                 if self.data_type == 'string':
-                    if type(value) == unicode:
-                        value = value.encode('utf-8')
-                    else:
-                        value = str(value)
-                    if len(self.allowed_values):
-                        if self.has_vendor_values == True:
-                            self.value = value
-                        elif value.upper() in [v.upper() for v in self.allowed_values]:
-                            self.value = value
+                    if isinstance(value,basestring):
+                        value = value.split(',')
+                    if isinstance(value,tuple):
+                        value = list(value)
+                    if not isinstance(value,list):
+                        value = [value]
+                    new_value = []
+                    for v in value:
+                        if type(v) == unicode:
+                            v = v.encode('utf-8')
                         else:
-                            log.warning("Variable %s update, value %s doesn't fit for variable" % (self.name, value))
-                    else:
-                        self.value = value
+                            v = str(v)
+                        if len(self.allowed_values):
+                            if self.has_vendor_values == True:
+                                new_value.append(v)
+                            elif v.upper() in [x.upper() for x in self.allowed_values]:
+                                new_value.append(v)
+                            else:
+                                log.warning("Variable %s update, value %s doesn't fit for variable" % (self.name, value))
+                        else:
+                            new_value.append(v)
+                    self.value = ','.join(new_value)
                 elif self.data_type == 'boolean':
                     if value in [True,1,'1','true','True','yes','Yes']:
                         self.value = '1'
@@ -136,11 +145,9 @@ class StateVariable:
             self.notify()
         else:
             self.updated = True
-            #print self.service.last_change
             if self.service.last_change != None:
                 self.service.last_change.updated = True
-                #print self.service.last_change.updated
-        #print "variable update", self.name, self.value, self.moderated
+        log.info("variable updated", self.name, self.value, self.moderated)
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
