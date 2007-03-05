@@ -66,6 +66,7 @@ class MSRoot(resource.Resource):
         log.info('getChild %s, %s' % (name, request))
         ch = self.store.get_by_id(name)
         if ch != None:
+            log.info('Child found', ch)
             if( request.method == 'GET' or
                 request.method == 'HEAD'):
                 headers = request.getAllHeaders()
@@ -98,17 +99,19 @@ class MSRoot(resource.Resource):
                     return ch.location
             p = ch.get_path()
             if os.path.exists(p):
+                log.info("accessing path", p)
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                             'Output',
                                                                             -1,
                                                                             '')
-                log.msg("startup, add %d to connection table" % new_id)
+                log.info("startup, add %d to connection table" % new_id)
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
                 ch = static.File(p)
             else:
                 return self.list_content(name, ch, request)
+
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
@@ -117,6 +120,7 @@ class MSRoot(resource.Resource):
         return ch
         
     def list_content(self, name, item, request):
+        log.info('list_content', name, item, request)
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
                                             (item.get_name(),item.get_name())
         
@@ -141,7 +145,7 @@ class MSRoot(resource.Resource):
         else:
             pass
         page += """</body></html>"""
-        return page
+        return static.Data(page,'text/html')
         
     def listchilds(self, uri):
         log.info('listchilds %s' % uri)
@@ -153,6 +157,7 @@ class MSRoot(resource.Resource):
         return cl
 
     def render(self,request):
+        print "render", request
         return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>'% \
                                         (self.server.backend,
                                          self.listchilds(request.uri))
