@@ -5,6 +5,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import time
+from sets import Set
 
 from coherence.upnp.core import utils
 try:
@@ -96,7 +97,8 @@ class StateVariable:
                 if self.data_type == 'string':
                     if isinstance(value,basestring):
                         value = value.split(',')
-                    if isinstance(value,tuple):
+                    if(isinstance(value,tuple) or
+                       isinstance(value,Set)):
                         value = list(value)
                     if not isinstance(value,list):
                         value = [value]
