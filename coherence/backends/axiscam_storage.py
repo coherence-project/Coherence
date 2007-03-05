@@ -7,13 +7,7 @@
 # for the RTP payload type identifier
 #
 
-import time
-from datetime import datetime
-
-from twisted.python import failure
-
-
-from coherence.upnp.core.utils import parse_xml
+from sets import Set
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
@@ -29,7 +23,7 @@ class AxisCamItem:
             self.mimetype = mimetype
         else:
             self.name = obj.get('name')
-            self.mimetype = 'video/mpeg'
+            self.mimetype = mimetype
             
         self.parent = parent
         if parent:
@@ -150,7 +144,8 @@ class AxisCamStore:
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
-            mimetype = 'video/'
+            protocol,network,content_type,info = obj['protocol'].split(':')
+            mimetype = content_type
             
         UPnPClass = classChooser(mimetype)
         id = self.getnextID()
@@ -196,14 +191,17 @@ class AxisCamStore:
         self.current_connection_id = None
         parent = self.append('AxisCam', None)
         
+        source_protocols = Set()
+        
         for k,v in self.config.items():
             if isinstance(v,dict):
                 v['name'] = k
+                source_protocols.add(v['protocol'])
                 self.append(v, parent)
 
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                    'rtsp-rtp-udp:*:MP4V-ES:*',
+                                                                    source_protocols,
                                                                     default=True)
 
 def main():
