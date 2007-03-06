@@ -79,7 +79,9 @@ class ElisaMediaStore:
 
 
     def upnp_init(self):
-        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*')
+        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
+                        ['internal:%s:audio/mpeg:*' % self.host,
+                         'http-get:*:audio/mpeg:*'])
 
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
@@ -98,13 +100,19 @@ class ElisaMediaStore:
                 upnp_item.childCount = len(elisa_item.get('children',[]))
             else:
                 url = elisa_item['location']
-                upnp_item.res = Resource(url,
-                                         'http-get:*:%s:*' % elisa_item['mimetype'])
                 try:
-                    upnp_item.res.size = elisa_item['size']
+                    size = elisa_item['size']
                 except:
-                    upnp_item.res.size = None
-                upnp_item.res = [ upnp_item.res ]
+                    size = None
+                upnp_item.res = []
+                res = Resource(url,
+                               'internal:%s:%s:*' %(self.host,elisa_item['mimetype']))
+                res.size = size
+                upnp_item.res.append(res)
+                res = Resource(url,
+                               'http-get:*:%s:*' % elisa_item['mimetype'])
+                res.size = size
+                upnp_item.res.append(res)
 
             return upnp_item
         

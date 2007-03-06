@@ -36,7 +36,7 @@ class ElisaPlayer:
 
     def __init__(self, device, **kwargs):
         self.name = kwargs.get('name','Elisa MediaRenderer')
-        self.host = kwargs.get('host','localhost')
+        self.host = kwargs.get('host','127.0.0.1')
         self.player = None
         
         if self.host == 'internal':
@@ -246,7 +246,10 @@ class ElisaPlayer:
         
     def upnp_init(self):
         self.current_connection_id = None
-        self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo', 'http-get:*:audio/mpeg:*', default=True)
+        self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
+                            ['internal:%s:audio/mpeg:*' % self.host,
+                             'http-get:*:audio/mpeg:*'],
+                            default=True)
         self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL', default=True)
