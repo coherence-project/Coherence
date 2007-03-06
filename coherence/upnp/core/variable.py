@@ -149,7 +149,7 @@ class StateVariable:
             self.updated = True
             if self.service.last_change != None:
                 self.service.last_change.updated = True
-        log.info("variable updated", self.name, self.value, self.moderated)
+        log.info("variable updated", self.name, self.value)
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
