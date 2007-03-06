@@ -425,13 +425,16 @@ class Player:
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
         local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
-        elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
-        if elt.numItems() == 1:
-            item = elt.getItems()[0]
-            for res in item.res:
-                if res.protocolInfo in local_protocol_info:
-                    self.load(CurrentURI,CurrentURIMetaData)
-                    return {}
+        if len(CurrentURIMetaData)==0:
+            self.load(CurrentURI,CurrentURIMetaData)
+        else:
+            elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
+            if elt.numItems() == 1:
+                item = elt.getItems()[0]
+                for res in item.res:
+                    if res.protocolInfo in local_protocol_info:
+                        self.load(CurrentURI,CurrentURIMetaData)
+                        return {}
         return failure.Failure(errorCode(714))
 
     def upnp_SetMute(self, *args, **kwargs):
