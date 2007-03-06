@@ -11,6 +11,8 @@ from datetime import datetime
 import mimetypes
 mimetypes.init()
 
+from urlparse import urlsplit
+
 from twisted.python.filepath import FilePath
 from twisted.python import failure
 
@@ -53,9 +55,22 @@ class FSItem:
         if mimetype in ['directory','root']:
             self.update_id = 0
         else:
-            self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
-            self.item.res.size = self.location.getsize()
-            self.item.res = [ self.item.res ]
+            self.item.res = []
+
+            _,host_port,_,_,_ = urlsplit(urlbase)
+            if host_port.find(':') != -1:
+                host,port = tuple(host_port.split(':'))
+            else:
+                host = host_port
+
+            res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+            res.size = self.location.getsize()
+            self.item.res.append(res)
+            
+            res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            res.size = self.location.getsize()
+            self.item.res.append(res)
+
             self.item.date = datetime.fromtimestamp(self.location.getmtime())
             # FIXME: getmtime is deprecated in Twisted 2.6
             
@@ -291,26 +306,29 @@ class FSStore:
     def upnp_init(self):
         self.current_connection_id = None
         if self.server:
-            self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo', 'http-get:*:audio/mpeg:*',default=True)
+            self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
+                        ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
+                         'http-get:*:audio/mpeg:*'],
+                        default=True)
 
 
 if __name__ == '__main__':
-    p = '/data/images'
-    p = 'tests/content'
-    #p = '/home/dev/beeCT/beeMedia/python-upnp'
-    #p = '/home/dev/beeCT/beeMedia/python-upnp/xml-service-descriptions'
 
-    f = FSStore('my media',p, 'http://localhost/xyz',(),None)
+    p = 'tests/content'
+    f = FSStore(None,name='my media',content=p, urlbase='http://localhost/xyz')
 
     print f.len()
     print f.get_by_id(1000).child_count, f.get_by_id(1000).get_xml()
-    #print f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml()
-    #print f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml()
+    print f.get_by_id(1001).child_count, f.get_by_id(1001).get_xml()
+    print f.get_by_id(1002).child_count, f.get_by_id(1002).get_xml()
+    print f.get_by_id(1003).child_count, f.get_by_id(1003).get_xml()
+    print f.get_by_id(1004).child_count, f.get_by_id(1004).get_xml()
+    print f.get_by_id(1005).child_count, f.get_by_id(1005).get_xml()
     print f.store[1000].get_children(0,0)
-    print f.upnp_Search(ContainerID ='4',
-                        Filter ='dc:title,upnp:artist',
-                        RequestedCount = '1000',
-                        StartingIndex = '0',
-                        SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
-                        SortCriteria = '+dc:title')
+    #print f.upnp_Search(ContainerID ='4',
+    #                    Filter ='dc:title,upnp:artist',
+    #                    RequestedCount = '1000',
+    #                    StartingIndex = '0',
+    #                    SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
+    #                    SortCriteria = '+dc:title')
 
