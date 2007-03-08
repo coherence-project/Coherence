@@ -126,7 +126,7 @@ class Player:
                     res = item.find('res')
                     m,s = divmod( self.duration/1000000000, 60)
                     h,m = divmod(m,60)
-                    res.attrib['duration'] = "%0d:%02d:%02d" % (h,m,s)
+                    res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
                 
                 self.metadata = elt.toString()
                 #print self.metadata
