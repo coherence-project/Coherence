@@ -121,14 +121,14 @@ class Player:
             try:
                 self.duration, format = self.player.query_duration(gst.FORMAT_TIME)
                 # FIXME: duration breaks client parsing MetaData?
-                #elt = DIDLLite.DIDLElement.fromString(self.metadata)
-                #for item in elt:
-                #    res = item.find('res')
-                #    m,s = divmod( self.duration/1000000000, 60)
-                #    h,m = divmod(m,60)
-                #    res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
-                #
-                #self.metadata = elt.toString()
+                elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                for item in elt:
+                    res = item.find('res')
+                    m,s = divmod( self.duration/1000000000, 60)
+                    h,m = divmod(m,60)
+                    res.attrib['duration'] = "%0d:%02d:%02d" % (h,m,s)
+                
+                self.metadata = elt.toString()
                 #print self.metadata
                 #if self.server != None:
                 #    connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
@@ -425,6 +425,8 @@ class Player:
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
         local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        #print CurrentURI
+        #print local_protocol_info
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
         else:
@@ -432,8 +434,14 @@ class Player:
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
                 for res in item.res:
+                    #print res.protocolInfo, res.data
+                    # FIXME:we can't rely on the sequence!
+                    #       if we accept internal:,
+                    #       we need to check _first_ if there
+                    #       are any matching ones,
+                    #       and if not try something else
                     if res.protocolInfo in local_protocol_info:
-                        self.load(CurrentURI,CurrentURIMetaData)
+                        self.load(res.data,CurrentURIMetaData)
                         return {}
         return failure.Failure(errorCode(714))
 
