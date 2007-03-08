@@ -377,6 +377,7 @@ class ServiceServer:
         return ET.tostring( root, encoding='utf-8')
         
     def build_last_change_event(self, instance=0):
+        got_one = False
         root = ET.Element('Event')
         root.attrib['xmlns']=self.event_metadata
         for instance, vdict in self._variables.items():
@@ -384,14 +385,20 @@ class ServiceServer:
             e.attrib['val']=str(instance)
             for variable in vdict.values():
                 if( variable.name != 'LastChange' and
-                    variable.name[0:11] != 'A_ARG_TYPE_'):
+                    variable.name[0:11] != 'A_ARG_TYPE_' and
+                    variable.updated == True):
                     s = ET.SubElement( e, variable.name)
                     s.attrib['val'] = str(variable.value)
+                    variable.updated = False
+                    got_one = True
                     if variable.dependant_variable != None:
                         dependants = variable.dependant_variable.get_allowed_values()
                         if dependants != None and len(dependants) > 0:
                             s.attrib['channel']=dependants[0]
-        return ET.tostring( root, encoding='utf-8')
+        if got_one == True:
+            return ET.tostring( root, encoding='utf-8')
+        else:
+            return None
         
     def propagate_notification(self, notify):
         #print "propagate_notification", notify
@@ -409,7 +416,10 @@ class ServiceServer:
         for n in notify:
             e = ET.SubElement( root, 'property')
             if n.name == 'LastChange':
-                ET.SubElement( e, n.name).text = self.build_last_change_event(instance=n.instance)
+                t = self.build_last_change_event(instance=n.instance)
+                if t is None:
+                    return
+                ET.SubElement( e, n.name).text = t
             else:
                 s = ET.SubElement( e, n.name).text = str(n.value)
                 if n.dependant_variable != None:
@@ -437,7 +447,6 @@ class ServiceServer:
         if len(self._subscribers) <= 0:
             return
         variables = moderated_variables[self.get_type()]
-        #print variables
         notify = []
         for v in variables:
             #print self._variables[0][v].name, self._variables[0][v].updated
