@@ -311,7 +311,7 @@ feature provided by your editor.
 
 		<stateVariable>
 			<name>RelativeTimePosition</name>
-			<sendEventsAttribute>no</sendEventsAttribute>
+			<sendEventsAttribute coherence:X_no_means_never="True">no</sendEventsAttribute>
 			<dataType>string</dataType>
 			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>00:00:00</allowedValue>
@@ -322,7 +322,7 @@ feature provided by your editor.
 
 		<stateVariable>
 			<name>AbsoluteTimePosition</name>
-			<sendEventsAttribute>no</sendEventsAttribute>
+			<sendEventsAttribute coherence:X_no_means_never="True">no</sendEventsAttribute>
 			<dataType>string</dataType>
 			<allowedValueList coherence:X_withVendorDefines="True">
 				<allowedValue>00:00:00</allowedValue>
@@ -334,7 +334,7 @@ feature provided by your editor.
 
 		<stateVariable>
 			<name>RelativeCounterPosition</name>
-			<sendEventsAttribute>no</sendEventsAttribute>
+			<sendEventsAttribute coherence:X_no_means_never="True">no</sendEventsAttribute>
 			<dataType>i4</dataType>
 			<allowedValueRange>
 				<minimum>-2147483646</minimum>
@@ -345,7 +345,7 @@ feature provided by your editor.
 
 		<stateVariable>
 			<name>AbsoluteCounterPosition</name>
-			<sendEventsAttribute>no</sendEventsAttribute>
+			<sendEventsAttribute coherence:X_no_means_never="True">no</sendEventsAttribute>
 			<dataType>i4</dataType>
 			<allowedValueRange>
 				<minimum>0</minimum>

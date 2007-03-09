@@ -37,6 +37,7 @@ class StateVariable:
         self.value = ''
         self.last_time_touched = time.time()
         self.allowed_value_range = None
+        self.never_evented = False
         if send_events in [True,1,'1','true','True','yes','Yes']:
             self.send_events = True
         else:
@@ -60,39 +61,40 @@ class StateVariable:
         
     def get_allowed_values(self):
         return self.allowed_values
-        
+    
+    def set_never_evented(self, value):
+        if value in [True,1,'1','true','True','yes','Yes']:
+            self.never_evented = True
+            
     def update(self, value):
-        self.old_value = self.value
-        self.last_time_touched = time.time()
-        # MOD if value == self.value:
-        #    return
-        log.info("variable update", self.name, value, self.service)
+        log.info("variable check for update", self.name, value, self.service)
         if not isinstance( self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
+                old_value = self.value
                 if self.updated == True:
                     if isinstance( value, tuple):
-                        v = self.value.split(',')
+                        v = old_value.split(',')
                         i = 0
                         while i < len(v):
                             if v[i] == str(value[0]):
                                 del v[i:i+2]
-                                self.value = ','.join(v)
+                                old_value = ','.join(v)
                                 break;
                             i += 2
-                        if len(self.value):
-                            self.value = self.value + ',' + str(value[0]) + ',' + str(value[1])
+                        if len(old_value):
+                            new_value = old_value + ',' + str(value[0]) + ',' + str(value[1])
                         else:
-                            self.value = str(value[0]) + ',' + str(value[1])
+                            new_value = str(value[0]) + ',' + str(value[1])
                     else:
-                        if len(self.value):
-                            self.value = str(self.value) + ',' + str(value)
+                        if len(old_value):
+                            new_value = str(old_value) + ',' + str(value)
                         else:
-                            self.value = str(value)
+                            new_value = str(value)
                 else:
                     if isinstance( value, tuple):
-                        self.value = str(value[0]) + ',' + str(value[1])
+                        new_value = str(value[0]) + ',' + str(value[1])
                     else:
-                        self.value = value
+                        new_value = value
             else:
                 if self.data_type == 'string':
                     if isinstance(value,basestring):
@@ -117,14 +119,14 @@ class StateVariable:
                                 log.warning("Variable %s update, value %s doesn't fit for variable" % (self.name, value))
                         else:
                             new_value.append(v)
-                    self.value = ','.join(new_value)
+                    new_value = ','.join(new_value)
                 elif self.data_type == 'boolean':
                     if value in [True,1,'1','true','True','yes','Yes']:
-                        self.value = '1'
+                        new_value = '1'
                     else:
-                        self.value = '0'
+                        new_value = '0'
                 else:
-                    self.value = int(value)
+                    new_value = int(value)
         else:
             if self.data_type == 'string':
                 if type(value) == unicode:
@@ -133,16 +135,24 @@ class StateVariable:
                     value = str(value)
                 if len(self.allowed_values):
                     if value.upper() in [v.upper() for v in self.allowed_values]:
-                        self.value = value
+                        new_value = value
                 else:
-                    self.value = value
+                    new_value = value
             elif self.data_type == 'boolean':
                 if value in [1,'true','True','yes','Yes']:
-                    self.value = '1'
+                    new_value = '1'
                 else:
-                    self.value = '0'
+                    new_value = '0'
             else:
-                self.value = int(value)
+                new_value = int(value)
+
+        if new_value == self.value:
+            log.info("variable NOT updated, no value change", self.name, self.value)
+            return
+        self.old_value = self.value
+        self.value = new_value
+        self.last_time_touched = time.time()
+
         if isinstance( self.service, service.Service):
             self.notify()
         else:

@@ -342,7 +342,7 @@ class ServiceServer:
         del(self._variables[instance])
         
     def set_variable(self, instance, variable_name, value, default=False):
-
+ 
         def process_value(result):
             variable.update(result)
             if default == True:
@@ -386,6 +386,7 @@ class ServiceServer:
             for variable in vdict.values():
                 if( variable.name != 'LastChange' and
                     variable.name[0:11] != 'A_ARG_TYPE_' and
+                    variable.never_evented == False and
                     variable.updated == True):
                     s = ET.SubElement( e, variable.name)
                     s.attrib['val'] = str(variable.value)
@@ -545,6 +546,11 @@ class ServiceServer:
             default_value = var_node.findtext('defaultValue')
             if default_value:
                 self._variables.get(instance)[name].set_default_value(default_value)
+            never_evented = var_node.find('sendEventsAttribute').attrib.get(
+                                    '{urn:schemas-beebits-net:service-1-0}X_no_means_never',
+                                    None)
+            if never_evented is not None:
+                self._variables.get(instance)[name].set_never_evented(never_evented)
             dependant_variable = var_node.findtext('{urn:schemas-beebits-net:service-1-0}X_dependantVariable')
             if dependant_variable:
                 self._variables.get(instance)[name].dependant_variable = dependant_variable
