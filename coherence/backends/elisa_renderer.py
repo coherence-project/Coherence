@@ -116,18 +116,17 @@ class ElisaPlayer:
                 h,m = divmod(m,60)
                 self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
                 self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                # FIXME: res.duration breaks client parsing MetaData?
-                #if self.duration is None:
-                #    elt = DIDLLite.DIDLElement.fromString(self.metadata)
-                #    for item in elt:
-                #        res = item.find('res')
-                #        m,s = divmod( self.duration/1000000000, 60)
-                #        h,m = divmod(m,60)
-                #        res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
-                #
-                #    self.metadata = elt.toString()
-                #    self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
-                #    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
+
+                if self.duration is None:
+                    elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                    for item in elt:
+                        for res in item.findall('res'):
+                            m,s = divmod( self.duration/1000000000, 60)
+                            h,m = divmod(m,60)
+                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                    self.metadata = elt.toString()
+                    self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
                                     
         dfr = self.player.callRemote("get_status")
         dfr.addCallback(got_result)
