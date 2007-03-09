@@ -298,13 +298,13 @@ def send_notification(s, xml):
                     xml]
 
         request = '\r\n'.join(request)
-        log.info("send_notification.send_request to", s['callback'])
+        log.info("send_notification.send_request to", s['sid'], s['callback'])
         log.debug("request:", request)
         s['seq'] += 1
         return p.transport.write(request)
         
     def got_error(failure):
-        log.info("error sending notification to", s['callback'])
+        log.info("error sending notification to", s['sid'], s['callback'])
         log.debug(failure)
 
     c = ClientCreator(reactor, NotificationProtocol)
