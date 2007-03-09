@@ -64,6 +64,15 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         avt_id = 0
         rcs_id = 0
         
+        if self.device.device_type == 'MediaServer':
+            self.connections[id] = {'ProtocolInfo':RemoteProtocolInfo,
+                                    'Direction':Direction,
+                                    'PeerConnectionID':PeerConnectionID,
+                                    'PeerConnectionManager':PeerConnectionManager,
+                                    'AVTransportID':avt_id,
+                                    'RcsID':rcs_id,
+                                    'Status':'OK'}
+            
         if self.device.device_type == 'MediaRenderer':
             """ this is the place to instantiate AVTransport and RenderingControl
                 for this connection
@@ -88,13 +97,18 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         return id, avt_id, rcs_id
         
     def remove_connection(self,id):
-        try:
-            self.device.av_transport_server.remove_instance(self.lookup_avt_id(id))
-            self.device.rendering_control_server.remove_instance(self.lookup_rcs_id(id))
+        if self.device.device_type == 'MediaRenderer':
+            try:
+                self.device.av_transport_server.remove_instance(self.lookup_avt_id(id))
+                self.device.rendering_control_server.remove_instance(self.lookup_rcs_id(id))
+                del self.connections[id]
+            except:
+                pass
+            self.backend.current_connection_id = None
+
+        if self.device.device_type == 'MediaServer':
             del self.connections[id]
-        except:
-            pass
-        self.backend.current_connection_id = None
+
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         
