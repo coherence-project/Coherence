@@ -14,10 +14,10 @@ from coherence.upnp.services.servers.connection_manager_server import Connection
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
 from coherence.upnp.services.servers.av_transport_server import AVTransportServer
 
+import louie
+
 from coherence.extern.logger import Logger
 log = Logger('MediaRenderer')
-
-import louie
 
 class MRRoot(resource.Resource):
 

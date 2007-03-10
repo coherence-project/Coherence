@@ -25,8 +25,7 @@ from coherence.upnp.services.servers.content_directory_server import ContentDire
 from coherence.upnp.services.servers.media_receiver_registrar_server import MediaReceiverRegistrarServer
 from coherence.upnp.services.servers.media_receiver_registrar_server import FakeMediaReceiverRegistrarBackend
 
-from coherence.backends.fs_storage import FSStore
-from coherence.backends.elisa_storage import ElisaMediaStore
+import louie
 
 from coherence.extern.logger import Logger
 log = Logger('MediaServer')
@@ -255,7 +254,10 @@ class MediaServer:
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
         d = threads.deferToThread(backend, self, **kwargs)
-        
+
+        def backend_ready(backend):
+            self.backend = backend
+
         def backend_failure(x):
             log.critical('backend not installed, MediaServer activation aborted')
             
@@ -263,14 +265,18 @@ class MediaServer:
             print x
             log.critical('required service not available, MediaServer activation aborted')
             
-        d.addCallback(self.backend_ready).addErrback(service_failure)
+        d.addCallback(backend_ready).addErrback(service_failure)
         d.addErrback(backend_failure)
+        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+
+        # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
+        #        can close down this device
         
-    def backend_ready(self, backend):
+    def init_complete(self, backend):
+        if self.backend != backend:
+            return
         self._services = []
         self._devices = []
-        
-        self.backend = backend
         
         try:
             self.connection_manager_server = ConnectionManagerServer(self)

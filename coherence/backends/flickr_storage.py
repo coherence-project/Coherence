@@ -19,6 +19,8 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 
+import louie
+
 from coherence.extern.logger import Logger
 log = Logger('FlickrStore')
 
@@ -229,7 +231,8 @@ class FlickrStore:
         self.refresh_store_loop = task.LoopingCall(self.refresh_store)
         self.refresh_store_loop.start(self.refresh, now=False)
 
-        
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
             

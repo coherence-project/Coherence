@@ -14,13 +14,18 @@ from coherence.extern.logger import Logger
 log = Logger('BuzztardStore')
 
 class BzClient(LineReceiver):
+    
+    def __init__( self):
+        self.expecting_content = False
 
     def connectionMade(self):
         print "connected to Buzztard"
         self.factory.clientReady(self)
- 
+
     def lineReceived(self, line):
         print "received:", line
+        if self.expecting_content == True:
+            self.factory.add_content(line)
 
 class BzFactory(protocol.ClientFactory):          
 
@@ -51,17 +56,23 @@ class BzFactory(protocol.ClientFactory):
             self.clientInstance.sendLine(msg)
         else:
             self.messageQueue.append(msg)
+            
+    def browse(self):
+        self.sendMessage('browse')
+        self.clientInstance.expecting_content = True
+        
+    def add_content(self,line):
+        data = line.split('|')
+        parent = self.backend.append(data[0], 'directory', self.backend.parent)
+        for label in data[1:]:
+            self.backend.append(label, 'audio/mpeg', parent)
 
 class BuzztardItem:
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, name, parent, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
-        if mimetype == 'directory':
-            self.name = obj
-            self.mimetype = mimetype
-        else:
-            self.name = obj.get('name')
-            self.mimetype = mimetype
+        self.name = name
+        self.mimetype = mimetype
             
         self.parent = parent
         if parent:
@@ -79,15 +90,17 @@ class BuzztardItem:
         if( len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
             
-        if self.mimetype == 'directory':
-            self.url = urlbase + str(self.id)
-        else:
-            self.url = obj.get('url')
+        self.url = urlbase + str(self.id)
         
         if self.mimetype == 'directory':
             self.update_id = 0
         else:
-            self.item.res = Resource(self.url, obj.get('protocol'))
+            _,host_port,_,_,_ = urlsplit(urlbase)
+            if host_port.find(':') != -1:
+                host,port = tuple(host_port.split(':'))
+            else:
+                host = host_port
+            self.item.res = Resource(self.url, 'internal:%s:%s:*' % (host,self.mimetype))
             self.item.res.size = None
             self.item.res = [ self.item.res ]
 
@@ -173,20 +186,15 @@ class BuzztardStore:
         self.server = server
         self.update_id = 0
         self.store = {}
-
+        self.parent = None
+        
         self.buzztard = BzFactory(self)
         reactor.connectTCP( self.host, self.port, self.buzztard)
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
             
-    def append( self, obj, parent):
-        if isinstance(obj, basestring):
-            mimetype = 'directory'
-        else:
-            protocol,network,content_type,info = obj['protocol'].split(':')
-            mimetype = content_type
-            
+    def append( self, name, mimetype, parent):
         UPnPClass = classChooser(mimetype)
         id = self.getnextID()
         update = False
@@ -229,13 +237,15 @@ class BuzztardStore:
 
     def upnp_init(self):
         self.current_connection_id = None
-        parent = self.append('Buzztard', None)
+        self.parent = self.append('Buzztard', 'directory', None)
 
         source_protocols = ""
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     source_protocols,
                                                                     default=True)
+            
+        self.buzztard.browse()
 
 def test_init_complete(backend):
     

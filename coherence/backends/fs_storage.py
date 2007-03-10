@@ -23,6 +23,8 @@ from coherence.extern.inotify import INotify
 from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
 from coherence.extern.inotify import IN_CHANGED
 
+import louie
+
 from coherence.extern.logger import Logger, LOG_WARNING
 log = Logger('FSStore')
 
@@ -179,7 +181,8 @@ class FSStore:
             self.walk(path, parent, ignore_file_pattern)
 
         self.update_id = 0
-        
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 

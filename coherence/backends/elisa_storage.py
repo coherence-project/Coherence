@@ -12,6 +12,8 @@ from twisted.python import failure
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 from coherence.upnp.core.soap_service import errorCode
 
+import louie
+
 class ElisaMediaStore:
 
     """ this is a backend to the Elisa Media DB
@@ -66,6 +68,7 @@ class ElisaMediaStore:
 
     def set_root_id( self, id):
         self.root_id = id
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def get_root_id( self, media_type='audio'):
         """ ask Elisa to tell us the id of the top item
