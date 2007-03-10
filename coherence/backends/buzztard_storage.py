@@ -212,7 +212,7 @@ class BuzztardStore:
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = BuzztardItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = BuzztardItem( id, name, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
         if hasattr(self, 'update_id'):
             self.update_id += 1
