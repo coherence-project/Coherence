@@ -78,7 +78,6 @@ class ElisaPlayer:
 
     def poll_player( self):
         def got_result(result):
-            print result
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
             if result == 'STOPPED':
