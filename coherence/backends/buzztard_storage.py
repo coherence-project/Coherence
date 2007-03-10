@@ -24,8 +24,13 @@ class BzClient(LineReceiver):
 
     def lineReceived(self, line):
         print "received:", line
+        
+        if line == 'flush':
+            self.factory.rebrowse()
+            
         if self.expecting_content == True:
             self.factory.add_content(line)
+            self.expecting_content = False
 
 class BzFactory(protocol.ClientFactory):          
 
@@ -57,6 +62,10 @@ class BzFactory(protocol.ClientFactory):
         else:
             self.messageQueue.append(msg)
             
+    def rebrowse(self):
+        self.backend.clear()
+        self.browse()
+        
     def browse(self):
         self.sendMessage('browse')
         self.clientInstance.expecting_content = True
@@ -111,6 +120,8 @@ class BuzztardItem:
 
     def remove(self):
         #print "BuzztardItem remove", self.id, self.name, self.parent
+        for child in self.children:
+            self.remove_child(child)
         if self.parent:
             self.parent.remove_child(self)
         del self.item
@@ -218,6 +229,26 @@ class BuzztardStore:
 
         return None
 
+    def remove(self, id):
+        try:
+            item = self.store[int(id)]
+            parent = item.get_parent()
+            item.remove()
+            del self.store[int(id)]
+            if hasattr(self, 'update_id'):
+                self.update_id += 1
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                value = (parent.get_id(),parent.get_update_id())
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+        except:
+            pass
+        
+    def clear(self):
+        for item in self.get_by_id(1000).get_children():
+            self.remove(item.get_id())
+        
     def len(self):
         return len(self.store)
         

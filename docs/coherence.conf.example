@@ -3,11 +3,12 @@
 # keywords are case-sensitive
 
 logmode = warning                         # none, critical, error, warning, info, debug
+#logfile = coherence.log
 #interface = eth0
-#serverport = 30020                       # if not specified or set to 0
+serverport = 30020                       # if not specified or set to 0
                                           # coherence will let the OS choose the port
 
-controlpoint = yes                        # if set to yes coherence will activate its
+#controlpoint = yes                        # if set to yes coherence will activate its
                                           # internal ControlPoint
 
 web-ui = no                               # set this to yes to enable some interactive
@@ -21,8 +22,8 @@ web-ui = no                               # set this to yes to enable some inter
 #SOAP = info
 #Action = info
 #Variable = info
-#Event = info
-#Service = info
+Event = debug
+Service = info
 #Device = info
 #ConnectionManagerServer = info
 #MediaServer= info
@@ -36,15 +37,32 @@ web-ui = no                               # set this to yes to enable some inter
     [[FSStore]]
         content = tests/content           # append more directories seperated by commas
         name = Coherence Test Content
+        
     [[Player]]
         name = GStreamer Audio Player
+    
     #[[ElisaPlayer]]
     #    name = Elisa
     #    host = localhost
+    
     [[FlickrStore]]
         name = Flickr Images
         proxy = yes                       # if set to yes coherence will fetch the images
                                           # from Flickr for your client
                                 
         refresh = 60                      # check every 60 minutes with Flickr for new images in the set
-
+    
+    #[[AxisCamStore]]
+    #    name = Elisa is watching you
+    #    [[[Cam 1]]]
+    #        url = http://192.168.1.222:554/mpeg4/1/media.amp
+    #        protocol = rtsp-rtp-udp:*:video/MP4V-ES:*
+    #    [[[Cam 2]]]
+    #        url = http://192.168.1.222:554/mpeg4/2/media.amp
+    #        protocol = rtsp-rtp-udp:*:video/MP4V-ES:*
+    
+    #[[BuzztardStore]]
+    #    name = Buzztard
+    #    host = localhost
+    #    port = 7654
+    
