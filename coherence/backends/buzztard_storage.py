@@ -3,6 +3,8 @@
 
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 
+from urlparse import urlsplit
+
 from twisted.internet import reactor, protocol
 from twisted.protocols.basic import LineReceiver
 
@@ -201,7 +203,7 @@ class BuzztardStore:
         
         self.buzztard = BzFactory(self)
         reactor.connectTCP( self.host, self.port, self.buzztard)
-
+        
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
             
