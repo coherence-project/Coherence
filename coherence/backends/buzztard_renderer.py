@@ -33,6 +33,9 @@ class BzClient(LineReceiver):
     def lineReceived(self, line):
         print "received:", line
         
+        if line.find('event'):
+            self.factory.event(line.split('|')[1:])
+        
 class BzFactory(protocol.ClientFactory):          
 
     protocol = BzClient
@@ -62,6 +65,9 @@ class BzFactory(protocol.ClientFactory):
             self.clientInstance.sendLine(msg)
         else:
             self.messageQueue.append(msg)
+            
+    def event(self, infos):
+        self.backend.event(infos)
 
 class BuzztardPlayer:
 
@@ -75,7 +81,6 @@ class BuzztardPlayer:
         self.port = int(kwargs.get('port',7654))
         self.player = None
 
-
         self.playing = False
         self.state = None
         self.duration = None
@@ -87,18 +92,50 @@ class BuzztardPlayer:
         
         self.buzztard = BzFactory(self)
         reactor.connectTCP( self.host, self.port, self.buzztard)
+        
+    def event(self,infos):
+        if infos[0] == 'playing':
+            transport_state = 'PLAYING'
+        if infos[0] == 'stopped':
+            transport_state = 'STOPPED'
+        if infos[0] == 'playing':
+            transport_state = 'PAUSED_PLAYBACK'
+        if self.server != None:
+            connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+        if self.state != transport_state:
+            self.state = transport_state
+            if self.server != None:
+                self.server.av_transport_server.set_variable(connection_id,
+                                             'TransportState', transport_state)
 
+            label = infos[1]
+            position = infos[2].split('.')[0]
+            duration = infos[3].split('.')[0]
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', duration)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', duration)
+            self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', position)
+            self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', position)
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+        
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
     def poll_player( self):
-        pass
-
-    def query_position( self):
-        pass
+        self.buzztard.sendMessage('status')
 
     def load( self, uri, metadata):
-        pass
+        self.duration = None
+        self.metadata = metadata
+        connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop')
+        self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
+        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
     def start( self, uri):
         self.load( uri)
