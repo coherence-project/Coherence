@@ -66,3 +66,8 @@ Service = info
     #    host = localhost
     #    port = 7654
     
+    #[[BuzztardPlayer]]
+    #    name = Buzztard
+    #    host = localhost
+    #    port = 7654
+    
