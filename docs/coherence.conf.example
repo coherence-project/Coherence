@@ -45,12 +45,12 @@ Service = info
     #    name = Elisa
     #    host = localhost
     
-    [[FlickrStore]]
-        name = Flickr Images
-        proxy = yes                       # if set to yes coherence will fetch the images
-                                          # from Flickr for your client
-                                
-        refresh = 60                      # check every 60 minutes with Flickr for new images in the set
+    #[[FlickrStore]]
+    #    name = Flickr Images
+    #    proxy = yes                       # if set to yes coherence will fetch the images
+    #                                      # from Flickr for your client
+    #                            
+    #    refresh = 60                      # check every 60 minutes with Flickr for new images in the set
     
     #[[AxisCamStore]]
     #    name = Elisa is watching you

@@ -87,114 +87,31 @@ class BuzztardPlayer:
         
         self.buzztard = BzFactory(self)
         reactor.connectTCP( self.host, self.port, self.buzztard)
-        
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
     def poll_player( self):
-        def got_result(result):
-            if self.server != None:
-                connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-            if result == 'STOPPED':
-                transport_state = 'STOPPED'
-            if result == 'PLAYING':
-                transport_state = 'PLAYING'
-            if result == 'PAUSED':                
-                transport_state = 'PAUSED_PLAYBACK'
-                
-            if transport_state == 'PLAYING':
-                self.query_position()
-
-            if self.state != transport_state:
-                self.state = transport_state                             
-                if self.server != None:
-                    self.server.av_transport_server.set_variable(connection_id,
-                                                 'TransportState', transport_state) 
-                                                        
-        dfr = self.player.callRemote("get_readable_state")
-        dfr.addCallback(got_result)
-        
+        pass
 
     def query_position( self):
-        def got_result(result):
-            print result
-            position, duration = result
-            if self.server != None:
-                connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
-                m,s = divmod( duration/1000000000, 60)
-                h,m = divmod(m,60)
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
-                m,s = divmod( position/1000000000, 60)
-                h,m = divmod(m,60)
-                self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+        pass
 
-                if self.duration is None:
-                    elt = DIDLLite.DIDLElement.fromString(self.metadata)
-                    for item in elt:
-                        for res in item.findall('res'):
-                            m,s = divmod( self.duration/1000000000, 60)
-                            h,m = divmod(m,60)
-                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
-                    self.metadata = elt.toString()
-                    self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
-                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
-                                    
-        dfr = self.player.callRemote("get_status")
-        dfr.addCallback(got_result)
-        
-        
-        
     def load( self, uri, metadata):
-
-        def got_result(result):
-            self.duration = None
-            self.metadata = metadata
-            self.tags = {}
-            connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
-            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
-
-        dfr = self.player.callRemote("set_uri", uri)
-        dfr.addCallback(got_result)
-
+        pass
 
     def start( self, uri):
         self.load( uri)
         self.play()
-        
+
     def stop(self):
-        def got_result(result):
-            self.server.av_transport_server.set_variable( \
-                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
-                                 'TransportState', 'STOPPED')        
-        dfr = self.player.callRemote("stop")
-        dfr.addCallback(got_result)
-        
-    def play( self):   
-        def got_result(result):
-            self.server.av_transport_server.set_variable( \
-                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
-                                 'TransportState', 'PLAYING')        
-        dfr = self.player.callRemote("play")
-        dfr.addCallback(got_result)
+        self.buzztard.sendMessage('stop')
+
+    def play( self):
+        self.buzztard.sendMessage('play')
 
     def pause( self):
-        def got_result(result):
-            self.server.av_transport_server.set_variable( \
-                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
-                                 'TransportState', 'PAUSED_PLAYBACK')        
-        dfr = self.player.callRemote("pause")
-        dfr.addCallback(got_result)
-
+        self.buzztard.sendMessage('pause')
 
     def seek(self, location):
         """
@@ -202,67 +119,26 @@ class BuzztardPlayer:
                             +nL = relative seek forward n seconds
                             -nL = relative seek backwards n seconds
         """
-        
-
 
     def mute(self):
-        def got_result(result):
-            rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
-            #FIXME: use result, not True
-            self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
-
-        dfr=self.player.callRemote("mute")
-        dfr.addCallback(got_result)
-        
+        pass
+    
     def unmute(self):
-        def got_result(result):
-            rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
-            #FIXME: use result, not False
-            self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
-
-        dfr=self.player.callRemote("un_mute")
-        dfr.addCallback(got_result)
-        
+        pass
+    
     def get_mute(self):
-        def got_infos(result):
-            log.info("get_mute", result)
-            return result
-            
-        dfr=self.player.callRemote("get_mute")
-        dfr.addCallback(got_infos)
-        return dfr
+        return False
         
     def get_volume(self):
-        """ playbin volume is a double from 0.0 - 10.0
-        """
-        def got_infos(result):
-            log.info("get_volume", result)
-            return result
-            
-        dfr=self.player.callRemote("get_volume")
-        dfr.addCallback(got_infos)
-        return dfr
+        return 50
         
     def set_volume(self, volume):
-        volume = int(volume)
-        if volume < 0:
-            volume=0
-        if volume > 100:
-            volume=100
-            
-        def got_result(result):
-            rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
-            #FIXME: use result, not volume
-            self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
-                
-        dfr=self.player.callRemote("set_volume",volume)
-        dfr.addCallback(got_result)
+        pass
         
     def upnp_init(self):
         self.current_connection_id = None
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
-                            ['internal:%s:audio/mpeg:*' % self.host,
-                             'http-get:*:audio/mpeg:*'],
+                            ['internal:%s:audio/mpeg:*' % self.host],
                             default=True)
         self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
