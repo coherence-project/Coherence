@@ -22,9 +22,6 @@ from coherence.extern.logger import Logger
 log = Logger('Buzztard')
 
 class BzClient(LineReceiver):
-    
-    def __init__( self):
-        self.expecting_content = False
 
     def connectionMade(self):
         print "connected to Buzztard"
@@ -37,9 +34,8 @@ class BzClient(LineReceiver):
             louie.send('Buzztard.Response.flush', None)
         elif line.find('event') == 0:
             louie.send('Buzztard.Response.event', None, line)
-        elif self.expecting_content == True:
+        elif line.find('playlist') == 0:
             louie.send('Buzztard.Response.browse', None, line)
-            self.expecting_content = False
 
 class BzFactory(protocol.ClientFactory):          
 
@@ -77,8 +73,7 @@ class BzFactory(protocol.ClientFactory):
         
     def browse(self):
         self.sendMessage('browse')
-        self.clientInstance.expecting_content = True
-        
+
 
 class BzConnection(object):
     """ a singleton class
@@ -233,7 +228,7 @@ class BuzztardStore:
         return str(self.__class__).split('.')[-1]
     
     def add_content(self,line):
-        data = line.split('|')
+        data = line.split('|')[1:]
         parent = self.append(data[0], 'directory', self.parent)
         i = 0
         for label in data[1:]:
