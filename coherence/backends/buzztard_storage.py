@@ -35,11 +35,9 @@ class BzClient(LineReceiver):
         
         if line == 'flush':
             louie.send('Buzztard.Response.flush', None)
-
-        if line.find('event'):
+        elif line.find('event') == 0:
             louie.send('Buzztard.Response.event', None, line)
-
-        if self.expecting_content == True:
+        elif self.expecting_content == True:
             louie.send('Buzztard.Response.browse', None, line)
             self.expecting_content = False
 
