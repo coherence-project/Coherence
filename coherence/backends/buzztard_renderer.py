@@ -146,7 +146,7 @@ class BuzztardPlayer:
 
     def play( self):
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-        label_id = self.server.av_transport_server.get_variable('CurrentTrackURI',connection_id)
+        label_id = self.server.av_transport_server.get_variable('CurrentTrackURI',connection_id).value
         label,id = label_id.split(':')
         self.buzztard.sendMessage('play %s' % id)
 
