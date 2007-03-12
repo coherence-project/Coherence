@@ -36,11 +36,12 @@ class EventServer(resource.Resource):
         log.warning("EventServer ready...")
 
     def render_NOTIFY(self, request):
-        log.debug("EventServer received request, code:", request.code)
+        log.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
             log.info("data:", data)
         else:
+            log.debug("data:", data)            
             headers = request.getAllHeaders()
             sid = headers['sid']
             tree = utils.parse_xml(data).getroot()
