@@ -34,8 +34,8 @@ class BzClient(LineReceiver):
         print "received:", line
         
         if line == 'flush':
-            self.factory.rebrowse()
-            
+            louie.send('Buzztard.Response.flush', None)
+
         if line.find('event'):
             louie.send('Buzztard.Response.event', None, line.split('|')[1:])
 
@@ -97,8 +97,7 @@ class BzConnection(object):
             cls._instance_ = obj
             obj.connection = BzFactory(kwargs['backend'])
             print kwargs['backend'], kwargs['host'], kwargs['port']
-            #reactor.connectTCP( kwargs['host'], kwargs['port'], obj.connection)
-            reactor.connectTCP( 'master.netzflocken.de', 25, obj.connection)
+            reactor.connectTCP( kwargs['host'], kwargs['port'], obj.connection)
             return obj
         
     def __init__(self,backend=None,host='localhost',port=7654):
@@ -228,6 +227,7 @@ class BuzztardStore:
         self.parent = None
         
         louie.connect( self.add_content, 'Buzztard.Response.browse', louie.Any)
+        louie.connect( self.clear, 'Buzztard.Response.flush', louie.Any)
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
 
         
@@ -285,6 +285,7 @@ class BuzztardStore:
     def clear(self):
         for item in self.get_by_id(1000).get_children():
             self.remove(item.get_id())
+        self.buzztard.connection.browse()
         
     def len(self):
         return len(self.store)
