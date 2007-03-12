@@ -107,25 +107,28 @@ class ElisaPlayer:
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
                 self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
-                m,s = divmod( duration/1000000000, 60)
-                h,m = divmod(m,60)
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
-                m,s = divmod( position/1000000000, 60)
-                h,m = divmod(m,60)
-                self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                if position is not None:
+                    m,s = divmod( position/1000000000, 60)
+                    h,m = divmod(m,60)
+                    self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                    self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                if duration is not None:
+                    m,s = divmod( duration/1000000000, 60)
+                    h,m = divmod(m,60)
+                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
+                    self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
 
-                if self.duration is None:
-                    elt = DIDLLite.DIDLElement.fromString(self.metadata)
-                    for item in elt:
-                        for res in item.findall('res'):
-                            m,s = divmod( self.duration/1000000000, 60)
-                            h,m = divmod(m,60)
-                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
-                    self.metadata = elt.toString()
-                    self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
-                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
+                    if self.duration is None:
+                        elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                        for item in elt:
+                            for res in item.findall('res'):
+                                m,s = divmod( duration/1000000000, 60)
+                                h,m = divmod(m,60)
+                                res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                        self.metadata = elt.toString()
+                        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
+                        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
+                        self.duration = duration
                                     
         dfr = self.player.callRemote("get_status")
         dfr.addCallback(got_result)
