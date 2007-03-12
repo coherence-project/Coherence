@@ -77,7 +77,7 @@ class BzFactory(protocol.ClientFactory):
         parent = self.backend.append(data[0], 'directory', self.backend.parent)
         i = 0
         for label in data[1:]:
-            self.backend.append(':'.join(label,str(i)), 'audio/mpeg', parent)
+            self.backend.append(':'.join((label,str(i))), 'audio/mpeg', parent)
             i += 1
 
 class BuzztardItem:
