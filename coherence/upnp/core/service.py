@@ -301,16 +301,21 @@ class ServiceServer:
         
         root = ET.Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
-
+        evented_variables = 0
         for n in notify:
             e = ET.SubElement( root, 'property')
             if n.name == 'LastChange':
-                ET.SubElement( e, n.name).text = self.build_last_change_event(n.instance)
+                text = self.build_last_change_event(n.instance)
+                if text is not None:
+                    ET.SubElement( e, n.name).text = text
+                    evented_variables += 1
             else:
                 ET.SubElement( e, n.name).text = str(n.value)
-            
-        xml = ET.tostring( root, encoding='utf-8')
-        event.send_notification(subscriber, xml)
+                evented_variables += 1
+                
+        if evented_variables > 0:
+            xml = ET.tostring( root, encoding='utf-8')
+            event.send_notification(subscriber, xml)
         self._subscribers[subscriber['sid']] = subscriber
         
     def get_id(self):
@@ -414,20 +419,24 @@ class ServiceServer:
         if isinstance( notify, variable.StateVariable):
             notify = [notify,]
 
+        evented_variables = 0
         for n in notify:
             e = ET.SubElement( root, 'property')
             if n.name == 'LastChange':
-                t = self.build_last_change_event(instance=n.instance)
-                if t is None:
-                    return
-                ET.SubElement( e, n.name).text = t
+                text = self.build_last_change_event(instance=n.instance)
+                if text is not None:
+                    ET.SubElement( e, n.name).text = text
+                    evented_variables += 1
             else:
                 s = ET.SubElement( e, n.name).text = str(n.value)
+                evented_variables += 1
                 if n.dependant_variable != None:
                     dependants = n.dependant_variable.get_allowed_values()
                     if dependants != None and len(dependants) > 0:
                         s.attrib['channel']=dependants[0]
-            
+
+        if evented_variables == 0:
+            return
         xml = ET.tostring( root, encoding='utf-8')
         #print "propagate_notification", xml
         for s in self._subscribers.values():
