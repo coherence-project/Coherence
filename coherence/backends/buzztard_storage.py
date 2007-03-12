@@ -37,7 +37,7 @@ class BzClient(LineReceiver):
             louie.send('Buzztard.Response.flush', None)
 
         if line.find('event'):
-            louie.send('Buzztard.Response.event', None, line.split('|')[1:])
+            louie.send('Buzztard.Response.event', None, line)
 
         if self.expecting_content == True:
             louie.send('Buzztard.Response.browse', None, line)
@@ -341,7 +341,8 @@ class BuzztardPlayer:
         louie.connect( self.event, 'Buzztard.Response.event', louie.Any)
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
         
-    def event(self,infos):
+    def event(self,line):
+        infos = line.split('|')[1:]
         if infos[0] == 'playing':
             transport_state = 'PLAYING'
         if infos[0] == 'stopped':
