@@ -358,8 +358,6 @@ class BuzztardPlayer:
             self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', duration)
             self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', position)
             self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', position)
-            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
         
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
