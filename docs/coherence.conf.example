@@ -34,12 +34,12 @@ Service = info
 
 
 [plugins]
-    [[FSStore]]
-        content = tests/content           # append more directories seperated by commas
-        name = Coherence Test Content
+    #[[FSStore]]
+    #    content = tests/content           # append more directories seperated by commas
+    #    name = Coherence Test Content
         
-    [[Player]]
-        name = GStreamer Audio Player
+    #[[Player]]
+    #    name = GStreamer Audio Player
     
     #[[ElisaPlayer]]
     #    name = Elisa
@@ -61,10 +61,10 @@ Service = info
     #        url = http://192.168.1.222:554/mpeg4/2/media.amp
     #        protocol = rtsp-rtp-udp:*:video/MP4V-ES:*
     
-    #[[BuzztardStore]]
-    #    name = Buzztard
-    #    host = localhost
-    #    port = 7654
+    [[BuzztardStore]]
+        name = Buzztard
+        host = localhost
+        port = 7654
     
     #[[BuzztardPlayer]]
     #    name = Buzztard
