@@ -102,7 +102,7 @@ class BzConnection(object):
 
 class BuzztardItem:
 
-    def __init__(self, id, name, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, name, parent, mimetype, urlbase, update=False):
         self.id = id
         self.name = name
         self.mimetype = mimetype
