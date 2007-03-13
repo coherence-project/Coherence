@@ -158,7 +158,6 @@ class BuzztardItem:
         if update == True:
             self.update_id += 1
 
-            
     def remove_child(self, child):
         log.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
@@ -423,10 +422,10 @@ class BuzztardPlayer:
         """
 
     def mute(self):
-        self.buzztard.connection.sendMessage('mute on')
+        self.buzztard.connection.sendMessage('set|mute|on')
     
     def unmute(self):
-         self.buzztard.connection.sendMessage('umute off')
+         self.buzztard.connection.sendMessage('set|mute|off')
     
     def get_mute(self,line):
         infos = line.split('|')[1:]
@@ -446,7 +445,7 @@ class BuzztardPlayer:
             volume=0
         if volume > 100:
             volume=100
-        self.buzztard.connection.sendMessage('volume %d'% volume)
+        self.buzztard.connection.sendMessage('set|volume|%d'% volume)
         
     def upnp_init(self):
         self.current_connection_id = None
@@ -457,8 +456,8 @@ class BuzztardPlayer:
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '', default=True)
-        self.buzztard.connection.sendMessage('volume')
-        self.buzztard.connection.sendMessage('mute')
+        self.buzztard.connection.sendMessage('get|volume')
+        self.buzztard.connection.sendMessage('get|mute')
 
         self.poll_LC.start( 1.0, True)
         
