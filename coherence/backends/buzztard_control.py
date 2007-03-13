@@ -34,6 +34,10 @@ class BzClient(LineReceiver):
             louie.send('Buzztard.Response.flush', None)
         elif line.find('event') == 0:
             louie.send('Buzztard.Response.event', None, line)
+        elif line.find('volume') == 0:
+            louie.send('Buzztard.Response.volume', None, line)
+        elif line.find('mute') == 0:
+            louie.send('Buzztard.Response.mute', None, line)
         elif line.find('playlist') == 0:
             louie.send('Buzztard.Response.browse', None, line)
 
@@ -332,6 +336,8 @@ class BuzztardPlayer:
         self.poll_LC = LoopingCall( self.poll_player)
         
         louie.connect( self.event, 'Buzztard.Response.event', louie.Any)
+        louie.connect( self.event, 'Buzztard.Response.volume', louie.Any)
+        louie.connect( self.event, 'Buzztard.Response.mute', louie.Any)
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
         
     def event(self,line):
@@ -358,7 +364,21 @@ class BuzztardPlayer:
             self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', duration)
             self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', position)
             self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', position)
-        
+            
+        try:
+            self.server.rendering_control_server.set_variable(connection_id, 'Volume', int(infos[4]))
+        except:
+            pass
+
+        try:
+            if infos[5] in ['on','1','true','True','yes','Yes']:
+                mute = True
+            else:
+                mute = False
+            self.server.rendering_control_server.set_variable(connection_id, 'Mute', mute)
+        except:
+            pass
+
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
@@ -403,19 +423,30 @@ class BuzztardPlayer:
         """
 
     def mute(self):
-        pass
+        self.buzztard.connection.sendMessage('mute on')
     
     def unmute(self):
-        pass
+         self.buzztard.connection.sendMessage('umute off')
     
-    def get_mute(self):
-        return False
+    def get_mute(self,line):
+        infos = line.split('|')[1:]
+        if infos[0] in ['on','1','true','True','yes','Yes']:
+            mute = True
+        else:
+            mute = False
+        self.server.rendering_control_server.set_variable(0, 'Mute', mute)
         
-    def get_volume(self):
-        return 50
+    def get_volume(self,line):
+        infos = line.split('|')[1:]
+        self.server.rendering_control_server.set_variable(0, 'Volume', int(infos[0]))
         
     def set_volume(self, volume):
-        pass
+        volume = int(volume)
+        if volume < 0:
+            volume=0
+        if volume > 100:
+            volume=100
+        self.buzztard.connection.sendMessage('volume %d'% volume)
         
     def upnp_init(self):
         self.current_connection_id = None
@@ -426,8 +457,9 @@ class BuzztardPlayer:
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL', default=True)
         self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '', default=True)
-        self.server.rendering_control_server.set_variable(0, 'Volume', self.get_volume())
-        self.server.rendering_control_server.set_variable(0, 'Mute', self.get_mute())
+        self.buzztard.connection.sendMessage('volume')
+        self.buzztard.connection.sendMessage('mute')
+
         self.poll_LC.start( 1.0, True)
         
     def upnp_Play(self, *args, **kwargs):
