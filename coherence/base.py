@@ -29,7 +29,7 @@ from coherence.backends.elisa_storage import ElisaMediaStore
 from coherence.backends.flickr_storage import FlickrStore
 from coherence.backends.elisa_renderer import ElisaPlayer
 from coherence.backends.axiscam_storage import AxisCamStore
-from coherence.backends.buzztard_storage import BuzztardStore, BuzztardPlayer
+from coherence.backends.buzztard_control import BuzztardStore, BuzztardPlayer
 
 try:
     from coherence.backends.gstreamer_audio_player import Player
