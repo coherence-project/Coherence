@@ -72,8 +72,6 @@ class MediaRendererClient:
             del self.connection_manager
         if self.av_transport != None:
             del self.av_transport
-        if self.scheduled_recording != None:
-            del self.scheduled_recording
         del self
 
     def state_variable_change( self, variable):
