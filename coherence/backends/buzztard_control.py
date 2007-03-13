@@ -115,11 +115,12 @@ class BuzztardItem:
             parent_id = -1
         else:
             parent_id = parent.get_id()
-
+            
+        UPnPClass = classChooser(mimetype, sub='music') # FIXME: this is stupid
         self.item = UPnPClass(id, parent_id, self.name)
         self.child_count = 0
         self.children = []
-        
+ 
         if( len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
             
@@ -136,7 +137,8 @@ class BuzztardItem:
             self.item.res = Resource(self.url, 'internal:%s:%s:*' % (host,self.mimetype))
             self.item.res.size = None
             self.item.res = [ self.item.res ]
-
+            self.item.artist = self.name
+        
             
     def __del__(self):
         #print "BuzztardItem __del__", self.id, self.name
@@ -239,14 +241,14 @@ class BuzztardStore:
             i += 1
             
     def append( self, name, mimetype, parent):
-        UPnPClass = classChooser(mimetype)
+
         id = self.getnextID()
         update = False
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = BuzztardItem( id, name, parent, mimetype, self.urlbase,
-                                        UPnPClass, update=update)
+        self.store[id] = BuzztardItem( id, name, parent, mimetype,
+                                        self.urlbase,update=update)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
