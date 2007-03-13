@@ -116,7 +116,8 @@ class StateVariable:
                             elif v.upper() in [x.upper() for x in self.allowed_values]:
                                 new_value.append(v)
                             else:
-                                log.warning("Variable %s update, value %s doesn't fit for variable" % (self.name, value))
+                                log.warning("Variable %s update, value %s doesn't fit" % (self.name, v))
+                                new_value = 'Coherence_Value_Error'
                         else:
                             new_value.append(v)
                     new_value = ','.join(new_value)
@@ -134,8 +135,13 @@ class StateVariable:
                 else:
                     value = str(value)
                 if len(self.allowed_values):
-                    if value.upper() in [v.upper() for v in self.allowed_values]:
+                    if self.has_vendor_values == True:
                         new_value = value
+                    elif value.upper() in [v.upper() for v in self.allowed_values]:
+                        new_value = value
+                    else:
+                        log.warning("Variable %s NOT updated, value %s doesn't fit" % (self.name, value))
+                        new_value = 'Coherence_Value_Error'
                 else:
                     new_value = value
             elif self.data_type == 'boolean':
@@ -146,6 +152,8 @@ class StateVariable:
             else:
                 new_value = int(value)
 
+        if new_value == 'Coherence_Value_Error':
+            return
         if new_value == self.value:
             log.info("variable NOT updated, no value change", self.name, self.value)
             return
