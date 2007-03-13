@@ -341,6 +341,7 @@ class BuzztardPlayer:
         
     def event(self,line):
         infos = line.split('|')[1:]
+        print infos
         if infos[0] == 'playing':
             transport_state = 'PLAYING'
         if infos[0] == 'stopped':
@@ -406,10 +407,10 @@ class BuzztardPlayer:
     def play( self):
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
         label_id = self.server.av_transport_server.get_variable('CurrentTrackURI',connection_id).value
-        id = ''
+        id = '0'
         if ':' in label_id:
             label,id = label_id.split(':')
-        self.buzztard.connection.sendMessage('play %s' % id)
+        self.buzztard.connection.sendMessage('play|%s' % id)
 
     def pause( self):
         self.buzztard.connection.sendMessage('pause')
