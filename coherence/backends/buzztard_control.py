@@ -124,7 +124,8 @@ class BuzztardItem:
         if( len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
             
-        self.url = urlbase + str(self.id)
+        #self.url = urlbase + str(self.id)
+        self.url = self.name
         
         if self.mimetype == 'directory':
             self.update_id = 0
