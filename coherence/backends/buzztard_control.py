@@ -335,8 +335,8 @@ class BuzztardPlayer:
         self.poll_LC = LoopingCall( self.poll_player)
         
         louie.connect( self.event, 'Buzztard.Response.event', louie.Any)
-        louie.connect( self.event, 'Buzztard.Response.volume', louie.Any)
-        louie.connect( self.event, 'Buzztard.Response.mute', louie.Any)
+        louie.connect( self.get_volume, 'Buzztard.Response.volume', louie.Any)
+        louie.connect( self.get_mute, 'Buzztard.Response.mute', louie.Any)
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
         
     def event(self,line):
