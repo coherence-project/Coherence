@@ -344,7 +344,7 @@ class BuzztardPlayer:
             transport_state = 'PLAYING'
         if infos[0] == 'stopped':
             transport_state = 'STOPPED'
-        if infos[0] == 'playing':
+        if infos[0] == 'paused':
             transport_state = 'PAUSED_PLAYBACK'
         if self.server != None:
             connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
