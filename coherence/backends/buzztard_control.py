@@ -388,6 +388,7 @@ class BuzztardPlayer:
         self.buzztard.connection.sendMessage('status')
 
     def load( self, uri, metadata):
+        print "load", uri, metadata
         self.duration = None
         self.metadata = metadata
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
@@ -487,11 +488,14 @@ class BuzztardPlayer:
         local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
+            return {}
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
+            print elt.numItems()
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
                 for res in item.res:
+                    print res.protocolInfo,local_protocol_info
                     if res.protocolInfo in local_protocol_info:
                         self.load(CurrentURI,CurrentURIMetaData)
                         return {}
