@@ -102,7 +102,7 @@ class BzConnection(object):
 
 class BuzztardItem:
 
-    def __init__(self, id, name, parent, mimetype, urlbase, update=False):
+    def __init__(self, id, name, parent, mimetype, urlbase, host, update=False):
         self.id = id
         self.name = name
         self.mimetype = mimetype
@@ -129,11 +129,6 @@ class BuzztardItem:
         if self.mimetype == 'directory':
             self.update_id = 0
         else:
-            _,host_port,_,_,_ = urlsplit(urlbase)
-            if host_port.find(':') != -1:
-                host,port = tuple(host_port.split(':'))
-            else:
-                host = host_port
             self.item.res = Resource(self.url, 'internal:%s:%s:*' % (host,self.mimetype))
             self.item.res.size = None
             self.item.res = [ self.item.res ]
@@ -248,7 +243,7 @@ class BuzztardStore:
             update = True
 
         self.store[id] = BuzztardItem( id, name, parent, mimetype,
-                                        self.urlbase,update=update)
+                                        self.urlbase,self.host,update=update)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
