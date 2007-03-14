@@ -571,8 +571,8 @@ class ServiceServer:
                 if service_value_defaults:
                     variable_value_defaults = service_value_defaults.get(name, None)
                     if variable_value_defaults:
-                        print "overwriting %s default value with %s" % (name,
-                                                               variable_value_defaults)
+                        log.info("overwriting %s default value with %s" % (name,
+                                                               variable_value_defaults))
                         self._variables.get(instance)[name].set_allowed_values(variable_value_defaults)
 
                 if vendor_values != None:
@@ -591,11 +591,11 @@ class ServiceServer:
                             variable_range_defaults = service_range_defaults.get(name)
                             if( variable_range_defaults != None and
                                 variable_range_defaults.get(e.tag) != None):
-                                print "overwriting %s attribute %s with %s" % (name,
-                                                               e.tag, str(variable_range_defaults[e.tag]))
+                                log.info("overwriting %s attribute %s with %s" % (name,
+                                                               e.tag, str(variable_range_defaults[e.tag])))
                                 range[e.tag] = variable_range_defaults[e.tag]
                             elif e.text == None:
-                                print "missing vendor definition for %s, attribute %s" % (name, e.tag)
+                                log.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
                 self._variables.get(instance)[name].set_allowed_value_range(**range)
                 
         for v in self._variables.get(0).values():

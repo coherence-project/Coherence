@@ -24,11 +24,11 @@ log = Logger('Buzztard')
 class BzClient(LineReceiver):
 
     def connectionMade(self):
-        print "connected to Buzztard"
+        log.info("connected to Buzztard")
         self.factory.clientReady(self)
 
     def lineReceived(self, line):
-        print "received:", line
+        log.debug( "received:", line)
         
         if line == 'flush':
             louie.send('Buzztard.Response.flush', None)
@@ -49,17 +49,17 @@ class BzFactory(protocol.ClientFactory):
         self.backend = backend
 
     def clientConnectionFailed(self, connector, reason):
-        print 'connection failed:', reason.getErrorMessage()
+        log.error('connection failed:', reason.getErrorMessage())
 
     def clientConnectionLost(self, connector, reason):
-        print 'connection lost:', reason.getErrorMessage()
+        log.error('connection lost:', reason.getErrorMessage())
 
     def startFactory(self):
         self.messageQueue = []
         self.clientInstance = None
 
     def clientReady(self, instance):
-        print "clientReady"
+        log.info("clientReady")
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self.backend)
         self.clientInstance = instance
         for msg in self.messageQueue:
@@ -84,7 +84,7 @@ class BzConnection(object):
     """
 
     def __new__(cls, *args, **kwargs):
-        print "BzConnection __new__"
+        log.debug("BzConnection __new__")
         obj = getattr(cls,'_instance_',None)
         if obj is not None:
             louie.send('Coherence.UPnP.Backend.init_completed', None, backend=kwargs['backend'])
@@ -93,12 +93,11 @@ class BzConnection(object):
             obj = super(BzConnection, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
             obj.connection = BzFactory(kwargs['backend'])
-            print kwargs['backend'], kwargs['host'], kwargs['port']
             reactor.connectTCP( kwargs['host'], kwargs['port'], obj.connection)
             return obj
         
     def __init__(self,backend=None,host='localhost',port=7654):
-        print "BzConnection __init__"
+        log.debug("BzConnection __init__")
 
 class BuzztardItem:
 
@@ -133,15 +132,15 @@ class BuzztardItem:
             self.item.res = Resource(self.url, 'internal:%s:%s:*' % (host,self.mimetype))
             self.item.res.size = None
             self.item.res = [ self.item.res ]
-            self.item.artist = self.name
+            self.item.artist = self.parent.name
         
             
     def __del__(self):
-        #print "BuzztardItem __del__", self.id, self.name
+        log.debug("BuzztardItem __del__", self.id, self.name)
         pass
 
     def remove(self):
-        #print "BuzztardItem remove", self.id, self.name, self.parent
+        log.debug("BuzztardItem remove", self.id, self.name, self.parent)
         for child in self.children:
             self.remove_child(child)
         if self.parent:
@@ -339,7 +338,7 @@ class BuzztardPlayer:
         
     def event(self,line):
         infos = line.split('|')[1:]
-        print infos
+        log.debug(infos)
         if infos[0] == 'playing':
             transport_state = 'PLAYING'
         if infos[0] == 'stopped':
@@ -384,7 +383,7 @@ class BuzztardPlayer:
         self.buzztard.connection.sendMessage('status')
 
     def load( self, uri, metadata):
-        print "load", uri, metadata
+        log.debug("load", uri, metadata)
         self.duration = None
         self.metadata = metadata
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
