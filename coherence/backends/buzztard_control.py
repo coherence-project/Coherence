@@ -158,7 +158,7 @@ class BuzztardItem:
             self.update_id += 1
 
     def remove_child(self, child):
-        log.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        log.debug("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):
@@ -262,20 +262,21 @@ class BuzztardStore:
         return None
 
     def remove(self, id):
+        item = self.store[int(id)]
+        parent = item.get_parent()
+        item.remove()
         try:
-            item = self.store[int(id)]
-            parent = item.get_parent()
-            item.remove()
             del self.store[int(id)]
-            if hasattr(self, 'update_id'):
-                self.update_id += 1
-                if self.server:
-                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-                value = (parent.get_id(),parent.get_update_id())
-                if self.server:
-                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
         except:
             pass
+        if hasattr(self, 'update_id'):
+            self.update_id += 1
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            value = (parent.get_id(),parent.get_update_id())
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+
         
     def clear(self):
         for item in self.get_by_id(1000).get_children():
