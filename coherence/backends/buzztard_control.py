@@ -38,6 +38,8 @@ class BzClient(LineReceiver):
             louie.send('Buzztard.Response.volume', None, line)
         elif line.find('mute') == 0:
             louie.send('Buzztard.Response.mute', None, line)
+        elif line.find('repeat') == 0:
+            louie.send('Buzztard.Response.repeat', None, line)
         elif line.find('playlist') == 0:
             louie.send('Buzztard.Response.browse', None, line)
 
@@ -334,6 +336,7 @@ class BuzztardPlayer:
         louie.connect( self.event, 'Buzztard.Response.event', louie.Any)
         louie.connect( self.get_volume, 'Buzztard.Response.volume', louie.Any)
         louie.connect( self.get_mute, 'Buzztard.Response.mute', louie.Any)
+        louie.connect( self.get_repeat, 'Buzztard.Response.repeat', louie.Any)
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
         
     def event(self,line):
@@ -433,6 +436,19 @@ class BuzztardPlayer:
         else:
             mute = False
         self.server.rendering_control_server.set_variable(0, 'Mute', mute)
+        
+    def get_repeat(self,line):
+        infos = line.split('|')[1:]
+        if infos[0] in ['on','1','true','True','yes','Yes']:
+            self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'REPEAT_ALL')
+        else:
+            self.server.av_transport_server.set_variable(0, 'CurrentPlayMode', 'NORMAL')
+            
+    def set_repeat(self, playmode):
+        if playmode in ['REPEAT_ONE','REPEAT_ALL']:
+            self.buzztard.connection.sendMessage('set|repeat|on')
+        else:
+            self.buzztard.connection.sendMessage('set|repeat|off')
         
     def get_volume(self,line):
         infos = line.split('|')[1:]
