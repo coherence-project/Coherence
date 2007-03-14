@@ -356,9 +356,10 @@ class BuzztardPlayer:
                 self.server.av_transport_server.set_variable(connection_id,
                                              'TransportState', transport_state)
 
-            label = infos[1]
-            position = infos[2].split('.')[0]
-            duration = infos[3].split('.')[0]
+        label = infos[1]
+        position = infos[2].split('.')[0]
+        duration = infos[3].split('.')[0]
+        if self.server != None:        
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', duration)
             self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', duration)
