@@ -379,6 +379,14 @@ class BuzztardPlayer:
             self.server.rendering_control_server.set_variable(connection_id, 'Mute', mute)
         except:
             pass
+        
+        try:
+            if infos[6] in ['on','1','true','True','yes','Yes']:
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentPlayMode', 'REPEAT_ALL')
+            else:
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentPlayMode', 'NORMAL')
+        except:
+            pass
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -474,6 +482,7 @@ class BuzztardPlayer:
         self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '', default=True)
         self.buzztard.connection.sendMessage('get|volume')
         self.buzztard.connection.sendMessage('get|mute')
+        self.buzztard.connection.sendMessage('get|repeat')
 
         self.poll_LC.start( 1.0, True)
         
