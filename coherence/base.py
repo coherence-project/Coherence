@@ -15,6 +15,8 @@ from twisted.web import server, resource
 
 import louie
 
+from coherence import __version__
+
 from coherence.upnp.core.ssdp import SSDPServer
 from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
@@ -137,7 +139,8 @@ class Coherence(object):
         network_if = config.get('interface')
         
         self.web_server_port = int(config.get('serverport', 0))
-            
+        log.start_logging(config.get('logfile', None))
+        
         log.set_master_level(logmode)
         
         subsystem_log = config.get('subsystem_log',{})
@@ -153,7 +156,11 @@ class Coherence(object):
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
 
-        log.warning("Coherence UPnP framework starting...")
+        if config.get('logfile', None) is not None:
+            print "Coherence UPnP framework version %s starting..." % __version__
+            print "directing output to logfile %s" % config.get('logfile')
+
+        log.warning("Coherence UPnP framework version %s starting..." % __version__)
         self.ssdp_server = SSDPServer()
         louie.connect( self.add_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)

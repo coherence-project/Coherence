@@ -3,9 +3,10 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import os, sys, logging
+import os, sys
+#import logging
 
-#from twisted.python import log
+from twisted.python import log
 
 LOG_UNSET       =  0
 LOG_DEBUG       = 10
@@ -33,12 +34,12 @@ class _Logger(object):
         else:
             obj = super(_Logger, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
-            #log.startLogging(sys.stdout)
-            logging.basicConfig(level=logging.INFO,
-                                format='%(asctime)s %(message)s',
-                                datefmt='%d %b %Y %H:%M:%S',)
-            obj.log = logging.getLogger('.')
-            obj.log.setLevel(logging.INFO)
+            
+            #logging.basicConfig(level=logging.INFO,
+            #                    format='%(asctime)s %(message)s',
+            #                    datefmt='%d %b %Y %H:%M:%S',)
+            #obj.log = logging.getLogger('.')
+            #obj.log.setLevel(logging.INFO)
             obj.feeds = {}
             obj.master_level = None
             return obj
@@ -49,16 +50,23 @@ class _Logger(object):
             if self.master_level:
                 level = self.master_level
             self.feeds[name] = {'active':True,'level':level}
-        
+            
+    def start_logging(self, logfile=None):
+            if logfile is not None:
+                observer = log.FileLogObserver(open(logfile, 'w'))
+            else:
+                observer = log.FileLogObserver(sys.stdout)
+            log.startLoggingWithObserver(observer.emit, setStdout=0)
+            
     def send(self, name, level, *args):
         try:
             if self.feeds[name]['active'] == False:
                 return
             if level >= self.feeds[name]['level']:
                 msg = ' '.join((str(i) for i in args)) 
-                self.log.info('%s: %s' % (name, msg))
+                log.msg('%s: %s' % (name, msg))
         except KeyError:
-            self.log.log(level, "Logger msg error, feed %s not found" % name)
+            log.msg("Logger error, feed %s not found" % name)
 
     def enable(self, name):
         try:
@@ -88,6 +96,9 @@ class Logger:
     def __init__(self, name='', level=LOG_DEBUG):
         self.name = name
         self.log = _Logger(name,level)
+        
+    def start_logging(self, logfile=None):
+        self.log.start_logging(logfile)
         
     def send(self, level, *args):
         self.log.send( self.name, LOG_UNSET, *args)
