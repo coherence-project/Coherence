@@ -6,11 +6,12 @@
 
 import SOAPpy
 from twisted.web import soap
-from twisted.web import client
 
 from coherence.extern.elementsoap.ElementSOAP import SoapRequest, SoapElement
 
 from coherence.extern.et import ET, namespace_map_update
+
+from coherence.upnp.core.utils import getPage
 
 class SOAPProxy(soap.Proxy):
 
@@ -62,11 +63,11 @@ class SOAPProxy(soap.Proxy):
             print failure
 
 
-        return client.getPage(self.url, postdata=payload, method="POST",
-                              headers={'content-type': 'text/xml ;charset="utf-8"',
-                                       'SOAPACTION': '"%s"' % soapaction,
-                                       }
-                              ).addCallbacks(self._cbGotResult, gotError, None, None, [self.url], None)
+        return getPage(self.url, postdata=payload, method="POST",
+                        headers={'content-type': 'text/xml ;charset="utf-8"',
+                                 'SOAPACTION': '"%s"' % soapaction,
+                                }
+                      ).addCallbacks(self._cbGotResult, gotError, None, None, [self.url], None)
 
     def _cbGotResult(self, result):
         #print "_cbGotResult 1", result

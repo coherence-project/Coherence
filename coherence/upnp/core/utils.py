@@ -103,6 +103,7 @@ class myHTTPPageGetter(client.HTTPPageGetter):
 class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
 
     protocol = myHTTPPageGetter
+    noisy = False
 
     def page(self, page):
         if self.waiting:

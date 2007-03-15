@@ -175,8 +175,6 @@ class Service:
 
     def parse_actions(self):
 
-        from twisted.web.client import getPage
-        
         def gotPage(x):
             #print "gotPage"
             #print x
@@ -216,7 +214,7 @@ class Service:
             print failure
             
         #print 'getPage', self.get_scpd_url()
-        getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)
+        utils.getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)
             
 moderated_variables = \
         {'urn:schemas-upnp-org:service:AVTransport:2':

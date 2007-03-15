@@ -125,7 +125,6 @@ class Device:
                 service.unsubscribe()
             
     def parse_description(self):
-        from twisted.web.client import getPage
                                      
         def gotPage(x):
             tree = utils.parse_xml(x, 'utf-8').getroot()
@@ -166,7 +165,7 @@ class Device:
             log.warning("error requesting", url)
             log.info(failure)
 
-        getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
+        utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 
 
 class RootDevice(Device):
