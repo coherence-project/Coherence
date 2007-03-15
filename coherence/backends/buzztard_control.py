@@ -141,13 +141,19 @@ class BuzztardItem:
         log.debug("BuzztardItem __del__", self.id, self.name)
         pass
 
-    def remove(self):
+    def remove(self,store):
         log.debug("BuzztardItem remove", self.id, self.name, self.parent)
-        for child in self.children:
+        while len(self.children) > 0:
+            child = self.children.pop()
             self.remove_child(child)
+            del store[int(child.id)]
+
         if self.parent:
             self.parent.remove_child(self)
+
+        del store[int(self.id)]
         del self.item
+        del self
         
     def add_child(self, child, update=False):
         self.children.append(child)
@@ -197,7 +203,11 @@ class BuzztardItem:
         return self.item.toString()
         
     def __repr__(self):
-        return 'id: ' + str(self.id) + ' @ ' + self.url
+        if self.parent == None:
+            parent = 'root'
+        else:
+            parent = str(self.parent.get_id())
+        return 'id: ' + str(self.id) +'/' + self.name + '/' + parent + ' ' + str(self.child_count) + ' @ ' + self.url
 
 class BuzztardStore:
 
@@ -223,6 +233,7 @@ class BuzztardStore:
         
         louie.connect( self.add_content, 'Buzztard.Response.browse', louie.Any)
         louie.connect( self.clear, 'Buzztard.Response.flush', louie.Any)
+
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
 
         
@@ -264,7 +275,7 @@ class BuzztardStore:
     def remove(self, id):
         item = self.store[int(id)]
         parent = item.get_parent()
-        item.remove()
+        item.remove(self.store)
         try:
             del self.store[int(id)]
         except:
@@ -550,7 +561,17 @@ def main():
     louie.connect( test_init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
     f = BuzztardStore(None)
-
+    
+    f.parent = f.append('Buzztard', 'directory', None)
+    print f.parent
+    print f.store
+    f.add_content('playlist|test label|start|stop')
+    print f.store
+    f.clear()
+    print f.store
+    f.add_content('playlist|after flush label|flush-start|flush-stop')
+    print f.store
+    
     #def got_upnp_result(result):
     #    print "upnp", result
 
