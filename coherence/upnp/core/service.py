@@ -178,6 +178,7 @@ class Service:
         def gotPage(x):
             #print "gotPage"
             #print x
+            data, headers = x
             tree = utils.parse_xml(x, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
             

@@ -71,7 +71,8 @@ class SOAPProxy(soap.Proxy):
 
     def _cbGotResult(self, result):
         #print "_cbGotResult 1", result
-        result = SOAPpy.parseSOAPRPC(result)            
+        page, headers = result
+        result = SOAPpy.parseSOAPRPC(page)            
         #print "_cbGotResult 2", result
         if len(result) == 1:
             return result[0]
