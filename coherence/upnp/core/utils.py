@@ -20,6 +20,12 @@ import struct
 
 def parse_xml(data, encoding="iso-8859-1"):
     p = ET.XMLParser(encoding=encoding)
+
+    # my version of twisted.web returns page_infos as a dictionnary in
+    # the second item of the data list
+    if isinstance(data, (list, tuple)):
+        data, _ = data
+        
     data = data.encode(encoding)
 
     # Guess from who we're getting this?
