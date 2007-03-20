@@ -127,8 +127,8 @@ class Device:
     def parse_description(self):
                                      
         def gotPage(x):
-            page, headers = x
-            tree = utils.parse_xml(page, 'utf-8').getroot()
+            data, headers = x
+            tree = utils.parse_xml(data, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:device-1-0"
             
             d = tree.find('.//{%s}device' % ns)

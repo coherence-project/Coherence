@@ -179,7 +179,7 @@ class Service:
             #print "gotPage"
             #print x
             data, headers = x
-            tree = utils.parse_xml(x, 'utf-8').getroot()
+            tree = utils.parse_xml(data, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
             
             for action_node in tree.findall('.//{%s}action' % ns):
