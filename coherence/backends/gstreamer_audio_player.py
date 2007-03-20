@@ -18,7 +18,7 @@ import gst
 
 import louie
 
-class Player:
+class GStreamerPlayer:
 
     """ a backend with a GStreamer based audio player
     

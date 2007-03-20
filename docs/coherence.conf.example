@@ -22,7 +22,7 @@ web-ui = no                               # set this to yes to enable some inter
 #SOAP = info
 #Action = info
 #Variable = info
-#Event = debug
+#Event = info
 #Service = info
 #Device = info
 #ConnectionManagerServer = info
@@ -39,7 +39,7 @@ web-ui = no                               # set this to yes to enable some inter
         content = tests/content           # append more directories seperated by commas
         name = Coherence Test Content
         
-    [[Player]]
+    [[GStreamerPlayer]]
         name = GStreamer Audio Player
     
     #[[ElisaPlayer]]
