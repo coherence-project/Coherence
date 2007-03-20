@@ -15,6 +15,8 @@ from twisted.web import server, resource
 
 import louie
 
+import pkg_resources
+
 from coherence import __version__
 
 from coherence.upnp.core.ssdp import SSDPServer
@@ -25,18 +27,6 @@ from coherence.upnp.core.utils import parse_xml, get_ip_address, get_host_addres
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
 from coherence.upnp.devices.media_renderer import MediaRenderer
-
-from coherence.backends.fs_storage import FSStore
-from coherence.backends.elisa_storage import ElisaMediaStore
-from coherence.backends.flickr_storage import FlickrStore
-from coherence.backends.elisa_renderer import ElisaPlayer
-from coherence.backends.axiscam_storage import AxisCamStore
-from coherence.backends.buzztard_control import BuzztardStore, BuzztardPlayer
-
-try:
-    from coherence.backends.gstreamer_audio_player import Player
-except:
-    pass
 
 from coherence.extern.logger import Logger, LOG_WARNING
 log = Logger('Coherence')
@@ -196,7 +186,14 @@ class Coherence(object):
 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
-
+        
+        self.installed_plugins = {}
+        
+        for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_server"):
+            self.installed_plugins[entrypoint.name] = entrypoint.load()
+        for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_renderer"):
+            self.installed_plugins[entrypoint.name] = entrypoint.load()
+            
         plugins = config.get('plugins',None)
         if plugins is None:
             log.warning("No plugin defined!")
@@ -215,7 +212,8 @@ class Coherence(object):
     def add_plugin(self, plugin, **kwargs):
         log.info("adding plugin", plugin)
         try:
-            plugin_class=globals().get(plugin,None)
+            #plugin_class=globals().get(plugin,None)
+            plugin_class = self.installed_plugins.get(plugin,None)
             if plugin_class == None:
                 raise KeyError
             for device in plugin_class.implements:
