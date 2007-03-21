@@ -248,7 +248,7 @@ class ElisaPlayer:
     def upnp_init(self):
         self.current_connection_id = None
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
-                            ['internal:%s:audio/mpeg:*' % self.host,
+                            ['internal:%s:*:*' % self.host,
                              'http-get:*:audio/mpeg:*'],
                             default=True)
         self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)

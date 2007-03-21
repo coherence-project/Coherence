@@ -96,26 +96,29 @@ class ElisaMediaStore:
         
         def build_upnp_item(elisa_item):
             UPnPClass = classChooser(elisa_item['mimetype'])
-            upnp_item = UPnPClass(elisa_item['id'],
-                                  elisa_item['parent_id'],
-                                  elisa_item['name'])
-            if isinstance(upnp_item, Container):
-                upnp_item.childCount = len(elisa_item.get('children',[]))
-            else:
-                url = elisa_item['location']
-                try:
-                    size = elisa_item['size']
-                except:
-                    size = None
-                upnp_item.res = []
-                res = Resource(url,
-                               'internal:%s:%s:*' %(self.host,elisa_item['mimetype']))
-                res.size = size
-                upnp_item.res.append(res)
-                res = Resource(url,
-                               'http-get:*:%s:*' % elisa_item['mimetype'])
-                res.size = size
-                upnp_item.res.append(res)
+            upnp_item = None
+            if UPnPClass:
+                upnp_item = UPnPClass(elisa_item['id'],
+                                      elisa_item['parent_id'],
+                                      elisa_item['name'])
+                if isinstance(upnp_item, Container):
+                    upnp_item.childCount = len(elisa_item.get('children',[]))
+                else:
+                    internal_url = elisa_item['location'].get('internal')
+                    external_url = elisa_item['location'].get('external')
+                    try:
+                        size = elisa_item['size']
+                    except:
+                        size = None
+                    upnp_item.res = []
+                    res = Resource(internal_url,
+                                   'internal:%s:*:*' %self.host)
+                    res.size = size
+                    upnp_item.res.append(res)
+                    res = Resource(external_url,
+                                   'http-get:*:%s:*' % elisa_item['mimetype'])
+                    res.size = size
+                    upnp_item.res.append(res)
 
             return upnp_item
         
@@ -129,10 +132,14 @@ class ElisaMediaStore:
                     childs = children[StartingIndex:StartingIndex+RequestedCount]
                 for child in childs:
                     if child is not None:
-                        didl.addItem(build_upnp_item(child))
+                        item = build_upnp_item(child)
+                        if item:
+                            didl.addItem(item)
                 total = len(children)
             elif elisa_item:
-                didl.addItem(build_upnp_item(elisa_item))
+                item = build_upnp_item(elisa_item)
+                if item:
+                    didl.addItem(item)
                 total = 1
 
             r = { 'Result': didl.toString(), 'TotalMatches': total,
