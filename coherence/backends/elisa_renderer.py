@@ -38,6 +38,7 @@ class ElisaPlayer:
         self.name = kwargs.get('name','Elisa MediaRenderer')
         self.host = kwargs.get('host','127.0.0.1')
         self.player = None
+        self.metadata = None
         
         if self.host == 'internal':
             try:
@@ -72,12 +73,25 @@ class ElisaPlayer:
         self.server = device
         self.poll_LC = LoopingCall( self.poll_player)
 
+    def call_player(self, method, callback, *args):
+        print '>> call player', method, str(args)
+        if self.host == 'internal':
+            dfr = Deferred()
+            dfr.addCallback(callback)
+            result = getattr(self.player, method)(*args)
+            dfr.callback(result)
+        else:
+            dfr = self.player.callRemote(method, *args)
+            dfr.addCallback(callback)
+        return dfr
         
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
     def poll_player( self):
         def got_result(result):
+            print "poll_player", result
+            log.info("poll_player", result)
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
             if result == 'STOPPED':
@@ -94,44 +108,48 @@ class ElisaPlayer:
                 self.state = transport_state                             
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id,
-                                                 'TransportState', transport_state) 
-                                                        
-        dfr = self.player.callRemote("get_readable_state")
-        dfr.addCallback(got_result)
+                                                 'TransportState', transport_state)
+        self.call_player("get_readable_state", got_result)
         
 
     def query_position( self):
         def got_result(result):
-            print result
+            log.info("query_position", result)
             position, duration = result
+            if position is not None:
+                m,s = divmod( position/1000000000, 60)
+                h,m = divmod(m,60)
+                
+            if duration is not None:
+                m,s = divmod( duration/1000000000, 60)
+                h,m = divmod(m,60)
+                
+            if self.duration is None:
+                if self.metadata is not None:
+                    elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                    for item in elt:
+                        for res in item.findall('res'):
+                            m,s = divmod( duration/1000000000, 60)
+                            h,m = divmod(m,60)
+                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                    self.metadata = elt.toString()
+                self.duration = duration
+                 
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
                 self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
-                if position is not None:
-                    m,s = divmod( position/1000000000, 60)
-                    h,m = divmod(m,60)
-                    self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                    self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                if duration is not None:
-                    m,s = divmod( duration/1000000000, 60)
-                    h,m = divmod(m,60)
-                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-                    self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
 
-                    if self.duration is None:
-                        elt = DIDLLite.DIDLElement.fromString(self.metadata)
-                        for item in elt:
-                            for res in item.findall('res'):
-                                m,s = divmod( duration/1000000000, 60)
-                                h,m = divmod(m,60)
-                                res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
-                        self.metadata = elt.toString()
-                        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
-                        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
-                        self.duration = duration
-                                    
-        dfr = self.player.callRemote("get_status")
-        dfr.addCallback(got_result)
+                self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
+
+
+                self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
+
+        self.call_player("get_status", got_result)
         
         
         
@@ -150,37 +168,35 @@ class ElisaPlayer:
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
-        dfr = self.player.callRemote("set_uri", uri)
-        dfr.addCallback(got_result)
+        self.call_player("set_uri", got_result, uri)
+        
 
-
-    def start( self, uri):
-        self.load( uri)
+    def start(self, uri):
+        self.load(uri)
         self.play()
         
     def stop(self):
         def got_result(result):
             self.server.av_transport_server.set_variable( \
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
-                                 'TransportState', 'STOPPED')        
-        dfr = self.player.callRemote("stop")
-        dfr.addCallback(got_result)
-        
-    def play( self):   
-        def got_result(result):
-            self.server.av_transport_server.set_variable( \
-                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
-                                 'TransportState', 'PLAYING')        
-        dfr = self.player.callRemote("play")
-        dfr.addCallback(got_result)
+                                 'TransportState', 'STOPPED')
 
-    def pause( self):
+        self.call_player("stop", got_result)
+        
+    def play(self):   
         def got_result(result):
             self.server.av_transport_server.set_variable( \
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
-                                 'TransportState', 'PAUSED_PLAYBACK')        
-        dfr = self.player.callRemote("pause")
-        dfr.addCallback(got_result)
+                                 'TransportState', 'PLAYING')
+
+        self.call_player("play", got_result)
+
+    def pause(self):
+        def got_result(result):
+            self.server.av_transport_server.set_variable( \
+                self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
+                                 'TransportState', 'PAUSED_PLAYBACK')
+        self.call_player("pause", got_result)
 
 
     def seek(self, location):
@@ -198,8 +214,7 @@ class ElisaPlayer:
             #FIXME: use result, not True
             self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
 
-        dfr=self.player.callRemote("mute")
-        dfr.addCallback(got_result)
+        self.call_player("mute", got_result)
         
     def unmute(self):
         def got_result(result):
@@ -207,17 +222,14 @@ class ElisaPlayer:
             #FIXME: use result, not False
             self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
 
-        dfr=self.player.callRemote("un_mute")
-        dfr.addCallback(got_result)
+        self.call_player("un_mute", got_result)
         
     def get_mute(self):
         def got_infos(result):
             log.info("get_mute", result)
             return result
-            
-        dfr=self.player.callRemote("get_mute")
-        dfr.addCallback(got_infos)
-        return dfr
+
+        return self.call_player("get_mute", got_infos)
         
     def get_volume(self):
         """ playbin volume is a double from 0.0 - 10.0
@@ -225,10 +237,8 @@ class ElisaPlayer:
         def got_infos(result):
             log.info("get_volume", result)
             return result
-            
-        dfr=self.player.callRemote("get_volume")
-        dfr.addCallback(got_infos)
-        return dfr
+
+        return self.call_player('get_volume', got_infos)
         
     def set_volume(self, volume):
         volume = int(volume)
@@ -241,9 +251,8 @@ class ElisaPlayer:
             rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
             #FIXME: use result, not volume
             self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
-                
-        dfr=self.player.callRemote("set_volume",volume)
-        dfr.addCallback(got_result)
+
+        self.call_player("set_volume", got_result, volume)
         
     def upnp_init(self):
         self.current_connection_id = None
@@ -280,15 +289,19 @@ class ElisaPlayer:
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
         local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        print '>>>', local_protocol_info
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
+            #import pdb; pdb.set_trace()
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
                 for res in item.res:
+                    print '>>>', res.protocolInfo
                     if res.protocolInfo in local_protocol_info:
-                        self.load(CurrentURI,CurrentURIMetaData)
+                        uri = res.data
+                        self.load(uri,CurrentURIMetaData)
                         return {}
         return failure.Failure(errorCode(714))
 

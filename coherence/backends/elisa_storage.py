@@ -82,9 +82,10 @@ class ElisaMediaStore:
 
 
     def upnp_init(self):
-        self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                        ['internal:%s:audio/mpeg:*' % self.host,
-                         'http-get:*:audio/mpeg:*'])
+        if self.server:
+            self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
+                            ['internal:%s:*:*' % self.host,
+                             'http-get:*:audio/mpeg:*'])
 
     def upnp_Browse(self, *args, **kwargs):
         ObjectID = int(kwargs['ObjectID'])
@@ -178,7 +179,7 @@ if __name__ == '__main__':
         def got_result(result):
             print result
 
-        f = MediaStore('my media',p, 'http://localhost/',())
+        f = MediaStore(None,'my media',p, 'http://localhost/',())
 
         dfr = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
                             RequestedCount=0,
