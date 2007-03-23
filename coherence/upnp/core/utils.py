@@ -10,6 +10,7 @@ import codecs
 import cStringIO
 import string
 from twisted.python import log
+from twisted.web import server, http
 from twisted.web import client
 from twisted.internet import reactor
 from twisted.python import failure
@@ -85,6 +86,13 @@ def get_host_address():
                     return get_ip_address(l[0])
     """ return localhost if we havn't found anything """
     return '127.0.0.1'
+
+class Site(server.Site):
+    
+    noisy = False
+    
+    def startFactory(self):
+        http._logDateTimeStart()
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 

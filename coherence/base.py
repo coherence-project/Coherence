@@ -11,7 +11,7 @@ import traceback
 from twisted.python import filepath, util
 from twisted.internet import task, address
 from twisted.internet import reactor
-from twisted.web import server, resource
+from twisted.web import resource
 
 import louie
 
@@ -23,6 +23,8 @@ from coherence.upnp.core.ssdp import SSDPServer
 from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
 from coherence.upnp.core.utils import parse_xml, get_ip_address, get_host_address
+
+from coherence.upnp.core.utils import Site
 
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
@@ -95,7 +97,7 @@ class WebServer:
             self.web_root_resource = Web(coherence)
             self.site = appserver.NevowSite( self.web_root_resource)
         except ImportError:
-            self.site = server.Site(SimpleRoot(coherence))
+            self.site = Site(SimpleRoot(coherence))
 
         port = reactor.listenTCP( port, self.site)
         coherence.web_server_port = port._realPortNumber

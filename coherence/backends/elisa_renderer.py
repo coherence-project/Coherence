@@ -50,6 +50,7 @@ class ElisaPlayer:
                 raise ImportError
         else:
             factory = pb.PBClientFactory()
+            factory.noisy = False
             reactor.connectTCP(self.host, 8789, factory)
             d = factory.getRootObject()
             

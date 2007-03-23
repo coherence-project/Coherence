@@ -57,6 +57,7 @@ class ElisaMediaStore:
 
     def get_store(self):
         factory = pb.PBClientFactory()
+        factory.noisy = False
         reactor.connectTCP(self.host, 8789, factory)
         return factory.getRootObject()
 
