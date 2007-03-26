@@ -138,6 +138,8 @@ class AxisCamStore:
         self.update_id = 0
         self.store = {}
         
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -205,7 +207,6 @@ class AxisCamStore:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     source_protocols,
                                                                     default=True)
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
 def main():
 
