@@ -11,6 +11,8 @@ from sets import Set
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
+import louie
+
 from coherence.extern.logger import Logger
 log = Logger('AxisCamStore')
 
@@ -203,6 +205,7 @@ class AxisCamStore:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     source_protocols,
                                                                     default=True)
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
 def main():
 
