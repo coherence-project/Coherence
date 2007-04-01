@@ -6,12 +6,26 @@ setup(
     name="Coherence",
     version=__version__,
     description="""Coherence - Python framework for the digital living""",
+    long_description="""Coherence is a framework written in Python enabling your application to
+participate in digital living networks, at the moment primarily the UPnP universe.
+
+Its objective and demand is to relieve your application from all the
+membership/the UPnP related tasks as much as possible.""",
     author="Frank Scholz",
     author_email='coherence@beebits.net',
     license = "MIT",
     packages=find_packages(),
     scripts = ['bin/coherence'],
     url = "http://coherence.beebits.net",
+    download_url = 'https://coherence.beebits.net/download/Coherence-0.2.0.tar.gz',
+    keywords=['UPnP', 'DLNA', 'multimedia', 'gstreamer'],
+    classifiers = ['Development Status :: 4 - Beta',
+                   'Environment :: Console',
+                   'Environment :: Web Environment',
+                   'License :: OSI Approved :: MIT License',
+                   'Operating System :: OS Independent',
+                   'Programming Language :: Python',
+                ],
     
     entry_points="""
         [coherence.plugins.backend.media_server]
