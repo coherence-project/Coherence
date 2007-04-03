@@ -196,6 +196,24 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.av_transport.set_av_transport_uri(current_uri=uri)
             return "Ok"
         return "Error"
+    
+    def xmlrpc_create_object(self, device_id, container_id, arguments):
+        print "create_object", arguments
+        device = self.control_point.get_device_with_id(device_id)
+        if device != None:
+            client = device.get_client()
+            client.content_directory.create_object(container_id, arguments)
+            return "Ok"
+        return "Error"
+    
+    def xmlrpc_import_resource(self, device_id, container_id, arguments):
+        print "create_object", arguments
+        device = self.control_point.get_device_with_id(device_id)
+        if device != None:
+            client = device.get_client()
+            client.content_directory.import_resource(container_id, arguments)
+            return "Ok"
+        return "Error"
 
     def xmlrpc_ping(self):
         print "ping"
@@ -217,6 +235,7 @@ if __name__ == '__main__':
     
     config = {}
     config['logmode'] = 'warning'
+    config['serverport'] = 30020
 
     ctrl = ControlPoint(Coherence(config))
 

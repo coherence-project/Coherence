@@ -38,14 +38,18 @@ class MSRoot(resource.Resource):
         self.store = store
         
     def getChildWithDefault(self, path, request):
-        log.info('%s getChildWithDefault, %s, %s %s' % (self.server.device_type,
-                                path, request.uri, request.client))
+        log.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
+                                request.method, path, request.uri, request.client))
         headers = request.getAllHeaders()
         log.msg( request.getAllHeaders())
         
-        if( headers.has_key('user-agent') and
-            headers['user-agent'].find('Xbox/') == 0 and
-            path in ['description-1.xml','description-2.xml']):
+        if(request.method == 'POST' and
+           path.endswith('?import')):
+            self.import_file(path[:-7],request)
+        
+        if(headers.has_key('user-agent') and
+           headers['user-agent'].find('Xbox/') == 0 and
+           path in ['description-1.xml','description-2.xml']):
             log.info('XBox alert, we need to simulate a Windows Media Connect server')
             if self.children.has_key('xbox-description-1.xml'):
                 log.msg( 'returning xbox-description-1.xml')
@@ -60,14 +64,26 @@ class MSRoot(resource.Resource):
     def requestFinished(self, result, id):
         log.info("finished, remove %d from connection table" % id)
         self.server.connection_manager_server.remove_connection(id)
+        
+    def import_file(self,name,request):
+        log.info("import file, id %s" % name)
+        ch = self.store.get_by_id(name)
+        if ch is not None:
+            f = open(ch.get_path())
+            f.write(request.content.getvalue()) #FIXME: is this the right way?
+            f.close()
+            request.setResponseCode(200)
+        else:
+            request.setResponseCode(404)
+        request.finish()
 
     def getChild(self, name, request):
         log.info('getChild %s, %s' % (name, request))
         ch = self.store.get_by_id(name)
         if ch != None:
             log.info('Child found', ch)
-            if( request.method == 'GET' or
-                request.method == 'HEAD'):
+            if(request.method == 'GET' or
+               request.method == 'HEAD'):
                 headers = request.getAllHeaders()
                 if headers.has_key('content-length'):
                     log.warning('%s request with content-length %s header - sanitizing' % (

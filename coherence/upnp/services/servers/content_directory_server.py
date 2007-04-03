@@ -134,8 +134,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         else:
             root_id = int(ObjectID)
 
-        item = self.backend.get_by_id(root_id)
-        
+        item = self.backend.get_by_id(int(root_id))
         if item == None:
             return failure.Failure(errorCode(701))
             

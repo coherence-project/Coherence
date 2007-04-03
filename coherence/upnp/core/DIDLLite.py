@@ -26,6 +26,8 @@ def classChooser(mimetype, sub=None):
 
     if mimetype == 'root':
         return StorageFolder
+    if mimetype == 'item':
+        return Item
     if mimetype == 'directory':
         return StorageFolder
     else:
@@ -49,6 +51,8 @@ class Resource:
         self.bitrate = None
         self.size = None
         self.duration = None
+        
+        self.importUri = None
 
     def toElement(self):
 
@@ -65,6 +69,9 @@ class Resource:
         if self.duration is not None:
             root.attrib['duration'] = self.duration
             
+        if self.importUri is not None:
+            root.attrib['importUri'] = self.importUri
+            
         return root
 
     def fromElement(self, elt):
@@ -73,7 +80,8 @@ class Resource:
         self.bitrate = elt.attrib.get('bitrate')
         self.size = elt.attrib.get('size')
         self.duration = elt.attrib.get('duration',None)
-
+        self.importUri = elt.attrib.get('importUri',None)
+       
     def toString(self):
         return ET.tostring(self.toElement())
 
@@ -94,19 +102,15 @@ class Object:
     writeStatus = None
     date = None
 
-    def __init__(self, id=None, parentID=None, title=None, restricted = False,
-                 creator = None):
+    def __init__(self, id=None, parentID=None, title=None, restricted=False,
+                       creator=None):
         self.res = []
         self.id = id
         self.parentID = parentID
         self.title = title
         self.creator = creator
+        self.restricted = restricted
 
-        if restricted:
-            self.restricted = 'true'
-        else:
-            self.restricted = 'false'
-            
     def checkUpdate(self):
         return self
 
@@ -119,8 +123,11 @@ class Object:
         ET.SubElement(root, 'dc:title').text = self.title
         ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
-        root.attrib['restricted'] = self.restricted
-
+        if self.restricted:
+            root.attrib['restricted'] = 'true'
+        else:
+            root.attrib['restricted'] = 'false'
+            
         if self.creator is not None:
             ET.SubElement(root, 'dc:creator').text = self.creator
 
@@ -152,7 +159,10 @@ class Object:
         self.elementName = elt.tag
         self.id = elt.attrib['id']
         self.parentID = elt.attrib['parentID']
-        self.restricted = elt.attrib['restricted']
+        if elt.attrib['restricted'] in ['true','True','1','yes','Yes']:
+            self.restricted = True
+        else:
+            self.restricted = False
 
         for child in elt.getchildren():
             if child.tag.endswith('title'):
@@ -473,3 +483,33 @@ class DIDLElement(ElementInterface):
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance
+    
+upnp_classes = {'object': Object,
+                'object.item': Item,
+                'object.item.imageItem': ImageItem,
+                'object.item.imageItem.photo': Photo,
+                'object.item.audioItem': AudioItem,
+                'object.item.audioItem.musicTrack': MusicTrack,
+                'object.item.audioItem.audioBroadcast': AudioBroadcast,
+                'object.item.audioItem.audioBook': AudioBook,
+                'object.item.videoItem': VideoItem,
+                'object.item.videoItem.movie': Movie,
+                'object.item.videoItem.videoBroadcast': VideoBroadcast,
+                'object.item.videoItem.musicVideoClip': MusicVideoClip,
+                'object.item.playlistItem': PlaylistItem,
+                'object.item.textItem': TextItem,
+                'object.container': Container,
+                'object.container.person': Person,
+                'object.container.person.musicArtist': MusicArtist,
+                'object.container.playlistContainer': PlaylistContainer,
+                'object.container.album': Album,
+                'object.container.album.musicAlbum': MusicAlbum,
+                'object.container.album.photoAlbum': PhotoAlbum,
+                'object.container.genre': Genre,
+                'object.container.genre.musicGenre': MusicGenre,
+                'object.container.genre.movieGenre': MovieGenre,
+                'object.container.storageSystem': StorageSystem,
+                'object.container.storageVolume': StorageVolume,
+                'object.container.storageFolder': StorageFolder,
+}
+

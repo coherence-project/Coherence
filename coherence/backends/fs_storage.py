@@ -17,7 +17,10 @@ from twisted.python.filepath import FilePath
 from twisted.python import failure
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource
+from coherence.upnp.core.DIDLLite import DIDLElement
 from coherence.upnp.core.soap_service import errorCode
+
+from coherence.upnp.core import utils
 
 from coherence.extern.inotify import INotify
 from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
@@ -66,16 +69,26 @@ class FSItem:
                 host = host_port
 
             res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
-            res.size = self.location.getsize()
+            try:
+                res.size = self.location.getsize()
+            except:
+                res.size = 0
             self.item.res.append(res)
             
             res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
-            res.size = self.location.getsize()
+            try:
+                res.size = self.location.getsize()
+            except:
+                res.size = 0
             self.item.res.append(res)
 
-            self.item.date = datetime.fromtimestamp(self.location.getmtime())
-            # FIXME: getmtime is deprecated in Twisted 2.6
-            
+            try:
+                # FIXME: getmtime is deprecated in Twisted 2.6
+                self.item.date = datetime.fromtimestamp(self.location.getmtime())
+            except:
+                self.item.date = None
+
+
     def __del__(self):
         #print "FSItem __del__", self.id, self.get_name()
         pass
@@ -222,21 +235,13 @@ class FSStore:
                 new_container = self.append(child.path,container)
                 if new_container != None:
                     containers.append(new_container)
-
-    def append(self, path, parent):
-        mimetype,_ = mimetypes.guess_type(path)
-        if mimetype == None:
-            if os.path.isdir(path):
-                mimetype = 'directory'
-        if mimetype == None:
-            return None
-        
+                    
+    def create(self, mimetype, path, parent):
         UPnPClass = classChooser(mimetype)
         if UPnPClass == None:
             return None
         
         id = self.getnextID()
-        #print "append", path, "with", id, 'at parent', parent
         update = False
         if hasattr(self, 'update_id'):
             update = True
@@ -246,10 +251,21 @@ class FSStore:
             self.update_id += 1
             if self.server:
                 self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-            #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
             value = (parent.get_id(),parent.get_update_id())
             if self.server:
                 self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+                
+        return id
+
+    def append(self,path,parent):
+        mimetype,_ = mimetypes.guess_type(path)
+        if mimetype == None:
+            if os.path.isdir(path):
+                mimetype = 'directory'
+        if mimetype == None:
+            return None
+        
+        id = self.create(mimetype,path,parent)
 
         if mimetype == 'directory':
             mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
@@ -299,7 +315,8 @@ class FSStore:
             #    print 'directory %s was created, parent %d (%s)' % (path, parameter, iwp.path)
             #else:
             #    print 'file %s was created, parent %d (%s)' % (path, parameter, iwp.path)
-            self.append( path, self.get_by_id(parameter))
+            if self.get_id_by_name(parameter,filename) is None:
+                self.append( path, self.get_by_id(parameter))
 
     def getnextID(self):
         ret = self.next_id
@@ -314,8 +331,100 @@ class FSStore:
                          'http-get:*:audio/mpeg:*'],
                         default=True)
 
+    def upnp_ImportResource(self, *args, **kwargs):
+        SourceURI = kwargs['SourceURI']
+        DestinationURI = kwargs['DestinationURI']
+        
+        if DestinationURI.endswith('?import'):
+            id = DestinationURI.split('/')[-1]
+            id = id[:-7] # remove the ?import
+        else:
+            return failure.Failure(errorCode(718))
+        
+        item = self.get_by_id(id)
+        if item == None:
+            return failure.Failure(errorCode(718))
+
+        def gotPage(x):
+            #print "gotPage", x
+            pass
+
+        def gotError(failure, url):
+            log.warning("error requesting", url)
+            log.info(failure)
+            return failure.Failure(errorCode(718))
+        
+        utils.downloadPage(SourceURI,
+                           item.get_path()).addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
+        
+        transfer_id = 0  #FIXME
+        
+        return {'TransferID': transfer_id}
+
+    def upnp_CreateObject(self, *args, **kwargs):
+        ContainerID = int(kwargs['ContainerID'])
+        Elements = kwargs['Elements']
+
+        parent_item = self.get_by_id(ContainerID)
+        if parent_item == None:
+            return failure.Failure(errorCode(710))
+        if parent_item.item.restricted:
+            return failure.Failure(errorCode(713))
+        
+        if len(Elements) == 0:
+            return failure.Failure(errorCode(712))
+
+        elt = DIDLElement.fromString(Elements)
+        if elt.numItems() != 1:
+            return failure.Failure(errorCode(712))
+        
+        item = elt.getItems()[0]
+        if(item.id != '' or
+           int(item.parentID) != ContainerID or
+           item.restricted == True or
+           item.title == ''):
+            return failure.Failure(errorCode(712))
+        
+        if('..' in item.title or
+           '~' in item.title or
+           os.sep in item.title):
+            return failure.Failure(errorCode(712))
+        
+        if item.upnp_class == 'object.container.storageFolder':
+            if len(item.res) != 0:
+                return failure.Failure(errorCode(712))
+            path = os.path.join(parent_item.get_path(),item.title)
+            id = self.create('directory',path,parent_item)
+            try:
+                os.mkdir(path)
+            except:
+                self.remove(id)
+                return failure.Failure(errorCode(712))
+
+            mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
+            self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
+
+            new_item = self.get_by_id(id)
+            didl = DIDLElement()
+            didl.addItem(new_item.item)
+            return {'ObjectID': id, 'Result': didl.toString()}
+
+        if item.upnp_class.startswith('object.item.'):
+            path = os.path.join(parent_item.get_path(),item.title)
+            id = self.create('item',path,parent_item)
+
+            new_item = self.get_by_id(id)
+            for res in new_item.item.res:
+                res.importUri = new_item.url+'?import'
+            didl = DIDLElement()
+            didl.addItem(new_item.item)
+            return {'ObjectID': id, 'Result': didl.toString()}
+        
+        return failure.Failure(errorCode(712))
 
 if __name__ == '__main__':
+    
+    from twisted.internet import reactor
 
     p = 'tests/content'
     f = FSStore(None,name='my media',content=p, urlbase='http://localhost/xyz')
@@ -334,4 +443,7 @@ if __name__ == '__main__':
     #                    StartingIndex = '0',
     #                    SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
     #                    SortCriteria = '+dc:title')
+    
+    f.upnp_ImportResource(SourceURI='http://spiegel.de',DestinationURI='ttt')
 
+    reactor.run()

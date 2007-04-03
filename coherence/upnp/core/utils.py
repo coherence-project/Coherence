@@ -11,7 +11,7 @@ import cStringIO
 import string
 from twisted.python import log
 from twisted.web import server, http
-from twisted.web import client
+from twisted.web import client, error
 from twisted.internet import reactor
 from twisted.python import failure
 
@@ -134,6 +134,25 @@ def getPage(url, contextFactory=None, *args, **kwargs):
     """
     scheme, host, port, path = client._parse(url)
     factory = HeaderAwareHTTPClientFactory(url, *args, **kwargs)
+    if scheme == 'https':
+        from twisted.internet import ssl
+        if contextFactory is None:
+            contextFactory = ssl.ClientContextFactory()
+        reactor.connectSSL(host, port, factory, contextFactory)
+    else:
+        reactor.connectTCP(host, port, factory)
+    return factory.deferred
+
+def downloadPage(url, file, contextFactory=None, *args, **kwargs):
+    """Download a web page to a file.
+
+    @param file: path to file on filesystem, or file-like object.
+    
+    See HTTPDownloader to see what extra args can be passed.
+    """
+    scheme, host, port, path = client._parse(url)
+    factory = client.HTTPDownloader(url, file, *args, **kwargs)
+    factory.noisy = False
     if scheme == 'https':
         from twisted.internet import ssl
         if contextFactory is None:

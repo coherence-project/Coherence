@@ -162,8 +162,36 @@ class ContentDirectoryClient:
 
         d.addCallback(gotResults)
         return d
+    
+    def dict2item(self, elements):
+        upnp_class = DIDLLite.upnp_classes.get(elements.get('upnp_class',None),None)
+        if upnp_class is None:
+            return None
+        
+        del elements['upnp_class']
+        item = upnp_class(id='',
+                          parentID=elements.get('parentID',None),
+                          title=elements.get('title',None),
+                          restricted=elements.get('restricted',None))
+        for k, v in elements.items():
+            attribute = getattr(item, k, None)
+            if attribute is None:
+                continue
+            attribute = v
+            
+        return item
         
     def create_object(self, container_id, elements):
+        if isinstance(elements, dict):
+            elements = self.dict2item(elements)
+        if isinstance(elements,DIDLLite.Object):
+            print elements
+            didl = DIDLLite.DIDLElement()
+            print didl
+            didl.addItem(elements)
+            elements=didl.toString()
+        if elements is None:
+            elements = ''
         action = self.service.get_action('CreateObject')
         return action.call( ContainerID=container_id,
                             Elements=elements)

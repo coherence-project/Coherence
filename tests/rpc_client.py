@@ -8,9 +8,12 @@ command = "status"
 device = ''
 volume = 50
 uri = ''
+id = 1000
+
+arguments = {}
 
 try:
-    optlist, args = getopt.getopt( sys.argv[1:], "c:d:v:u:", ['command=', 'device=', 'volume=', 'uri='])
+    optlist, args = getopt.getopt( sys.argv[1:], "c:d:i:v:u:", ['command=', 'device=', 'id=', 'volume=', 'uri='])
 except getopt.GetoptError:
     print "falsche parameter"
     sys.exit(1)  
@@ -18,8 +21,22 @@ except getopt.GetoptError:
 for option, param in optlist:
     if option in( '-c', '--command'):command=param
     if option in( '-d', '--device'):device=param
+    if option in( '-i', '--id'):id=param
     if option in( '-v', '--volume'):volume=param
     if option in( '-u', '--uri'):uri=param
+
+skip = False
+for p in sys.argv[1:]:
+    if skip:
+        skip = False
+        continue
+    if p.startswith('-'):
+        skip = True
+        continue
+    k, v = p.split('=')
+    arguments[k] = v
+
+#print 'Arguments', arguments
     
 s = xmlrpclib.Server('http://127.0.0.1:30020/RPC2')
 
@@ -58,5 +75,8 @@ if( command == "set_av_transport_uri" and device != '' and uri != ''):
     
 if( command == "shutdown"):
     r=s.shutdown()
+    
+if(command == "create_object" and device != ''):
+    r = s.create_object(device, id, arguments)
 
 print r

@@ -18,6 +18,9 @@ import gst
 
 import louie
 
+from coherence.extern.logger import Logger
+log = Logger('GStreamerPlayer')
+
 class GStreamerPlayer:
 
     """ a backend with a GStreamer based audio player
