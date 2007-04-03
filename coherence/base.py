@@ -192,10 +192,16 @@ class Coherence(object):
         self.installed_plugins = {}
         
         for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_server"):
-            self.installed_plugins[entrypoint.name] = entrypoint.load()
+            try:
+                self.installed_plugins[entrypoint.name] = entrypoint.load()
+            except ImportError:
+                log.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
         for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_renderer"):
-            self.installed_plugins[entrypoint.name] = entrypoint.load()
-            
+            try:
+                self.installed_plugins[entrypoint.name] = entrypoint.load()
+            except ImportError:
+                log.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
+                
         plugins = config.get('plugins',None)
         if plugins is None:
             log.warning("No plugin defined!")
