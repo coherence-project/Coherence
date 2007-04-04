@@ -79,4 +79,10 @@ if( command == "shutdown"):
 if(command == "create_object" and device != ''):
     r = s.create_object(device, id, arguments)
 
+if(command == "create_object" and device != ''):
+    r = s.create_object(device, id, arguments)
+
+if(command == "import_resource" and device != ''):
+    r = s.import_resource(device, arguments['source_uri'], arguments['destination_uri'])
+    
 print r

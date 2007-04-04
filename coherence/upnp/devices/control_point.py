@@ -206,12 +206,12 @@ class XMLRPC( xmlrpc.XMLRPC):
             return "Ok"
         return "Error"
     
-    def xmlrpc_import_resource(self, device_id, container_id, arguments):
-        print "create_object", arguments
+    def xmlrpc_import_resource(self, device_id, source_uri, destination_uri):
+        print "import_resource", source_uri, destination_uri
         device = self.control_point.get_device_with_id(device_id)
         if device != None:
             client = device.get_client()
-            client.content_directory.import_resource(container_id, arguments)
+            client.content_directory.import_resource(source_uri, destination_uri)
             return "Ok"
         return "Error"
 
