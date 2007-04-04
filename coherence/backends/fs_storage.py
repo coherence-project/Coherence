@@ -179,7 +179,10 @@ class FSStore:
         self.server = server
         self.store = {}
         
-        self.inotify = INotify()
+        try:
+            self.inotify = INotify()
+        except:
+            self.inotify = None
         
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
@@ -268,8 +271,9 @@ class FSStore:
         id = self.create(mimetype,path,parent)
 
         if mimetype == 'directory':
-            mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
-            self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
+            if self.inotify is not None:
+                mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
+                self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
             return self.store[id]
             
         return None
@@ -401,8 +405,9 @@ class FSStore:
                 self.remove(id)
                 return failure.Failure(errorCode(712))
 
-            mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
-            self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
+            if self.inotify is not None:
+                mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
+                self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
 
             new_item = self.get_by_id(id)
             didl = DIDLElement()
