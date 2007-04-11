@@ -185,7 +185,10 @@ class GStreamerPlayer:
     def update( self):
         #print "update"
         _, current,_ = self.player.get_state()
-        if( current != gst.STATE_PLAYING and current != gst.STATE_PAUSED and current != gst.STATE_READY):
+        if current == gst.STATE_NULL:
+            return
+        if current not in (gst.STATE_PLAYING, gst.STATE_PAUSED,
+                           gst.STATE_READY):
             print "I'm out"
             return
         if current == gst.STATE_PLAYING:
@@ -353,11 +356,14 @@ class GStreamerPlayer:
             pass
             #print "setting new stream time to 0"
             #self.player.set_new_stream_time(0L)
-        else:
+        elif location != '-0':
             print "seek to %r failed" % location
 
         if location == '-0':
-            self.player.set_state(gst.STATE_READY)
+            self.player.set_state(gst.STATE_NULL)
+            self.playing = False                                        
+            self.update_LC.stop()                                       
+            self.update() 
         else:
             self.player.set_state(state)
             if state == gst.STATE_PAUSED:
