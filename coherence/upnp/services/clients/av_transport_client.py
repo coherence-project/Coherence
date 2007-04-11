@@ -63,9 +63,9 @@ class AVTransportClient:
         action = self.service.get_action('Pause')
         return action.call( InstanceID=instance_id)
 
-    def play(self, instance_id=0):
+    def play(self, instance_id=0, speed=1):
         action = self.service.get_action('Play')
-        return action.call( InstanceID=instance_id)
+        return action.call( InstanceID=instance_id,Speed=speed)
 
     def stop(self, instance_id=0):
         action = self.service.get_action('Stop')
