@@ -11,6 +11,7 @@ from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import DIDLLite
 
 import string
+import platform
 
 import pygst
 pygst.require('0.10')
@@ -46,7 +47,18 @@ class GStreamerPlayer:
     def __init__(self, device, **kwargs):
         self.name = kwargs.get('name','GStreamer Audio Player')
 
-        self.player = gst.element_factory_make("playbin", "myplayer")
+        if platform.uname()[1].startswith('Nokia'):
+            self.player = gst.Pipeline("myplayer")
+            self.source = gst.element_factory_make("gnomevfssrc", "source")
+            self.player.add(self.source)
+            self.sink = gst.element_factory_make("dspmp3sink", "sink")
+            self.player.add(self.sink)
+            gst.element_link_many(self.source, self.sink)
+            self.player_uri = 'location'
+        else:
+            self.player = gst.element_factory_make("playbin", "myplayer")
+            self.player_uri = 'uri'
+            self.source = self.sink = self.player
         self.playing = False
         self.duration = None
         self.metadata = None
@@ -115,7 +127,7 @@ class GStreamerPlayer:
         try:
             position, format = self.player.query_position(gst.FORMAT_TIME)
         except:
-            print "CLOCK_TIME_NONE", gst.CLOCK_TIME_NONE
+            #print "CLOCK_TIME_NONE", gst.CLOCK_TIME_NONE
             position = gst.CLOCK_TIME_NONE
             position = 0
         #print position
@@ -217,7 +229,7 @@ class GStreamerPlayer:
             self.stop()
         else:
             self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'STOPPED')
-        self.player.set_property('uri', uri)
+        self.source.set_property(self.player_uri, uri)
         self.duration = None
         self.metadata = metadata
         self.tags = {}
@@ -240,7 +252,7 @@ class GStreamerPlayer:
             self.play()
 
     def status( self, position):
-        uri = self.player.get_property('uri')
+        uri = self.source.get_property(self.player_uri)
         if uri == None:
             return {u'state':u'idle',u'uri':u''}
         else:
@@ -274,21 +286,21 @@ class GStreamerPlayer:
         self.play()
         
     def stop(self):
-        if self.player.get_property('uri') == None:
+        if self.source.get_property(self.player_uri) == None:
             return
-        print 'Stopping:', self.player.get_property('uri')
+        print 'Stopping:', self.source.get_property(self.player_uri)
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
         self.seek('-0')
         
     def play( self):   
         print "play -->"
-        print 'Playing:', self.player.get_property('uri')
+        print 'Playing:', self.source.get_property(self.player_uri)
         self.player.set_state(gst.STATE_PLAYING)
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
         print "play <--"
 
     def pause( self):
-        print 'Pausing:', self.player.get_property('uri')
+        print 'Pausing:', self.source.get_property(self.player_uri)
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
         self.player.set_state(gst.STATE_PAUSED)
         
@@ -348,30 +360,30 @@ class GStreamerPlayer:
 
     def mute(self):
         if hasattr(self,'stored_volume'):
-            self.stored_volume = self.player.get_property('volume')
-            self.player.set_property('volume', 0)
+            self.stored_volume = self.sink.get_property('volume')
+            self.sink.set_property('volume', 0)
         else:
-            self.player.set_property('mute', True)
+            self.sink.set_property('mute', True)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
         
     def unmute(self):
         if hasattr(self,'stored_volume'):
-            self.player.set_property('volume', self.stored_volume)
+            self.sink.set_property('volume', self.stored_volume)
         else:
-            self.player.set_property('mute', False)
+            self.sink.set_property('mute', False)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
         
     def get_mute(self):
         if hasattr(self,'stored_volume'):
-            muted = self.player.get_property('volume') == 0
+            muted = self.sink.get_property('volume') == 0
         else:
             try:
-                muted = self.player.get_property('mute')
+                muted = self.sink.get_property('mute')
             except TypeError:
                 if not hasattr(self,'stored_volume'):
-                    self.stored_volume = self.player.get_property('volume')
+                    self.stored_volume = self.sink.get_property('volume')
                 muted = self.stored_volume == 0
             except:
                 muted = False
@@ -381,7 +393,7 @@ class GStreamerPlayer:
     def get_volume(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
-        volume = self.player.get_property('volume')
+        volume = self.sink.get_property('volume')
         return int(volume*10)
         
     def set_volume(self, volume):
@@ -390,7 +402,7 @@ class GStreamerPlayer:
             volume=0
         if volume > 100:
             volume=100
-        self.player.set_property('volume', float(volume)/10)
+        self.sink.set_property('volume', float(volume)/10)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
         
