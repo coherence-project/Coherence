@@ -48,17 +48,22 @@ class GStreamerPlayer:
         self.name = kwargs.get('name','GStreamer Audio Player')
 
         if platform.uname()[1].startswith('Nokia'):
-            self.player = gst.Pipeline("myplayer")
-            self.source = gst.element_factory_make("gnomevfssrc", "source")
+            self.player = gst.Pipeline('myplayer')
+            self.source = gst.element_factory_make('gnomevfssrc', 'source')
             self.player.add(self.source)
-            self.sink = gst.element_factory_make("dspmp3sink", "sink")
+            self.sink = gst.element_factory_make('dspmp3sink', 'sink')
             self.player.add(self.sink)
             gst.element_link_many(self.source, self.sink)
             self.player_uri = 'location'
+            self.set_volume = self.set_volume_dspmp3sink
+            self.get_volume = self.get_volume_dspmp3sink
         else:
-            self.player = gst.element_factory_make("playbin", "myplayer")
+            self.player = gst.element_factory_make('playbin', 'myplayer')
             self.player_uri = 'uri'
             self.source = self.sink = self.player
+            self.set_volume = self.set_volume_playbin
+            self.get_volume = self.get_volume_playbin
+            
         self.playing = False
         self.duration = None
         self.metadata = None
@@ -389,20 +394,36 @@ class GStreamerPlayer:
                 muted = False
                 print "can't get mute state"
         return muted
-        
-    def get_volume(self):
+
+    def get_volume_playbin(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
         volume = self.sink.get_property('volume')
         return int(volume*10)
-        
-    def set_volume(self, volume):
+
+    def set_volume_playbin(self, volume):
         volume = int(volume)
         if volume < 0:
             volume=0
         if volume > 100:
             volume=100
         self.sink.set_property('volume', float(volume)/10)
+        rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
+        self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
+        
+    def get_volume_dspmp3sink(self):
+        """ dspmp3sink volume is a n in from 0 to 65535
+        """
+        volume = self.sink.get_property('volume')
+        return int(volume*100/65535)
+
+    def set_volume_dspmp3sink(self, volume):
+        volume = int(volume)
+        if volume < 0:
+            volume=0
+        if volume > 100:
+            volume=100
+        self.sink.set_property('volume',  volume*65535/100)
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
         
