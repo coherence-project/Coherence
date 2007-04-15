@@ -4,6 +4,8 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import os
+import tempfile
+import shutil
 import time
 import re
 from datetime import datetime
@@ -351,15 +353,19 @@ class FSStore:
 
         def gotPage(x):
             #print "gotPage", x
-            pass
+            shutil.move(tmp_path, item.get_path())
 
-        def gotError(failure, url):
+        def gotError(error, url):
             log.warning("error requesting", url)
-            log.info(failure)
+            log.info(error)
+            os.unlink(tmp_path)
             return failure.Failure(errorCode(718))
         
+        tmp_fp, tmp_path = tempfile.mkstemp()
+        os.close(tmp_fp)
+        
         utils.downloadPage(SourceURI,
-                           item.get_path()).addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
+                           tmp_path).addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
         
         transfer_id = 0  #FIXME
         

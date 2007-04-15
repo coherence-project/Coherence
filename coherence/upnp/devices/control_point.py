@@ -7,7 +7,7 @@ import string
 
 from twisted.internet import task
 from twisted.internet import reactor
-from twisted.web import xmlrpc
+from twisted.web import xmlrpc, client
 
 from coherence.upnp.core import service
 from coherence.upnp.core.event import EventServer
@@ -95,6 +95,27 @@ class ControlPoint:
                     target_service.get_state_variable(var_name, 0).update(var_value)
 
 
+    def put_resource(self, url, path):
+        def got_result(result):
+            print result
+
+        def got_error(result):
+            print "error", result
+
+        try:
+            f = open(path)
+            data = f.read()
+            f.close()
+            headers= {
+                "Content-Type": "application/octet-stream",
+                "Content-Length": str(len(data))
+            }
+            df = client.getPage(url, method="POST",
+                                headers=headers, postdata=data)
+            df.addCallback(got_result)
+            df.addErrback(got_error)
+        except IOError:
+            pass
 
 
 class XMLRPC( xmlrpc.XMLRPC):
@@ -214,6 +235,11 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.content_directory.import_resource(source_uri, destination_uri)
             return "Ok"
         return "Error"
+    
+    def xmlrpc_put_resource(self, url, path):
+        print "put_resource", url, path
+        self.control_point.put_resource(url, path)
+        return "Ok"
 
     def xmlrpc_ping(self):
         print "ping"

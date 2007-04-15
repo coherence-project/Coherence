@@ -81,5 +81,8 @@ if(command == "create_object" and device != ''):
 
 if(command == "import_resource" and device != ''):
     r = s.import_resource(device, arguments['source_uri'], arguments['destination_uri'])
+
+if(command == "put_resource"):
+    r = s.put_resource( arguments['url'], arguments['path'])
     
 print r

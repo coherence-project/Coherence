@@ -44,8 +44,9 @@ class MSRoot(resource.Resource):
         log.msg( request.getAllHeaders())
         
         if(request.method == 'POST' and
-           path.endswith('?import')):
-            self.import_file(path[:-7],request)
+           request.uri.endswith('?import')):
+            self.import_file(path,request)
+            return self.import_response(path)
         
         if(headers.has_key('user-agent') and
            headers['user-agent'].find('Xbox/') == 0 and
@@ -69,13 +70,16 @@ class MSRoot(resource.Resource):
         log.info("import file, id %s" % name)
         ch = self.store.get_by_id(name)
         if ch is not None:
-            f = open(ch.get_path())
-            f.write(request.content.getvalue()) #FIXME: is this the right way?
-            f.close()
-            request.setResponseCode(200)
-        else:
-            request.setResponseCode(404)
-        request.finish()
+            try:
+                f = open(ch.get_path(), 'w+b')
+                f.write(request.content.read()) #FIXME: is this the right way?
+                f.close()
+                request.setResponseCode(200)
+                return
+            except IOError:
+                log.warning("import of file %s failed" % ch.get_path())
+
+        request.setResponseCode(404)
 
     def getChild(self, name, request):
         log.info('getChild %s, %s' % (name, request))
@@ -170,6 +174,9 @@ class MSRoot(resource.Resource):
         for c in self.children:
                 cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
+    
+    def import_response(self,id):
+        return static.Data('<html><p>import of %s finished</p></html>'% id,'text/html')
 
     def render(self,request):
         print "render", request
