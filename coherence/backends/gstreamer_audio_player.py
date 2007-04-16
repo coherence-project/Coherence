@@ -51,9 +51,11 @@ class GStreamerPlayer:
             self.player = gst.Pipeline('myplayer')
             self.source = gst.element_factory_make('gnomevfssrc', 'source')
             self.player.add(self.source)
+            self.id3 = gst.element_factory_make('id3lib', 'id3')
+            self.player.add(self.id3)
             self.sink = gst.element_factory_make('dspmp3sink', 'sink')
             self.player.add(self.sink)
-            gst.element_link_many(self.source, self.sink)
+            gst.element_link_many(self.source, self.id3, self.sink)
             self.player_uri = 'location'
             self.set_volume = self.set_volume_dspmp3sink
             self.get_volume = self.get_volume_dspmp3sink
