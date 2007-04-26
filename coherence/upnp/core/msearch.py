@@ -26,6 +26,9 @@ class MSearch(DatagramProtocol):
         l.start(120.0)
 
     def datagramReceived(self, data, (host, port)):
+        #make raw data available
+        louie.send('UPnT.msearch_datagram_received', None, data, host, port)
+
         cmd, headers = utils.parse_http_response(data)
         log.msg('datagramReceived from %s:%d, code %s' % (host, port, cmd[1]))
         if cmd[0] == 'HTTP/1.1' and cmd[1] == '200':

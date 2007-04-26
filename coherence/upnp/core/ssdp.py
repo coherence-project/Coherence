@@ -63,6 +63,9 @@ class SSDPServer(DatagramProtocol):
 
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""
+        #make raw data available
+        louie.send('UPnT.ssdp_datagram_received', None, data, host, port)
+
         try:
             header, payload = data.split('\r\n\r\n')
         except ValueError, err:
