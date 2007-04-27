@@ -10,6 +10,8 @@ from twisted.internet import task
 
 from coherence.upnp.core import utils
 
+import louie
+
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
 
