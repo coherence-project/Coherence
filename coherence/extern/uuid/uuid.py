@@ -97,7 +97,7 @@ class UUID(object):
 
     def __init__(self, hex=None, bytes=None, fields=None, int=None,
                        version=None):
-        """Create a UUID from either a string of 32 hexadecimal digits,
+        r"""Create a UUID from either a string of 32 hexadecimal digits,
         a string of 16 bytes as the 'bytes' argument, a tuple of six
         integers (32-bit time_low, 16-bit time_mid, 16-bit time_hi_version,
         8-bit clock_seq_hi_variant, 8-bit clock_seq_low, 48-bit node) as
