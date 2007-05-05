@@ -7,6 +7,8 @@
 import urllib2
 import time
 
+from twisted.internet import defer
+
 from coherence.upnp.core.service import Service
 from coherence.upnp.core import utils
 
@@ -34,11 +36,11 @@ class Device:
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
 
         self.parse_description()
-        
+
     def __del__(self):
         #print "Device removal completed"
         pass
-        
+
     def remove(self):
         log.info(self.usn, "removal started")
         while len(self.services)>0:
@@ -49,7 +51,7 @@ class Device:
             louie.send('Coherence.UPnP.Device.remove_client', None, self.usn, self.client)
             self.client = None
         del self
-        
+
     def is_local(self):
         if self.manifestation == 'local':
             return True
@@ -59,7 +61,7 @@ class Device:
         if self.manifestation != 'local':
             return True
         return False
-        
+
     def receiver( self, signal, *args, **kwargs):
         #print "Device receiver called with", signal
         if self.detection_completed == True:
@@ -103,38 +105,41 @@ class Device:
 
     def set_client(self, client):
         self.client = client
-        
+
     def get_client(self):
         return self.client
-        
+
     def renew_service_subscriptions(self):
         """ iterate over device's services and renew subscriptions """
         now = time.time()
         for service in self.get_services():
             if service.get_sid():
                 if service.get_timeout() < now:
-                    log.warning("wow, we lost an event subscription for %s, " % service.get_id(), 
+                    log.warning("wow, we lost an event subscription for %s, " % service.get_id(),
                           "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
-        
+
     def unsubscribe_service_subscriptions(self):
         """ iterate over device's services and unsubscribe subscriptions """
+        l = []
         for service in self.get_services():
             if service.get_sid():
-                service.unsubscribe()
-            
+                l.append(service.unsubscribe())
+        dl = defer.DeferredList(l)
+        return dl
+
     def parse_description(self):
-                                     
+
         def gotPage(x):
             data, headers = x
             tree = utils.parse_xml(data, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:device-1-0"
-            
+
             d = tree.find('.//{%s}device' % ns)
             if d == None:
                 return
-                
+
             self.device_type = unicode(d.findtext('.//{%s}deviceType' % ns))
             self.friendly_name = unicode(d.findtext('.//{%s}friendlyName' % ns))
             self.udn = d.findtext('.//{%s}UDN' % ns)
@@ -143,8 +148,8 @@ class Device:
             for service in s.findall('.//{%s}service' % ns):
                 serviceType = service.findtext('{%s}serviceType' % ns)
                 serviceId = service.findtext('{%s}serviceId' % ns)
-                controlUrl = service.findtext('{%s}controlURL' % ns) 
-                eventSubUrl = service.findtext('{%s}eventSubURL' % ns) 
+                controlUrl = service.findtext('{%s}controlURL' % ns)
+                eventSubUrl = service.findtext('{%s}eventSubURL' % ns)
                 presentationUrl = service.findtext('{%s}presentationURL' % ns)
                 scpdUrl = service.findtext('{%s}SCPDURL' % ns)
                 """ check if values are somehow reasonable
@@ -161,7 +166,7 @@ class Device:
                 self.add_service(Service(serviceType, serviceId, self.location,
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
-            
+
         def gotError(failure, url):
             log.warning("error requesting", url)
             log.info(failure)

@@ -41,7 +41,7 @@ class EventServer(resource.Resource):
         if request.code != 200:
             log.info("data:", data)
         else:
-            log.debug("data:", data)            
+            log.debug("data:", data)
             headers = request.getAllHeaders()
             sid = headers['sid']
             tree = utils.parse_xml(data).getroot()
@@ -64,11 +64,11 @@ class EventSubscriptionServer(resource.Resource):
      'nt': 'upnp:event',
      'content-length': '0',
      'timeout': 'Second-300'}
-    
+
     modify the callback value
     callback = callback[1:len(callback)-1]
     and pack it into a subscriber dict
-    
+
     {'uuid:oAQbxiNlyYojCAdznJnC':
         {'callback': '<http://192.168.213.130:9083/BYvZMzfTSQkjHwzOThaP/ConnectionManager>',
          'created': 1162374189.257338,
@@ -82,7 +82,7 @@ class EventSubscriptionServer(resource.Resource):
             self.backend_name = self.service.backend.name
         except AttributeError:
             self.backend_name = self.service.backend
-        
+
     def render_SUBSCRIBE(self, request):
         log.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d" % (
                             self.service.id,
@@ -120,7 +120,7 @@ class EventSubscriptionServer(resource.Resource):
             request.setHeader('SERVER', ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
             request.setHeader('CONTENT-LENGTH', 0)
         return ""
-        
+
     def render_UNSUBSCRIBE(self, request):
         log.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d" % (
                             self.service.id,
@@ -138,7 +138,7 @@ class EventSubscriptionServer(resource.Resource):
                 pass
             #print self.subscribers
         return ""
-    
+
 class Event(dict):
     def __init__(self, sid):
         dict.__init__(self)
@@ -152,7 +152,7 @@ class EventProtocol(Protocol):
     def __init__(self, service, action):
         self.service = service
         self.action = action
-        
+
     def __del__(self):
         pass
         #print "EventProtocol deleted"
@@ -172,24 +172,24 @@ class EventProtocol(Protocol):
         except:
             #print headers
             pass
-        
-        del self.service
-        del self
-            
+
+        #del self.service
+        #del self
+
     def connectionLost( self, reason):
         #print "connection closed from the Service Events HTTP server"
         pass
-        
+
 def unsubscribe(service, action='unsubscribe'):
     subscribe(service, action)
-    
+
 def subscribe(service, action='subscribe'):
     """
     send a subscribe/renewal/unsubscribe request to a service
     return the device response
     """
     log.info("event.subscribe, action:", action)
-    
+
     _,host_port,path,_,_ = urlsplit(service.get_base_url())
     if host_port.find(':') != -1:
         host,port = tuple(host_port.split(':'))
@@ -199,12 +199,13 @@ def subscribe(service, action='subscribe'):
         port = 80
 
     def send_request(p, action):
-        log.info("event.subscribe.send_request, action:", action )
+        log.info("event.subscribe.send_request, action:", action, p)
         if action == 'subscribe':
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
                         "TIMEOUT: Second-300",
                         ]
+            service.event_connection = p
         else:
             request = ["UNSUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
@@ -227,35 +228,38 @@ def subscribe(service, action='subscribe'):
         request = '\r\n'.join(request)
         log.info("event.subscribe.send_request", request)
         return p.transport.write(request)
-        
+
     def got_error(failure, action):
         log.info("error on %s request with %s" % (action,service.get_base_url()))
         log.debug(failure)
-        
+
     def teardown_connection(c, d):
         log.info("event.subscribe.teardown_connection")
         del d
         del c
 
     def prepare_connection( service, action):
-        log.info("event.subscribe.prepare_connection action:", action)
-        c = ClientCreator(reactor, EventProtocol, service=service, action=action)
-        d = c.connectTCP(host, port)
-        d.addCallback(send_request, action=action)
-        d.addErrback(got_error, action)
-        reactor.callLater(3, teardown_connection, c, d)
-        return d
+        log.info("event.subscribe.prepare_connection action:", action, service.event_connection)
+        if service.event_connection == None:
+            c = ClientCreator(reactor, EventProtocol, service=service, action=action)
+            log.info("event.subscribe.prepare_connection:", host, port)
+            d = c.connectTCP(host, port)
+            d.addCallback(send_request, action=action)
+            d.addErrback(got_error, action)
+            #reactor.callLater(3, teardown_connection, c, d)
+        else:
+            send_request(service.event_connection, action)
 
     """ FIXME:
         we need to find a way to be sure that our unsubscribe calls get through
         on shutdown
         reactor.addSystemEventTrigger( 'before', 'shutdown', prepare_connection, service, action)
     """
-        
+
     prepare_connection(service, action)
 
     #print "event.subscribe finished"
-    
+
 class NotificationProtocol(Protocol):
 
     def __init__(self):
@@ -266,7 +270,7 @@ class NotificationProtocol(Protocol):
         #cmd, headers = utils.parse_http_response(data)
         #print cmd, headers
         pass
-            
+
     def connectionLost( self, reason):
         #print "connection closed from the Service Events HTTP server"
         pass
@@ -303,7 +307,7 @@ def send_notification(s, xml):
         log.debug("request:", request)
         s['seq'] += 1
         return p.transport.write(request)
-        
+
     def got_error(failure):
         log.info("error sending notification to", s['sid'], s['callback'])
         log.debug(failure)
@@ -312,4 +316,3 @@ def send_notification(s, xml):
     d = c.connectTCP(host, port)
     d.addCallback(send_request)
     d.addErrback(got_error)
-

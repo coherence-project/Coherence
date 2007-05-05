@@ -40,7 +40,7 @@ class SSDPServer(DatagramProtocol):
     _callbacks = {}
 
     def __init__(self):
-        
+
         # Create SSDP server
         try:
             port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
@@ -51,7 +51,7 @@ class SSDPServer(DatagramProtocol):
 
             l = task.LoopingCall(self.resendNotify)
             l.start(777.0, now=False)
-            
+
         except error.CannotListenError, err:
             log.msg("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
@@ -69,7 +69,7 @@ class SSDPServer(DatagramProtocol):
             print err
             print 'Arggg,', data
             import pdb; pdb.set_trace()
-                                         
+
         lines = header.split('\r\n')
         cmd = string.split(lines[0], ' ')
         lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
@@ -93,7 +93,7 @@ class SSDPServer(DatagramProtocol):
                         cache_control='max-age=1800'):
         """Register a service or device that this SSDP server will
         respond to."""
-        
+
         log.msg('Registering %s (%s)' % (st, location))
 
         self.known[usn] = {}
@@ -107,11 +107,11 @@ class SSDPServer(DatagramProtocol):
         else:
             self.known[usn]['SERVER'] = server
             self.known[usn]['CACHE-CONTROL'] = cache_control
-            
+
         self.known[usn]['MANIFESTATION'] = manifestation
-        
+
         log.msg(self.known[usn])
-        
+
         if manifestation == 'local':
             self.doNotify(usn)
 
@@ -126,7 +126,7 @@ class SSDPServer(DatagramProtocol):
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=st, infos=self.known[usn])
             #self.callback("removed_device", st, self.known[usn])
-            
+
         del self.known[usn]
 
     def isKnown(self, usn):
@@ -213,7 +213,7 @@ class SSDPServer(DatagramProtocol):
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        
+
     def resendNotify( self):
         for usn in self.known:
             if self.known[usn]['MANIFESTATION'] == 'local':
