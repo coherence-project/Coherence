@@ -606,6 +606,8 @@ class ServiceServer:
                             elif e.text == None:
                                 log.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
                 self._variables.get(instance)[name].set_allowed_value_range(**range)
+                if vendor_values != None:
+                    self._variables.get(instance)[name].has_vendor_values = True
 
         for v in self._variables.get(0).values():
             if isinstance( v.dependant_variable, str):
