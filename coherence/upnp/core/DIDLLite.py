@@ -39,6 +39,10 @@ def classChooser(mimetype, sub=None):
             return AudioItem
         if string.find (mimetype,'video/') == 0:
             return VideoItem
+        if mimetype == 'application/ogg':
+            if sub == 'music':       # FIXME: this is stupid
+                return MusicTrack
+            return AudioItem
     return None
 
 
@@ -51,7 +55,7 @@ class Resource:
         self.bitrate = None
         self.size = None
         self.duration = None
-        
+
         self.importUri = None
 
     def toElement(self):
@@ -65,13 +69,13 @@ class Resource:
 
         if self.size is not None:
             root.attrib['size'] = str(self.size)
-            
+
         if self.duration is not None:
             root.attrib['duration'] = self.duration
-            
+
         if self.importUri is not None:
             root.attrib['importUri'] = self.importUri
-            
+
         return root
 
     def fromElement(self, elt):
@@ -81,7 +85,7 @@ class Resource:
         self.size = elt.attrib.get('size')
         self.duration = elt.attrib.get('duration',None)
         self.importUri = elt.attrib.get('importUri',None)
-       
+
     def toString(self):
         return ET.tostring(self.toElement())
 
@@ -127,7 +131,7 @@ class Object:
             root.attrib['restricted'] = 'true'
         else:
             root.attrib['restricted'] = 'false'
-            
+
         if self.creator is not None:
             ET.SubElement(root, 'dc:creator').text = self.creator
 
@@ -136,14 +140,14 @@ class Object:
 
         if self.writeStatus is not None:
             ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
-            
+
         if self.date is not None:
             if isinstance(self.date, datetime):
                 ET.SubElement(root, 'dc:date').text = self.date.isoformat()
             else:
                 ET.SubElement(root, 'dc:date').text = self.date
         else:
-            ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()        
+            ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()
 
         return root
 
@@ -210,14 +214,14 @@ class Item(Object):
 
 class ImageItem(Item):
     upnp_class = Item.upnp_class + '.imageItem'
-    
+
     description = None
     longDescription = None
     rating = None
     storageMedium = None
     publisher = None
     rights = None
-    
+
     def toElement(self):
         root = Item.toElement(self)
         if self.description is not None:
@@ -228,28 +232,28 @@ class ImageItem(Item):
 
         if self.rating is not None:
             ET.SubElement(root, 'upnp:rating').text = self.rating
-            
+
         if self.storageMedium is not None:
             ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.contributor
-            
+
         if self.rights is not None:
             ET.SubElement(root, 'dc:rights').text = self.rights
 
         return root
-    
+
 class Photo(ImageItem):
     upnp_class = ImageItem.upnp_class + '.photo'
     album = None
-    
+
     def toElement(self):
         root = ImageItem.toElement(self)
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
         return root
-            
+
 class AudioItem(Item):
     """A piece of content that when rendered generates some audio."""
 
@@ -378,7 +382,7 @@ class Container(Object):
                  restricted = 0, creator = None):
         Object.__init__(self, id, parentID, title, restricted, creator)
         self.searchClass = []
-    
+
     def toElement(self):
 
         root = Object.toElement(self)
@@ -483,7 +487,7 @@ class DIDLElement(ElementInterface):
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance
-    
+
 upnp_classes = {'object': Object,
                 'object.item': Item,
                 'object.item.imageItem': ImageItem,
@@ -512,4 +516,3 @@ upnp_classes = {'object': Object,
                 'object.container.storageVolume': StorageVolume,
                 'object.container.storageFolder': StorageFolder,
 }
-

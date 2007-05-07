@@ -49,7 +49,7 @@ class FSItem:
             urlbase += '/'
         self.url = urlbase + str(self.id)
 
-        
+
         if parent == None:
             parent_id = -1
         else:
@@ -76,7 +76,7 @@ class FSItem:
             except:
                 res.size = 0
             self.item.res.append(res)
-            
+
             res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             try:
                 res.size = self.location.getsize()
@@ -100,7 +100,7 @@ class FSItem:
         if self.parent:
             self.parent.remove_child(self)
         del self.item
-        
+
     def add_child(self, child, update=False):
         self.children.append(child)
         self.child_count += 1
@@ -109,7 +109,7 @@ class FSItem:
         if update == True:
             self.update_id += 1
 
-            
+
     def remove_child(self, child):
         #print "remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name())
         if child in self.children:
@@ -118,25 +118,25 @@ class FSItem:
                 self.item.childCount -= 1
             self.children.remove(child)
             self.update_id += 1
-            
+
     def get_children(self,start=0,request_count=0):
         if request_count == 0:
             return self.children[start:]
         else:
             return self.children[start:request_count]
-        
+
     def get_id(self):
         return self.id
-        
+
     def get_location(self):
         return self.location
-        
+
     def get_update_id(self):
         if hasattr(self, 'update_id'):
             return self.update_id
         else:
             return None
-        
+
     def get_path(self):
         if isinstance( self.location,FilePath):
             return self.location.path
@@ -154,17 +154,17 @@ class FSItem:
 
     def get_item(self):
         return self.item
-        
+
     def get_xml(self):
         return self.item.toString()
-        
+
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.location.basename()
 
 class FSStore:
 
     implements = ['MediaServer']
-    
+
     wmc_mapping = {'4':1000}
 
     def __init__(self, server, **kwargs):
@@ -180,19 +180,19 @@ class FSStore:
             self.urlbase += '/'
         self.server = server
         self.store = {}
-        
+
         try:
             self.inotify = INotify()
         except:
             self.inotify = None
-        
+
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         if len(self.content)>1:
             UPnPClass = classChooser('root')
             id = self.getnextID()
             parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=False)
-                            
+
         for path in self.content:
             if ignore_file_pattern.match(path):
                 continue
@@ -206,7 +206,7 @@ class FSStore:
 
     def len(self):
         return len(self.store)
-        
+
     def get_by_id(self,id):
         id = int(id)
         if id == 0:
@@ -215,7 +215,7 @@ class FSStore:
             return self.store[id]
         except:
             return None
-        
+
     def get_id_by_name(self, parent, name):
         try:
             parent = self.store[int(parent)]
@@ -224,9 +224,9 @@ class FSStore:
                     return child.id
         except:
             pass
-            
+
         return None
-            
+
     def walk(self, path, parent=None, ignore_file_pattern=''):
         containers = []
         parent = self.append(path,parent)
@@ -240,12 +240,12 @@ class FSStore:
                 new_container = self.append(child.path,container)
                 if new_container != None:
                     containers.append(new_container)
-                    
+
     def create(self, mimetype, path, parent):
         UPnPClass = classChooser(mimetype)
         if UPnPClass == None:
             return None
-        
+
         id = self.getnextID()
         update = False
         if hasattr(self, 'update_id'):
@@ -259,7 +259,7 @@ class FSStore:
             value = (parent.get_id(),parent.get_update_id())
             if self.server:
                 self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
-                
+
         return id
 
     def append(self,path,parent):
@@ -269,7 +269,7 @@ class FSStore:
                 mimetype = 'directory'
         if mimetype == None:
             return None
-        
+
         id = self.create(mimetype,path,parent)
 
         if mimetype == 'directory':
@@ -277,9 +277,9 @@ class FSStore:
                 mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
                 self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
             return self.store[id]
-            
+
         return None
-        
+
     def remove(self, id):
         #print 'FSSTore remove id', id
         try:
@@ -303,7 +303,7 @@ class FSStore:
     def notify(self, iwp, filename, mask, parameter=None):
         #print "Event %s on %s %s - id %d" % (
         #    ', '.join(self.inotify.flag_to_human(mask)), iwp.path, filename, parameter)
-            
+
         path = iwp.path
         if filename:
             path = os.path.join(path, filename)
@@ -311,7 +311,7 @@ class FSStore:
         if mask & IN_CHANGED:
             # FIXME react maybe on access right changes, loss of read rights?
             print '%s was changed, parent %d (%s)' % (path, parameter, iwp.path)
-        
+
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
             #print '%s was deleted, parent %d (%s)' % (path, parameter, iwp.path)
             id = self.get_id_by_name(parameter,filename)
@@ -328,25 +328,27 @@ class FSStore:
         ret = self.next_id
         self.next_id += 1
         return ret
-        
+
     def upnp_init(self):
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                         ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
-                         'http-get:*:audio/mpeg:*'],
+                         'http-get:*:audio/mpeg:*',
+                         'internal:%s:application/ogg:*' % self.server.coherence.hostname,
+                         'http-get:*:application/ogg:*'],
                         default=True)
 
     def upnp_ImportResource(self, *args, **kwargs):
         SourceURI = kwargs['SourceURI']
         DestinationURI = kwargs['DestinationURI']
-        
+
         if DestinationURI.endswith('?import'):
             id = DestinationURI.split('/')[-1]
             id = id[:-7] # remove the ?import
         else:
             return failure.Failure(errorCode(718))
-        
+
         item = self.get_by_id(id)
         if item == None:
             return failure.Failure(errorCode(718))
@@ -360,15 +362,15 @@ class FSStore:
             log.info(error)
             os.unlink(tmp_path)
             return failure.Failure(errorCode(718))
-        
+
         tmp_fp, tmp_path = tempfile.mkstemp()
         os.close(tmp_fp)
-        
+
         utils.downloadPage(SourceURI,
                            tmp_path).addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
-        
+
         transfer_id = 0  #FIXME
-        
+
         return {'TransferID': transfer_id}
 
     def upnp_CreateObject(self, *args, **kwargs):
@@ -380,26 +382,26 @@ class FSStore:
             return failure.Failure(errorCode(710))
         if parent_item.item.restricted:
             return failure.Failure(errorCode(713))
-        
+
         if len(Elements) == 0:
             return failure.Failure(errorCode(712))
 
         elt = DIDLElement.fromString(Elements)
         if elt.numItems() != 1:
             return failure.Failure(errorCode(712))
-        
+
         item = elt.getItems()[0]
         if(item.id != '' or
            int(item.parentID) != ContainerID or
            item.restricted == True or
            item.title == ''):
             return failure.Failure(errorCode(712))
-        
+
         if('..' in item.title or
            '~' in item.title or
            os.sep in item.title):
             return failure.Failure(errorCode(712))
-        
+
         if item.upnp_class == 'object.container.storageFolder':
             if len(item.res) != 0:
                 return failure.Failure(errorCode(712))
@@ -430,11 +432,11 @@ class FSStore:
             didl = DIDLElement()
             didl.addItem(new_item.item)
             return {'ObjectID': id, 'Result': didl.toString()}
-        
+
         return failure.Failure(errorCode(712))
 
 if __name__ == '__main__':
-    
+
     from twisted.internet import reactor
 
     p = 'tests/content'
@@ -454,7 +456,7 @@ if __name__ == '__main__':
     #                    StartingIndex = '0',
     #                    SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
     #                    SortCriteria = '+dc:title')
-    
+
     f.upnp_ImportResource(SourceURI='http://spiegel.de',DestinationURI='ttt')
 
     reactor.run()
