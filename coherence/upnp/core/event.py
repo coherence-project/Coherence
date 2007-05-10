@@ -159,7 +159,7 @@ class EventProtocol(Protocol):
 
     def dataReceived(self, data):
         log.info("response received from the Service Events HTTP server ")
-        log.info(data)
+        #log.debug(data)
         cmd, headers = utils.parse_http_response(data)
         log.debug(cmd, headers)
         try:
@@ -199,7 +199,7 @@ def subscribe(service, action='subscribe'):
         port = 80
 
     def send_request(p, action):
-        log.info("event.subscribe.send_request, action:", action, p)
+        log.info("event.subscribe.send_request, action:", action, service.get_event_sub_url())
         if action == 'subscribe':
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
@@ -226,7 +226,7 @@ def subscribe(service, action='subscribe'):
         request.append( "")
         request.append( "")
         request = '\r\n'.join(request)
-        log.info("event.subscribe.send_request", request)
+        log.debug("event.subscribe.send_request", request)
         return p.transport.write(request)
 
     def got_error(failure, action):
