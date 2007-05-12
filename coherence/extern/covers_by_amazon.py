@@ -97,6 +97,10 @@ class CoverGetter(object):
     parameters are:
 
         filename: where to save a received image
+                  TODO: let filename be NONE and
+                        store the image in memory
+        callback: a method to call with the filename as a parameter
+                  after the image request and save was successful
         locale:   which Amazon Webservice Server to use, defaults to .com
         image_size: request the cover as large|medium|small image
                     resolution seems to be in pixels for
@@ -106,8 +110,12 @@ class CoverGetter(object):
         title: the album title
     """
 
-    def __init__(self, filename, locale=None, image_size='large', title=None, artist=None, asin=None):
+    def __init__(self, filename, callback=None,
+                       locale=None,
+                       image_size='large',
+                       title=None, artist=None, asin=None):
         self.filename = filename
+        self.callback = callback
         self.server = 'http://ecs.amazonaws.%s' % aws_server.get(locale,'com')
         self.image_size = image_size
         if asin != None:
@@ -128,7 +136,8 @@ class CoverGetter(object):
 
     def got_image(self, result):
         #print "got_image, saved to", self.filename
-        pass
+        if self.callback is not None:
+            self.callback(self.filename)
 
     def got_response(self, result):
         #print x
@@ -144,7 +153,11 @@ class CoverGetter(object):
         print "got_error", failure, url
 
 if __name__ == '__main__':
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",asin='B000NJLNPO')
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",artist='Beyonce',title="B'Day [Deluxe]")
+
+    def got_it(filename):
+        print "Mylady, it is an image and its name is", filename
+
+    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=got_it,asin='B000NJLNPO')
+    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=got_it,artist='Beyonce',title="B'Day [Deluxe]")
 
     reactor.run()
