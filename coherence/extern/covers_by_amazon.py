@@ -78,7 +78,7 @@ class WorkQueue(object):
         if len(self.queue) == 0:
             return
         if len(self.workers) >= self.max_workers:
-            print "WorkQueue - all workers busy"
+            #print "WorkQueue - all workers busy"
             return
         work = self.queue.pop()
         d = work[0](*work[1],**work[2])
@@ -101,6 +101,12 @@ class CoverGetter(object):
                         store the image in memory
         callback: a method to call with the filename as a parameter
                   after the image request and save was successful
+                  can be:
+                  - only a callable
+                  - a tuple with a callable,
+                      - optional an argument or a tuple of arguments
+                      - optional a dict with keyword arguments
+
         locale:   which Amazon Webservice Server to use, defaults to .com
         image_size: request the cover as large|medium|small image
                     resolution seems to be in pixels for
@@ -129,6 +135,7 @@ class CoverGetter(object):
         WorkQueue(self.send_request, url)
 
     def send_request(self,url,*args,**kwargs):
+        #print "send_request", url
         d= client.getPage(url)
         d.addCallback(self.got_response)
         d.addErrback(self.got_error, url)
@@ -137,7 +144,28 @@ class CoverGetter(object):
     def got_image(self, result):
         #print "got_image, saved to", self.filename
         if self.callback is not None:
-            self.callback(self.filename)
+            #print "got_image", self.callback
+            if isinstance(self.callback,tuple):
+                if len(self.callback) == 3:
+                    c,a,kw = self.callback
+                    if not isinstance(a,tuple):
+                        a = (a,)
+                    a=(self.filename,) + a
+                    c(*a,**kw)
+                if len(self.callback) == 2:
+                    c,a = self.callback
+                    if isinstance(a,dict):
+                        c(self.filename,**a)
+                    else:
+                        if not isinstance(a,tuple):
+                            a = (a,)
+                        a=(self.filename,) + a
+                        c(*a)
+                if len(self.callback) == 1:
+                    c = self.callback
+                    c(self.filename)
+            else:
+                self.callback(self.filename)
 
     def got_response(self, result):
         #print x
@@ -154,10 +182,13 @@ class CoverGetter(object):
 
 if __name__ == '__main__':
 
-    def got_it(filename):
-        print "Mylady, it is an image and its name is", filename
+    def got_it(filename, *args, **kwargs):
+        print "Mylady, it is an image and its name is", filename, args, kwargs
 
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=got_it,asin='B000NJLNPO')
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=got_it,artist='Beyonce',title="B'Day [Deluxe]")
+    def got_it2(filename, **kwargs):
+        print "Mylady, it is an image and its name is", filename, args, kwargs
+
+    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
+    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
 
     reactor.run()
