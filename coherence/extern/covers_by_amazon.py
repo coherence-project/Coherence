@@ -23,6 +23,7 @@ apply for your own key @ http://www.amazon.com/webservices
 
 """
 
+import os
 import urllib
 
 from twisted.internet import reactor
@@ -65,7 +66,7 @@ class WorkQueue(object):
         else:
             obj = super(WorkQueue, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
-            obj.max_workers = kwargs.get('max_workers', 10)
+            obj.max_workers = kwargs.get('max_workers', 1)
             obj.queue = []
             obj.workers = []
             return obj
@@ -173,6 +174,11 @@ class CoverGetter(object):
         image_tag = result.find('.//{%s}%s' % (aws_ns,aws_image_size.get(self.image_size,'large')))
         if image_tag != None:
             image_url = image_tag.findtext('{%s}URL' % aws_ns)
+            _,ext =  os.path.splitext(self.filename)
+            if ext == '':
+                _,ext =  os.path.splitext(image_url)
+                if  ext != '':
+                    self.filename = ''.join((self.filename, ext))
             d = client.downloadPage( image_url, self.filename)
             d.addCallback(self.got_image)
             d.addErrback(self.got_error, image_url)
