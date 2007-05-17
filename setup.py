@@ -30,6 +30,7 @@ membership/the UPnP related tasks as much as possible.""",
     entry_points="""
         [coherence.plugins.backend.media_server]
         FSStore = coherence.backends.fs_storage:FSStore
+        MediaStore = coherence.backends.mediadb_storage:MediaStore
         ElisaMediaStore = coherence.backends.elisa_storage:ElisaMediaStore
         FlickrStore = coherence.backends.flickr_storage:FlickrStore
         AxisCamStore = coherence.backends.axiscam_storage:AxisCamStore
