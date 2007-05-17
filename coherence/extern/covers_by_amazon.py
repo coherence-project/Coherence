@@ -25,6 +25,7 @@ apply for your own key @ http://www.amazon.com/webservices
 
 import os
 import urllib
+import StringIO
 
 from twisted.internet import reactor
 from twisted.web import client
@@ -98,9 +99,9 @@ class CoverGetter(object):
     parameters are:
 
         filename: where to save a received image
-                  TODO: let filename be NONE and
-                        store the image in memory
-        callback: a method to call with the filename as a parameter
+                  if NONE the image will be passed to the callback
+        callback: a method to call with the filename
+                  or the image as a parameter
                   after the image request and save was successful
                   can be:
                   - only a callable
@@ -115,6 +116,11 @@ class CoverGetter(object):
         asin: the Amazon Store Identification Number
         artist: the artists name
         title: the album title
+
+    if the filename extension and the received image extension differ,
+    the image is converted with PIL to the desired format
+    http://www.pythonware.com/products/pil/index.htm
+
     """
 
     def __init__(self, filename, callback=None,
@@ -142,8 +148,25 @@ class CoverGetter(object):
         d.addErrback(self.got_error, url)
         return d
 
-    def got_image(self, result):
-        #print "got_image, saved to", self.filename
+    def got_image(self, result, convert_from='', convert_to=''):
+        if(len(convert_from) and len(convert_to)):
+            #print "got_image %d, convert to %s" % (len(result), convert_to)
+            try:
+                import Image
+
+                im = Image.open(StringIO.StringIO(result))
+                name,file_ext =  os.path.splitext(self.filename)
+                self.filename = name + convert_to
+
+                im.save(self.filename)
+            except ImportError:
+                print "we need the Python Imaging Library to do image conversion"
+
+        if self.filename == None:
+            data = result
+        else:
+            date = self.filename
+
         if self.callback is not None:
             #print "got_image", self.callback
             if isinstance(self.callback,tuple):
@@ -151,36 +174,49 @@ class CoverGetter(object):
                     c,a,kw = self.callback
                     if not isinstance(a,tuple):
                         a = (a,)
-                    a=(self.filename,) + a
+                    a=(data,) + a
                     c(*a,**kw)
                 if len(self.callback) == 2:
                     c,a = self.callback
                     if isinstance(a,dict):
-                        c(self.filename,**a)
+                        c(data,**a)
                     else:
                         if not isinstance(a,tuple):
                             a = (a,)
-                        a=(self.filename,) + a
+                        a=(data,) + a
                         c(*a)
                 if len(self.callback) == 1:
                     c = self.callback
-                    c(self.filename)
+                    c(data)
             else:
-                self.callback(self.filename)
+                self.callback(data)
 
     def got_response(self, result):
         #print x
+        convert_from = convert_to = ''
         result = parse_xml(result, encoding='utf-8')
         image_tag = result.find('.//{%s}%s' % (aws_ns,aws_image_size.get(self.image_size,'large')))
         if image_tag != None:
             image_url = image_tag.findtext('{%s}URL' % aws_ns)
-            _,ext =  os.path.splitext(self.filename)
-            if ext == '':
-                _,ext =  os.path.splitext(image_url)
-                if  ext != '':
-                    self.filename = ''.join((self.filename, ext))
-            d = client.downloadPage( image_url, self.filename)
-            d.addCallback(self.got_image)
+            if self.filename == None:
+                d = client.getPage(image_url)
+            else:
+                _,file_ext =  os.path.splitext(self.filename)
+                if file_ext == '':
+                    _,image_ext =  os.path.splitext(image_url)
+                    if image_ext != '':
+                        self.filename = ''.join((self.filename, image_ext))
+                else:
+                    _,image_ext =  os.path.splitext(image_url)
+                    if image_ext != '' and file_ext != image_ext:
+                        #print "hmm, we need a conversion..."
+                        convert_from = image_ext
+                        convert_to = file_ext
+                if len(convert_to):
+                    d = client.getPage(image_url)
+                else:
+                    d = client.downloadPage(image_url, self.filename)
+            d.addCallback(self.got_image, convert_from=convert_from, convert_to=convert_to)
             d.addErrback(self.got_error, image_url)
 
     def got_error(self, failure, url):
@@ -195,6 +231,6 @@ if __name__ == '__main__':
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
     reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
+    reactor.callWhenRunning(CoverGetter,"cover.png",callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
 
     reactor.run()
