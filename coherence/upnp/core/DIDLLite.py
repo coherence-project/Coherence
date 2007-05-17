@@ -314,6 +314,7 @@ class MusicTrack(AudioItem):
 
     artist = None
     album = None
+    albumArtURI = None
     originalTrackNumber = None
     playlist = None
     storageMedium = None
@@ -328,6 +329,9 @@ class MusicTrack(AudioItem):
 
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
+
+        if self.albumArtURI is not None:
+            ET.SubElement(root, 'upnp:albumArtURI').text = self.albumArtURI
 
         if self.originalTrackNumber is not None:
             ET.SubElement(root, 'upnp:originalTrackNumber').text = \
