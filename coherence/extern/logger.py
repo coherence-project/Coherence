@@ -65,7 +65,7 @@ class _Logger(object):
             if level >= self.feeds[name]['level']:
                 a = []
                 for i in args:
-                    if isinstance(a,unicode):
+                    if isinstance(i,unicode):
                         i = i.encode('ascii', 'ignore')
                     else:
                         i = str(i)
