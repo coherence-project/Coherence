@@ -125,6 +125,9 @@ class FSItem:
         else:
             return self.children[start:request_count]
 
+    def get_child_count(self):
+        return self.child_count
+
     def get_id(self):
         return self.id
 
