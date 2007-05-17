@@ -5,7 +5,7 @@
 
 import os
 from StringIO import StringIO
-
+import urllib
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -36,18 +36,31 @@ class MSRoot(resource.Resource):
         resource.Resource.__init__(self)
         self.server = server
         self.store = store
-        
+
     def getChildWithDefault(self, path, request):
         log.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
                                 request.method, path, request.uri, request.client))
         headers = request.getAllHeaders()
         log.msg( request.getAllHeaders())
-        
+
+        if(request.method == 'GET' and
+           request.uri.endswith('?cover')):
+            log.info("request cover for id %s" % path)
+            ch = self.store.get_by_id(path)
+            if ch is not None:
+                request.setResponseCode(200)
+                file = ch.get_cover()
+                if os.path.exists(file):
+                    log.info("got cover %s" % file)
+                    return static.File(file)
+            request.setResponseCode(404)
+            return static.Data('<html><p>cover requested not found</p></html>','text/html')
+
         if(request.method == 'POST' and
            request.uri.endswith('?import')):
             self.import_file(path,request)
             return self.import_response(path)
-        
+
         if(headers.has_key('user-agent') and
            headers['user-agent'].find('Xbox/') == 0 and
            path in ['description-1.xml','description-2.xml']):
@@ -61,11 +74,11 @@ class MSRoot(resource.Resource):
         if request.uri == '/':
             return self
         return self.getChild(path, request)
-        
+
     def requestFinished(self, result, id):
         log.info("finished, remove %d from connection table" % id)
         self.server.connection_manager_server.remove_connection(id)
-        
+
     def import_file(self,name,request):
         log.info("import file, id %s" % name)
         ch = self.store.get_by_id(name)
@@ -116,7 +129,10 @@ class MSRoot(resource.Resource):
                     d.addCallback(self.requestFinished, new_id)
                     d.addErrback(self.requestFinished, new_id)
                     return ch.location
-            p = ch.get_path()
+            try:
+                p = ch.get_path()
+            except:
+                return self.list_content(name, ch, request)
             if os.path.exists(p):
                 log.info("accessing path", p)
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
@@ -137,35 +153,53 @@ class MSRoot(resource.Resource):
                 ch = static.File(p)
         log.info('MSRoot ch', ch)
         return ch
-        
+
     def list_content(self, name, item, request):
         log.info('list_content', name, item, request)
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
                                             (item.get_name(),item.get_name())
-        
-        if item.mimetype in ['directory','root']:
+
+        if( hasattr(item,'mimetype') and item.mimetype in ['directory','root']):
             uri = request.uri
             if uri[-1] != '/':
                 uri += '/'
 
             page += """<ul>"""
-            for c in item.children:
-                # FIXME: there has to be a better solution for this decoding stupidity
-                path = c.get_path().encode('utf-8').encode('string_escape')
-                title = c.get_name().encode('string_escape')
-                page += '<li><a href=%s>%s</a></li>' % \
+            for c in item.get_children():
+                if hasattr(c,'get_url'):
+                    path = c.get_url().encode('utf-8')
+                elif hasattr(c,'get_path'):
+                    #path = c.get_path().encode('utf-8').encode('string_escape')
+                    path = c.get_path().encode('utf-8')
+                else:
+                    path = request.uri.split('/')
+                    path[-1] = str(c.get_id())
+                    path = '/'.join(path)
+                title = c.get_name()
+                if isinstance(title,unicode):
+                    title = title.encode('utf-8').encode('string_escape')
+                else:
+                    title = title.encode('string_escape')
+                page += '<li><a href="%s">%s</a></li>' % \
                                     (path, title)
             page += """</ul>"""
-        elif item.mimetype.find('image/') == 0:
-            path = item.get_path().encode('utf-8').encode('string_escape')
-            title = item.get_name().encode('string_escape')
+        elif( hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
+            #path = item.get_path().encode('utf-8').encode('string_escape')
+            path = urllib.quote(c.get_path().encode('utf-8'))
+            title = c.get_name()
+            if isinstance(title,unicode):
+                title = title.encode('utf-8').encode('string_escape')
+            else:
+                title = name.encode('string_escape')
             page += """<p><img src="%s" alt="%s"></p>""" % \
                                     (path, title)
         else:
             pass
         page += """</body></html>"""
+        if isinstance(page,unicode):
+            page = page.encode('utf-8').encode('string_escape')
         return static.Data(page,'text/html')
-        
+
     def listchilds(self, uri):
         log.info('listchilds %s' % uri)
         if uri[-1] != '/':
@@ -174,7 +208,7 @@ class MSRoot(resource.Resource):
         for c in self.children:
                 cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
-    
+
     def import_response(self,id):
         return static.Data('<html><p>import of %s finished</p></html>'% id,'text/html')
 
@@ -255,7 +289,7 @@ class RootDeviceXML(static.Data):
 
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
-        
+
 class MediaServer:
 
     def __init__(self, coherence, backend, **kwargs):
@@ -269,9 +303,9 @@ class MediaServer:
         if urlbase[-1] != '/':
             urlbase += '/'
         self.urlbase = urlbase + str(self.uuid)[5:]
-        
+
         log.msg('MediaServer urlbase %s' % self.urlbase)
-        
+
         kwargs['urlbase'] = self.urlbase
 
         """ this could take some time, put it in a  thread to be sure it doesn't block
@@ -283,49 +317,49 @@ class MediaServer:
 
         def backend_failure(x):
             log.critical('backend not installed, MediaServer activation aborted')
-            
+
         def service_failure(x):
             print x
             log.critical('required service not available, MediaServer activation aborted')
-            
+
         d.addCallback(backend_ready).addErrback(service_failure)
         d.addErrback(backend_failure)
         louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
         # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
         #        can close down this device
-        
+
     def init_complete(self, backend):
         if self.backend != backend:
             return
         self._services = []
         self._devices = []
-        
+
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
             log.warning( 'ConnectionManagerServer', msg)
             raise LookupError,msg
-        
+
         try:
             self.content_directory_server = ContentDirectoryServer(self)
             self._services.append(self.content_directory_server)
         except LookupError,msg:
             log.warning( 'ContentDirectoryServer', msg)
             raise LookupError,msg
-        
+
         try:
             self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,
                                                         backend=FakeMediaReceiverRegistrarBackend())
             self._services.append(self.media_receiver_registrar_server)
         except LookupError,msg:
             log.warning( 'MediaReceiverRegistrarServer (optional)', msg)
-        
+
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:
             upnp_init()
-        
+
         self.web_resource = MSRoot( self, backend)
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
@@ -392,4 +426,3 @@ class MediaServer:
                             self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
 
             version -= 1
-
