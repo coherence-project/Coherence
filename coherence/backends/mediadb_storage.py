@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
-
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
+
+# -*- coding: utf-8 -*-
 
 """
 
@@ -120,17 +120,17 @@ class Artist(item.Item):
     musicbrainz_id = attributes.text()
 
     def get_children(self,start=0,request_count=0):
-        children = list(self.db.query(Album, Album.artist == self))
+        children = list(self.store.query(Album, Album.artist == self))
         if request_count == 0:
-            return self.children[start:]
+            return children[start:]
         else:
-            return self.children[start:request_count]
+            return children[start:request_count]
 
     def get_child_count(self):
-        return len(list(self.db.query(Album, Album.artist == self)))
+        return len(list(self.store.query(Album, Album.artist == self)))
 
     def get_item(self):
-        item = DIDLLite.MusicArtist(self.storeID, parent_id, self.title)
+        item = DIDLLite.MusicArtist(self.storeID, parent_id, self.name)
         return item
 
     def get_id(self):
@@ -264,7 +264,7 @@ class Track(item.Item):
         return self.title
 
     def get_url(self):
-        return self.store.urlbase + str(self.storeID+1000)
+        return self.store.urlbase + str(self.storeID+1000).encode('utf-8')
 
     def get_cover(self):
         return self.album.cover
@@ -318,10 +318,18 @@ class MediaStore(object):
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                 Container( ROOT_CONTAINER_ID,-1, self.name)
+        self.containers[AUDIO_ALL_CONTAINER_ID] = \
+                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All',
+                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
                           children_callback=lambda :list(self.db.query(Album,sort=Album.title.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
+        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
+                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                          children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
@@ -428,16 +436,14 @@ class MediaStore(object):
     def get_by_id(self,id):
         id = int(id)
         log.info("get_by_id %d" % id)
-        item = None
         try:
             item = self.containers[id]
         except:
             try:
                 item = self.db.getItemByID(id-1000)
             except:
-                pass
-        log.info("found", item)
-        print "get_by_id found", item
+                item = None
+        log.info("get_by_id found", item)
         return item
 
     def upnp_init(self):
