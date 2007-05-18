@@ -3,6 +3,8 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+# -*- coding: utf-8 -*-
+
 import os
 from StringIO import StringIO
 import urllib
@@ -157,7 +159,8 @@ class MSRoot(resource.Resource):
     def list_content(self, name, item, request):
         log.info('list_content', name, item, request)
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
-                                            (item.get_name(),item.get_name())
+                                            (item.get_name().encode('ascii','xmlcharrefreplace'),
+                                             item.get_name().encode('ascii','xmlcharrefreplace'))
 
         if( hasattr(item,'mimetype') and item.mimetype in ['directory','root']):
             uri = request.uri
@@ -167,37 +170,38 @@ class MSRoot(resource.Resource):
             page += """<ul>"""
             for c in item.get_children():
                 if hasattr(c,'get_url'):
-                    path = c.get_url().encode('utf-8')
+                    path = c.get_url()
+                    log.debug('has get_url', path)
                 elif hasattr(c,'get_path'):
                     #path = c.get_path().encode('utf-8').encode('string_escape')
-                    path = c.get_path().encode('utf-8')
+                    path = c.get_path()
+                    log.debug('has get_path', path)
                 else:
                     path = request.uri.split('/')
                     path[-1] = str(c.get_id())
                     path = '/'.join(path)
+                    log.debug('got path', path)
                 title = c.get_name()
-                if isinstance(title,unicode):
-                    title = title.encode('utf-8').encode('string_escape')
-                else:
-                    title = title.encode('string_escape')
+                log.debug( 'title is:', type(title))
+                try:
+                    if isinstance(title,unicode):
+                        title = c.get_name().encode('ascii','xmlcharrefreplace')
+                    else:
+                        title = c.get_name().decode('utf-8').encode('ascii','xmlcharrefreplace')
+                except (UnicodeEncodeError,UnicodeDecodeError):
+                    title = c.get_name().encode('utf-8').encode('string_escape')
                 page += '<li><a href="%s">%s</a></li>' % \
                                     (path, title)
             page += """</ul>"""
         elif( hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
             #path = item.get_path().encode('utf-8').encode('string_escape')
-            path = urllib.quote(c.get_path().encode('utf-8'))
-            title = c.get_name()
-            if isinstance(title,unicode):
-                title = title.encode('utf-8').encode('string_escape')
-            else:
-                title = name.encode('string_escape')
+            path = urllib.quote(item.get_path().encode('utf-8'))
+            title = item.get_name().decode('utf-8').encode('ascii','xmlcharrefreplace')
             page += """<p><img src="%s" alt="%s"></p>""" % \
                                     (path, title)
         else:
             pass
         page += """</body></html>"""
-        if isinstance(page,unicode):
-            page = page.encode('utf-8').encode('string_escape')
         return static.Data(page,'text/html')
 
     def listchilds(self, uri):
