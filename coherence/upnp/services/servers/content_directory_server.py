@@ -89,7 +89,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                             total += 1
         else:
             try:
-                root_id = int(ContainerID)
+                root_id = ContainerID
             except:
                 pass
 
@@ -132,9 +132,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                 wmc_mapping.has_key(ObjectID)):
             root_id = wmc_mapping[ObjectID]
         else:
-            root_id = int(ObjectID)
+            root_id = ObjectID
 
-        item = self.backend.get_by_id(int(root_id))
+        item = self.backend.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
 
