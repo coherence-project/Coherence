@@ -9,8 +9,6 @@
 
 MediaStore
 
-*** WORK IN PROGRESS ***
-
 A MediaServer with a database backend,
 exposes its content in All, Albums and Artists containers.
 Serves cover art with the Album object, and keeps references to
@@ -120,7 +118,6 @@ class Artist(item.Item):
     musicbrainz_id = attributes.text()
 
     def get_children(self,start=0,request_count=0):
-        print "get_children"
         all_id = 'artist_all_tracks_%d' % (self.storeID+1000)
         self.store.containers[all_id] = \
                 Container( all_id, self.storeID+1000, 'All tracks of %s' % self.name,
@@ -131,18 +128,15 @@ class Artist(item.Item):
                             ))])
 
         children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self))
-        print children
         if request_count == 0:
             return children[start:]
         else:
             return children[start:request_count]
 
     def get_child_count(self):
-        print "get_child_count"
         return len(list(self.store.query(Album, Album.artist == self))) + 1
 
     def get_item(self):
-        print "get_item"
         item = DIDLLite.MusicArtist(self.storeID+1000, AUDIO_ARTIST_CONTAINER_ID, self.name)
         return item
 
@@ -491,7 +485,7 @@ class MediaStore(object):
         #self.show_db()
         #self.show_artists()
         #self.show_albums()
-        self.show_tracks_by_artist(u'Meat Loaf')
+        #self.show_tracks_by_artist(u'Meat Loaf')
         #self.show_tracks_by_artist(u'Beyonce')
         #self.show_tracks_by_title(u'Bad')
         #self.show_tracks_to_filename(u'säen')
