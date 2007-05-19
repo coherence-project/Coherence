@@ -6,6 +6,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 from StringIO import StringIO
 import urllib
 
@@ -32,6 +33,8 @@ import louie
 from coherence.extern.logger import Logger
 log = Logger('MediaServer')
 
+COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
+
 class MSRoot(resource.Resource):
 
     def __init__(self, server, store):
@@ -46,7 +49,7 @@ class MSRoot(resource.Resource):
         log.msg( request.getAllHeaders())
 
         if(request.method == 'GET' and
-           request.uri.endswith('?cover')):
+           COVER_REQUEST_INDICATOR.match(request.uri)):
             log.info("request cover for id %s" % path)
             ch = self.store.get_by_id(path)
             if ch is not None:

@@ -120,17 +120,30 @@ class Artist(item.Item):
     musicbrainz_id = attributes.text()
 
     def get_children(self,start=0,request_count=0):
-        children = list(self.store.query(Album, Album.artist == self))
+        print "get_children"
+        all_id = 'artist_all_tracks_%d' % (self.storeID+1000)
+        self.store.containers[all_id] = \
+                Container( all_id, self.storeID+1000, 'All tracks of %s' % self.name,
+                          children_callback=lambda :[x[1] for x in list(self.store.query((Album,Track),
+                            attributes.AND(Album.artist == self,
+                                           Track.album == Album.storeID),
+                            sort=(Track.title.ascending)
+                            ))])
+
+        children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self))
+        print children
         if request_count == 0:
             return children[start:]
         else:
             return children[start:request_count]
 
     def get_child_count(self):
-        return len(list(self.store.query(Album, Album.artist == self)))
+        print "get_child_count"
+        return len(list(self.store.query(Album, Album.artist == self))) + 1
 
     def get_item(self):
-        item = DIDLLite.MusicArtist(self.storeID, parent_id, self.name)
+        print "get_item"
+        item = DIDLLite.MusicArtist(self.storeID+1000, AUDIO_ARTIST_CONTAINER_ID, self.name)
         return item
 
     def get_id(self):
@@ -213,7 +226,10 @@ class Track(item.Item):
         item.artist = self.album.artist.name
         item.album = self.album.title
         if self.album.cover != '':
-            item.albumArtURI = self.store.urlbase + str(self.storeID+1000) + '/?cover'
+            _,ext =  os.path.splitext(self.album.cover)
+            """ add the cover image extension to help clients not reacting on
+                the mimetype """
+            item.albumArtURI = ''.join((self.store.urlbase,str(self.storeID+1000),'?cover',ext))
         item.res = []
 
         _,host_port,_,_,_ = urlsplit(self.store.urlbase)
@@ -319,7 +335,7 @@ class MediaStore(object):
         self.containers[ROOT_CONTAINER_ID] = \
                 Container( ROOT_CONTAINER_ID,-1, self.name)
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All',
+                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
                           children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
@@ -394,11 +410,20 @@ class MediaStore(object):
             print artist
 
     def show_tracks_by_artist(self, artist_name):
+        """
         artist = self.db.query(Artist,Artist.name == artist_name)
         artist = list(artist)[0]
         for album in list(self.db.query(Album, Album.artist == artist)):
             for track in list(self.db.query(Track, Track.album == album,sort=Track.title.ascending)):
                 print track
+        """
+        for track in [x[2] for x in list(self.db.query((Artist,Album,Track),
+                            attributes.AND(Artist.name == artist_name,
+                                           Album.artist == Artist.storeID,
+                                           Track.album == Album.storeID),
+                            sort=(Track.title.ascending)
+                            ))]:
+            print track
 
     def show_tracks_by_title(self, title_or_part):
             for track in list(self.db.query(Track, Track.title.like(u'%',title_or_part,u'%'),sort=Track.title.ascending)):
@@ -419,7 +444,7 @@ class MediaStore(object):
             filename = "%s - %s" % ( album.artist.name, album.title)
             filename = sanitize(filename)
 
-            cover_path = os.path.join(self.coverlocation,filename +'.png')
+            cover_path = os.path.join(self.coverlocation,filename +'.jpg')
             if os.path.exists(cover_path) is True:
                 print "cover found:", cover_path
                 album.cover = cover_path
@@ -434,8 +459,13 @@ class MediaStore(object):
                             title=album.title)
 
     def get_by_id(self,id):
+        log.info("get_by_id %s" % id)
+        if id.startswith('artist_all_tracks_'):
+            try:
+                return self.containers[id]
+            except:
+                return None
         id = int(id)
-        log.info("get_by_id %d" % id)
         try:
             item = self.containers[id]
         except:
@@ -452,14 +482,16 @@ class MediaStore(object):
             db_is_new = True
         self.db = store.Store(self.mediadb)
         self.db.urlbase = self.urlbase
+        self.db.containers = self.containers
 
         if db_is_new is True:
             self.get_music_files(self.medialocation)
             self.get_album_covers()
+
         #self.show_db()
         #self.show_artists()
         #self.show_albums()
-        #self.show_tracks_by_artist(u'Meat Loaf')
+        self.show_tracks_by_artist(u'Meat Loaf')
         #self.show_tracks_by_artist(u'Beyonce')
         #self.show_tracks_by_title(u'Bad')
         #self.show_tracks_to_filename(u'säen')
