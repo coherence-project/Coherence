@@ -188,9 +188,9 @@ class MSRoot(resource.Resource):
                 log.debug( 'title is:', type(title))
                 try:
                     if isinstance(title,unicode):
-                        title = c.get_name().encode('ascii','xmlcharrefreplace')
+                        title = title.encode('ascii','xmlcharrefreplace')
                     else:
-                        title = c.get_name().decode('utf-8').encode('ascii','xmlcharrefreplace')
+                        title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
                 except (UnicodeEncodeError,UnicodeDecodeError):
                     title = c.get_name().encode('utf-8').encode('string_escape')
                 page += '<li><a href="%s">%s</a></li>' % \
