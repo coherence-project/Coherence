@@ -1,9 +1,9 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
-
-# -*- coding: utf-8 -*-
 
 """
 
@@ -18,12 +18,22 @@ Should not scan for files, but gets feeded
 with proper tagged ones via some import tool
 or/and allow imports via the web-UI.
 
-depends on: Axiom - http://divmod.org/trac/wiki/DivmodAxiom
-            Epsilon - http://divmod.org/trac/wiki/DivmodEpsilon
-            CoversByAmazon - https://coherence.beebits.net/browser/trunk/coherence/extern/covers_by_amazon.py
-            libmtag - http://code.google.com/p/libmtag/
-            taglib - http://developer.kde.org/~wheeler/taglib.html
+depends on:
+            for the sqlite db handling:
 
+                Axiom - http://divmod.org/trac/wiki/DivmodAxiom
+                Epsilon - http://divmod.org/trac/wiki/DivmodEpsilon
+
+            for id3 tag extraction:
+
+                libmtag - http://code.google.com/p/libmtag/
+                taglib - http://developer.kde.org/~wheeler/taglib.html
+
+                or
+
+                pyid3lib - http://pyid3lib.sourceforge.net/doc.html
+
+            CoversByAmazon - https://coherence.beebits.net/browser/trunk/coherence/extern/covers_by_amazon.py
 """
 
 import os
@@ -41,7 +51,40 @@ from twisted.python.filepath import FilePath
 from coherence.upnp.core import DIDLLite
 
 from coherence.extern.covers_by_amazon import CoverGetter
-import libmtag
+
+from coherence.extern.logger import Logger
+log = Logger('MediaStore')
+
+try:
+    import libmtag
+
+    def get_tags(filename):
+        audio_file = libmtag.File(filename)
+        tags = {}
+        tags['artist'] = audio_file.tag().get('artist').strip()
+        tags['album'] = audio_file.tag().get('album').strip()
+        tags['title'] = audio_file.tag().get('title').strip()
+        tags['track'] = audio_file.tag().get('track').strip()
+        return tags
+
+except ImportError:
+    try:
+        import pyid3lib
+
+        def get_tags(filename):
+            audio_file = pyid3lib.tag(filename)
+            tags = {}
+            tags['artist'] = audio_file.artist.strip()
+            tags['album'] = audio_file.album.strip()
+            tags['title'] = audio_file.title.strip()
+            tags['track'] = audio_file.track[0]
+            return tags
+
+    except ImportError:
+        log.critical("we need some installed id3 tag library for this backend")
+        raise ImportError
+
+
 
 MEDIA_DB = 'content/media.db'
 
@@ -60,9 +103,6 @@ def sanitize(filename):
     f = f.replace(unicode(u'ß'),unicode('ss'))
     f = f.replace(badchars, '_')
     return f
-
-from coherence.extern.logger import Logger
-log = Logger('MediaStore')
 
 class Container(object):
 
@@ -361,11 +401,11 @@ class MediaStore(object):
             self.walk(path)
 
         for file in self.filelist:
-            audio_file = libmtag.File(file)
-            album=audio_file.tag().get('album').strip()
-            artist=audio_file.tag().get('artist').strip()
-            title=audio_file.tag().get('title').strip()
-            track=audio_file.tag().get('track')
+            tags = get_tags(file)
+            album=tags.get('album', '')
+            artist=tags.get('artist', '')
+            title=tags.get('title', '')
+            track=tags.get('track', 0)
 
             if len(artist) == 0:
                 continue;
