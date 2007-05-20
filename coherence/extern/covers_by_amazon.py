@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -134,6 +136,26 @@ class CoverGetter(object):
         if asin != None:
             query = aws_asin_query + '&ItemId=%s' % urllib.quote(asin)
         elif (artist is not None and title is not None):
+            artist = unicode(artist.lower())
+            artist = artist.replace(unicode(u'ä'),unicode('ae'))
+            artist = artist.replace(unicode(u'ö'),unicode('oe'))
+            artist = artist.replace(unicode(u'ü'),unicode('ue'))
+            artist = artist.replace(unicode(u'ß'),unicode('ss'))
+            if isinstance(artist,unicode):
+                artist = artist.encode('ascii','ignore')
+            else:
+                artist = artist.decode('utf-8').encode('ascii','ignore')
+
+            title = unicode(title.lower())
+            title = title.replace(unicode(u'ä'),unicode('ae'))
+            title = title.replace(unicode(u'ö'),unicode('oe'))
+            title = title.replace(unicode(u'ü'),unicode('ue'))
+            title = title.replace(unicode(u'ß'),unicode('ss'))
+            if isinstance(title,unicode):
+                title = title.encode('ascii','ignore')
+            else:
+                title = title.decode('utf-8').encode('ascii','ignore')
+
             query = aws_artist_query + '&Artist=%s&Title=%s' % (urllib.quote(artist),
                                                                 urllib.quote(title))
         else:
@@ -165,7 +187,7 @@ class CoverGetter(object):
         if self.filename == None:
             data = result
         else:
-            date = self.filename
+            data = self.filename
 
         if self.callback is not None:
             #print "got_image", self.callback
@@ -232,5 +254,6 @@ if __name__ == '__main__':
 
     reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
     reactor.callWhenRunning(CoverGetter,"cover.png",callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
+    reactor.callWhenRunning(CoverGetter,"cover2.jpg",callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
 
     reactor.run()
