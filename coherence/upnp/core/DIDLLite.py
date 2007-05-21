@@ -266,6 +266,7 @@ class AudioItem(Item):
     language = None
     relation = None
     rights = None
+    albumArtURI = None
 
     valid_keys = ['genre', 'description', 'longDescription', 'publisher',
                   'langugage', 'relation', 'rights']
@@ -283,6 +284,9 @@ class AudioItem(Item):
         if self.longDescription is not None:
             ET.SubElement(root, 'upnp:longDescription').text = \
                              self.longDescription
+
+        if self.albumArtURI is not None:
+            ET.SubElement(root, 'upnp:albumArtURI').text = self.albumArtURI
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.publisher
@@ -314,7 +318,6 @@ class MusicTrack(AudioItem):
 
     artist = None
     album = None
-    albumArtURI = None
     originalTrackNumber = None
     playlist = None
     storageMedium = None
@@ -329,9 +332,6 @@ class MusicTrack(AudioItem):
 
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
-
-        if self.albumArtURI is not None:
-            ET.SubElement(root, 'upnp:albumArtURI').text = self.albumArtURI
 
         if self.originalTrackNumber is not None:
             ET.SubElement(root, 'upnp:originalTrackNumber').text = \
