@@ -1,9 +1,9 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
-
-# -*- coding: utf-8 -*-
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
 import os
 import re
@@ -234,65 +234,79 @@ class RootDeviceXML(static.Data):
                         friendly_name='Coherence UPnP A/V MediaServer',
                         xbox_hack=False,
                         services=[],
-                        devices=[]):
+                        devices=[],
+                        icons=[]):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
         device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement( e, 'major').text = '1'
-        ET.SubElement( e, 'minor').text = '0'
+        ET.SubElement(e, 'major').text = '1'
+        ET.SubElement(e, 'minor').text = '0'
 
         ET.SubElement(root, 'URLBase').text = urlbase
 
         d = ET.SubElement(root, 'device')
-        x = ET.SubElement( d, 'dlna:X_DLNADOC')
+        x = ET.SubElement(d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'DMS-1.50'
-        x = ET.SubElement( d, 'dlna:X_DLNADOC')
+        x = ET.SubElement(d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'M-DMS-1.50'
-        x=ET.SubElement( d, 'dlna:X_DLNACAP')
+        x=ET.SubElement(d, 'dlna:X_DLNACAP')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'av-upload,image-upload,audio-upload'
-        ET.SubElement( d, 'deviceType').text = device_type
+        ET.SubElement(d, 'deviceType').text = device_type
         if xbox_hack == False:
-            ET.SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
-            ET.SubElement( d, 'friendlyName').text = friendly_name
+            ET.SubElement(d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
+            ET.SubElement(d, 'friendlyName').text = friendly_name
         else:
-            ET.SubElement( d, 'modelName').text = 'Windows Media Connect'
-            ET.SubElement( d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
-        ET.SubElement( d, 'manufacturer').text = 'beebits.net'
-        ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
-        ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        ET.SubElement( d, 'modelNumber').text = '0.1'
-        ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
-        ET.SubElement( d, 'serialNumber').text = '0000001'
-        ET.SubElement( d, 'UDN').text = uuid
-        ET.SubElement( d, 'UPC').text = ''
-        ET.SubElement( d, 'presentationURL').text = ''
+            ET.SubElement(d, 'modelName').text = 'Windows Media Connect'
+            ET.SubElement(d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
+        ET.SubElement(d, 'manufacturer').text = 'beebits.net'
+        ET.SubElement(d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        ET.SubElement(d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
+        ET.SubElement(d, 'modelNumber').text = '0.1'
+        ET.SubElement(d, 'modelURL').text = 'http://coherence.beebits.net'
+        ET.SubElement(d, 'serialNumber').text = '0000001'
+        ET.SubElement(d, 'UDN').text = uuid
+        ET.SubElement(d, 'UPC').text = ''
+        ET.SubElement(d, 'presentationURL').text = ''
 
         if len(services):
-            e = ET.SubElement( d, 'serviceList')
+            e = ET.SubElement(d, 'serviceList')
             for service in services:
                 id = service.get_id()
-                s = ET.SubElement( e, 'service')
+                s = ET.SubElement(e, 'service')
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                ET.SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'upnp-org'
-                ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                ET.SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                ET.SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                ET.SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
-        if len(services):
-            e = ET.SubElement( d, 'deviceList')
+        if len(devices):
+            e = ET.SubElement(d, 'deviceList')
+
+        if len(icons):
+            e = ET.SubElement(d, 'iconList')
+            for icon in icons:
+                i = ET.SubElement(e, 'icon')
+                for k,v in icon.items():
+                    if k == 'url':
+                        if v.startswith('file://'):
+                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                        else:
+                            ET.SubElement(i, k).text = v
+                    else:
+                        ET.SubElement(i, k).text = v
 
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
@@ -314,6 +328,9 @@ class MediaServer:
         log.msg('MediaServer urlbase %s' % self.urlbase)
 
         kwargs['urlbase'] = self.urlbase
+        self.icons = kwargs.get('icons', [])
+        if kwargs.has_key('icon'):
+            self.icons.append(kwargs['icon'])
 
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
@@ -379,7 +396,8 @@ class MediaServer:
                                     self.device_type, version,
                                     friendly_name=self.backend.name,
                                     services=self._services,
-                                    devices=self._devices))
+                                    devices=self._devices,
+                                    icons=self.icons))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
@@ -388,12 +406,19 @@ class MediaServer:
                                     friendly_name=self.backend.name,
                                     xbox_hack=True,
                                     services=self._services,
-                                    devices=self._devices))
+                                    devices=self._devices,
+                                    icons=self.icons))
             version -= 1
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
         self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
+
+        for icon in self.icons:
+            if icon.has_key('url'):
+                if icon['url'].startswith('file://'):
+                    self.web_resource.putChild(os.path.basename(icon['url']),
+                                               static.File(icon['url'][7:]))
 
         self.register()
         log.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
