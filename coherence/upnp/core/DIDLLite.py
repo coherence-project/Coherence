@@ -25,11 +25,11 @@ from coherence.upnp.core import utils
 def classChooser(mimetype, sub=None):
 
     if mimetype == 'root':
-        return StorageFolder
+        return Container
     if mimetype == 'item':
         return Item
     if mimetype == 'directory':
-        return StorageFolder
+        return Container
     else:
         if string.find (mimetype,'image/') == 0:
             return Photo
@@ -128,9 +128,9 @@ class Object:
         ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
-            root.attrib['restricted'] = 'true'
+            root.attrib['restricted'] = 1
         else:
-            root.attrib['restricted'] = 'false'
+            root.attrib['restricted'] = 0
 
         if self.creator is not None:
             ET.SubElement(root, 'dc:creator').text = self.creator
@@ -163,7 +163,7 @@ class Object:
         self.elementName = elt.tag
         self.id = elt.attrib['id']
         self.parentID = elt.attrib['parentID']
-        if elt.attrib['restricted'] in ['true','True','1','yes','Yes']:
+        if elt.attrib['restricted'] in [1,'true','True','1','yes','Yes']:
             self.restricted = True
         else:
             self.restricted = False
@@ -383,7 +383,7 @@ class Container(Object):
     searchable = None
 
     def __init__(self, id=None, parentID=None, title=None,
-                 restricted = 0, creator = None):
+                 restricted = False, creator = None):
         Object.__init__(self, id, parentID, title, restricted, creator)
         self.searchClass = []
 
@@ -399,10 +399,15 @@ class Container(Object):
         if not isinstance(self.searchClass, (list, tuple)):
             self.searchClass = ['searchClass']
         for i in self.searchClass:
-            ET.SubElement(root, 'upnp:searchclass').text = i
+            sc = ET.SubElement(root, 'upnp:searchclass')
+            sc.attrib['includeDerived'] = 1
+            sc.text = i
 
         if self.searchable is not None:
-            root.attrib['searchable'] = str(self.searchable)
+            if self.searchable in (1, True, 'true', 'True'):
+                root.attrib['searchable'] = 1
+            else:
+                root.attrib['searchable'] = 0
 
         return root
 
@@ -410,7 +415,7 @@ class Container(Object):
         Object.fromElement(self, elt)
         self.childCount = int(elt.attrib.get('childCount','0'))
         #self.searchable = int(elt.attrib.get('searchable','0'))
-        self.searchable = elt.attrib.get('searchable','0') in ['True','true','1']
+        self.searchable = elt.attrib.get('searchable','0') in [1,'True','true','1']
         self.searchClass = []
         for child in elt.getchildren():
             if child.tag.endswith('createclass'):
