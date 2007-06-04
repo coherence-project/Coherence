@@ -437,22 +437,23 @@ class GStreamerMediaRenderer(object):
             if(self.duration == None and
                position[u'raw'].has_key(u'duration')):
                 self.duration = int(position[u'raw'][u'duration'])
-                # FIXME: duration breaks client parsing MetaData?
-                elt = DIDLLite.DIDLElement.fromString(self.metadata)
-                for item in elt:
-                    for res in item.findall('res'):
-                        m,s = divmod( self.duration/1000000000, 60)
-                        h,m = divmod(m,60)
-                        res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                if self.metadata != None and len(self.metadata)>0:
+                    # FIXME: duration breaks client parsing MetaData?
+                    elt = DIDLLite.DIDLElement.fromString(self.metadata)
+                    for item in elt:
+                        for res in item.findall('res'):
+                            m,s = divmod( self.duration/1000000000, 60)
+                            h,m = divmod(m,60)
+                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
 
-                self.metadata = elt.toString()
-                #print self.metadata
-                if self.server != None:
-                    connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-                    self.server.av_transport_server.set_variable(connection_id,
-                                                'AVTransportURIMetaData',self.metadata)
-                    self.server.av_transport_server.set_variable(connection_id,
-                                                'CurrentTrackMetaData',self.metadata)
+                    self.metadata = elt.toString()
+                    #print self.metadata
+                    if self.server != None:
+                        connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+                        self.server.av_transport_server.set_variable(connection_id,
+                                                    'AVTransportURIMetaData',self.metadata)
+                        self.server.av_transport_server.set_variable(connection_id,
+                                                    'CurrentTrackMetaData',self.metadata)
 
 
             print "%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
@@ -629,13 +630,13 @@ class GStreamerMediaRenderer(object):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        #print CurrentURI
+        #print InstanceID, CurrentURI, CurrentURIMetaData
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
             return {}
         else:
-            local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
-            #print local_protocol_info
+            local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+            #print local_protocol_infos
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
@@ -646,9 +647,22 @@ class GStreamerMediaRenderer(object):
                     #       we need to check _first_ if there
                     #       are any matching ones,
                     #       and if not try something else
-                    if res.protocolInfo in local_protocol_info:
-                        self.load(res.data,CurrentURIMetaData,mimetype=res.protocolInfo.split(':')[2])
-                        return {}
+                    for protocol_info in local_protocol_infos:
+                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                        print remote_protocol,remote_network,remote_content_format
+                        local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
+                        print local_protocol,local_network,local_content_format
+                        if((remote_protocol == local_protocol or
+                            remote_protocol == '*' or
+                            local_protocol == '*') and
+                           (remote_network == local_network or
+                            remote_network == '*' or
+                            local_network == '*') and
+                           (remote_content_format == local_content_format or
+                            remote_content_format == '*' or
+                            local_content_format == '*')):
+                            self.load(res.data,CurrentURIMetaData,mimetype=remote_content_format)
+                            return {}
         return failure.Failure(errorCode(714))
 
     def upnp_SetMute(self, *args, **kwargs):
