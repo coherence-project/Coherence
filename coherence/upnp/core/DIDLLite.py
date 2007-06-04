@@ -58,6 +58,15 @@ class Resource:
 
         self.importUri = None
 
+        if self.protocolInfo is not None:
+            protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+            if additional_info == '*':
+                if content_format == 'audio/mpeg':
+                    additional_info = ';'.join(('DLNA.ORG_PN=MP3','DLNA.ORG_OP=11'))
+                if content_format == 'image/jpeg':
+                    additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=11'))
+                self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
+
     def toElement(self):
 
         root = ET.Element('res')
@@ -128,9 +137,9 @@ class Object:
         ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
-            root.attrib['restricted'] = 1
+            root.attrib['restricted'] = '1'
         else:
-            root.attrib['restricted'] = 0
+            root.attrib['restricted'] = '0'
 
         if self.creator is not None:
             ET.SubElement(root, 'dc:creator').text = self.creator
@@ -400,14 +409,14 @@ class Container(Object):
             self.searchClass = ['searchClass']
         for i in self.searchClass:
             sc = ET.SubElement(root, 'upnp:searchclass')
-            sc.attrib['includeDerived'] = 1
+            sc.attrib['includeDerived'] = '1'
             sc.text = i
 
         if self.searchable is not None:
-            if self.searchable in (1, True, 'true', 'True'):
-                root.attrib['searchable'] = 1
+            if self.searchable in (1, '1', True, 'true', 'True'):
+                root.attrib['searchable'] = '1'
             else:
-                root.attrib['searchable'] = 0
+                root.attrib['searchable'] = '0'
 
         return root
 
