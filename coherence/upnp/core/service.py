@@ -695,8 +695,8 @@ class ServiceControl:
                     r[argument.name] = variable.value
                     #print "r", r
             self.service.propagate_notification(notify)
-        r= { '%sResponse'%action.name: r}
-        log.info( 'action_results', r)
+        #r= { '%sResponse'%action.name: r}
+        log.info( 'action_results', action.name, r)
         return r
 
     def soap__generic(self, *args, **kwargs):
