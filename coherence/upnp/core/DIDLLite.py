@@ -131,9 +131,14 @@ class Object:
 
         root = ET.Element(self.elementName)
 
-        root.attrib['id'] = str(self.id)
+        if self.id == 1000:
+            root.attrib['id'] = '0'
+            ET.SubElement(root, 'dc:title').text = 'root'
+        else:
+            root.attrib['id'] = str(self.id)
+            ET.SubElement(root, 'dc:title').text = self.title
+
         root.attrib['parentID'] = str(self.parentID)
-        ET.SubElement(root, 'dc:title').text = self.title
         ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
@@ -150,6 +155,7 @@ class Object:
         if self.writeStatus is not None:
             ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
 
+        """
         if self.date is not None:
             if isinstance(self.date, datetime):
                 ET.SubElement(root, 'dc:date').text = self.date.isoformat()
@@ -157,6 +163,7 @@ class Object:
                 ET.SubElement(root, 'dc:date').text = self.date
         else:
             ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()
+        """
 
         return root
 
@@ -406,9 +413,9 @@ class Container(Object):
             ET.SubElement(root, 'upnp:createclass').text = self.createClass
 
         if not isinstance(self.searchClass, (list, tuple)):
-            self.searchClass = ['searchClass']
+            self.searchClass = [self.searchClass]
         for i in self.searchClass:
-            sc = ET.SubElement(root, 'upnp:searchclass')
+            sc = ET.SubElement(root, 'upnp:searchClass')
             sc.attrib['includeDerived'] = '1'
             sc.text = i
 
@@ -472,9 +479,11 @@ class StorageFolder(Container):
 class DIDLElement(ElementInterface):
     def __init__(self):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
-        self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite'
+        self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
-        self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp'
+        self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
+        self.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
+        self.attrib['xmlns:pv'] = 'http://www.pv.com/pvns/'
         self._items = []
 
     def addContainer(self, id, parentID, title, restricted = False):

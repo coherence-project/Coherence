@@ -103,7 +103,11 @@ class UPnPPublisher(soap.SOAPPublisher):
 
     def _gotResult(self, result, request, methodName, ns):
         log.info('_gotResult', result, request, methodName, ns)
-        response = SOAPpy.buildSOAP(kw=result, encoding=self.encoding, method=methodName+'Response', namespace=('u', ns))
+        config = SOAPpy.SOAPConfig()
+        config.typed = 0
+        response = SOAPpy.buildSOAP(kw=result, encoding='utf-8',
+                                    method=methodName+'Response', namespace=('u', ns),
+                                    noroot=1, config=config)
         self._sendResponse(request, response)
 
     def _gotError(self, failure, request, methodName, ns):
