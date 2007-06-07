@@ -14,6 +14,7 @@ from twisted.python import failure
 import socket
 import fcntl
 import struct
+import string
 
 def parse_xml(data, encoding="iso-8859-1"):
     p = ET.XMLParser(encoding=encoding)
@@ -203,46 +204,44 @@ class StaticFile(static.File):
             return ''
 
         trans = True
-        try:
-            range = request.getHeader('range')
+ 
+        range = request.getHeader('range')
 
-            tsize = size
-            if range is not None:
-                # This is a request for partial data...
-                bytesrange = string.split(range, '=')
-                assert bytesrange[0] == 'bytes',\
-                       "Syntactically invalid http range header!"
-                start, end = string.split(bytesrange[1],'-', 1)
-                if start:
-                    f.seek(int(start))
-                    if end:
-                        end = int(end)
-                    else:
-                        end = size - 1
+        tsize = size
+        if range is not None:
+            # This is a request for partial data...
+            bytesrange = string.split(range, '=')
+            assert bytesrange[0] == 'bytes',\
+                   "Syntactically invalid http range header!"
+            start, end = string.split(bytesrange[1],'-', 1)
+            if start:
+                f.seek(int(start))
+                if end:
+                    end = int(end)
                 else:
-                    lastbytes = int(end)
-                    if size < lastbytes:
-                        lastbytes = size
-                    start = size - lastbytes
-                    f.seek(start)
-                    fsize = lastbytes
                     end = size - 1
-                size = end + 1
-                fsize = end - int(start) + 1
-                # start is the byte offset to begin, and end is the byte offset
-                # to end..  fsize is size to send, tsize is the real size of
-                # the file, and size is the byte position to stop sending.
+            else:
+                lastbytes = int(end)
+                if size < lastbytes:
+                    lastbytes = size
+                start = size - lastbytes
+                f.seek(start)
+                fsize = lastbytes
+                end = size - 1
+            size = end + 1
+            fsize = end - int(start) + 1
+            # start is the byte offset to begin, and end is the byte offset
+            # to end..  fsize is size to send, tsize is the real size of
+            # the file, and size is the byte position to stop sending.
 
-                if fsize <= 0:
-                    request.setResponseCode(http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                    fsize = tsize
-                    trans = False
-                else:
-                    request.setResponseCode(http.PARTIAL_CONTENT)
-                    request.setHeader('content-range',"bytes %s-%s/%s " % (
-                        str(start), str(end), str(tsize)))
-        except:
-            traceback.print_exc(file=log.logfile)
+            if fsize <= 0:
+                request.setResponseCode(http.REQUESTED_RANGE_NOT_SATISFIABLE)
+                fsize = tsize
+                trans = False
+            else:
+                request.setResponseCode(http.PARTIAL_CONTENT)
+                request.setHeader('content-range',"bytes %s-%s/%s " % (
+                    str(start), str(end), str(tsize)))
 
         request.setHeader('content-length', str(fsize))
         if request.method == 'HEAD' or trans == False:
