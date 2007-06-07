@@ -22,6 +22,7 @@ from twisted.python.filepath import FilePath
 from coherence.extern.et import ET
 
 from coherence.upnp.core.service import ServiceServer
+from coherence.upnp.core.utils import StaticFile
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -57,7 +58,7 @@ class MSRoot(resource.Resource):
                 file = ch.get_cover()
                 if os.path.exists(file):
                     log.info("got cover %s" % file)
-                    return static.File(file)
+                    return StaticFile(file)
             request.setResponseCode(404)
             return static.Data('<html><p>cover requested not found</p></html>','text/html')
 
@@ -148,14 +149,14 @@ class MSRoot(resource.Resource):
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
-                ch = static.File(p)
+                ch = StaticFile(p)
             else:
                 return self.list_content(name, ch, request)
 
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = static.File(p)
+                ch = StaticFile(p)
         log.info('MSRoot ch', ch)
         return ch
 
@@ -418,7 +419,7 @@ class MediaServer:
             if icon.has_key('url'):
                 if icon['url'].startswith('file://'):
                     self.web_resource.putChild(os.path.basename(icon['url']),
-                                               static.File(icon['url'][7:]))
+                                               StaticFile(icon['url'][7:]))
 
         self.register()
         log.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))

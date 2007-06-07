@@ -153,7 +153,6 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
             'NumberReturned': didl.numItems()}
 
         if hasattr(item, 'update_id'):
-            print "we have an update_id",  item.update_id
             r['UpdateID'] = item.update_id
         else:
             r['UpdateID'] = self.backend.update_id # FIXME

@@ -104,15 +104,12 @@ class FSItem:
         del self.item
 
     def add_child(self, child, update=False):
-        print "add_child", update
         self.children.append(child)
         self.child_count += 1
         if isinstance(self.item, Container):
             self.item.childCount += 1
         if update == True:
             self.update_id += 1
-            print "update_id", self.update_id
-
 
     def remove_child(self, child):
         #print "remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name())
