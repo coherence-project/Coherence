@@ -63,7 +63,14 @@ class FSItem:
             self.update_id = 0
             self.item.searchable = True
             self.item.searchClass = 'object'
+            self.check_for_cover_art()
         else:
+            if hasattr(parent, 'cover'):
+                _,ext =  os.path.splitext(parent.cover)
+                """ add the cover image extension to help clients not reacting on
+                    the mimetype """
+                self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+
             self.item.res = []
 
             _,host_port,_,_,_ = urlsplit(urlbase)
@@ -96,6 +103,21 @@ class FSItem:
     def __del__(self):
         #print "FSItem __del__", self.id, self.get_name()
         pass
+
+    def check_for_cover_art(self):
+        """ let's try to find in the current directory some jpg file,
+            or png if the jpg search fails, and take the first one
+            that comes around
+        """
+        jpgs = [i.path for i in self.location.children() if i.splitext()[1] in ('.jpg', '.JPG')]
+        try:
+            self.cover = jpgs[0]
+        except IndexError:
+            pngs = [i.path for i in self.location.children() if i.splitext()[1] in ('.png', '.PNG')]
+            try:
+                self.cover = pngs[0]
+            except IndexError:
+                return
 
     def remove(self):
         #print "FSItem remove", self.id, self.get_name(), self.parent
@@ -152,6 +174,12 @@ class FSItem:
             return self.location.basename()
         else:
             self.location
+
+    def get_cover(self):
+        try:
+            return self.parent.cover
+        except:
+            return ''
 
     def get_parent(self):
         return self.parent

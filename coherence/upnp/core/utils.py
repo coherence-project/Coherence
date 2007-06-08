@@ -204,7 +204,7 @@ class StaticFile(static.File):
             return ''
 
         trans = True
- 
+
         range = request.getHeader('range')
 
         tsize = size
