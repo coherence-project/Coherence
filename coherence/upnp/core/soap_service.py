@@ -3,14 +3,13 @@
 
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
-
-import platform
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
 from twisted.web import soap, server
 from twisted.python import log, failure
 from twisted.internet import defer
 
+from coherence import SERVER_ID
 from coherence.extern.et import ET
 #from elementtree.ElementTree import Element, SubElement, tostring
 
@@ -85,8 +84,7 @@ class UPnPPublisher(soap.SOAPPublisher):
         request.setHeader("Content-type", mimeType)
         request.setHeader("Content-length", str(len(response)))
         request.setHeader("EXT", '')
-        request.setHeader("SERVER",
-            ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+        request.setHeader("SERVER", SERVER_ID)
         """ XXX: version string """
         request.write(response)
         request.finish()
