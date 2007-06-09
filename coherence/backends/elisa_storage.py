@@ -106,6 +106,9 @@ class ElisaMediaStore:
                                       elisa_item['name'])
                 if isinstance(upnp_item, Container):
                     upnp_item.childCount = len(elisa_item.get('children',[]))
+                    if len(Filter) > 0:
+                        upnp_item.searchable = True
+                        upnp_item.searchClass = ('object',)
                 else:
                     internal_url = elisa_item['location'].get('internal')
                     external_url = elisa_item['location'].get('external')

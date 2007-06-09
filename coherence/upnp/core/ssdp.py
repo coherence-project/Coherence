@@ -4,7 +4,7 @@
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 #
 # Implementation of a SSDP server under Twisted Python.
 #
@@ -13,11 +13,12 @@ import random
 import string
 import sys
 import time
-import platform
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
 from twisted.internet import task
+
+from coherence import SERVER_ID
 
 import louie
 
@@ -32,9 +33,6 @@ class SSDPServer(DatagramProtocol):
     searchReceived methods are called when the appropriate type of
     datagram is received by the server."""
 
-    # not used yet
-    stdheaders = [ ('Server', 'Twisted, UPnP/1.0, python-upnp'), ]
-    elements = {}
     known = {}
 
     _callbacks = {}
@@ -89,7 +87,7 @@ class SSDPServer(DatagramProtocol):
             log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
 
     def register(self, manifestation, usn, st, location,
-                        server='UPnP/1.0,Coherence UPnP framework,0.1',
+                        server=SERVER_ID,
                         cache_control='max-age=1800'):
         """Register a service or device that this SSDP server will
         respond to."""
@@ -102,7 +100,7 @@ class SSDPServer(DatagramProtocol):
         self.known[usn]['ST'] = st
         self.known[usn]['EXT'] = ''
         if manifestation == 'local':
-            self.known[usn]['SERVER'] = ','.join([platform.system(),platform.release(),server])
+            self.known[usn]['SERVER'] = server
             self.known[usn]['CACHE-CONTROL'] = cache_control
         else:
             self.known[usn]['SERVER'] = server

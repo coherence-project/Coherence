@@ -1,6 +1,10 @@
 #!/usr/bin/env python
-#
-#
+
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
+
 import getopt, sys, string
 import xmlrpclib
 
@@ -16,7 +20,7 @@ try:
     optlist, args = getopt.getopt( sys.argv[1:], "c:d:i:v:u:", ['command=', 'device=', 'id=', 'volume=', 'uri='])
 except getopt.GetoptError:
     print "falsche parameter"
-    sys.exit(1)  
+    sys.exit(1)
 
 for option, param in optlist:
     if option in( '-c', '--command'):command=param
@@ -37,12 +41,12 @@ for p in sys.argv[1:]:
     arguments[k] = v
 
 #print 'Arguments', arguments
-    
+
 s = xmlrpclib.Server('http://127.0.0.1:30020/RPC2')
 
 if( command == "ping"):
     r=s.ping()
-    
+
 if( command == "list_devices"):
     r=s.list_devices()
 
@@ -66,16 +70,16 @@ if( command == "stop" and device != ''):
 
 if( command == "next" and device != ''):
     r=s.next(device)
-    
+
 if( command == "previous" and device != ''):
     r=s.previous(device)
-    
+
 if( command == "set_av_transport_uri" and device != '' and uri != ''):
     r=s.set_av_transport_uri(device, uri)
-    
+
 if( command == "shutdown"):
     r=s.shutdown()
-    
+
 if(command == "create_object" and device != ''):
     r = s.create_object(device, id, arguments)
 
@@ -84,5 +88,5 @@ if(command == "import_resource" and device != ''):
 
 if(command == "put_resource"):
     r = s.put_resource( arguments['url'], arguments['path'])
-    
+
 print r

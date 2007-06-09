@@ -61,7 +61,16 @@ class FSItem:
 
         if mimetype in ['directory','root']:
             self.update_id = 0
+            self.item.searchable = True
+            self.item.searchClass = 'object'
+            self.check_for_cover_art()
         else:
+            if hasattr(parent, 'cover'):
+                _,ext =  os.path.splitext(parent.cover)
+                """ add the cover image extension to help clients not reacting on
+                    the mimetype """
+                self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+
             self.item.res = []
 
             _,host_port,_,_,_ = urlsplit(urlbase)
@@ -95,6 +104,21 @@ class FSItem:
         #print "FSItem __del__", self.id, self.get_name()
         pass
 
+    def check_for_cover_art(self):
+        """ let's try to find in the current directory some jpg file,
+            or png if the jpg search fails, and take the first one
+            that comes around
+        """
+        jpgs = [i.path for i in self.location.children() if i.splitext()[1] in ('.jpg', '.JPG')]
+        try:
+            self.cover = jpgs[0]
+        except IndexError:
+            pngs = [i.path for i in self.location.children() if i.splitext()[1] in ('.png', '.PNG')]
+            try:
+                self.cover = pngs[0]
+            except IndexError:
+                return
+
     def remove(self):
         #print "FSItem remove", self.id, self.get_name(), self.parent
         if self.parent:
@@ -108,7 +132,6 @@ class FSItem:
             self.item.childCount += 1
         if update == True:
             self.update_id += 1
-
 
     def remove_child(self, child):
         #print "remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name())
@@ -152,6 +175,12 @@ class FSItem:
         else:
             self.location
 
+    def get_cover(self):
+        try:
+            return self.parent.cover
+        except:
+            return ''
+
     def get_parent(self):
         return self.parent
 
@@ -191,17 +220,18 @@ class FSStore:
 
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
+        self.update_id = 0
         if len(self.content)>1:
             UPnPClass = classChooser('root')
             id = self.getnextID()
-            parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=False)
+            parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True)
 
         for path in self.content:
             if ignore_file_pattern.match(path):
                 continue
             self.walk(path, parent, ignore_file_pattern)
 
-        self.update_id = 0
+        #self.update_id = 0
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):
@@ -254,14 +284,17 @@ class FSStore:
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=update)
+        self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=True)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
-                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-            value = (parent.get_id(),parent.get_update_id())
-            if self.server:
-                self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+                if hasattr(self.server,'content_directory_server'):
+                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            if parent is not None:
+            	value = (parent.get_id(),parent.get_update_id())
+            	if self.server:
+                    if hasattr(self.server,'content_directory_server'):
+                        self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         return id
 
@@ -341,6 +374,8 @@ class FSStore:
                          'internal:%s:application/ogg:*' % self.server.coherence.hostname,
                          'http-get:*:application/ogg:*'],
                         default=True)
+            self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+
 
     def upnp_ImportResource(self, *args, **kwargs):
         SourceURI = kwargs['SourceURI']

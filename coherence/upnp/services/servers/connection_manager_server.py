@@ -34,36 +34,36 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
             backend = self.device.backend
         resource.Resource.__init__(self)
         service.ServiceServer.__init__(self, 'ConnectionManager', self.device.version, backend)
-        
+
         self.control = ConnectionManagerControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
         self.next_connection_id = 1
         self.next_avt_id = 1
         self.next_rcs_id = 1
-        
+
         self.connections = {}
-        
+
         self.set_variable(0, 'SourceProtocolInfo', '')
         self.set_variable(0, 'SinkProtocolInfo', '')
         self.set_variable(0, 'CurrentConnectionIDs', '')
-        
+
         self.remove_lingering_connections_loop = task.LoopingCall(self.remove_lingering_connections)
         self.remove_lingering_connections_loop.start(180.0, now=False)
 
-        
+
     def add_connection(self, RemoteProtocolInfo,
                              Direction,
                              PeerConnectionID,
                              PeerConnectionManager):
-                             
+
 
         id = self.next_connection_id
         self.next_connection_id += 1
-        
+
         avt_id = 0
         rcs_id = 0
-        
+
         if self.device.device_type == 'MediaServer':
             self.connections[id] = {'ProtocolInfo':RemoteProtocolInfo,
                                     'Direction':Direction,
@@ -72,7 +72,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
                                     'AVTransportID':avt_id,
                                     'RcsID':rcs_id,
                                     'Status':'OK'}
-            
+
         if self.device.device_type == 'MediaRenderer':
             """ this is the place to instantiate AVTransport and RenderingControl
                 for this connection
@@ -95,7 +95,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
         return id, avt_id, rcs_id
-        
+
     def remove_connection(self,id):
         if self.device.device_type == 'MediaRenderer':
             try:
@@ -111,22 +111,22 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
 
         csv_ids = ','.join([str(x) for x in self.connections])
         self.set_variable(0, 'CurrentConnectionIDs', csv_ids)
-        
+
     def remove_lingering_connections(self):
         """ check if we have a connection that hasn't a StateVariable change
             within the last 300 seconds, if so remove it
         """
         if self.device.device_type != 'MediaRenderer':
             return
-            
+
         now = time.time()
-            
+
         for id, connection in self.connections.items():
             avt_id = connection['AVTransportID']
             rcs_id = connection['RcsID']
             avt_active = True
             rcs_active = True
-            
+
             #print "remove_lingering_connections", id, avt_id, rcs_id
             if avt_id > 0:
                 avt_variables = self.device.av_transport_server.get_variables().get(avt_id)
@@ -146,31 +146,31 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
                             break
             if( avt_active == False and rcs_active == False):
                 self.remove_connection(id)
-        
+
     def lookup_connection(self,id):
         return self.connections.get(id)
-            
+
     def lookup_avt_id(self,id):
         try:
             return self.connections[id]['AVTransportID']
         except:
             return 0
-        
+
     def lookup_rcs_id(self,id):
         try:
             return self.connections[id]['RcsID']
         except:
             return 0
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
                 cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
         return cl
-        
+
     def render(self,request):
         return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
-        
+
 
     def upnp_PrepareForConnection(self, *args, **kwargs):
         log.info('upnp_PrepareForConnection')
@@ -190,15 +190,32 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
         PeerConnectionID = kwargs['PeerConnectionID']
         """ ??? """
         PeerConnectionManager = kwargs['PeerConnectionManager']
-        protocolinfo = None
+        local_protocol_infos = None
         if self.device.device_type == 'MediaRenderer':
-            local_protocol_info = self.get_variable('SinkProtocolInfo').value
+            local_protocol_infos = self.get_variable('SinkProtocolInfo').value
         if self.device.device_type == 'MediaServer':
-            local_protocol_info = self.get_variable('SourceProtocolInfo').value
-        log.info(RemoteProtocolInfo, '--', local_protocol_info)
-        if RemoteProtocolInfo in local_protocol_info.split(','):
-            connection_id, avt_id, rcs_id = \
-                self.add_connection(RemoteProtocolInfo,
+            local_protocol_infos = self.get_variable('SourceProtocolInfo').value
+        log.info(RemoteProtocolInfo, '--', local_protocol_infos)
+
+        for protocol_info in local_protocol_infos.split(','):
+            print RemoteProtocolInfo
+            remote_protocol,remote_network,remote_content_format,_ = RemoteProtocolInfo.split(':')
+            print remote_protocol,remote_network,remote_content_format
+            print protocol_info
+            local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
+            print local_protocol,local_network,local_content_format
+            if((remote_protocol == local_protocol or
+                remote_protocol == '*' or
+                local_protocol == '*') and
+               (remote_network == local_network or
+                remote_network == '*' or
+                local_network == '*') and
+               (remote_content_format == local_content_format or
+                remote_content_format == '*' or
+                local_content_format == '*')):
+
+                connection_id, avt_id, rcs_id = \
+                    self.add_connection(RemoteProtocolInfo,
                                         Direction,
                                         PeerConnectionID,
                                         PeerConnectionManager)
@@ -222,7 +239,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
             PeerConnectionID
             Direction
             Status
-            
+
             or send a 706 if there isn't such a ConnectionID
         """
         connection = self.lookup_connection(ConnectionID)

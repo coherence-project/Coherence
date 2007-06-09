@@ -4,7 +4,6 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import platform
 import time
 from urlparse import urlsplit
 
@@ -13,6 +12,7 @@ from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
 from twisted.python import failure
 
+from coherence import SERVER_ID
 from coherence.upnp.core import utils
 
 from coherence.extern.logger import Logger
@@ -100,7 +100,7 @@ class EventSubscriptionServer(resource.Resource):
                     s = self.subscribers[headers['sid']]
                 elif not headers.has_key('callback'):
                     request.setResponseCode(404)
-                    request.setHeader('SERVER', ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+                    request.setHeader('SERVER', SERVER_ID)
                     request.setHeader('CONTENT-LENGTH', 0)
                     return ""
             except:
@@ -117,7 +117,7 @@ class EventSubscriptionServer(resource.Resource):
             request.setHeader('SID', s['sid'])
             #request.setHeader('Subscription-ID', sid)  wrong example in the UPnP UUID spec?
             request.setHeader('TIMEOUT', s['timeout'])
-            request.setHeader('SERVER', ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+            request.setHeader('SERVER', SERVER_ID)
             request.setHeader('CONTENT-LENGTH', 0)
         return ""
 
