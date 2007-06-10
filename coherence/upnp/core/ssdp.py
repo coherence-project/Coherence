@@ -88,7 +88,8 @@ class SSDPServer(DatagramProtocol):
 
     def register(self, manifestation, usn, st, location,
                         server=SERVER_ID,
-                        cache_control='max-age=1800'):
+                        cache_control='max-age=1800',
+                        silent=False):
         """Register a service or device that this SSDP server will
         respond to."""
 
@@ -107,6 +108,7 @@ class SSDPServer(DatagramProtocol):
             self.known[usn]['CACHE-CONTROL'] = cache_control
 
         self.known[usn]['MANIFESTATION'] = manifestation
+        self.known[usn]['SILENT'] = silent
 
         log.msg(self.known[usn])
 
@@ -179,6 +181,8 @@ class SSDPServer(DatagramProtocol):
     def doNotify(self, usn):
         """Do notification"""
 
+        if self.known[usn]['SILENT']:
+            return
         log.msg('Sending alive notification for %s' % usn)
 
         resp = [ 'NOTIFY * HTTP/1.1',
@@ -189,6 +193,7 @@ class SSDPServer(DatagramProtocol):
         stcpy['NT'] = stcpy['ST']
         del stcpy['ST']
         del stcpy['MANIFESTATION']
+        del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         log.msg('doNotify content', resp)
@@ -198,6 +203,8 @@ class SSDPServer(DatagramProtocol):
     def doByebye(self, st):
         """Do byebye"""
 
+        if self.known[st]['SILENT']:
+            return
         log.msg('Sending byebye notification for %s' % st)
 
         resp = [ 'NOTIFY * HTTP/1.1',
@@ -208,6 +215,7 @@ class SSDPServer(DatagramProtocol):
         stcpy['NT'] = stcpy['ST']
         del stcpy['ST']
         del stcpy['MANIFESTATION']
+        del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))

@@ -130,7 +130,7 @@ class MediaRenderer:
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
-        self.version = kwargs.get('version',2)
+        self.version = int(kwargs.get('version',2))
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
@@ -241,10 +241,15 @@ class MediaRenderer:
 
         version = self.version
         while version > 0:
+            if version == self.version:
+                silent = False
+            else:
+                silent = True
             s.register('local',
                         '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
                         'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
-                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
+                        silent=silent)
 
             for service in self._services:
                 try:
@@ -255,6 +260,7 @@ class MediaRenderer:
                 s.register('local',
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, version),
-                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
+                            silent=silent)
 
             version -= 1
