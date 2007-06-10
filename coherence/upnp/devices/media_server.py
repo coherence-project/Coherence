@@ -240,7 +240,7 @@ class RootDeviceXML(static.Data):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
-        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
+        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, int(version))
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement(e, 'major').text = '1'
         ET.SubElement(e, 'minor').text = '0'
@@ -283,7 +283,7 @@ class RootDeviceXML(static.Data):
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(version))
                 try:
                     namespace = service.namespace
                 except:
@@ -388,7 +388,7 @@ class MediaServer:
         self.web_resource = MSRoot( self, backend)
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
-        version = self.version
+        version = int(self.version)
         while version > 0:
             self.web_resource.putChild( 'description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
@@ -433,14 +433,14 @@ class MediaServer:
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,
                     'upnp:rootdevice',
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % int(self.version))
 
         s.register('local',
                     uuid,
                     uuid,
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % int(self.version))
 
-        version = self.version
+        version = int(self.version)
         while version > 0:
             s.register('local',
                         '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),

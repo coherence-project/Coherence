@@ -252,7 +252,7 @@ class ServiceServer:
         self.backend = backend
         if getattr(self, "namespace", None) == None:
             self.namespace = 'schemas-upnp-org'
-        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, self.version)
+        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, int(self.version))
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
@@ -489,7 +489,7 @@ class ServiceServer:
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
     def init_var_and_actions(self):
-        desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, self.version))
+        desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, int(self.version)))
         tree = ET.parse(desc_file)
 
         for action_node in tree.findall('.//action'):
