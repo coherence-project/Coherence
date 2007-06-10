@@ -61,8 +61,8 @@ class FSItem:
 
         if mimetype in ['directory','root']:
             self.update_id = 0
-            self.item.searchable = True
-            self.item.searchClass = 'object'
+            #self.item.searchable = True
+            #self.item.searchClass = 'object'
             self.check_for_cover_art()
         else:
             if hasattr(parent, 'cover'):

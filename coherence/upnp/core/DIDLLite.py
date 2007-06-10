@@ -65,6 +65,8 @@ class Resource:
                     additional_info = ';'.join(('DLNA.ORG_PN=MP3','DLNA.ORG_OP=11'))
                 if content_format == 'image/jpeg':
                     additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=11'))
+                if content_format == 'video/mpeg':
+                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=11'))
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self):
@@ -155,7 +157,6 @@ class Object:
         if self.writeStatus is not None:
             ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
 
-        """
         if self.date is not None:
             if isinstance(self.date, datetime):
                 ET.SubElement(root, 'dc:date').text = self.date.isoformat()
@@ -163,7 +164,6 @@ class Object:
                 ET.SubElement(root, 'dc:date').text = self.date
         else:
             ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()
-        """
 
         return root
 
