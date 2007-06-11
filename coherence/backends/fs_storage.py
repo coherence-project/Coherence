@@ -291,8 +291,8 @@ class FSStore:
                 if hasattr(self.server,'content_directory_server'):
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             if parent is not None:
-            	value = (parent.get_id(),parent.get_update_id())
-            	if self.server:
+                value = (parent.get_id(),parent.get_update_id())
+                if self.server:
                     if hasattr(self.server,'content_directory_server'):
                         self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
