@@ -30,6 +30,7 @@ import urllib
 import StringIO
 
 from twisted.internet import reactor
+from twisted.internet import defer
 from twisted.web import client
 
 from coherence.upnp.core.utils import parse_xml
@@ -85,7 +86,7 @@ class WorkQueue(object):
             #print "WorkQueue - all workers busy"
             return
         work = self.queue.pop()
-        d = work[0](*work[1],**work[2])
+        d = defer.maybeDeferred(work[0], *work[1],**work[2])
         self.workers.append(d)
         d.addCallback(self.remove_from_workers, d)
         d.addErrback(self.remove_from_workers, d)
