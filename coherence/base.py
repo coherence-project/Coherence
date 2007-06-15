@@ -9,7 +9,7 @@ import os, sys
 import traceback
 
 from twisted.python import filepath, util
-from twisted.internet import task, address
+from twisted.internet import task, address, defer
 from twisted.internet import reactor
 from twisted.web import resource
 
@@ -39,15 +39,15 @@ class SimpleRoot(resource.Resource):
 
     def __init__(self, coherence):
         resource.Resource.__init__(self)
-        self.coherence = coherence  
-         
+        self.coherence = coherence
+
     def getChild(self, name, request):
         log.info('SimpleRoot getChild %s, %s' % (name, request))
         try:
             return self.coherence.children[name]
         except:
             return self
-            
+
     def listchilds(self, uri):
         log.info('listchilds %s' % uri)
         if uri[-1] != '/':
@@ -65,7 +65,7 @@ class SimpleRoot(resource.Resource):
         for c in self.children:
                 cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
-        
+
     def render(self,request):
         return """<html><head><title>Coherence</title></head><body>
 <a href="http://coherence.beebits.net">Coherence</a> - a Python UPnP A/V framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
@@ -79,16 +79,16 @@ class WebServer:
                 """ use this to jump out here if we do not want
                     the web ui """
                 raise ImportError
-                
+
             from nevow import __version_info__, __version__
             if __version_info__ <(0,9,17):
                 log.warning( "Nevow version %s too old, disabling WebUI" % __version__)
                 raise ImportError
-                
+
             from nevow import appserver, inevow
             from coherence.web.ui import Web, IWeb, WebUI
             from twisted.python.components import registerAdapter
-                
+
             def ResourceFactory( original):
                 return WebUI( IWeb, original)
 
@@ -117,30 +117,30 @@ class Coherence(object):
             cls._instance_ = obj
             obj.setup(*args, **kwargs)
             return obj
-            
+
     def __init__(self, *args, **kwargs):
         pass
-                
+
     def setup(self, config={}):
-            
+
         self.devices = []
         self.children = {}
         self._callbacks = {}
 
         logmode = config.get('logmode', 'info')
         network_if = config.get('interface')
-        
+
         self.web_server_port = int(config.get('serverport', 0))
         log.start_logging(config.get('logfile', None))
-        
+
         log.set_master_level(logmode)
-        
+
         subsystem_log = config.get('subsystem_log',{})
-            
+
         for subsystem,level in subsystem_log.items():
             log.warning( "setting log-level for subsystem %s to %s" % (subsystem,level))
             log.set_level(name=subsystem,level=level)
-            
+
         #log.disable(name='Variable')
         #log.enable(name='Variable')
         #log.set_level(name='Variable')
@@ -177,7 +177,7 @@ class Coherence(object):
 
             if self.hostname == '127.0.0.1':
                 """ use interface detection via routing table as last resort """
-                self.hostname = get_host_address() 
+                self.hostname = get_host_address()
 
         log.warning('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
@@ -188,9 +188,9 @@ class Coherence(object):
 
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
-        
+
         self.installed_plugins = {}
-        
+
         for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_server"):
             try:
                 self.installed_plugins[entrypoint.name] = entrypoint.load()
@@ -201,7 +201,7 @@ class Coherence(object):
                 self.installed_plugins[entrypoint.name] = entrypoint.load()
             except ImportError:
                 log.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
-                
+
         plugins = config.get('plugins',None)
         if plugins is None:
             log.warning("No plugin defined!")
@@ -213,7 +213,7 @@ class Coherence(object):
                     self.add_plugin(plugin, **arguments)
                 except Exception, msg:
                     log.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
-        
+
         if config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
 
@@ -241,8 +241,8 @@ class Coherence(object):
         except Exception, msg:
             log.critical(traceback.print_exc())
             log.critical("Can't enable %s plugin, %s!" % (plugin, msg))
-            
-            
+
+
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
         #print kwargs
@@ -254,13 +254,16 @@ class Coherence(object):
             self.renew_service_subscription_loop.stop()
         except:
             pass
+        l = []
         for root_device in self.get_devices():
-            root_device.unsubscribe_service_subscriptions()
+            l.append(root_device.unsubscribe_service_subscriptions())
             for device in root_device.get_devices():
-                device.unsubscribe_service_subscriptions()
+                l.append(device.unsubscribe_service_subscriptions())
         self.ssdp_server.shutdown()
+        dl = defer.DeferredList(l)
         log.warning('Coherence UPnP framework shutdown')
-        
+        return dl
+
     def check_devices(self):
         """ iterate over devices and their embedded ones and renew subscriptions """
         for root_device in self.get_devices():
@@ -306,7 +309,7 @@ class Coherence(object):
 
     def get_nonlocal_devices(self):
         return [d for d in self.devices if d.manifestation == 'remote']
-        
+
     def add_device(self, device_type, infos):
         log.info("adding",infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
@@ -334,7 +337,7 @@ class Coherence(object):
                 louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
                 self.callback("removed_device", infos['ST'], infos['USN'])
 
-            
+
     def add_web_resource(self, name, sub):
         #self.web_server.web_root_resource.putChild(name, sub)
         self.children[name] = sub

@@ -36,7 +36,7 @@ def subscribe(service):
 def unsubscribe(service):
     if subscribers.has_key(service.get_sid()):
         del subscribers[service.get_sid()]
-        
+
 class Service:
 
     def __init__(self, service_type, service_id, location, control_url,
@@ -49,7 +49,7 @@ class Service:
             presentation_url = "/%s" % presentation_url
         if not scpd_url.startswith('/'):
             scpd_url = "/%s" % scpd_url
-            
+
         self.service_type = service_type
         self.detection_completed = False
         self.id = service_id
@@ -63,16 +63,18 @@ class Service:
         self._var_subscribers = {}
         self.subscription_id = ""
         self.timeout = 0
-        
+
+        self.event_connection = None
+
         parsed = urllib2.urlparse.urlparse(location)
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
         log.info("%s %s inizialized" % (self.service_type,self.id))
-        
+
     def __repr__(self):
         return "Service %s %s" % (self.service_type,self.id)
-        
+
     def __del__(self):
         #print "Service deleted"
         pass
@@ -83,7 +85,7 @@ class Service:
         action = "%s#%s" % (namespace, name)
         client = SOAPProxy( url, namespace=("u",namespace), soapaction=action)
         return client
-        
+
     def remove(self):
         log.info("remove myself", self.service_type, self.id)
         self.unsubscribe()
@@ -112,7 +114,7 @@ class Service:
 
     def get_timeout(self):
         return self.timeout
-        
+
     def get_id(self):
         return self.id
 
@@ -123,10 +125,10 @@ class Service:
         self.subscription_id = sid
         if sid:
             subscribe(self)
-            
+
     def get_actions(self):
         return self._actions
-        
+
     def get_action( self, name):
         return self.get_actions()[name]
 
@@ -152,23 +154,31 @@ class Service:
 
     def get_base_url(self):
         return self.url_base
-    
+
     def subscribe(self):
         event.subscribe(self)
         global subscribers
         subscribers[self.get_sid()] = self
-        
+
     def unsubscribe(self):
-        event.unsubscribe(self)
-        global subscribers
-        if subscribers.has_key(self.get_sid()):
-            del subscribers[self.get_sid()]
+        d = defer.Deferred()
+
+        def remove_it(r):
+            global subscribers
+            if subscribers.has_key(self.get_sid()):
+                del subscribers[self.get_sid()]
+
+        d.addCallback(event.unsubscribe)
+        d.addCallback(remove_it)
+        d.callback(self)
+
+        return d
 
     def subscribe_for_variable(self, var_name, instance=0, callback=None):
         variable = self.get_state_variable(var_name)
         if variable:
             variable.subscribe(callback)
-            
+
     def renew_subscription(self):
         event.subscribe(self)
 
@@ -181,7 +191,7 @@ class Service:
             data, headers = x
             tree = utils.parse_xml(data, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
-            
+
             for action_node in tree.findall('.//{%s}action' % ns):
                 name = action_node.findtext('{%s}name' % ns)
                 arguments = []
@@ -209,14 +219,14 @@ class Service:
             self.detection_completed = True
 
             louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
-            
+
         def gotError(failure, url):
             print "error requesting", url
             print failure
-            
+
         #print 'getPage', self.get_scpd_url()
         utils.getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)
-            
+
 moderated_variables = \
         {'urn:schemas-upnp-org:service:AVTransport:2':
             ['LastChange'],
@@ -242,7 +252,7 @@ class ServiceServer:
         self.backend = backend
         if getattr(self, "namespace", None) == None:
             self.namespace = 'schemas-upnp-org'
-        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, self.version)
+        self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, int(self.version))
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
@@ -253,11 +263,11 @@ class ServiceServer:
             self.event_metadata = 'urn:schemas-upnp-org:metadata-1-0/RCS/'
         if id == 'ScheduledRecording':
             self.event_metadata = 'urn:schemas-upnp-org:av:srs-event'
-            
+
         self._actions = {}
         self._variables = {0: {}}
         self._subscribers = {}
-        
+
         self.last_change = None
         self.init_var_and_actions()
 
@@ -268,10 +278,10 @@ class ServiceServer:
             pass
 
         self.putChild(self.subscription_url, EventSubscriptionServer(self))
-        
+
         self.check_subscribers_loop = task.LoopingCall(self.check_subscribers)
         self.check_subscribers_loop.start(120.0, now=False)
-        
+
         if moderated_variables.has_key(self.service_type):
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
             #self.check_moderated_loop.start(5.0, now=False)
@@ -293,11 +303,11 @@ class ServiceServer:
         notify = []
         for vdict in self._variables.values():
             notify += [v for v in vdict.values() if v.send_events == True]
-            
+
         log.info("new_subscriber", subscriber, notify)
         if len(notify) <= 0:
             return
-        
+
         root = ET.Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
         evented_variables = 0
@@ -311,18 +321,18 @@ class ServiceServer:
             else:
                 ET.SubElement( e, n.name).text = str(n.value)
                 evented_variables += 1
-                
+
         if evented_variables > 0:
             xml = ET.tostring( root, encoding='utf-8')
             event.send_notification(subscriber, xml)
         self._subscribers[subscriber['sid']] = subscriber
-        
+
     def get_id(self):
         return self.id
-        
+
     def get_type(self):
         return self.service_type
-        
+
     def create_new_instance(self, instance):
         self._variables[instance] = {}
         for v in self._variables[0].values():
@@ -344,9 +354,9 @@ class ServiceServer:
         if instance == 0:
             return
         del(self._variables[instance])
-        
+
     def set_variable(self, instance, variable_name, value, default=False):
- 
+
         def process_value(result):
             variable.update(result)
             if default == True:
@@ -357,7 +367,7 @@ class ServiceServer:
                 xml = self.build_single_notification(instance, variable_name, variable.value)
                 for s in self._subscribers.values():
                     event.send_notification(s, xml)
-                               
+
         try:
             variable = self._variables[instance][variable_name]
             if isinstance( value, defer.Deferred):
@@ -366,7 +376,7 @@ class ServiceServer:
                 process_value(value)
         except:
             pass
-            
+
     def get_variable(self, variable_name, instance=0):
         try:
             return self._variables[instance][variable_name]
@@ -379,7 +389,7 @@ class ServiceServer:
         e = ET.SubElement( root, 'property')
         s = ET.SubElement( e, variable_name).text = str(value)
         return ET.tostring( root, encoding='utf-8')
-        
+
     def build_last_change_event(self, instance=0):
         got_one = False
         root = ET.Element('Event')
@@ -404,14 +414,14 @@ class ServiceServer:
             return ET.tostring( root, encoding='utf-8')
         else:
             return None
-        
+
     def propagate_notification(self, notify):
         #print "propagate_notification", notify
         if len(self._subscribers) <= 0:
             return
         if len(notify) <= 0:
             return
-            
+
         root = ET.Element('propertyset')
         root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
 
@@ -440,7 +450,7 @@ class ServiceServer:
         #print "propagate_notification", xml
         for s in self._subscribers.values():
             event.send_notification(s, xml)
-        
+
     def check_subscribers(self):
         for s in self._subscribers.values():
             timeout = 86400
@@ -473,15 +483,15 @@ class ServiceServer:
         except:
             pass
         return False
-        
+
     def simulate_notification(self):
         print "simulate_notification for", self.id
         self.set_variable(0, 'CurrentConnectionIDs', '0')
-        
+
     def init_var_and_actions(self):
-        desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, self.version))
+        desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, int(self.version)))
         tree = ET.parse(desc_file)
-        
+
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')
             implementation = 'required'
@@ -499,14 +509,14 @@ class ServiceServer:
                     arg_direction == 'out'):
                     needs_callback = True
                 #print arg_name, arg_direction, needs_callback
-                    
+
             """ check for action in backend """
             callback = getattr(self.backend, "upnp_%s" % name, None)
-            
+
             if callback == None:
                 """ check for action in ServiceServer """
                 callback = getattr(self, "upnp_%s" % name, None)
-            
+
             if( needs_callback == True and
                 callback == None):
                 """ we have one or more 'A_ARG_TYPE_' variables
@@ -524,18 +534,18 @@ class ServiceServer:
             if callback != None:
                 new_action.set_callback(callback)
                 log.info('Add callback %s for %s/%s' % (callback, self.id, name))
-                    
- 
+
+
         backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
         service_value_defaults = None
         if backend_vendor_value_defaults:
             service_value_defaults = backend_vendor_value_defaults.get(self.id,None)
-                    
+
         backend_vendor_range_defaults = getattr(self.backend, "vendor_range_defaults", None)
         service_range_defaults = None
         if backend_vendor_range_defaults:
             service_range_defaults = backend_vendor_range_defaults.get(self.id)
-            
+
         for var_node in tree.findall('.//stateVariable'):
             instance = 0
             name = var_node.findtext('name')
@@ -576,7 +586,7 @@ class ServiceServer:
 
                 if vendor_values != None:
                     self._variables.get(instance)[name].has_vendor_values = True
-                    
+
             allowed_value_range = var_node.find('allowedValueRange')
             if allowed_value_range:
                 vendor_values = allowed_value_range.attrib.get(
@@ -596,15 +606,17 @@ class ServiceServer:
                             elif e.text == None:
                                 log.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
                 self._variables.get(instance)[name].set_allowed_value_range(**range)
-                
+                if vendor_values != None:
+                    self._variables.get(instance)[name].has_vendor_values = True
+
         for v in self._variables.get(0).values():
             if isinstance( v.dependant_variable, str):
                 v.dependant_variable = self._variables.get(instance).get(v.dependant_variable)
-                
+
 class scpdXML(static.Data):
 
     def __init__(self, server, control):
-    
+
         root = ET.Element('scpd')
         root.attrib['xmlns']='urn:schemas-upnp-org:service-1-0'
         e = ET.SubElement(root, 'specVersion')
@@ -636,7 +648,7 @@ class scpdXML(static.Data):
                 v = ET.SubElement( s, 'allowedValueList')
                 for value in var.allowed_values:
                     ET.SubElement( v, 'allowedValue').text = value
-                    
+
             if( var.allowed_value_range != None and
                 len(var.allowed_value_range) > 0):
                 complete = True
@@ -683,10 +695,10 @@ class ServiceControl:
                     r[argument.name] = variable.value
                     #print "r", r
             self.service.propagate_notification(notify)
-        r= { '%sResponse'%action.name: r}
-        log.info( 'action_results', r)
+        #r= { '%sResponse'%action.name: r}
+        log.info( 'action_results', action.name, r)
         return r
-        
+
     def soap__generic(self, *args, **kwargs):
         """ generic UPnP service control method,
             which will be used if no soap_ACTIONNAME method
@@ -696,12 +708,12 @@ class ServiceControl:
             action = self.actions[kwargs['soap_methodName']]
         except:
             return failure.Failure(errorCode(401))
-        
+
         try:
             instance = int(kwargs['InstanceID'])
         except:
             instance = 0
-            
+
         log.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
         if( kwargs.has_key('X_UPnPClient') and
@@ -716,7 +728,7 @@ class ServiceControl:
         for arg_name, arg in kwargs.iteritems():
             if arg_name.find('X_') == 0:
                 continue
-            l = [ a for a in in_arguments if arg_name == a.get_name()] 
+            l = [ a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
@@ -726,7 +738,7 @@ class ServiceControl:
             log.critical('argument %s missing for action %s' %
                                 ([ a.get_name() for a in in_arguments],action.name))
             return failure.Failure(errorCode(402))
-        
+
         def callit( *args, **kwargs):
             #print 'callit args', args
             #print 'callit kwargs', kwargs
@@ -735,7 +747,7 @@ class ServiceControl:
             if callback != None:
                 return callback( **kwargs)
             return result
-            
+
         def got_error(x):
             #print 'failure', x
             log.error('soap__generic error during call processing')
@@ -746,4 +758,3 @@ class ServiceControl:
         d.addCallback( self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d
-

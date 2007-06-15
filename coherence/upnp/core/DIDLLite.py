@@ -25,11 +25,11 @@ from coherence.upnp.core import utils
 def classChooser(mimetype, sub=None):
 
     if mimetype == 'root':
-        return StorageFolder
+        return Container
     if mimetype == 'item':
         return Item
     if mimetype == 'directory':
-        return StorageFolder
+        return Container
     else:
         if string.find (mimetype,'image/') == 0:
             return Photo
@@ -39,6 +39,10 @@ def classChooser(mimetype, sub=None):
             return AudioItem
         if string.find (mimetype,'video/') == 0:
             return VideoItem
+        if mimetype == 'application/ogg':
+            if sub == 'music':       # FIXME: this is stupid
+                return MusicTrack
+            return AudioItem
     return None
 
 
@@ -51,8 +55,19 @@ class Resource:
         self.bitrate = None
         self.size = None
         self.duration = None
-        
+
         self.importUri = None
+
+        if self.protocolInfo is not None:
+            protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+            if additional_info == '*':
+                if content_format == 'audio/mpeg':
+                    additional_info = ';'.join(('DLNA.ORG_PN=MP3','DLNA.ORG_OP=11'))
+                if content_format == 'image/jpeg':
+                    additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=11'))
+                if content_format == 'video/mpeg':
+                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=11'))
+                self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self):
 
@@ -65,13 +80,13 @@ class Resource:
 
         if self.size is not None:
             root.attrib['size'] = str(self.size)
-            
+
         if self.duration is not None:
             root.attrib['duration'] = self.duration
-            
+
         if self.importUri is not None:
             root.attrib['importUri'] = self.importUri
-            
+
         return root
 
     def fromElement(self, elt):
@@ -81,7 +96,7 @@ class Resource:
         self.size = elt.attrib.get('size')
         self.duration = elt.attrib.get('duration',None)
         self.importUri = elt.attrib.get('importUri',None)
-       
+
     def toString(self):
         return ET.tostring(self.toElement())
 
@@ -118,16 +133,21 @@ class Object:
 
         root = ET.Element(self.elementName)
 
-        root.attrib['id'] = str(self.id)
+        if self.id == 1000:
+            root.attrib['id'] = '0'
+            ET.SubElement(root, 'dc:title').text = 'root'
+        else:
+            root.attrib['id'] = str(self.id)
+            ET.SubElement(root, 'dc:title').text = self.title
+
         root.attrib['parentID'] = str(self.parentID)
-        ET.SubElement(root, 'dc:title').text = self.title
         ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
-            root.attrib['restricted'] = 'true'
+            root.attrib['restricted'] = '1'
         else:
-            root.attrib['restricted'] = 'false'
-            
+            root.attrib['restricted'] = '0'
+
         if self.creator is not None:
             ET.SubElement(root, 'dc:creator').text = self.creator
 
@@ -136,14 +156,14 @@ class Object:
 
         if self.writeStatus is not None:
             ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
-            
+
         if self.date is not None:
             if isinstance(self.date, datetime):
                 ET.SubElement(root, 'dc:date').text = self.date.isoformat()
             else:
                 ET.SubElement(root, 'dc:date').text = self.date
         else:
-            ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()        
+            ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()
 
         return root
 
@@ -159,7 +179,7 @@ class Object:
         self.elementName = elt.tag
         self.id = elt.attrib['id']
         self.parentID = elt.attrib['parentID']
-        if elt.attrib['restricted'] in ['true','True','1','yes','Yes']:
+        if elt.attrib['restricted'] in [1,'true','True','1','yes','Yes']:
             self.restricted = True
         else:
             self.restricted = False
@@ -210,14 +230,14 @@ class Item(Object):
 
 class ImageItem(Item):
     upnp_class = Item.upnp_class + '.imageItem'
-    
+
     description = None
     longDescription = None
     rating = None
     storageMedium = None
     publisher = None
     rights = None
-    
+
     def toElement(self):
         root = Item.toElement(self)
         if self.description is not None:
@@ -228,28 +248,28 @@ class ImageItem(Item):
 
         if self.rating is not None:
             ET.SubElement(root, 'upnp:rating').text = self.rating
-            
+
         if self.storageMedium is not None:
             ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.contributor
-            
+
         if self.rights is not None:
             ET.SubElement(root, 'dc:rights').text = self.rights
 
         return root
-    
+
 class Photo(ImageItem):
     upnp_class = ImageItem.upnp_class + '.photo'
     album = None
-    
+
     def toElement(self):
         root = ImageItem.toElement(self)
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
         return root
-            
+
 class AudioItem(Item):
     """A piece of content that when rendered generates some audio."""
 
@@ -262,6 +282,7 @@ class AudioItem(Item):
     language = None
     relation = None
     rights = None
+    albumArtURI = None
 
     valid_keys = ['genre', 'description', 'longDescription', 'publisher',
                   'langugage', 'relation', 'rights']
@@ -279,6 +300,9 @@ class AudioItem(Item):
         if self.longDescription is not None:
             ET.SubElement(root, 'upnp:longDescription').text = \
                              self.longDescription
+
+        if self.albumArtURI is not None:
+            ET.SubElement(root, 'upnp:albumArtURI').text = self.albumArtURI
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.publisher
@@ -375,10 +399,10 @@ class Container(Object):
     searchable = None
 
     def __init__(self, id=None, parentID=None, title=None,
-                 restricted = 0, creator = None):
+                 restricted = False, creator = None):
         Object.__init__(self, id, parentID, title, restricted, creator)
         self.searchClass = []
-    
+
     def toElement(self):
 
         root = Object.toElement(self)
@@ -389,12 +413,17 @@ class Container(Object):
             ET.SubElement(root, 'upnp:createclass').text = self.createClass
 
         if not isinstance(self.searchClass, (list, tuple)):
-            self.searchClass = ['searchClass']
+            self.searchClass = [self.searchClass]
         for i in self.searchClass:
-            ET.SubElement(root, 'upnp:searchclass').text = i
+            sc = ET.SubElement(root, 'upnp:searchClass')
+            sc.attrib['includeDerived'] = '1'
+            sc.text = i
 
         if self.searchable is not None:
-            root.attrib['searchable'] = str(self.searchable)
+            if self.searchable in (1, '1', True, 'true', 'True'):
+                root.attrib['searchable'] = '1'
+            else:
+                root.attrib['searchable'] = '0'
 
         return root
 
@@ -402,7 +431,7 @@ class Container(Object):
         Object.fromElement(self, elt)
         self.childCount = int(elt.attrib.get('childCount','0'))
         #self.searchable = int(elt.attrib.get('searchable','0'))
-        self.searchable = elt.attrib.get('searchable','0') in ['True','true','1']
+        self.searchable = elt.attrib.get('searchable','0') in [1,'True','true','1']
         self.searchClass = []
         for child in elt.getchildren():
             if child.tag.endswith('createclass'):
@@ -450,9 +479,11 @@ class StorageFolder(Container):
 class DIDLElement(ElementInterface):
     def __init__(self):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
-        self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite'
+        self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
-        self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp'
+        self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
+        self.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
+        self.attrib['xmlns:pv'] = 'http://www.pv.com/pvns/'
         self._items = []
 
     def addContainer(self, id, parentID, title, restricted = False):
@@ -483,7 +514,7 @@ class DIDLElement(ElementInterface):
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance
-    
+
 upnp_classes = {'object': Object,
                 'object.item': Item,
                 'object.item.imageItem': ImageItem,
@@ -512,4 +543,3 @@ upnp_classes = {'object': Object,
                 'object.container.storageVolume': StorageVolume,
                 'object.container.storageFolder': StorageFolder,
 }
-

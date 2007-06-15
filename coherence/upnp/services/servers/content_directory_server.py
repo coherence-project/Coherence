@@ -32,14 +32,14 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
             backend = self.device.backend
         resource.Resource.__init__(self)
         service.ServiceServer.__init__(self, 'ContentDirectory', self.device.version, backend)
-        
+
         self.control = ContentDirectoryControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
         self.putChild('control', self.control)
 
         self.set_variable(0, 'SystemUpdateID', 0)
         self.set_variable(0, 'ContainerUpdateIDs', '')
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
@@ -56,7 +56,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
         SearchCriteria = kwargs['SearchCriteria']
-        
+
         total = 0
         root_id = 0
         item = None
@@ -75,7 +75,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                 item = self.backend.get_by_id(root_id)
                 if item  == None:
                     return failure.Failure(errorCode(701))
-                    
+
                 containers = [item]
                 while len(containers)>0:
                     container = containers.pop()
@@ -89,20 +89,20 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                             total += 1
         else:
             try:
-                root_id = int(ContainerID)
+                root_id = ContainerID
             except:
                 pass
 
             item = self.backend.get_by_id(root_id)
             if item == None:
                 return failure.Failure(errorCode(701))
-                
+
             items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
-            total = item.child_count
+            total = item.get_child_count()
 
         didl = DIDLElement()
         for i in items:
-            didl.addItem(i.item)
+            didl.addItem(i.get_item())
 
         r = { 'Result': didl.toString(), 'TotalMatches': total,
             'NumberReturned': didl.numItems()}
@@ -121,7 +121,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         StartingIndex = int(kwargs['StartingIndex'])
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
-        
+
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         """ fake a Windows Media Connect Server
             and return for the moment an error
@@ -132,21 +132,21 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                 wmc_mapping.has_key(ObjectID)):
             root_id = wmc_mapping[ObjectID]
         else:
-            root_id = int(ObjectID)
+            root_id = ObjectID
 
-        item = self.backend.get_by_id(int(root_id))
+        item = self.backend.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
-            
+
         didl = DIDLElement()
 
         if BrowseFlag == 'BrowseDirectChildren':
             childs = item.get_children(StartingIndex, StartingIndex + RequestedCount)
             for i in childs:
-                didl.addItem(i.item)
-            total = item.child_count
+                didl.addItem(i.get_item())
+            total = item.get_child_count()
         else:
-            didl.addItem(item.item)
+            didl.addItem(item.get_item())
             total = 1
 
         r = { 'Result': didl.toString(), 'TotalMatches': total,

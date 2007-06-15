@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
 import os
+import re
 from StringIO import StringIO
-
+import urllib
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -19,6 +22,7 @@ from twisted.python.filepath import FilePath
 from coherence.extern.et import ET
 
 from coherence.upnp.core.service import ServiceServer
+from coherence.upnp.core.utils import StaticFile
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -30,24 +34,39 @@ import louie
 from coherence.extern.logger import Logger
 log = Logger('MediaServer')
 
+COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
+
 class MSRoot(resource.Resource):
 
     def __init__(self, server, store):
         resource.Resource.__init__(self)
         self.server = server
         self.store = store
-        
+
     def getChildWithDefault(self, path, request):
         log.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
                                 request.method, path, request.uri, request.client))
         headers = request.getAllHeaders()
         log.msg( request.getAllHeaders())
-        
+
+        if(request.method == 'GET' and
+           COVER_REQUEST_INDICATOR.match(request.uri)):
+            log.info("request cover for id %s" % path)
+            ch = self.store.get_by_id(path)
+            if ch is not None:
+                request.setResponseCode(200)
+                file = ch.get_cover()
+                if os.path.exists(file):
+                    log.info("got cover %s" % file)
+                    return StaticFile(file)
+            request.setResponseCode(404)
+            return static.Data('<html><p>cover requested not found</p></html>','text/html')
+
         if(request.method == 'POST' and
            request.uri.endswith('?import')):
             self.import_file(path,request)
             return self.import_response(path)
-        
+
         if(headers.has_key('user-agent') and
            headers['user-agent'].find('Xbox/') == 0 and
            path in ['description-1.xml','description-2.xml']):
@@ -61,11 +80,11 @@ class MSRoot(resource.Resource):
         if request.uri == '/':
             return self
         return self.getChild(path, request)
-        
+
     def requestFinished(self, result, id):
         log.info("finished, remove %d from connection table" % id)
         self.server.connection_manager_server.remove_connection(id)
-        
+
     def import_file(self,name,request):
         log.info("import file, id %s" % name)
         ch = self.store.get_by_id(name)
@@ -116,7 +135,10 @@ class MSRoot(resource.Resource):
                     d.addCallback(self.requestFinished, new_id)
                     d.addErrback(self.requestFinished, new_id)
                     return ch.location
-            p = ch.get_path()
+            try:
+                p = ch.get_path()
+            except:
+                return self.list_content(name, ch, request)
             if os.path.exists(p):
                 log.info("accessing path", p)
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
@@ -127,45 +149,65 @@ class MSRoot(resource.Resource):
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
-                ch = static.File(p)
+                ch = StaticFile(p)
             else:
                 return self.list_content(name, ch, request)
 
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = static.File(p)
+                ch = StaticFile(p)
         log.info('MSRoot ch', ch)
         return ch
-        
+
     def list_content(self, name, item, request):
         log.info('list_content', name, item, request)
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
-                                            (item.get_name(),item.get_name())
-        
-        if item.mimetype in ['directory','root']:
+                                            (item.get_name().encode('ascii','xmlcharrefreplace'),
+                                             item.get_name().encode('ascii','xmlcharrefreplace'))
+
+        if( hasattr(item,'mimetype') and item.mimetype in ['directory','root']):
             uri = request.uri
             if uri[-1] != '/':
                 uri += '/'
 
             page += """<ul>"""
-            for c in item.children:
-                # FIXME: there has to be a better solution for this decoding stupidity
-                path = c.get_path().encode('utf-8').encode('string_escape')
-                title = c.get_name().encode('string_escape')
-                page += '<li><a href=%s>%s</a></li>' % \
+            for c in item.get_children():
+                if hasattr(c,'get_url'):
+                    path = c.get_url()
+                    log.debug('has get_url', path)
+                elif hasattr(c,'get_path'):
+                    #path = c.get_path().encode('utf-8').encode('string_escape')
+                    path = c.get_path()
+                    log.debug('has get_path', path)
+                else:
+                    path = request.uri.split('/')
+                    path[-1] = str(c.get_id())
+                    path = '/'.join(path)
+                    log.debug('got path', path)
+                title = c.get_name()
+                log.debug( 'title is:', type(title))
+                try:
+                    if isinstance(title,unicode):
+                        title = title.encode('ascii','xmlcharrefreplace')
+                    else:
+                        title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
+                except (UnicodeEncodeError,UnicodeDecodeError):
+                    title = c.get_name().encode('utf-8').encode('string_escape')
+                page += '<li><a href="%s">%s</a></li>' % \
                                     (path, title)
             page += """</ul>"""
-        elif item.mimetype.find('image/') == 0:
-            path = item.get_path().encode('utf-8').encode('string_escape')
-            title = item.get_name().encode('string_escape')
+        elif( hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
+            #path = item.get_path().encode('utf-8').encode('string_escape')
+            path = urllib.quote(item.get_path().encode('utf-8'))
+            title = item.get_name().decode('utf-8').encode('ascii','xmlcharrefreplace')
             page += """<p><img src="%s" alt="%s"></p>""" % \
                                     (path, title)
         else:
             pass
         page += """</body></html>"""
         return static.Data(page,'text/html')
-        
+
     def listchilds(self, uri):
         log.info('listchilds %s' % uri)
         if uri[-1] != '/':
@@ -174,7 +216,7 @@ class MSRoot(resource.Resource):
         for c in self.children:
                 cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
-    
+
     def import_response(self,id):
         return static.Data('<html><p>import of %s finished</p></html>'% id,'text/html')
 
@@ -193,75 +235,89 @@ class RootDeviceXML(static.Data):
                         friendly_name='Coherence UPnP A/V MediaServer',
                         xbox_hack=False,
                         services=[],
-                        devices=[]):
+                        devices=[],
+                        icons=[]):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
-        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
+        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, int(version))
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement( e, 'major').text = '1'
-        ET.SubElement( e, 'minor').text = '0'
+        ET.SubElement(e, 'major').text = '1'
+        ET.SubElement(e, 'minor').text = '0'
 
         ET.SubElement(root, 'URLBase').text = urlbase
 
         d = ET.SubElement(root, 'device')
-        x = ET.SubElement( d, 'dlna:X_DLNADOC')
+        x = ET.SubElement(d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'DMS-1.50'
-        x = ET.SubElement( d, 'dlna:X_DLNADOC')
+        x = ET.SubElement(d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'M-DMS-1.50'
-        x=ET.SubElement( d, 'dlna:X_DLNACAP')
+        x=ET.SubElement(d, 'dlna:X_DLNACAP')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
         x.text = 'av-upload,image-upload,audio-upload'
-        ET.SubElement( d, 'deviceType').text = device_type
+        ET.SubElement(d, 'deviceType').text = device_type
         if xbox_hack == False:
-            ET.SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
-            ET.SubElement( d, 'friendlyName').text = friendly_name
+            ET.SubElement(d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
+            ET.SubElement(d, 'friendlyName').text = friendly_name
         else:
-            ET.SubElement( d, 'modelName').text = 'Windows Media Connect'
-            ET.SubElement( d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
-        ET.SubElement( d, 'manufacturer').text = 'beebits.net'
-        ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
-        ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        ET.SubElement( d, 'modelNumber').text = '0.1'
-        ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
-        ET.SubElement( d, 'serialNumber').text = '0000001'
-        ET.SubElement( d, 'UDN').text = uuid
-        ET.SubElement( d, 'UPC').text = ''
-        ET.SubElement( d, 'presentationURL').text = ''
+            ET.SubElement(d, 'modelName').text = 'Windows Media Connect'
+            ET.SubElement(d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
+        ET.SubElement(d, 'manufacturer').text = 'beebits.net'
+        ET.SubElement(d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        ET.SubElement(d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
+        ET.SubElement(d, 'modelNumber').text = '0.1'
+        ET.SubElement(d, 'modelURL').text = 'http://coherence.beebits.net'
+        ET.SubElement(d, 'serialNumber').text = '0000001'
+        ET.SubElement(d, 'UDN').text = uuid
+        ET.SubElement(d, 'UPC').text = ''
+        ET.SubElement(d, 'presentationURL').text = ''
 
         if len(services):
-            e = ET.SubElement( d, 'serviceList')
+            e = ET.SubElement(d, 'serviceList')
             for service in services:
                 id = service.get_id()
-                s = ET.SubElement( e, 'service')
+                s = ET.SubElement(e, 'service')
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                ET.SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(version))
                 try:
                     namespace = service.namespace
                 except:
                     namespace = 'upnp-org'
-                ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                ET.SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                ET.SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                ET.SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
-        if len(services):
-            e = ET.SubElement( d, 'deviceList')
+        if len(devices):
+            e = ET.SubElement(d, 'deviceList')
+
+        if len(icons):
+            e = ET.SubElement(d, 'iconList')
+            for icon in icons:
+                i = ET.SubElement(e, 'icon')
+                for k,v in icon.items():
+                    if k == 'url':
+                        if v.startswith('file://'):
+                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                        else:
+                            ET.SubElement(i, k).text = v
+                    else:
+                        ET.SubElement(i, k).text = v
 
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
-        
+
 class MediaServer:
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaServer'
-        self.version = kwargs.get('version',2)
+        self.version = int(kwargs.get('version',2))
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
@@ -269,10 +325,13 @@ class MediaServer:
         if urlbase[-1] != '/':
             urlbase += '/'
         self.urlbase = urlbase + str(self.uuid)[5:]
-        
+
         log.msg('MediaServer urlbase %s' % self.urlbase)
-        
+
         kwargs['urlbase'] = self.urlbase
+        self.icons = kwargs.get('icons', [])
+        if kwargs.has_key('icon'):
+            self.icons.append(kwargs['icon'])
 
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
@@ -283,53 +342,53 @@ class MediaServer:
 
         def backend_failure(x):
             log.critical('backend not installed, MediaServer activation aborted')
-            
+
         def service_failure(x):
             print x
             log.critical('required service not available, MediaServer activation aborted')
-            
+
         d.addCallback(backend_ready).addErrback(service_failure)
         d.addErrback(backend_failure)
         louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
         # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
         #        can close down this device
-        
+
     def init_complete(self, backend):
         if self.backend != backend:
             return
         self._services = []
         self._devices = []
-        
+
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
             log.warning( 'ConnectionManagerServer', msg)
             raise LookupError,msg
-        
+
         try:
             self.content_directory_server = ContentDirectoryServer(self)
             self._services.append(self.content_directory_server)
         except LookupError,msg:
             log.warning( 'ContentDirectoryServer', msg)
             raise LookupError,msg
-        
+
         try:
             self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,
                                                         backend=FakeMediaReceiverRegistrarBackend())
             self._services.append(self.media_receiver_registrar_server)
         except LookupError,msg:
             log.warning( 'MediaReceiverRegistrarServer (optional)', msg)
-        
+
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:
             upnp_init()
-        
+
         self.web_resource = MSRoot( self, backend)
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
-        version = self.version
+        version = int(self.version)
         while version > 0:
             self.web_resource.putChild( 'description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
@@ -338,7 +397,8 @@ class MediaServer:
                                     self.device_type, version,
                                     friendly_name=self.backend.name,
                                     services=self._services,
-                                    devices=self._devices))
+                                    devices=self._devices,
+                                    icons=self.icons))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
@@ -347,12 +407,19 @@ class MediaServer:
                                     friendly_name=self.backend.name,
                                     xbox_hack=True,
                                     services=self._services,
-                                    devices=self._devices))
+                                    devices=self._devices,
+                                    icons=self.icons))
             version -= 1
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
         self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
+
+        for icon in self.icons:
+            if icon.has_key('url'):
+                if icon['url'].startswith('file://'):
+                    self.web_resource.putChild(os.path.basename(icon['url']),
+                                               StaticFile(icon['url'][7:]))
 
         self.register()
         log.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
@@ -375,10 +442,15 @@ class MediaServer:
 
         version = self.version
         while version > 0:
+            if version == self.version:
+                silent = False
+            else:
+                silent = True
             s.register('local',
                         '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
                         'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
-                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
+                        silent=silent)
 
             for service in self._services:
                 try:
@@ -389,7 +461,7 @@ class MediaServer:
                 s.register('local',
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, version),
-                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
+                            silent=silent)
 
             version -= 1
-

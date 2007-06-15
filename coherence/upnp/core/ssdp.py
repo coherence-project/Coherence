@@ -4,7 +4,7 @@
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 #
 # Implementation of a SSDP server under Twisted Python.
 #
@@ -13,11 +13,12 @@ import random
 import string
 import sys
 import time
-import platform
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
 from twisted.internet import task
+
+from coherence import SERVER_ID
 
 import louie
 
@@ -32,15 +33,12 @@ class SSDPServer(DatagramProtocol):
     searchReceived methods are called when the appropriate type of
     datagram is received by the server."""
 
-    # not used yet
-    stdheaders = [ ('Server', 'Twisted, UPnP/1.0, python-upnp'), ]
-    elements = {}
     known = {}
 
     _callbacks = {}
 
     def __init__(self):
-        
+
         # Create SSDP server
         try:
             port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
@@ -51,7 +49,7 @@ class SSDPServer(DatagramProtocol):
 
             l = task.LoopingCall(self.resendNotify)
             l.start(777.0, now=False)
-            
+
         except error.CannotListenError, err:
             log.msg("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
@@ -72,7 +70,7 @@ class SSDPServer(DatagramProtocol):
             print err
             print 'Arggg,', data
             import pdb; pdb.set_trace()
-                                         
+
         lines = header.split('\r\n')
         cmd = string.split(lines[0], ' ')
         lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
@@ -92,11 +90,12 @@ class SSDPServer(DatagramProtocol):
             log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
 
     def register(self, manifestation, usn, st, location,
-                        server='UPnP/1.0,Coherence UPnP framework,0.1',
-                        cache_control='max-age=1800'):
+                        server=SERVER_ID,
+                        cache_control='max-age=1800',
+                        silent=False):
         """Register a service or device that this SSDP server will
         respond to."""
-        
+
         log.msg('Registering %s (%s)' % (st, location))
 
         self.known[usn] = {}
@@ -105,16 +104,17 @@ class SSDPServer(DatagramProtocol):
         self.known[usn]['ST'] = st
         self.known[usn]['EXT'] = ''
         if manifestation == 'local':
-            self.known[usn]['SERVER'] = ','.join([platform.system(),platform.release(),server])
+            self.known[usn]['SERVER'] = server
             self.known[usn]['CACHE-CONTROL'] = cache_control
         else:
             self.known[usn]['SERVER'] = server
             self.known[usn]['CACHE-CONTROL'] = cache_control
-            
+
         self.known[usn]['MANIFESTATION'] = manifestation
-        
+        self.known[usn]['SILENT'] = silent
+
         log.msg(self.known[usn])
-        
+
         if manifestation == 'local':
             self.doNotify(usn)
 
@@ -129,7 +129,7 @@ class SSDPServer(DatagramProtocol):
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=st, infos=self.known[usn])
             #self.callback("removed_device", st, self.known[usn])
-            
+
         del self.known[usn]
 
     def isKnown(self, usn):
@@ -184,6 +184,8 @@ class SSDPServer(DatagramProtocol):
     def doNotify(self, usn):
         """Do notification"""
 
+        if self.known[usn]['SILENT']:
+            return
         log.msg('Sending alive notification for %s' % usn)
 
         resp = [ 'NOTIFY * HTTP/1.1',
@@ -194,6 +196,7 @@ class SSDPServer(DatagramProtocol):
         stcpy['NT'] = stcpy['ST']
         del stcpy['ST']
         del stcpy['MANIFESTATION']
+        del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         log.msg('doNotify content', resp)
@@ -203,6 +206,8 @@ class SSDPServer(DatagramProtocol):
     def doByebye(self, st):
         """Do byebye"""
 
+        if self.known[st]['SILENT']:
+            return
         log.msg('Sending byebye notification for %s' % st)
 
         resp = [ 'NOTIFY * HTTP/1.1',
@@ -213,10 +218,11 @@ class SSDPServer(DatagramProtocol):
         stcpy['NT'] = stcpy['ST']
         del stcpy['ST']
         del stcpy['MANIFESTATION']
+        del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        
+
     def resendNotify( self):
         for usn in self.known:
             if self.known[usn]['MANIFESTATION'] == 'local':

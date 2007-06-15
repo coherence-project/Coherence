@@ -3,14 +3,13 @@
 
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
-
-import platform
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
 from twisted.web import soap, server
 from twisted.python import log, failure
 from twisted.internet import defer
 
+from coherence import SERVER_ID
 from coherence.extern.et import ET
 #from elementtree.ElementTree import Element, SubElement, tostring
 
@@ -41,7 +40,7 @@ class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
         self.status = status
-        
+
 class UPnPError:
 
     def __init__(self,status,description='without words'):
@@ -61,7 +60,7 @@ class UPnPError:
         except:
             ET.SubElement(e,'errorDescription').text=description
         self.xml = ET.tostring( root, encoding='utf-8')
-        
+
     def get_xml(self):
         return self.xml
 
@@ -85,12 +84,11 @@ class UPnPPublisher(soap.SOAPPublisher):
         request.setHeader("Content-type", mimeType)
         request.setHeader("Content-length", str(len(response)))
         request.setHeader("EXT", '')
-        request.setHeader("SERVER",
-            ','.join([platform.system(),platform.release(),'UPnP/1.0,Coherence UPnP framework,0.1']))
+        request.setHeader("SERVER", SERVER_ID)
         """ XXX: version string """
         request.write(response)
         request.finish()
-        
+
     def _methodNotFound(self, request, methodName):
         """
         response = SOAPpy.buildSOAP(SOAPpy.faultType("%s:Client" % SOAPpy.NS.ENV_T,
@@ -101,12 +99,16 @@ class UPnPPublisher(soap.SOAPPublisher):
         response = UPnPError(401).get_xml()
         self._sendResponse(request, response, status=401)
 
-    def _gotResult(self, result, request, methodName):
-        log.info('_gotResult', result, request, methodName)
-        response = SOAPpy.buildSOAP(kw=result, encoding=self.encoding)
+    def _gotResult(self, result, request, methodName, ns):
+        log.info('_gotResult', result, request, methodName, ns)
+        config = SOAPpy.SOAPConfig()
+        config.typed = 0
+        response = SOAPpy.buildSOAP(kw=result, encoding='utf-8',
+                                    method=methodName+'Response', namespace=('u', ns),
+                                    noroot=1, config=config)
         self._sendResponse(request, response)
 
-    def _gotError(self, failure, request, methodName):
+    def _gotError(self, failure, request, methodName, ns):
         log.info('_gotError', failure, failure.value)
         e = failure.value
         status = 500
@@ -134,7 +136,7 @@ class UPnPPublisher(soap.SOAPPublisher):
             return function, getattr(function, "useKeywords", False)
         else:
             return None, None
-            
+
     def render(self, request):
         """Handle a SOAP command."""
         data = request.content.read()
@@ -149,7 +151,7 @@ class UPnPPublisher(soap.SOAPPublisher):
         except:
             self._gotError(failure.Failure(errorCode(415)), request, methodName)
             return server.NOT_DONE_YET
-            
+
         # deal with changes in SOAPpy 0.11
         if callable(args):
             args = args()
@@ -176,6 +178,6 @@ class UPnPPublisher(soap.SOAPPublisher):
             else:
                 d = defer.maybeDeferred(function, *args, **keywords)
 
-        d.addCallback(self._gotResult, request, methodName)
-        d.addErrback(self._gotError, request, methodName)
+        d.addCallback(self._gotResult, request, methodName, ns)
+        d.addErrback(self._gotError, request, methodName, ns)
         return server.NOT_DONE_YET

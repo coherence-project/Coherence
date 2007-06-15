@@ -38,7 +38,7 @@ class Action:
         self.arguments_list = arguments_list
         
     def _get_client(self):
-        client = self.service._get_client( self.name)
+        client = self.service._get_client(self.name)
         return client
         
     def get_name(self):

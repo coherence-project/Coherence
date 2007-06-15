@@ -1,7 +1,8 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
+# Modified by Colin Laplace, added is_watched() function
 
 import os
 import struct
@@ -35,8 +36,8 @@ IN_DELETE =         0x00000200L     # Subfile was delete
 IN_DELETE_SELF =    0x00000400L     # Self was deleted
 IN_MOVE_SELF =      0x00000800L     # Self was moved
 IN_UNMOUNT =        0x00002000L     # Backing fs was unmounted
-IN_Q_OVERFLOW =     0x00004000L     # Event queued overflowed 
-IN_IGNORED =        0x00008000L     # File was ignored 
+IN_Q_OVERFLOW =     0x00004000L     # Event queued overflowed
+IN_IGNORED =        0x00008000L     # File was ignored
 
 IN_ONLYDIR =         0x01000000      # only watch the path if it is a directory
 IN_DONT_FOLLOW =     0x02000000      # don't follow a sym link
@@ -75,13 +76,16 @@ _flag_to_human = {
     IN_MASK_ADD: 'mask_add',
     IN_ISDIR: 'is_dir',
     IN_ONESHOT: 'one_shot'}
-    
+
 _inotify_syscalls = { 'i386': (291,292,293),  # FIXME, there has to be a better way for this
                       'i486': (291,292,293),
                       'i586': (291,292,293),
                       'i686': (291,292,293),
+                      'armv6l':(316,317,318),              # Nokia N800
+                      'armv5tej1':(316,317,318),           # Nokia N770
+                      'ppc': (275,276,277),                # PPC, like PS3
                       }
-                      
+
 
 class IWatchPoint:
 
@@ -94,10 +98,10 @@ class IWatchPoint:
             if not isinstance(callbacks, list):
                 callbacks = [callbacks]
             self.callbacks = callbacks
-        
+
     def add_callback(self, callback, parameter=None):
         self.callbacks.append((callback,parameter))
-        
+
     def remove_callback(self, callback):
         try:
             del self.callbacks[callback]
@@ -125,7 +129,7 @@ class INotify(FileDescriptor, object):
                 obj.libc = ctypes.CDLL("libc.so.6")
             except:
                 raise SystemError, "libc not found, INotify support disabled"
-                
+
             machine = platform.machine()
             try:
                 obj._init_syscall_id = _inotify_syscalls[machine][0]
@@ -133,7 +137,7 @@ class INotify(FileDescriptor, object):
                 obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
             except:
                 raise SystemError, "unknown system, INotify support disabled"
-        
+
             FileDescriptor.__init__(obj)
 
             obj._fd = obj.inotify_init()
@@ -141,7 +145,7 @@ class INotify(FileDescriptor, object):
                 raise SystemError, "INotify support not detected on this system."
 
             fdesc.setNonBlocking(obj._fd) # FIXME do we need this?
-            
+
             reactor.addReader(obj)
 
             obj._buffer = ''
@@ -156,14 +160,19 @@ class INotify(FileDescriptor, object):
         return self.libc.syscall(self._init_syscall_id)
 
     def inotify_add_watch(self, path, mask):
-        return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
-        
+        if type(path) is unicode:
+            self.libc.syscall.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+            return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
+        else:
+            self.libc.syscall.argtypes = None
+            return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
+
     def inotify_rm_watch(self, wd):
         return self.libc.syscall(self._rm_watch_syscall_id, self._fd, wd)
 
     def fileno(self):
         return self._fd
-        
+
     def flag_to_human(self, mask):
         s = []
         for (k, v) in _flag_to_human.iteritems():
@@ -189,7 +198,7 @@ class INotify(FileDescriptor, object):
                 name = None
 
             self._buffer = self._buffer[16+size:]
-            
+
             try:
                 iwp = self._watchpoints[wd]
             except:
@@ -198,9 +207,9 @@ class INotify(FileDescriptor, object):
             path = iwp.path
             if name:
                 path = os.path.join(path, name)
-                
+
             iwp.notify( name, mask)
-            
+
             if( iwp.auto_add and mask & IN_ISDIR and mask & IN_CREATE):
                 self.watch(path, mask = iwp.mask, auto_add = True, callbacks=iwp.callbacks)
 
@@ -209,23 +218,27 @@ class INotify(FileDescriptor, object):
                 del self._watchpoints[wd]
 
 
-    def watch(self, path, mask = IN_WATCH_MASK, auto_add = None, callbacks=[]):
-        if isinstance(path, FilePath):
-            path = path.path
-        path = os.path.realpath(path)
-        for wd, iwp in self._watchpoints.items():
-            if iwp.path == path:
-                return wd
-                
-        mask = mask | IN_DELETE_SELF
+    def watch(self, path, mask = IN_WATCH_MASK, auto_add = None, callbacks=[], recursive=False):
+        if recursive:
+            for root, dirs, files in os.walk(path):
+                self.watch(root, mask, auto_add, callbacks, False)
+        else:
+            if isinstance(path, FilePath):
+                path = path.path
+            path = os.path.realpath(path)
+            for wd, iwp in self._watchpoints.items():
+                if iwp.path == path:
+                    return wd
 
-        #print "add watch for", path, ', '.join(self.flag_to_str(mask))
-        wd = self.inotify_add_watch(path, mask)
-        if wd < 0:
-            raise IOError, "Failed to add watch on '%s'" % path
-            
-        iwp = IWatchPoint(path, mask, auto_add, callbacks)
-        self._watchpoints[wd] = iwp
+            mask = mask | IN_DELETE_SELF
+
+            #print "add watch for", path, ', '.join(self.flag_to_human(mask))
+            wd = self.inotify_add_watch(path, mask)
+            if wd < 0:
+                raise IOError, "Failed to add watch on '%s'" % path
+
+            iwp = IWatchPoint(path, mask, auto_add, callbacks)
+            self._watchpoints[wd] = iwp
 
     def ignore(self, path):
         path = os.path.realpath(path)
@@ -236,13 +249,19 @@ class INotify(FileDescriptor, object):
                 del self._watchpoints[wd]
                 break
 
+    def is_watched(self, path):
+        for wd, iwp in self._watchpoints.items():
+            if iwp.path == path:
+                return True
+        return False
+
 if __name__ == '__main__':
 
     i = INotify()
     print i
-    i.watch('/tmp', auto_add = True, callbacks=(i.notify,None))
+    i.watch(unicode('/tmp'), auto_add = True, callbacks=(i.notify,None), recursive=True)
 
     i2 = INotify()
     print i2
-    i2.watch('/', auto_add = True, callbacks=(i.notify,None))
+    i2.watch('/', auto_add = True, callbacks=(i2.notify,None), recursive=False)
     reactor.run()

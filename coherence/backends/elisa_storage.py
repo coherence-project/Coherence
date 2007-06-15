@@ -34,6 +34,7 @@ class ElisaMediaStore:
             mimetype = 'directory' or real mimetype
             children = list of objects for which this item is the parent
             location = filesystem path if item is a file
+            cover = url by which the cover image can be retrieved  (OPTIONAL)
             size = in bytes (OPTIONAL)
     """
 
@@ -51,7 +52,7 @@ class ElisaMediaStore:
         self.update_id = 0
         self.root_id = 0
         self.get_root_id()
-        
+
     def __repr__(self):
         return "Elisa storage"
 
@@ -65,7 +66,7 @@ class ElisaMediaStore:
         try:
             return self.store[int(id)]
         except:
-            return None        
+            return None
 
     def set_root_id( self, id):
         self.root_id = id
@@ -95,7 +96,7 @@ class ElisaMediaStore:
         StartingIndex = int(kwargs['StartingIndex'])
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
-        
+
         def build_upnp_item(elisa_item):
             UPnPClass = classChooser(elisa_item['mimetype'])
             upnp_item = None
@@ -105,6 +106,9 @@ class ElisaMediaStore:
                                       elisa_item['name'])
                 if isinstance(upnp_item, Container):
                     upnp_item.childCount = len(elisa_item.get('children',[]))
+                    if len(Filter) > 0:
+                        upnp_item.searchable = True
+                        upnp_item.searchClass = ('object',)
                 else:
                     internal_url = elisa_item['location'].get('internal')
                     external_url = elisa_item['location'].get('external')
@@ -112,6 +116,12 @@ class ElisaMediaStore:
                         size = elisa_item['size']
                     except:
                         size = None
+                    try:
+                        cover = elisa_item['cover']
+                        if cover != '':
+                            upnp_item.albumArtURI = cover
+                    except:
+                        pass
                     upnp_item.res = []
                     res = Resource(internal_url,
                                    'internal:%s:*:*' %self.host)
@@ -123,7 +133,7 @@ class ElisaMediaStore:
                     upnp_item.res.append(res)
 
             return upnp_item
-        
+
         def got_result(elisa_item):
             didl = DIDLElement()
             children = elisa_item.get('children',[])
@@ -153,7 +163,7 @@ class ElisaMediaStore:
                 r['UpdateID'] = self.update_id
 
             return r
-    
+
         def errback(r):
             return failure.Failure(errorCode(701))
 
@@ -169,7 +179,7 @@ class ElisaMediaStore:
                         cache_mgr.callRemote("get_media_node_with_id", id))
         dfr.addCallback(got_result)
         return dfr
-            
+
 
 
 if __name__ == '__main__':
@@ -190,7 +200,6 @@ if __name__ == '__main__':
                             Filter='')
         dfr.addCallback(got_result)
         dfr.addCallback(lambda _: reactor.stop())
-        
+
     reactor.callLater(0.1, main)
     reactor.run()
-        

@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -24,7 +26,7 @@ class MRRoot(resource.Resource):
     def __init__(self, server):
         resource.Resource.__init__(self)
         self.server = server
-        
+
     def getChildWithDefault(self, path, request):
         log.info('MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
         log.info( request.getAllHeaders())
@@ -42,7 +44,7 @@ class MRRoot(resource.Resource):
                 ch = static.File(p)
         log.info('MSRoot ch', ch)
         return ch
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
@@ -60,7 +62,8 @@ class RootDeviceXML(static.Data):
                         version=2,
                         friendly_name='Coherence UPnP A/V MediaRenderer',
                         services=[],
-                        devices=[]):
+                        devices=[],
+                        icons=[]):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
@@ -104,72 +107,87 @@ class RootDeviceXML(static.Data):
                 ET.SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
                 ET.SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
-        if len(services):
+        if len(devices):
             e = ET.SubElement( d, 'deviceList')
+
+        if len(icons):
+            e = ET.SubElement(d, 'iconList')
+            for icon in icons:
+                i = ET.SubElement(e, 'icon')
+                for k,v in icon.items():
+                    if k == 'url':
+                        if v.startswith('file://'):
+                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                            continue
+                    ET.SubElement(i, k).text = v
 
         #indent( root, 0)
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
-        
+
 class MediaRenderer:
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
-        self.version = kwargs.get('version',2)
+        self.version = int(kwargs.get('version',2))
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
-        
+
+        self.icons = kwargs.get('icons', [])
+        if kwargs.has_key('icon'):
+            self.icons.append(kwargs['icon'])
+
         """ this could take some time, put it in a  thread to be sure it doesn't block
             as we can't tell for sure that every backend is implemented properly """
         d = threads.deferToThread(backend, self, **kwargs)
-        
+
         def backend_ready(backend):
             self.backend = backend
-            
+
         def backend_failure(x):
             log.critical('backend not installed, MediaRenderer activation aborted')
-            
+
         def service_failure(x):
             print x
             log.critical('required service not available, MediaRenderer activation aborted')
-            
+
         d.addCallback(backend_ready).addErrback(service_failure)
         d.addErrback(backend_failure)
-        
+
         louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
         # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
         #        can close down this device
-        
+
     def init_complete(self, backend):
         if self.backend != backend:
             return
         self._services = []
         self._devices = []
-        
+
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
             log.warning( 'ConnectionManagerServer', msg)
             raise LookupError,msg
-            
+
         try:
             self.rendering_control_server = RenderingControlServer(self)
             self._services.append(self.rendering_control_server)
         except LookupError,msg:
             log.warning( 'RenderingControlServer', msg)
             raise LookupError,msg
-            
+
         try:
             self.av_transport_server = AVTransportServer(self)
             self._services.append(self.av_transport_server)
         except LookupError,msg:
             log.warning( 'AVTransportServer', msg)
             raise LookupError,msg
-            
+
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:
             upnp_init()
@@ -188,7 +206,8 @@ class MediaRenderer:
                                     self.device_type, version,
                                     friendly_name=self.backend.name,
                                     services=self._services,
-                                    devices=self._devices))
+                                    devices=self._devices,
+                                    icons=self.icons))
             version -= 1
 
 
@@ -196,10 +215,15 @@ class MediaRenderer:
         self.web_resource.putChild('RenderingControl', self.rendering_control_server)
         self.web_resource.putChild('AVTransport', self.av_transport_server)
 
+        for icon in self.icons:
+            if icon.has_key('url'):
+                if icon['url'].startswith('file://'):
+                    self.web_resource.putChild(os.path.basename(icon['url']),
+                                               static.File(icon['url'][7:]))
 
         self.register()
         log.critical("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
-        
+
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
@@ -217,10 +241,15 @@ class MediaRenderer:
 
         version = self.version
         while version > 0:
+            if version == self.version:
+                silent = False
+            else:
+                silent = True
             s.register('local',
                         '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
                         'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
-                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
+                        silent=silent)
 
             for service in self._services:
                 try:
@@ -231,6 +260,7 @@ class MediaRenderer:
                 s.register('local',
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, version),
-                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version)
+                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
+                            silent=silent)
 
             version -= 1
