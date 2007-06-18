@@ -159,7 +159,7 @@ class Logger:
             name=self.name
         return self.log.get_level(name)
 
-    def has_level(self, level):
+    def has_level(self, level, name=None):
         if name == None:
             name=self.name
         if self.log.get_level(name) <= level:
