@@ -34,6 +34,7 @@ class Device:
         self.client = None
 
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
+        louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
         self.parse_description()
 
@@ -71,6 +72,9 @@ class Device:
                 return
         self.detection_completed = True
         louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
+
+    def service_detection_failed( self, device):
+        self.remove()
 
     def get_id(self):
         return self.udn
@@ -170,6 +174,7 @@ class Device:
         def gotError(failure, url):
             log.warning("error requesting", url)
             log.info(failure)
+            del self
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 

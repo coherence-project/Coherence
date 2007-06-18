@@ -204,7 +204,7 @@ class Service:
                 self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
             for var_node in tree.findall('.//{%s}stateVariable' % ns):
-                send_events = var_node.attrib.get('sendEvents','False')
+                send_events = var_node.attrib.get('sendEvents','yes')
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
@@ -221,8 +221,9 @@ class Service:
             louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
 
         def gotError(failure, url):
-            print "error requesting", url
-            print failure
+            log.warning('error requesting', url)
+            log.info('failure', failure)
+            louie.send('Coherence.UPnP.Service.detection_failed', self.device, device=self.device)
 
         #print 'getPage', self.get_scpd_url()
         utils.getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)

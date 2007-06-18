@@ -154,9 +154,9 @@ class Coherence(object):
 
         log.warning("Coherence UPnP framework version %s starting..." % __version__)
         self.ssdp_server = SSDPServer()
-        louie.connect( self.add_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
+        louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
-        louie.connect( self.receiver, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect( self.add_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         #louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', louie.Any)
 
         self.ssdp_server.subscribe("new_device", self.add_device)
@@ -196,11 +196,14 @@ class Coherence(object):
                 self.installed_plugins[entrypoint.name] = entrypoint.load()
             except ImportError:
                 log.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
+                log.info(traceback.print_exc())
         for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_renderer"):
             try:
                 self.installed_plugins[entrypoint.name] = entrypoint.load()
             except ImportError:
                 log.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
+                log.info(traceback.print_exc())
+
 
         plugins = config.get('plugins',None)
         if plugins is None:
@@ -213,6 +216,7 @@ class Coherence(object):
                     self.add_plugin(plugin, **arguments)
                 except Exception, msg:
                     log.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
+                    log.info(traceback.print_exc())
 
         if config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
@@ -234,13 +238,13 @@ class Coherence(object):
                 except KeyError:
                     log.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
-                    log.critical(traceback.print_exc())
                     log.critical("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
+                    log.info(traceback.print_exc())
         except KeyError:
             log.critical("Can't enable %s plugin, not found!" % plugin)
         except Exception, msg:
-            log.critical(traceback.print_exc())
             log.critical("Can't enable %s plugin, %s!" % (plugin, msg))
+            log.info(traceback.print_exc())
 
 
     def receiver( self, signal, *args, **kwargs):
@@ -310,14 +314,13 @@ class Coherence(object):
     def get_nonlocal_devices(self):
         return [d for d in self.devices if d.manifestation == 'remote']
 
-    def add_device(self, device_type, infos):
-        log.info("adding",infos['ST'],infos['USN'])
+    def create_device(self, device_type, infos):
+        log.info("creating",infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
-            log.info("adding upnp:rootdevice",infos['USN'])
+            log.info("creating upnp:rootdevice",infos['USN'])
             root = RootDevice(infos)
-            self.devices.append(root)
         else:
-            log.info("adding device/service",infos['USN'])
+            log.info("creating device/service",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
@@ -326,6 +329,9 @@ class Coherence(object):
         #if infos['ST'] == 'upnp:rootdevice':
         #    self.callback("new_device", infos['ST'], infos)
 
+    def add_device(self, device):
+        log.info("adding device",device.get_usn())
+        self.devices.append(device)
 
     def remove_device(self, device_type, infos):
         log.info("removed device",infos['ST'],infos['USN'])
