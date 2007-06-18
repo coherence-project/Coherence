@@ -93,6 +93,12 @@ class _Logger(object):
         except KeyError:
             self.feeds[name] = {'active':False,'level':level}
 
+    def get_level(self, name):
+        try:
+            return self.feeds[name]['level']
+        except KeyError:
+            return None
+
     def set_master_level(self,level):
         self.master_level = level
         for feed in self.feeds.values():
@@ -147,6 +153,19 @@ class Logger:
             except:
                 level=LOG_INFO
         self.log.set_level(name,level)
+
+    def get_level(self, name=None):
+        if name == None:
+            name=self.name
+        return self.log.get_level(name)
+
+    def has_level(self, level):
+        if name == None:
+            name=self.name
+        if self.log.get_level(name) <= level:
+            return True
+        else:
+            return False
 
     def set_warning_level(self, name=None):
         if name == None:
