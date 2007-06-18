@@ -19,7 +19,9 @@ from twisted.web import proxy
 from twisted.python import util
 from twisted.python.filepath import FilePath
 
-from coherence.extern.et import ET
+from coherence.extern.et import ET, indent
+
+from coherence import __version__
 
 from coherence.upnp.core.service import ServiceServer
 from coherence.upnp.core.utils import StaticFile
@@ -31,7 +33,7 @@ from coherence.upnp.services.servers.media_receiver_registrar_server import Fake
 
 import louie
 
-from coherence.extern.logger import Logger
+from coherence.extern.logger import Logger, LOG_DEBUG
 log = Logger('MediaServer')
 
 COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
@@ -267,7 +269,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement(d, 'manufacturer').text = 'beebits.net'
         ET.SubElement(d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         ET.SubElement(d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        ET.SubElement(d, 'modelNumber').text = '0.1'
+        ET.SubElement(d, 'modelNumber').text = __version__
         ET.SubElement(d, 'modelURL').text = 'http://coherence.beebits.net'
         ET.SubElement(d, 'serialNumber').text = '0000001'
         ET.SubElement(d, 'UDN').text = uuid
@@ -309,6 +311,8 @@ class RootDeviceXML(static.Data):
                     else:
                         ET.SubElement(i, k).text = v
 
+        if log.has_level(LOG_DEBUG):
+            indent( root)
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 

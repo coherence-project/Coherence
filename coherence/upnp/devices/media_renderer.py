@@ -10,7 +10,7 @@ from twisted.internet import reactor
 from twisted.internet import threads
 from twisted.web import xmlrpc, resource, static
 
-from coherence.extern.et import ET
+from coherence.extern.et import ET, indent
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
@@ -18,7 +18,7 @@ from coherence.upnp.services.servers.av_transport_server import AVTransportServe
 
 import louie
 
-from coherence.extern.logger import Logger
+from coherence.extern.logger import Logger, LOG_DEBUG
 log = Logger('MediaRenderer')
 
 class MRRoot(resource.Resource):
@@ -81,7 +81,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
         ET.SubElement( d, 'modelName').text = 'Coherence  UPnP A/V MediaRenderer'
-        ET.SubElement( d, 'modelNumber').text = '0.1'
+        ET.SubElement(d, 'modelNumber').text = __version__
         ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         ET.SubElement( d, 'serialNumber').text = '0000001'
         ET.SubElement( d, 'UDN').text = uuid
@@ -121,7 +121,9 @@ class RootDeviceXML(static.Data):
                             continue
                     ET.SubElement(i, k).text = v
 
-        #indent( root, 0)
+        if log.has_level(LOG_DEBUG):
+            indent( root)
+
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
