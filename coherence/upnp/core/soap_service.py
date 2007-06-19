@@ -44,7 +44,7 @@ class errorCode(Exception):
 class UPnPError:
 
     def __init__(self,status,description='without words'):
-        root = ET.Element(e,'s:Fault')
+        root = ET.Element('s:Fault')
         ET.SubElement(root,'faultcode').text='s:Client'
         ET.SubElement(root,'faultstring').text='UPnPError'
         e = ET.SubElement(root,'detail')
