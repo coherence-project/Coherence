@@ -1,67 +1,50 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
-
-import SOAPpy
-from twisted.web import soap
-
-from coherence.extern.elementsoap.ElementSOAP import SoapRequest, SoapElement
+# Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
 from coherence.extern.et import ET, namespace_map_update
 
-from coherence.upnp.core.utils import getPage
+from coherence.upnp.core.utils import getPage, parse_xml
 
-class SOAPProxy(soap.Proxy):
+from coherence.upnp.core import soap_lite
+
+class SOAPProxy(object):
+    """ A Proxy for making remote SOAP calls.
+
+        Based upon twisted.web.soap.Proxy and
+        extracted to remove the SOAPpy dependency
+
+        Pass the URL of the remote SOAP server to the constructor.
+
+        Use proxy.callRemote('foobar', 1, 2) to call remote method
+        'foobar' with args 1 and 2, proxy.callRemote('foobar', x=1)
+        will call foobar with named argument 'x'.
+    """
 
     def __init__(self, url, namespace=None, envelope_attrib=None, header=None, soapaction=None):
-        soap.Proxy.__init__(self, url, namespace, header)
+        self.url = url
+        self.namespace = namespace
+        self.header = header
+        self.action = None
         self.soapaction = soapaction
         self.envelope_attrib = envelope_attrib
 
     def callRemote(self, soapmethod, *args, **kwargs):
         soapaction = self.soapaction or soapmethod
+        self.action = soapmethod
 
         ns = self.namespace
-        namespace_map_update({ns[1]:ns[0]})
+        payload = soap_lite.build_soap_call("{%s}%s" % (ns[1], soapmethod), kwargs,
+                                            encoding=None)
 
-        request = SoapRequest("{%s}%s" % (ns[1], soapmethod))
-
-        type_map = {str: 'xsd:string',
-                    int: 'xsd:int',
-                    bool: 'xsd:boolean'}
-                    
-        for arg_name, arg in kwargs.iteritems():
-            arg_type = type_map[type(arg)]
-            arg_val = str(arg)
-            if arg_type == 'xsd:boolean':
-                arg_val = arg_val.lower()
-            #SoapElement(request, arg_name, arg_type, arg_val)
-            SoapElement(request, arg_name, '', arg_val)
-
-        envelope = ET.Element("s:Envelope")
-        
-        if self.envelope_attrib:
-            for n in self.envelope_attrib:
-                envelope.attrib.update({n[0] : n[1]})
-        else:
-            envelope.attrib.update({'s:encodingStyle' : "http://schemas.xmlsoap.org/soap/encoding/"})
-            envelope.attrib.update({'xmlns:s' :"http://schemas.xmlsoap.org/soap/envelope/"})
-        body = ET.SubElement(envelope, "s:Body")
-        body.append(request)
-
-        preambule = """<?xml version="1.0" encoding="utf-8"?>"""
-        payload = preambule + ET.tostring(envelope)
-        
         #print "soapaction:", soapaction
         #print "callRemote:", payload
         #print "url:", self.url
-        
+
         def gotError(failure, url):
             print "error requesting", url
             print failure
-
 
         return getPage(self.url, postdata=payload, method="POST",
                         headers={'content-type': 'text/xml ;charset="utf-8"',
@@ -72,16 +55,53 @@ class SOAPProxy(soap.Proxy):
     def _cbGotResult(self, result):
         #print "_cbGotResult 1", result
         page, headers = result
-        result = SOAPpy.parseSOAPRPC(page)            
+        #result = SOAPpy.parseSOAPRPC(page)
         #print "_cbGotResult 2", result
+
+        def print_c(e):
+            for c in e.getchildren():
+                print c, c.tag
+                print_c(c)
+
+        tree = parse_xml(page)
+        #print tree, "find %s" % self.action
+
+        #root = tree.getroot()
+        #print_c(root)
+
+        body = tree.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
+        #print "body", body
+        response = body.find('{%s}%sResponse' % (self.namespace[1], self.action))
+        if response == None:
+            """ fallback for improper SOAP action responses """
+            response = body.find('%sResponse' % self.action)
+        #print "response", response
+        result = {}
+        if response != None:
+            for elem in response:
+                result[elem.tag] = self.decode_result(elem)
+        #print "_cbGotResult 3", result
+
         if len(result) == 1:
             return result[0]
         else:
             return result
-        """
-        tree = ET.fromstring(result)
-        body = tree.find('%sBody' % NS_SOAP_ENV)
-        r = decode(body)
-        print "_cbGotResult 3", r
-        return r
-        """
+
+    def decode_result(self, element):
+        type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')
+        if type is not None:
+            try:
+                prefix, local = type.split(":")
+                if prefix == 'xsd':
+                    type = local
+            except ValueError:
+                pass
+
+        if type == "integer" or type == "int":
+            return int(element.text)
+        if type == "float" or type == "double":
+            return float(element.text)
+        if type == "boolean":
+            return element.text == "true"
+
+        return element.text or ""
