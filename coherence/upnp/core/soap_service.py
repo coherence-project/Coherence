@@ -15,24 +15,6 @@ from coherence.upnp.core.utils import parse_xml
 
 from coherence.upnp.core import soap_lite
 
-UPNPERRORS = {401:'Invalid Action',
-              402:'Invalid Args',
-              501:'Action Failed',
-              600:'Argument Value Invalid',
-              601:'Argument Value Out of Range',
-              602:'Optional Action Not Implemented',
-              603:'Out Of Memory',
-              604:'Human Intervention Required',
-              605:'String Argument Too Long',
-              606:'Action Not Authorized',
-              607:'Signature Failure',
-              608:'Signature Missing',
-              609:'Not Encrypted',
-              610:'Invalid Sequence',
-              611:'Invalid Control URL',
-              612:'No Such Session',}
-
-
 from coherence.extern.logger import Logger
 log = Logger('SOAP')
 
@@ -40,25 +22,6 @@ class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
         self.status = status
-
-class UPnPError:
-
-    def __init__(self,status,description='without words'):
-        root = ET.Element('s:Fault')
-        ET.SubElement(root,'faultcode').text='s:Client'
-        ET.SubElement(root,'faultstring').text='UPnPError'
-        e = ET.SubElement(root,'detail')
-        e = ET.SubElement(root, 'UPnPError')
-        e.attrib['xmlns']='urn:schemas-upnp-org:control-1-0'
-        ET.SubElement(root,'errorCode').text=str(status)
-        try:
-            ET.SubElement(root,'errorDescription').text=UPNPERRORS[status]
-        except:
-            ET.SubElement(root,'errorDescription').text=description
-        self.xml = soap_lite.build_soap_call(None, root, encoding=None)
-
-    def get_xml(self):
-        return self.xml
 
 class UPnPPublisher(resource.Resource):
     """ Based upon twisted.web.soap.SOAPPublisher and
@@ -92,7 +55,7 @@ class UPnPPublisher(resource.Resource):
         request.finish()
 
     def _methodNotFound(self, request, methodName):
-        response = UPnPError(401).get_xml()
+        response = soap_lite.build_soap_error(401)
         self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName, ns):
@@ -114,7 +77,7 @@ class UPnPPublisher(resource.Resource):
         else:
             failure.printTraceback()
 
-        response = UPnPError(status).get_xml()
+        response = soap_lite.build_soap_error(status)
         self._sendResponse(request, response, status=status)
 
     def lookupFunction(self, functionName):
