@@ -11,14 +11,13 @@ from twisted.internet import defer
 
 from coherence.upnp.core.service import Service
 from coherence.upnp.core import utils
+from coherence import log
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('Device')
-
-class Device:
-
+class Device(log.Loggable):
+    logCategory = 'device'
+    
     def __init__(self, infos, parent=None):
         self.parent = parent
         self.usn = infos['USN']
@@ -43,10 +42,10 @@ class Device:
         pass
 
     def remove(self):
-        log.info(self.usn, "removal started")
+        self.info(self.usn, "removal started")
         while len(self.services)>0:
             service = self.services.pop()
-            log.info("try to remove", service)
+            self.info("try to remove", service)
             service.remove()
         if self.client != None:
             louie.send('Coherence.UPnP.Device.remove_client', None, self.usn, self.client)
@@ -119,7 +118,7 @@ class Device:
         for service in self.get_services():
             if service.get_sid():
                 if service.get_timeout() < now:
-                    log.warning("wow, we lost an event subscription for %s, " % service.get_id(),
+                    self.warning("wow, we lost an event subscription for %s, " % service.get_id(),
                           "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
@@ -159,21 +158,21 @@ class Device:
                 """ check if values are somehow reasonable
                 """
                 if len(scpdUrl) == 0:
-                    log.warning("service has no uri for its description")
+                    self.warning("service has no uri for its description")
                     continue
                 if len(eventSubUrl) == 0:
-                    log.warning("service has no uri for eventing")
+                    self.warning("service has no uri for eventing")
                     continue
                 if len(controlUrl) == 0:
-                    log.warning("service has no uri for controling")
+                    self.warning("service has no uri for controling")
                     continue
                 self.add_service(Service(serviceType, serviceId, self.location,
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
 
         def gotError(failure, url):
-            log.warning("error requesting", url)
-            log.info(failure)
+            self.warning("error requesting", url)
+            self.info(failure)
             del self
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
@@ -186,9 +185,9 @@ class RootDevice(Device):
         self.devices = []
 
     def add_device(self, device):
-        log.info("RootDevice add_device", device)
+        self.info("RootDevice add_device", device)
         self.devices.append(device)
 
     def get_devices(self):
-        log.info("RootDevice get_devices:", self.devices)
+        self.info("RootDevice get_devices:", self.devices)
         return self.devices

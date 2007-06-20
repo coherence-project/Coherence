@@ -30,11 +30,11 @@ from coherence.extern.inotify import IN_CHANGED
 
 import louie
 
-from coherence.extern.logger import Logger, LOG_WARNING
-log = Logger('FSStore')
+from coherence import log
 
-class FSItem:
-
+class FSItem(log.Loggable):
+    logCategory = 'fs_item'
+    
     def __init__(self, id, parent, path, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
         self.parent = parent
@@ -193,8 +193,9 @@ class FSItem:
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.location.basename()
 
-class FSStore:
-
+class FSStore(log.Loggable):
+    logCategory = 'fs_store'
+    
     implements = ['MediaServer']
 
     wmc_mapping = {'4':1000}
@@ -396,8 +397,8 @@ class FSStore:
             shutil.move(tmp_path, item.get_path())
 
         def gotError(error, url):
-            log.warning("error requesting", url)
-            log.info(error)
+            self.warning("error requesting", url)
+            self.info(error)
             os.unlink(tmp_path)
             return failure.Failure(errorCode(718))
 

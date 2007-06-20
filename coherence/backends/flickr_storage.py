@@ -21,8 +21,7 @@ from coherence.upnp.core.soap_service import errorCode
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('FlickrStore')
+from coherence import log
 
 from urlparse import urlsplit
 
@@ -46,8 +45,9 @@ class ProxyImage(proxy.ReverseProxyResource):
 
         proxy.ReverseProxyResource.__init__(self, host, port, path)
 
-class FlickrItem:
-
+class FlickrItem(log.Loggable):
+    logCategory = 'flickr_storage'
+    
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False,proxy=False):
         self.id = id
         self.real_url = None
@@ -113,7 +113,7 @@ class FlickrItem:
         from coherence.upnp.core.utils import getPage
 
         def gotPhoto(result):
-            log.debug("gotPhoto", result)
+            self.debug("gotPhoto", result)
             _, headers = result
             length = headers.get('content-length',None)
             modified = headers.get('last-modified',None)
@@ -124,8 +124,8 @@ class FlickrItem:
                 self.item.date = datetime(*parsedate_tz(modified[0])[0:6])
 
         def gotError(failure, url):
-            log.warning("error requesting", failure, url)
-            log.info(failure)
+            self.warning("error requesting", failure, url)
+            self.info(failure)
 
         getPage(self.real_url,method='HEAD').addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
 
@@ -145,7 +145,7 @@ class FlickrItem:
 
 
     def remove_child(self, child):
-        log.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):
@@ -269,7 +269,7 @@ class FlickrStore:
 
         def update_photo_details(result, photo):
             dates = result.find('dates')
-            log.info("update_photo_details", dates.get('posted'), dates.get('taken'))
+            self.info("update_photo_details", dates.get('posted'), dates.get('taken'))
             photo.item.date = datetime(*time.strptime(dates.get('taken'),
                                                "%Y-%m-%d %H:%M:%S")[0:6])
 
@@ -301,7 +301,7 @@ class FlickrStore:
         for photo in result.getiterator('photo'):
             self.append(photo, parent)
             count += 1
-        log.warning("initialized photo set %s with %d images" % (parent.get_name(), count))
+        self.warning("initialized photo set %s with %d images" % (parent.get_name(), count))
 
     def len(self):
         return len(self.store)
@@ -321,7 +321,7 @@ class FlickrStore:
         return ret
 
     def refresh_store(self):
-        log.info("refresh_store")
+        self.info("refresh_store")
 
         def update_flickr_result(result, parent):
             """ - is in in the store, but not in the update,
@@ -338,19 +338,19 @@ class FlickrStore:
                 new_ones[photo.get('id')] = photo
             for id,child in old_ones.items():
                 if new_ones.has_key(id):
-                    log.debug(id, "already there")
+                    self.debug(id, "already there")
                     del new_ones[id]
                 else:
-                    log.debug(child.get_flickr_id(), "needs removal")
+                    self.debug(child.get_flickr_id(), "needs removal")
                     del old_ones[id]
                     self.remove(child.get_id())
-            log.info("refresh pass 1:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+            self.info("refresh pass 1:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
             for photo in new_ones.values():
                 self.append(photo, parent)
 
-            log.info("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+            self.info("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
             if len(new_ones) > 0:
-                log.warning("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
+                self.warning("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
 
         d = self.flickr_interestingness()
         d.addCallback(update_flickr_result, self.most_wanted)
@@ -362,8 +362,8 @@ class FlickrStore:
             return result
 
         def got_error(error):
-            log.info(error)
-            log.error("connection to Flickr service failed!")
+            self.info(error)
+            self.error("connection to Flickr service failed!")
             return error
 
         args = {}

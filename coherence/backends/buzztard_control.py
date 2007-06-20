@@ -18,17 +18,17 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('Buzztard')
+from coherence import log
 
-class BzClient(LineReceiver):
-
+class BzClient(LineReceiver, log.Loggable):
+    logCategory = 'buzztard_client'
+    
     def connectionMade(self):
-        log.info("connected to Buzztard")
+        self.info("connected to Buzztard")
         self.factory.clientReady(self)
 
     def lineReceived(self, line):
-        log.debug( "received:", line)
+        self.debug( "received:", line)
 
         if line == 'flush':
             louie.send('Buzztard.Response.flush', None)
@@ -43,25 +43,25 @@ class BzClient(LineReceiver):
         elif line.find('playlist') == 0:
             louie.send('Buzztard.Response.browse', None, line)
 
-class BzFactory(protocol.ClientFactory):
-
+class BzFactory(protocol.ClientFactory, log.Loggable):
+    logCategory = 'buzztard_factory'
     protocol = BzClient
 
     def __init__(self,backend):
         self.backend = backend
 
     def clientConnectionFailed(self, connector, reason):
-        log.error('connection failed:', reason.getErrorMessage())
+        self.error('connection failed:', reason.getErrorMessage())
 
     def clientConnectionLost(self, connector, reason):
-        log.error('connection lost:', reason.getErrorMessage())
+        self.error('connection lost:', reason.getErrorMessage())
 
     def startFactory(self):
         self.messageQueue = []
         self.clientInstance = None
 
     def clientReady(self, instance):
-        log.info("clientReady")
+        self.info("clientReady")
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self.backend)
         self.clientInstance = instance
         for msg in self.messageQueue:
@@ -81,12 +81,13 @@ class BzFactory(protocol.ClientFactory):
         self.sendMessage('browse')
 
 
-class BzConnection(object):
+class BzConnection(log.Loggable):
     """ a singleton class
     """
-
+    logCategory = 'buzztard_connection'
+    
     def __new__(cls, *args, **kwargs):
-        log.debug("BzConnection __new__")
+        self.debug("BzConnection __new__")
         obj = getattr(cls,'_instance_',None)
         if obj is not None:
             louie.send('Coherence.UPnP.Backend.init_completed', None, backend=kwargs['backend'])
@@ -99,10 +100,11 @@ class BzConnection(object):
             return obj
 
     def __init__(self,backend=None,host='localhost',port=7654):
-        log.debug("BzConnection __init__")
+        self.debug("BzConnection __init__")
 
-class BuzztardItem:
-
+class BuzztardItem(log.Loggable):
+    logCategory = 'buzztard_item'
+    
     def __init__(self, id, name, parent, mimetype, urlbase, host, update=False):
         self.id = id
         self.name = name
@@ -138,11 +140,11 @@ class BuzztardItem:
 
 
     def __del__(self):
-        log.debug("BuzztardItem __del__", self.id, self.name)
+        self.debug("BuzztardItem __del__", self.id, self.name)
         pass
 
     def remove(self,store):
-        log.debug("BuzztardItem remove", self.id, self.name, self.parent)
+        self.debug("BuzztardItem remove", self.id, self.name, self.parent)
         while len(self.children) > 0:
             child = self.children.pop()
             self.remove_child(child)
@@ -164,7 +166,7 @@ class BuzztardItem:
             self.update_id += 1
 
     def remove_child(self, child):
-        log.debug("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        self.debug("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):
@@ -212,8 +214,8 @@ class BuzztardItem:
             parent = str(self.parent.get_id())
         return 'id: ' + str(self.id) +'/' + self.name + '/' + parent + ' ' + str(self.child_count) + ' @ ' + self.url
 
-class BuzztardStore:
-
+class BuzztardStore(log.Loggable):
+    logCategory = 'buzztard_store'
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
@@ -327,8 +329,8 @@ class BuzztardStore:
         self.buzztard.connection.browse()
 
 
-class BuzztardPlayer:
-
+class BuzztardPlayer(log.Loggable):
+    logCategory = 'buzztard_player'
     implements = ['MediaRenderer']
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
@@ -356,7 +358,7 @@ class BuzztardPlayer:
 
     def event(self,line):
         infos = line.split('|')[1:]
-        log.debug(infos)
+        self.debug(infos)
         if infos[0] == 'playing':
             transport_state = 'PLAYING'
         if infos[0] == 'stopped':
@@ -410,7 +412,7 @@ class BuzztardPlayer:
         self.buzztard.connection.sendMessage('status')
 
     def load( self, uri, metadata):
-        log.debug("load", uri, metadata)
+        self.debug("load", uri, metadata)
         self.duration = None
         self.metadata = metadata
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)

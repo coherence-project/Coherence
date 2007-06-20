@@ -19,15 +19,15 @@ from coherence.upnp.core.utils import parse_xml
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('ControlPoint')
+from coherence import log
 
-class ControlPoint:
-
+class ControlPoint(log.Loggable):
+    logCategory = 'control_point'
+    
     def __init__(self, coherence):
         self.coherence = coherence
         
-        log.warning("Coherence UPnP ControlPoint starting...")
+        self.warning("Coherence UPnP ControlPoint starting...")
         self.event_server = EventServer(self)
         
         self.coherence.add_web_resource('RPC2',
@@ -53,11 +53,11 @@ class ControlPoint:
 
     def check_device( self, device):
         if device.is_remote():
-            log.info("found device %s of type %s" %(device.get_friendly_name(),
+            self.info("found device %s of type %s" %(device.get_friendly_name(),
                                                     device.get_device_type()))
             if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
                                       "urn:schemas-upnp-org:device:MediaServer:2"]:
-                log.warning("identified MediaServer", device.get_friendly_name())
+                self.warning("identified MediaServer", device.get_friendly_name())
                 client = MediaServerClient(device)
                 device.set_client( client)
                 louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
@@ -65,14 +65,14 @@ class ControlPoint:
 
             if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
                                       "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
-                log.warning("identified MediaRenderer", device.get_friendly_name())
+                self.warning("identified MediaRenderer", device.get_friendly_name())
                 client = MediaRendererClient(device)
                 device.set_client( client)
                 louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
                                    client=client,usn=device.get_usn())
 
     def remove_client(self, usn, client):
-        log.warning("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
+        self.warning("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
         client.remove()
     

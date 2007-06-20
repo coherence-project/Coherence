@@ -17,11 +17,11 @@ try:
 except ImportError:
     import service
     
-from coherence.extern.logger import Logger
-log = Logger('Variable')
+from coherence import log
 
-class StateVariable:
-
+class StateVariable(log.Loggable):
+    logCategory = 'variable'
+    
     def __init__(self, upnp_service, name, implementation, instance, send_events,
                  data_type, values):
         self.service = upnp_service
@@ -67,7 +67,7 @@ class StateVariable:
             self.never_evented = True
             
     def update(self, value):
-        log.info("variable check for update", self.name, value, self.service)
+        self.info("variable check for update", self.name, value, self.service)
         if not isinstance( self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
                 old_value = self.value
@@ -116,7 +116,7 @@ class StateVariable:
                             elif v.upper() in [x.upper() for x in self.allowed_values]:
                                 new_value.append(v)
                             else:
-                                log.warning("Variable %s update, value %s doesn't fit" % (self.name, v))
+                                self.warning("Variable %s update, value %s doesn't fit" % (self.name, v))
                                 new_value = 'Coherence_Value_Error'
                         else:
                             new_value.append(v)
@@ -140,7 +140,7 @@ class StateVariable:
                     elif value.upper() in [v.upper() for v in self.allowed_values]:
                         new_value = value
                     else:
-                        log.warning("Variable %s NOT updated, value %s doesn't fit" % (self.name, value))
+                        self.warning("Variable %s NOT updated, value %s doesn't fit" % (self.name, value))
                         new_value = 'Coherence_Value_Error'
                 else:
                     new_value = value
@@ -155,7 +155,7 @@ class StateVariable:
         if new_value == 'Coherence_Value_Error':
             return
         if new_value == self.value:
-            log.info("variable NOT updated, no value change", self.name, self.value)
+            self.info("variable NOT updated, no value change", self.name, self.value)
             return
         self.old_value = self.value
         self.value = new_value
@@ -167,7 +167,7 @@ class StateVariable:
             self.updated = True
             if self.service.last_change != None:
                 self.service.last_change.updated = True
-        log.info("variable updated", self.name, self.value)
+        self.info("variable updated", self.name, self.value)
 
     def subscribe(self, callback):
         self._callbacks.append(callback)

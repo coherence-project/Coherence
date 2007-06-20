@@ -19,11 +19,11 @@ import gst
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('GStreamerPlayer')
+from coherence import log
 
-class Player(object):
-
+class Player(log.Loggable):
+    logCategory = 'gstreamer_player'
+    
     def __init__(self, default_mimetype='audio/mpeg'):
         self.player = None
         self.source = None

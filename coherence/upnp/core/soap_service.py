@@ -7,7 +7,7 @@ from twisted.web import server, resource
 from twisted.python import log, failure
 from twisted.internet import defer
 
-from coherence import SERVER_ID
+from coherence import log, SERVER_ID
 
 from coherence.extern.et import ET, namespace_map_update
 
@@ -15,15 +15,12 @@ from coherence.upnp.core.utils import parse_xml
 
 from coherence.upnp.core import soap_lite
 
-from coherence.extern.logger import Logger
-log = Logger('SOAP')
-
 class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
         self.status = status
 
-class UPnPPublisher(resource.Resource):
+class UPnPPublisher(resource.Resource, log.Loggable):
     """ Based upon twisted.web.soap.SOAPPublisher and
         extracted to remove the SOAPpy dependency
 
@@ -31,13 +28,13 @@ class UPnPPublisher(resource.Resource):
         in a slightly
         different way than the SOAPPublisher class does.
     """
-
+    logCategory = 'soap'
     isLeaf = 1
     encoding = "UTF-8"
     envelope_attrib = None
 
     def _sendResponse(self, request, response, status=200):
-        log.info('_sendResponse', status, response)
+        self.info('_sendResponse', status, response)
         if status == 200:
             request.setResponseCode(200)
         else:
@@ -59,7 +56,7 @@ class UPnPPublisher(resource.Resource):
         self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName, ns):
-        log.info('_gotResult', result, request, methodName, ns)
+        self.info('_gotResult', result, request, methodName, ns)
 
         response = soap_lite.build_soap_call("{%s}%s" % (ns, methodName), result,
                                                 is_response=True,
@@ -68,7 +65,7 @@ class UPnPPublisher(resource.Resource):
         self._sendResponse(request, response)
 
     def _gotError(self, failure, request, methodName, ns):
-        log.info('_gotError', failure, failure.value)
+        self.info('_gotError', failure, failure.value)
         e = failure.value
         status = 500
 
@@ -93,7 +90,7 @@ class UPnPPublisher(resource.Resource):
         """Handle a SOAP command."""
         data = request.content.read()
         headers = request.getAllHeaders()
-        log.info('soap_request:', headers)
+        self.info('soap_request:', headers)
 
         def print_c(e):
             for c in e.getchildren():
@@ -147,7 +144,7 @@ class UPnPPublisher(resource.Resource):
 
             for k, v in kwargs.items():
                 keywords[str(k)] = v
-            log.info('call', methodName, keywords)
+            self.info('call', methodName, keywords)
             if hasattr(function, "useKeywords"):
                 d = defer.maybeDeferred(function, **keywords)
             else:

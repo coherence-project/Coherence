@@ -7,11 +7,11 @@ from coherence.upnp.services.clients.connection_manager_client import Connection
 from coherence.upnp.services.clients.rendering_control_client import RenderingControlClient
 from coherence.upnp.services.clients.av_transport_client import AVTransportClient
 
-from coherence.extern.logger import Logger
-log = Logger('MRClient')
+from coherence import log
 
-class MediaRendererClient:
-
+class MediaRendererClient(log.Loggable):
+    logCategory = 'mr_client'
+    
     def __init__(self, device):
         self.device = device
         self.device_type,self.version = device.get_device_type().split(':')[3:5]
@@ -28,9 +28,9 @@ class MediaRendererClient:
             if service.get_type() in ["urn:schemas-upnp-org:service:AVTransport:1",
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
                 self.av_transport = AVTransportClient( service)
-        log.info("MediaRenderer %s" % (self.device.get_friendly_name()))
+        self.info("MediaRenderer %s" % (self.device.get_friendly_name()))
         if self.rendering_control:
-            log.info("RenderingControl available")
+            self.info("RenderingControl available")
             """
             actions =  self.rendering_control.service.get_actions()
             print actions
@@ -44,16 +44,16 @@ class MediaRendererClient:
             #self.rendering_control.get_volume()
             #self.rendering_control.set_mute(desired_mute=1)
         else:
-            log.warning("RenderingControl not available, device not implemented properly according to the UPnP specification")
+            self.warning("RenderingControl not available, device not implemented properly according to the UPnP specification")
             return
         if self.connection_manager:
-            log.info("ConnectionManager available")
+            self.info("ConnectionManager available")
             #self.connection_manager.get_protocol_info()
         else:
-            log.warning("ConnectionManager not available, device not implemented properly according to the UPnP specification")
+            self.warning("ConnectionManager not available, device not implemented properly according to the UPnP specification")
             return
         if self.av_transport:
-            log.info("AVTransport (optional) available")
+            self.info("AVTransport (optional) available")
             self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('TransportState', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('CurrentTransportActions', 0, self.state_variable_change)
@@ -65,7 +65,7 @@ class MediaRendererClient:
         pass
         
     def remove(self):
-        log.info("removal of MediaRendererClient started")
+        self.info("removal of MediaRendererClient started")
         if self.rendering_control != None:
             del self.rendering_control
         if self.connection_manager != None:
@@ -75,5 +75,5 @@ class MediaRendererClient:
         del self
 
     def state_variable_change( self, variable):
-        log.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
+        self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
 

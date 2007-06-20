@@ -52,8 +52,7 @@ from coherence.upnp.core import DIDLLite
 
 from coherence.extern.covers_by_amazon import CoverGetter
 
-from coherence.extern.logger import Logger
-log = Logger('MediaStore')
+from coherence import log
 
 try:
     import libmtag
@@ -343,12 +342,12 @@ class Playlist(item.Item):
     name = attributes.text(allowNone=False, indexed=True)
     # references to tracks
 
-class MediaStore(object):
-
+class MediaStore(log.Loggable):
+    logCategory = 'media_store'
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        log.info("MediaStore __init__")
+        self.info("MediaStore __init__")
         self.server = server
         self.update_id = 0
 
@@ -493,7 +492,7 @@ class MediaStore(object):
                             title=album.title)
 
     def get_by_id(self,id):
-        log.info("get_by_id %s" % id)
+        self.info("get_by_id %s" % id)
         if id.startswith('artist_all_tracks_'):
             try:
                 return self.containers[id]
@@ -507,7 +506,7 @@ class MediaStore(object):
                 item = self.db.getItemByID(id-1000)
             except:
                 item = None
-        log.info("get_by_id found", item)
+        self.info("get_by_id found", item)
         return item
 
     def upnp_init(self):
