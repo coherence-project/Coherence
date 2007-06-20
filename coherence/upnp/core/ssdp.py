@@ -181,7 +181,7 @@ class SSDPServer(DatagramProtocol):
     def doNotify(self, usn):
         """Do notification"""
 
-        if self.known[usn]['SILENT']:
+        if self.known[usn]['SILENT'] == True:
             return
         log.msg('Sending alive notification for %s' % usn)
 
@@ -203,8 +203,6 @@ class SSDPServer(DatagramProtocol):
     def doByebye(self, st):
         """Do byebye"""
 
-        if self.known[st]['SILENT']:
-            return
         log.msg('Sending byebye notification for %s' % st)
 
         resp = [ 'NOTIFY * HTTP/1.1',
