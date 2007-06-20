@@ -751,7 +751,7 @@ class ServiceControl:
 
         def got_error(x):
             #print 'failure', x
-            log.error('soap__generic error during call processing')
+            log.info('soap__generic error during call processing')
             return x
 
         # call plugin method for this action
