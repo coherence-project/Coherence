@@ -30,7 +30,7 @@ class EventServer(resource.Resource, log.Loggable):
         global hostname, web_server_port
         hostname = self.coherence.hostname
         web_server_port = self.coherence.web_server_port
-        self.warning("EventServer ready...")
+        self.info("EventServer ready...")
 
     def render_NOTIFY(self, request):
         self.info("EventServer received notify from %s, code: %d" % (request.client, request.code))

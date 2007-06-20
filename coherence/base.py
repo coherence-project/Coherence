@@ -102,7 +102,7 @@ class WebServer(log.Loggable):
         port = reactor.listenTCP( port, self.site)
         coherence.web_server_port = port._realPortNumber
         # XXX: is this the right way to do it?
-        self.warning( "WebServer on port %d ready" % coherence.web_server_port)
+        self.info( "WebServer on port %d ready" % coherence.web_server_port)
 
 
 class Coherence(log.Loggable):
@@ -137,7 +137,7 @@ class Coherence(log.Loggable):
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
 
-        self.warning("Coherence UPnP framework version %s starting..." % __version__)
+        self.info("Coherence UPnP framework version %s starting..." % __version__)
         self.ssdp_server = SSDPServer()
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
@@ -164,7 +164,7 @@ class Coherence(log.Loggable):
                 """ use interface detection via routing table as last resort """
                 self.hostname = get_host_address()
 
-        self.warning('running on host: %s' % self.hostname)
+        self.info('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
             self.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
         self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
@@ -250,7 +250,7 @@ class Coherence(log.Loggable):
                 l.append(device.unsubscribe_service_subscriptions())
         self.ssdp_server.shutdown()
         dl = defer.DeferredList(l)
-        self.warning('Coherence UPnP framework shutdown')
+        self.info('Coherence UPnP framework shutdown')
         return dl
 
     def check_devices(self):

@@ -27,7 +27,7 @@ class ControlPoint(log.Loggable):
     def __init__(self, coherence):
         self.coherence = coherence
         
-        self.warning("Coherence UPnP ControlPoint starting...")
+        self.info("Coherence UPnP ControlPoint starting...")
         self.event_server = EventServer(self)
         
         self.coherence.add_web_resource('RPC2',
@@ -57,7 +57,7 @@ class ControlPoint(log.Loggable):
                                                     device.get_device_type()))
             if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
                                       "urn:schemas-upnp-org:device:MediaServer:2"]:
-                self.warning("identified MediaServer", device.get_friendly_name())
+                self.info("identified MediaServer", device.get_friendly_name())
                 client = MediaServerClient(device)
                 device.set_client( client)
                 louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
@@ -65,14 +65,14 @@ class ControlPoint(log.Loggable):
 
             if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
                                       "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
-                self.warning("identified MediaRenderer", device.get_friendly_name())
+                self.info("identified MediaRenderer", device.get_friendly_name())
                 client = MediaRendererClient(device)
                 device.set_client( client)
                 louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
                                    client=client,usn=device.get_usn())
 
     def remove_client(self, usn, client):
-        self.warning("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
+        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
         client.remove()
     
