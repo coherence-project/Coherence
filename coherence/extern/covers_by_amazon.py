@@ -17,11 +17,26 @@ The licence agreement says something about only
 one request per second, so we need to serialize
 and delay the calls a bit.
 
-The AWSAccessKeyId supplied is _only_ for the use
+The AWSAccessKeyId supplied is _ONLY_ for the use
 in conjunction with Coherence, http://coherence.beebits.net
 
 If you use this library in your own software please
 apply for your own key @ http://www.amazon.com/webservices
+and follow the rules of their license.
+
+Especially you must add the following disclaimer in a place
+that is reasonably viewable by the user of your application:
+
+ PLEASE KEEP IN MIND THAT SOME OF THE CONTENT THAT WE
+ MAKE AVAILABLE TO YOU THROUGH THIS APPLICATION COMES
+ FROM AMAZON WEB SERVICES. ALL SUCH CONTENT IS PROVIDED
+ TO YOU "AS IS." THIS CONTENT AND YOUR USE OF IT
+ ARE SUBJECT TO CHANGE AND/OR REMOVAL AT ANY TIME.
+
+Furthermore if you save any of the cover images you
+have to take care that they are stored no longer than
+a maximum of one month and requested then from Amazon
+again.
 
 """
 
