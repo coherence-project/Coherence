@@ -245,8 +245,9 @@ moderated_variables = \
             ['LastChange'],
         }
 
-class ServiceServer:
-
+class ServiceServer(log.Loggable):
+    logCategory = 'service_server'
+    
     def __init__(self, id, version, backend):
         self.id = id
         self.version = version
