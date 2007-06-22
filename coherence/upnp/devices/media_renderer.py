@@ -24,7 +24,7 @@ from coherence import log
 
 class MRRoot(resource.Resource, log.Loggable):
     logCategory = 'ms_root'
-    
+
     def __init__(self, server):
         resource.Resource.__init__(self)
         self.server = server
@@ -59,7 +59,7 @@ class MRRoot(resource.Resource, log.Loggable):
 
 class RootDeviceXML(static.Data, log.Loggable):
     logCategory = 'ms_root'
-    
+
     def __init__(self, hostname, uuid, urlbase,
                         device_type='MediaRenderer',
                         version=2,
@@ -125,15 +125,15 @@ class RootDeviceXML(static.Data, log.Loggable):
                             continue
                     ET.SubElement(i, k).text = v
 
-        if self.has_level(LOG_DEBUG):
-            indent( root)
+        #if self.has_level(LOG_DEBUG):
+        #    indent( root)
 
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaRenderer(log.Loggable):
     logCategory = 'media_renderer'
-    
+
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'

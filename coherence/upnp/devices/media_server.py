@@ -39,7 +39,7 @@ COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
 
 class MSRoot(resource.Resource, log.Loggable):
     logCategory = 'ms_root'
-    
+
     def __init__(self, server, store):
         resource.Resource.__init__(self)
         log.Loggable.__init__(self)
@@ -312,14 +312,14 @@ class RootDeviceXML(static.Data):
                     else:
                         ET.SubElement(i, k).text = v
 
-        if self.has_level(LOG_DEBUG):
-            indent( root)
+        #if self.has_level(LOG_DEBUG):
+        #    indent( root)
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaServer(log.Loggable):
     logCategory = 'media_server'
-    
+
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaServer'
