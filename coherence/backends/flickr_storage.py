@@ -47,7 +47,7 @@ class ProxyImage(proxy.ReverseProxyResource):
 
 class FlickrItem(log.Loggable):
     logCategory = 'flickr_storage'
-    
+
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False,proxy=False):
         self.id = id
         self.real_url = None
@@ -201,7 +201,8 @@ class FlickrItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url
 
-class FlickrStore:
+class FlickrStore(log.Loggable):
+    logCategory = 'flickr_storage'
 
     implements = ['MediaServer']
 
