@@ -10,6 +10,8 @@ from twisted.internet import reactor
 from twisted.internet import threads
 from twisted.web import xmlrpc, resource, static
 
+from coherence import __version__
+
 from coherence.extern.et import ET, indent
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
