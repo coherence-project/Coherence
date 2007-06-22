@@ -373,7 +373,11 @@ class FSStore(log.Loggable):
                         ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                          'http-get:*:audio/mpeg:*',
                          'internal:%s:application/ogg:*' % self.server.coherence.hostname,
-                         'http-get:*:application/ogg:*'],
+                         'http-get:*:application/ogg:*',
+                         'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
+                         'http-get:*:video/x-msvideo:*',
+                         'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
+                         'http-get:*:video/quicktime:*'],
                         default=True)
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
 
