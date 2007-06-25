@@ -56,7 +56,7 @@ class ContentDirectoryClient:
         action = self.service.get_action('GetSystemUpdateID')
         return action.call()
 
-    def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
+    def new_browse(self, object_id=0, browse_flag='BrowseDirectChildren',
                filter='*', sort_criteria='',
                starting_index=0, requested_count=0):
 
@@ -96,11 +96,21 @@ class ContentDirectoryClient:
         d.addCallback( process_result)
         return d
 
-    def old_browse(self, object_id=0, browse_flag='BrowseDirectChildren',
-               starting_index=0, requested_count=0,
-               recursive=False):
+    def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
+                     filter='*', sort_criteria='',
+                     starting_index=0, requested_count=0,
+                     backward_compatibility=True,
+                     recursive=False):
         """
         """
+        if backward_compatibility == True:
+            print """DeprecationWarning: content_directory_client.browse method will """ \
+                  """change in version 0.4.0 and be replaced with the now called """ \
+                  """new_browse method!"""
+        else:
+            return self.new_browse(object_id=object_id, browse_flag=browse_flag,
+                                   filter=filter, sort_criteria=sort_criteria,
+                                   starting_index=starting_index, requested_count=starting_index)
         finished = defer.Deferred()
         infos = {}
         action = self.service.get_action('Browse')
