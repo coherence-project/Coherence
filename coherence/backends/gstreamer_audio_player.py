@@ -23,7 +23,7 @@ from coherence import log
 
 class Player(log.Loggable):
     logCategory = 'gstreamer_player'
-    
+
     def __init__(self, default_mimetype='audio/mpeg'):
         self.player = None
         self.source = None
@@ -600,6 +600,8 @@ class GStreamerMediaRenderer(object):
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
                             ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                              'http-get:*:audio/mpeg:*',
+                             'internal:%s:audio/mp4:*' % self.server.coherence.hostname,
+                             'http-get:*:audio/mp4:*',
                              'internal:%s:application/ogg:*' % self.server.coherence.hostname,
                              'http-get:*:application/ogg:*',
                              'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
