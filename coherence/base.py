@@ -35,7 +35,7 @@ from coherence import log
 class SimpleRoot(resource.Resource, log.Loggable):
     addSlash = True
     logCategory = 'coherence'
-    
+
     def __init__(self, coherence):
         resource.Resource.__init__(self)
         self.coherence = coherence
@@ -72,7 +72,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
 class WebServer(log.Loggable):
     logCategory = 'web_server'
-    
+
     def __init__(self, ui, port, coherence):
         try:
             if ui != 'yes':
@@ -248,6 +248,7 @@ class Coherence(log.Loggable):
             l.append(root_device.unsubscribe_service_subscriptions())
             for device in root_device.get_devices():
                 l.append(device.unsubscribe_service_subscriptions())
+            root_device.remove()
         self.ssdp_server.shutdown()
         dl = defer.DeferredList(l)
         self.info('Coherence UPnP framework shutdown')
@@ -300,12 +301,12 @@ class Coherence(log.Loggable):
         return [d for d in self.devices if d.manifestation == 'remote']
 
     def create_device(self, device_type, infos):
-        self.info("creating %r %r", infos['ST'],infos['USN'])
+        self.info("creating", infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
-            self.info("creating upnp:rootdevice %r", infos['USN'])
+            self.info("creating upnp:rootdevice", infos['USN'])
             root = RootDevice(infos)
         else:
-            self.info("creating device/service %r",infos['USN'])
+            self.info("creating device/service",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
@@ -315,11 +316,11 @@ class Coherence(log.Loggable):
         #    self.callback("new_device", infos['ST'], infos)
 
     def add_device(self, device):
-        self.info("adding device %r",device.get_usn())
+        self.info("adding device",device.get_usn())
         self.devices.append(device)
 
     def remove_device(self, device_type, infos):
-        self.info("removed device %r",infos['ST'],infos['USN'])
+        self.info("removed device",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
             self.devices.remove(device)

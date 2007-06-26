@@ -17,7 +17,7 @@ import louie
 
 class Device(log.Loggable):
     logCategory = 'device'
-    
+
     def __init__(self, infos, parent=None):
         self.parent = parent
         self.usn = infos['USN']

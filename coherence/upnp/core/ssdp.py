@@ -39,8 +39,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         # Create SSDP server
         try:
             port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
-            # don't get our own sends
-            port.setLoopbackMode(0)
+            port.setLoopbackMode(1)
 
             port.joinGroup(SSDP_ADDR)
 
@@ -118,7 +117,6 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     def unRegister(self, usn):
         self.msg("Un-registering %s" % usn)
-
         st = self.known[usn]['ST']
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=st, infos=self.known[usn])
@@ -213,6 +211,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
+        self.msg('doByebye content', resp)
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 
     def resendNotify( self):
