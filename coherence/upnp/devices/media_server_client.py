@@ -11,7 +11,7 @@ from coherence import log
 
 class MediaServerClient(log.Loggable):
     logCategory = 'ms_client'
-    
+
     def __init__(self, device):
         self.device = device
         self.device_type,self.version = device.get_device_type().split(':')[3:5]
@@ -30,7 +30,7 @@ class MediaServerClient(log.Loggable):
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
                 self.av_transport = AVTransportClient( service)
             #if service.get_type()  in ["urn:schemas-upnp-org:service:ScheduledRecording:1",
-            #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:    
+            #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:
             #    self.scheduled_recording = ScheduledRecordingClient( service)
         self.info("MediaServer %s" % (self.device.get_friendly_name()))
         if self.content_directory:
@@ -47,14 +47,14 @@ class MediaServerClient(log.Loggable):
             self.info("AVTransport (optional) available")
         if self.scheduled_recording:
             self.info("ScheduledRecording (optional) available")
-            
-        #d = self.content_directory.browse(0, recursive=False) # browse top level
+
+        #d = self.content_directory.browse(0) # browse top level
         #d.addCallback( self.process_meta)
-        
+
     def __del__(self):
         #print "MediaServerClient deleted"
         pass
-        
+
     def remove(self):
         self.info("removal of MediaServerClient started")
         if self.content_directory != None:
@@ -66,7 +66,7 @@ class MediaServerClient(log.Loggable):
         if self.scheduled_recording != None:
             del self.scheduled_recording
         del self
-        
+
     def state_variable_change( self, variable):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
 
@@ -77,4 +77,3 @@ class MediaServerClient(log.Loggable):
         for k,v in results.iteritems():
             dfr = self.content_directory.browse(k, "BrowseMetadata")
             dfr.addCallback( self.print_results)
-
