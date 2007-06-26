@@ -22,6 +22,8 @@ namespace_map_update(my_namespaces)
 
 from coherence.upnp.core import utils
 
+from coherence.upnp.core import dlna
+
 def classChooser(mimetype, sub=None):
 
     if mimetype == 'root':
@@ -62,11 +64,15 @@ class Resource:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if additional_info == '*':
                 if content_format == 'audio/mpeg':
-                    additional_info = ';'.join(('DLNA.ORG_PN=MP3','DLNA.ORG_OP=11'))
+                    additional_info = ';'.join(('DLNA.ORG_PN=MP3','DLNA.ORG_OP=01'))
                 if content_format == 'image/jpeg':
-                    additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=11'))
+                    additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=01'))
                 if content_format == 'video/mpeg':
-                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=11'))
+                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=01'))
+                if content_format == 'video/x-xvid':
+                    additional_info = ';'.join(('DLNA.ORG_PN=','DLNA.ORG_OP=01'))
+                if content_format == 'video/x-divx':
+                    additional_info = ';'.join(('DLNA.ORG_PN=','DLNA.ORG_OP=01'))
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self):
@@ -285,8 +291,9 @@ class AudioItem(Item):
     albumArtURI = None
 
     valid_keys = ['genre', 'description', 'longDescription', 'publisher',
-                  'langugage', 'relation', 'rights']
+                  'langugage', 'relation', 'rights', 'albumArtURI']
 
+    @dlna.AudioItem
     def toElement(self):
 
         root = Item.toElement(self)
@@ -302,7 +309,8 @@ class AudioItem(Item):
                              self.longDescription
 
         if self.albumArtURI is not None:
-            ET.SubElement(root, 'upnp:albumArtURI').text = self.albumArtURI
+            e = ET.SubElement(root, 'upnp:albumArtURI')
+            e.text = self.albumArtURI
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.publisher
@@ -501,7 +509,8 @@ class DIDLElement(ElementInterface):
         return self._items
 
     def toString(self):
-        return ET.tostring(self)
+        preamble = """<?xml version="1.0" encoding="utf-8"?>"""
+        return preamble + ET.tostring(self)
 
     @classmethod
     def fromString(cls, aString):
