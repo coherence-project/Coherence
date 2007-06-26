@@ -67,7 +67,7 @@ class MediaServerClient(log.Loggable):
             del self.scheduled_recording
         del self
 
-    def state_variable_change( self, variable):
+    def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
 
     def print_results(self, results):

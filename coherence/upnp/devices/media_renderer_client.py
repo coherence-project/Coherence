@@ -11,7 +11,7 @@ from coherence import log
 
 class MediaRendererClient(log.Loggable):
     logCategory = 'mr_client'
-    
+
     def __init__(self, device):
         self.device = device
         self.device_type,self.version = device.get_device_type().split(':')[3:5]
@@ -20,7 +20,7 @@ class MediaRendererClient(log.Loggable):
         self.av_transport = None
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:RenderingControl:1",
-                                      "urn:schemas-upnp-org:service:RenderingControl:2"]:    
+                                      "urn:schemas-upnp-org:service:RenderingControl:2"]:
                 self.rendering_control = RenderingControlClient( service)
             if service.get_type() in ["urn:schemas-upnp-org:service:ConnectionManager:1",
                                       "urn:schemas-upnp-org:service:ConnectionManager:2"]:
@@ -63,7 +63,7 @@ class MediaRendererClient(log.Loggable):
     def __del__(self):
         #print "MediaRendererClient deleted"
         pass
-        
+
     def remove(self):
         self.info("removal of MediaRendererClient started")
         if self.rendering_control != None:
@@ -74,6 +74,5 @@ class MediaRendererClient(log.Loggable):
             del self.av_transport
         del self
 
-    def state_variable_change( self, variable):
+    def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
-
