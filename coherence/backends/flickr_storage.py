@@ -55,7 +55,7 @@ class FlickrItem(log.Loggable):
             self.name = obj
             self.mimetype = mimetype
         else:
-            self.name = obj.get('title').encode('utf-8')
+            self.name = obj.get('title') #.encode('utf-8')
             if len(self.name) == 0:
                 self.name = 'untitled'
             self.mimetype = 'image/jpeg'

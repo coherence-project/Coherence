@@ -171,9 +171,10 @@ class FSItem(log.Loggable):
 
     def get_name(self):
         if isinstance( self.location,FilePath):
-            return self.location.basename()
+            name = self.location.basename()
         else:
-            self.location
+            name = self.location
+        return name
 
     def get_cover(self):
         try:

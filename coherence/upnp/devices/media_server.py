@@ -152,14 +152,14 @@ class MSRoot(resource.Resource, log.Loggable):
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
-                ch = StaticFile(p)
+                ch = StaticFile(p.encode('utf-8'))
             else:
                 return self.list_content(name, ch, request)
 
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = StaticFile(p)
+                ch = StaticFile(p.encode('utf-8'))
         self.info('MSRoot ch', ch)
         return ch
 
