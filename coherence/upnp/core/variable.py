@@ -16,12 +16,12 @@ try:
     from coherence.upnp.core import service
 except ImportError:
     import service
-    
+
 from coherence import log
 
 class StateVariable(log.Loggable):
     logCategory = 'variable'
-    
+
     def __init__(self, upnp_service, name, implementation, instance, send_events,
                  data_type, values):
         self.service = upnp_service
@@ -50,22 +50,22 @@ class StateVariable(log.Loggable):
     def set_default_value(self, value):
         self.update(value)
         self.default_value = self.value
-        
+
     def set_allowed_values(self, values):
         if not isinstance(values,list):
             values = [values]
         self.allowed_values = values
-        
+
     def set_allowed_value_range(self, **kwargs):
         self.allowed_value_range = kwargs
-        
+
     def get_allowed_values(self):
         return self.allowed_values
-    
+
     def set_never_evented(self, value):
         if value in [True,1,'1','true','True','yes','Yes']:
             self.never_evented = True
-            
+
     def update(self, value):
         self.info("variable check for update", self.name, value, self.service)
         if not isinstance( self.service, service.Service):
@@ -171,11 +171,11 @@ class StateVariable(log.Loggable):
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
-        
+
     def notify(self):
         for callback in self._callbacks:
-            callback( self)
-            
+            callback( self, self.service.device.usn)
+
     def __repr__(self):
         return "Variable: %s, %s, %d, %s, %s, %s, %s, %s, %s" % \
                         (self.name,
@@ -187,4 +187,3 @@ class StateVariable(log.Loggable):
                          str(self.default_value),
                          str(self.value),
                          str(self.send_events))
-
