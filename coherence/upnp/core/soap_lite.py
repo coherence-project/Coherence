@@ -82,13 +82,17 @@ def build_soap_call(method, arguments, is_response=False,
     # append the arguments
     if isinstance(arguments,dict):
         type_map = {str: 'xsd:string',
+                    unicode: 'xsd:string',
                     int: 'xsd:int',
                     float: 'xsd:float',
                     bool: 'xsd:boolean'}
 
         for arg_name, arg_val in arguments.iteritems():
             arg_type = type_map[type(arg_val)]
-            arg_val = str(arg_val)
+            if arg_type == 'xsd:string' and type(arg_val) == unicode:
+                arg_val = arg_val.encode('utf-8')
+            if arg_type == 'xsd:int' or arg_type == 'xsd:float':
+                arg_val = str(arg_val)
             if arg_type == 'xsd:boolean':
                 arg_val = arg_val.lower()
 
@@ -104,4 +108,4 @@ def build_soap_call(method, arguments, is_response=False,
 
 
     preamble = """<?xml version="1.0" encoding="utf-8"?>"""
-    return preamble + ET.tostring(envelope)
+    return preamble + ET.tostring(envelope,'utf-8')

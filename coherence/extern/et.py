@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -5,26 +7,69 @@
 #
 # a little helper to get the proper ElementTree package
 
-try:
-    from xml.etree import cElementTree as ET
-except ImportError:
-    try:
-        import cElementTree as ET
-    except ImportError:
-        try:
-            from xml.etree import ElementTree as ET
-        except ImportError:
-            try:
-                from elementtree import ElementTree as ET
-            except ImportError:
-                import sys
-                print "no ElementTree module found, critical error"
-                sys.exit(0)
+import re
 
 try:
-    from xml.etree.ElementTree import _ElementInterface
+    import XcElementTree as ET
+    import elementtree
+    print "we are on CET"
 except ImportError:
-    from elementtree.ElementTree import _ElementInterface
+    try:
+        from elementtree import ElementTree as ET
+        import elementtree
+        print "simply using ET"
+    except ImportError:
+        import sys
+        print "no ElementTree module found, critical error"
+        sys.exit(0)
+
+#try:
+#    from xml.etree import cElementTree as ET
+#except ImportError:
+#    try:
+#        import cElementTree as ET
+#    except ImportError:
+#        try:
+#            from xml.etree import ElementTree as ET
+#        except ImportError:
+#            try:
+#                from elementtree import ElementTree as ET
+#            except ImportError:
+#                import sys
+#                print "no ElementTree module found, critical error"
+#               sys.exit(0)
+
+#try:
+#    from xml.etree.ElementTree import _ElementInterface
+#except ImportError:
+#    from elementtree.ElementTree import _ElementInterface
+
+#try:
+#    from xml.etree.ElementTree import _encode_entity as old_encode_entity
+#    from xml.etree.ElementTree import _escape,_escape_map,_encode,_raise_serialization_error
+#except ImportError:
+#    from elementtree.ElementTree import _encode_entity as old_encode_entity
+#    from elementtree.ElementTree import _escape,_escape_map,_encode,_raise_serialization_error
+
+utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
+
+def encode_entity(text, pattern=utf8_escape):
+    # map reserved and non-ascii characters to numerical entities
+    def escape_entities(m, map=elementtree.ElementTree._escape_map):
+        out = []
+        append = out.append
+        for char in m.group():
+            t = map.get(char)
+            if t is None:
+                t = "&#%d;" % ord(char)
+            append(t)
+        return u''.encode('utf-8').join(out)
+    try:
+        return elementtree.ElementTree._encode(pattern.sub(escape_entities, text.decode('utf-8')), 'utf-8')
+    except TypeError:
+        elementtree.ElementTree._raise_serialization_error(text)
+
+elementtree.ElementTree._encode_entity = encode_entity
 
 # it seems there are some ElementTree libs out there
 # which have the alias XMLParser and some that haven't.
@@ -32,21 +77,21 @@ except ImportError:
 # So we just use the XMLTreeBuilder method for now
 # if XMLParser isn't available.
 
-if not hasattr(ET, 'XMLParser'):
-    def XMLParser(encoding='utf-8'):
-        return ET.XMLTreeBuilder()
+#if not hasattr(ET, 'XMLParser'):
+def XMLParser(encoding='utf-8'):
+    return ET.XMLTreeBuilder()
 
-    ET.XMLParser = XMLParser
+ET.XMLParser = XMLParser
 
 def namespace_map_update(namespaces):
-    try:
-        from xml.etree import ElementTree
-    except ImportError:
-        from elementtree import ElementTree
+    #try:
+    #    from xml.etree import ElementTree
+    #except ImportError:
+    #    from elementtree import ElementTree
 
-        ElementTree._namespace_map.update(namespaces)
+    elementtree.ElementTree._namespace_map.update(namespaces)
 
-class ElementInterface(_ElementInterface):
+class ElementInterface(elementtree.ElementTree._ElementInterface):
     """ helper class """
 
 def indent(elem, level=0):
@@ -66,5 +111,3 @@ def indent(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
-
-

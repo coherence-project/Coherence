@@ -104,7 +104,7 @@ class Resource:
         self.importUri = elt.attrib.get('importUri',None)
 
     def toString(self):
-        return ET.tostring(self.toElement())
+        return ET.tostring(self.toElement(),encoding='utf-8')
 
     @classmethod
     def fromString(cls, aString):
@@ -174,7 +174,7 @@ class Object:
         return root
 
     def toString(self):
-        return ET.tostring(self.toElement())
+        return ET.tostring(self.toElement(),encoding='utf-8')
 
     def fromElement(self, elt):
         """
@@ -510,7 +510,7 @@ class DIDLElement(ElementInterface):
 
     def toString(self):
         preamble = """<?xml version="1.0" encoding="utf-8"?>"""
-        return preamble + ET.tostring(self)
+        return preamble + ET.tostring(self,encoding='utf-8')
 
     @classmethod
     def fromString(cls, aString):
