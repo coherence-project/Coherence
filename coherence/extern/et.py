@@ -10,14 +10,14 @@
 import re
 
 try:
-    import XcElementTree as ET
+    import cElementTree as ET
     import elementtree
-    print "we are on CET"
+    #print "we are on CET"
 except ImportError:
     try:
         from elementtree import ElementTree as ET
         import elementtree
-        print "simply using ET"
+        #print "simply using ET"
     except ImportError:
         import sys
         print "no ElementTree module found, critical error"
@@ -52,8 +52,9 @@ except ImportError:
 #    from elementtree.ElementTree import _escape,_escape_map,_encode,_raise_serialization_error
 
 utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
+escape = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
 
-def encode_entity(text, pattern=utf8_escape):
+def encode_entity(text, pattern=escape):
     # map reserved and non-ascii characters to numerical entities
     def escape_entities(m, map=elementtree.ElementTree._escape_map):
         out = []
@@ -63,13 +64,36 @@ def encode_entity(text, pattern=utf8_escape):
             if t is None:
                 t = "&#%d;" % ord(char)
             append(t)
-        return u''.encode('utf-8').join(out)
+        return ''.join(out)
     try:
-        return elementtree.ElementTree._encode(pattern.sub(escape_entities, text.decode('utf-8')), 'utf-8')
+        return elementtree.ElementTree._encode(pattern.sub(escape_entities, text), 'ascii')
     except TypeError:
         elementtree.ElementTree._raise_serialization_error(text)
 
-elementtree.ElementTree._encode_entity = encode_entity
+def new_encode_entity(text, pattern=utf8_escape):
+    # map reserved and non-ascii characters to numerical entities
+    def escape_entities(m, map=elementtree.ElementTree._escape_map):
+        out = []
+        append = out.append
+        for char in m.group():
+            t = map.get(char)
+            if t is None:
+                t = "&#%d;" % ord(char)
+            append(t)
+        if type(text) == unicode:
+            return ''.join(out)
+        else:
+            return u''.encode('utf-8').join(out)
+    try:
+        if type(text) == unicode:
+            return elementtree.ElementTree._encode(escape.sub(escape_entities, text), 'ascii')
+        else:
+            return elementtree.ElementTree._encode(utf8_escape.sub(escape_entities, text.decode('utf-8')), 'utf-8')
+    except TypeError:
+
+        elementtree.ElementTree._raise_serialization_error(text)
+
+elementtree.ElementTree._encode_entity = new_encode_entity
 
 # it seems there are some ElementTree libs out there
 # which have the alias XMLParser and some that haven't.
@@ -77,11 +101,11 @@ elementtree.ElementTree._encode_entity = encode_entity
 # So we just use the XMLTreeBuilder method for now
 # if XMLParser isn't available.
 
-#if not hasattr(ET, 'XMLParser'):
-def XMLParser(encoding='utf-8'):
-    return ET.XMLTreeBuilder()
+if not hasattr(ET, 'XMLParser'):
+    def XMLParser(encoding='utf-8'):
+        return ET.XMLTreeBuilder()
 
-ET.XMLParser = XMLParser
+    ET.XMLParser = XMLParser
 
 def namespace_map_update(namespaces):
     #try:

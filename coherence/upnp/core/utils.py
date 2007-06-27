@@ -16,7 +16,7 @@ import fcntl
 import struct
 import string
 
-def parse_xml(data, encoding="iso-8859-1"):
+def parse_xml(data, encoding="utf-8"):
     p = ET.XMLParser(encoding=encoding)
 
     # my version of twisted.web returns page_infos as a dictionary in
@@ -24,13 +24,21 @@ def parse_xml(data, encoding="iso-8859-1"):
     if isinstance(data, (list, tuple)):
         data, _ = data
 
-    data = data.encode(encoding)
+    try:
+        data = data.encode(encoding)
+    except UnicodeDecodeError:
+        pass
+    except Exception, error:
+        print "parse_xml encode Exception", error
+        import traceback
+        traceback.print_exc()
 
     # Guess from who we're getting this?
     data = data.replace('\x00','')
     try:
         p.feed(data)
     except Exception, error:
+        print "parse_xml feed Exception", error
         print error, repr(data)
         return None
     else:
