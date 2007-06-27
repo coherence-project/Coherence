@@ -224,7 +224,7 @@ class MSRoot(resource.Resource, log.Loggable):
         return static.Data('<html><p>import of %s finished</p></html>'% id,'text/html')
 
     def render(self,request):
-        print "render", request
+        #print "render", request
         return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>'% \
                                         (self.server.backend,
                                          self.listchilds(request.uri))
