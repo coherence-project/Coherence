@@ -293,7 +293,7 @@ class AudioItem(Item):
     valid_keys = ['genre', 'description', 'longDescription', 'publisher',
                   'langugage', 'relation', 'rights', 'albumArtURI']
 
-    @dlna.AudioItem
+    #@dlna.AudioItem
     def toElement(self):
 
         root = Item.toElement(self)
