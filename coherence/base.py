@@ -328,6 +328,7 @@ class Coherence(object):
 
 
     def remove_device(self, device_type, infos):
+        
         log.info("removed device",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
@@ -335,6 +336,7 @@ class Coherence(object):
             device.remove()
             if infos['ST'] == 'upnp:rootdevice':
                 louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
+                louie.send('UPnT.host_removed', None, infos)
                 self.callback("removed_device", infos['ST'], infos['USN'])
 
 
