@@ -311,6 +311,8 @@ class AudioItem(Item):
         if self.albumArtURI is not None:
             e = ET.SubElement(root, 'upnp:albumArtURI')
             e.text = self.albumArtURI
+            e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
+            e.attrib['dlna:profileID'] = 'JPEG_TN'
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.publisher
