@@ -51,3 +51,23 @@ def namespace_map_update(namespaces):
 
 class ElementInterface(_ElementInterface):
     """ helper class """
+
+def indent(elem, level=0):
+    """ generate pretty looking XML, based upon:
+        http://effbot.org/zone/element-lib.htm#prettyprint
+    """
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        for elem in elem:
+            indent(elem, level+1)
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
