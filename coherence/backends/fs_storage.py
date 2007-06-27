@@ -64,6 +64,11 @@ class FSItem(log.Loggable):
             #self.item.searchable = True
             #self.item.searchClass = 'object'
             self.check_for_cover_art()
+            if hasattr(self, 'cover'):
+                _,ext =  os.path.splitext(self.cover)
+                """ add the cover image extension to help clients not reacting on
+                    the mimetype """
+                self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
         else:
             if hasattr(parent, 'cover'):
                 _,ext =  os.path.splitext(parent.cover)
@@ -178,9 +183,12 @@ class FSItem(log.Loggable):
 
     def get_cover(self):
         try:
-            return self.parent.cover
+            return self.cover
         except:
-            return ''
+            try:
+                return self.parent.cover
+            except:
+                return ''
 
     def get_parent(self):
         return self.parent

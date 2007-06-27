@@ -122,7 +122,8 @@ class Object:
     #res = None
     writeStatus = None
     date = None
-
+    albumArtURI = None
+    
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
         self.res = []
@@ -170,6 +171,13 @@ class Object:
                 ET.SubElement(root, 'dc:date').text = self.date
         else:
             ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()
+
+        if self.albumArtURI is not None:
+            e = ET.SubElement(root, 'upnp:albumArtURI')
+            e.text = self.albumArtURI
+            e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
+            e.attrib['dlna:profileID'] = 'JPEG_TN'
+
 
         return root
 
@@ -288,7 +296,6 @@ class AudioItem(Item):
     language = None
     relation = None
     rights = None
-    albumArtURI = None
 
     valid_keys = ['genre', 'description', 'longDescription', 'publisher',
                   'langugage', 'relation', 'rights', 'albumArtURI']
@@ -307,12 +314,6 @@ class AudioItem(Item):
         if self.longDescription is not None:
             ET.SubElement(root, 'upnp:longDescription').text = \
                              self.longDescription
-
-        if self.albumArtURI is not None:
-            e = ET.SubElement(root, 'upnp:albumArtURI')
-            e.text = self.albumArtURI
-            e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
-            e.attrib['dlna:profileID'] = 'JPEG_TN'
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.publisher
