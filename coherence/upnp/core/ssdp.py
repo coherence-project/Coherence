@@ -62,6 +62,7 @@ class SSDPServer(DatagramProtocol):
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""
         #make raw data available
+        log.info('UPnT.ssdp_datagram_received')
         louie.send('UPnT.ssdp_datagram_received', None, data, host, port)
 
         try:
