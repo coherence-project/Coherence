@@ -19,7 +19,9 @@ from twisted.web import proxy
 from twisted.python import util
 from twisted.python.filepath import FilePath
 
-from coherence.extern.et import ET
+from coherence.extern.et import ET, indent
+
+from coherence import __version__
 
 from coherence.upnp.core.service import ServiceServer
 from coherence.upnp.core.utils import StaticFile
@@ -31,33 +33,34 @@ from coherence.upnp.services.servers.media_receiver_registrar_server import Fake
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('MediaServer')
+from coherence import log
 
 COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
 
-class MSRoot(resource.Resource):
+class MSRoot(resource.Resource, log.Loggable):
+    logCategory = 'ms_root'
 
     def __init__(self, server, store):
         resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
         self.server = server
         self.store = store
 
     def getChildWithDefault(self, path, request):
-        log.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
+        self.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
                                 request.method, path, request.uri, request.client))
         headers = request.getAllHeaders()
-        log.msg( request.getAllHeaders())
+        self.msg( request.getAllHeaders())
 
         if(request.method == 'GET' and
            COVER_REQUEST_INDICATOR.match(request.uri)):
-            log.info("request cover for id %s" % path)
+            self.info("request cover for id %s" % path)
             ch = self.store.get_by_id(path)
             if ch is not None:
                 request.setResponseCode(200)
                 file = ch.get_cover()
                 if os.path.exists(file):
-                    log.info("got cover %s" % file)
+                    self.info("got cover %s" % file)
                     return StaticFile(file)
             request.setResponseCode(404)
             return static.Data('<html><p>cover requested not found</p></html>','text/html')
@@ -70,9 +73,9 @@ class MSRoot(resource.Resource):
         if(headers.has_key('user-agent') and
            headers['user-agent'].find('Xbox/') == 0 and
            path in ['description-1.xml','description-2.xml']):
-            log.info('XBox alert, we need to simulate a Windows Media Connect server')
+            self.info('XBox alert, we need to simulate a Windows Media Connect server')
             if self.children.has_key('xbox-description-1.xml'):
-                log.msg( 'returning xbox-description-1.xml')
+                self.msg( 'returning xbox-description-1.xml')
                 return self.children['xbox-description-1.xml']
 
         if self.children.has_key(path):
@@ -82,11 +85,11 @@ class MSRoot(resource.Resource):
         return self.getChild(path, request)
 
     def requestFinished(self, result, id):
-        log.info("finished, remove %d from connection table" % id)
+        self.info("finished, remove %d from connection table" % id)
         self.server.connection_manager_server.remove_connection(id)
 
     def import_file(self,name,request):
-        log.info("import file, id %s" % name)
+        self.info("import file, id %s" % name)
         ch = self.store.get_by_id(name)
         if ch is not None:
             try:
@@ -96,41 +99,41 @@ class MSRoot(resource.Resource):
                 request.setResponseCode(200)
                 return
             except IOError:
-                log.warning("import of file %s failed" % ch.get_path())
+                self.warning("import of file %s failed" % ch.get_path())
 
         request.setResponseCode(404)
 
     def getChild(self, name, request):
-        log.info('getChild %s, %s' % (name, request))
+        self.info('getChild %s, %s' % (name, request))
         ch = self.store.get_by_id(name)
         if ch != None:
-            log.info('Child found', ch)
+            self.info('Child found', ch)
             if(request.method == 'GET' or
                request.method == 'HEAD'):
                 headers = request.getAllHeaders()
                 if headers.has_key('content-length'):
-                    log.warning('%s request with content-length %s header - sanitizing' % (
+                    self.warning('%s request with content-length %s header - sanitizing' % (
                                     request.method,
                                     headers['content-length']))
                     del request.received_headers['content-length']
-                log.debug('data', )
+                self.debug('data', )
                 if len(request.content.getvalue()) > 0:
                     """ shall we remove that?
                         can we remove that?
                     """
-                    log.warning('%s request with %d bytes of message-body - sanitizing' % (
+                    self.warning('%s request with %d bytes of message-body - sanitizing' % (
                                     request.method,
                                     len(request.content.getvalue())))
                     request.content = StringIO()
 
             if hasattr(ch, "location"):
                 if isinstance(ch.location, proxy.ReverseProxyResource):
-                    log.info('getChild proxy %s to %s' % (name, ch.location.uri))
+                    self.info('getChild proxy %s to %s' % (name, ch.location.uri))
                     new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                                 'Output',
                                                                                 -1,
                                                                                 '')
-                    log.info("startup, add %d to connection table" % new_id)
+                    self.info("startup, add %d to connection table" % new_id)
                     d = request.notifyFinish()
                     d.addCallback(self.requestFinished, new_id)
                     d.addErrback(self.requestFinished, new_id)
@@ -140,28 +143,28 @@ class MSRoot(resource.Resource):
             except:
                 return self.list_content(name, ch, request)
             if os.path.exists(p):
-                log.info("accessing path", p)
+                self.info("accessing path", p)
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                             'Output',
                                                                             -1,
                                                                             '')
-                log.info("startup, add %d to connection table" % new_id)
+                self.info("startup, add %d to connection table" % new_id)
                 d = request.notifyFinish()
                 d.addCallback(self.requestFinished, new_id)
                 d.addErrback(self.requestFinished, new_id)
-                ch = StaticFile(p)
+                ch = StaticFile(p.encode('utf-8'))
             else:
                 return self.list_content(name, ch, request)
 
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = StaticFile(p)
-        log.info('MSRoot ch', ch)
+                ch = StaticFile(p.encode('utf-8'))
+        self.info('MSRoot ch', ch)
         return ch
 
     def list_content(self, name, item, request):
-        log.info('list_content', name, item, request)
+        self.info('list_content', name, item, request)
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
                                             (item.get_name().encode('ascii','xmlcharrefreplace'),
                                              item.get_name().encode('ascii','xmlcharrefreplace'))
@@ -175,18 +178,18 @@ class MSRoot(resource.Resource):
             for c in item.get_children():
                 if hasattr(c,'get_url'):
                     path = c.get_url()
-                    log.debug('has get_url', path)
+                    self.debug('has get_url', path)
                 elif hasattr(c,'get_path'):
                     #path = c.get_path().encode('utf-8').encode('string_escape')
                     path = c.get_path()
-                    log.debug('has get_path', path)
+                    self.debug('has get_path', path)
                 else:
                     path = request.uri.split('/')
                     path[-1] = str(c.get_id())
                     path = '/'.join(path)
-                    log.debug('got path', path)
+                    self.debug('got path', path)
                 title = c.get_name()
-                log.debug( 'title is:', type(title))
+                self.debug( 'title is:', type(title))
                 try:
                     if isinstance(title,unicode):
                         title = title.encode('ascii','xmlcharrefreplace')
@@ -209,7 +212,7 @@ class MSRoot(resource.Resource):
         return static.Data(page,'text/html')
 
     def listchilds(self, uri):
-        log.info('listchilds %s' % uri)
+        self.info('listchilds %s' % uri)
         if uri[-1] != '/':
             uri += '/'
         cl = '<p><a href=%s0>content</a></p>' % uri
@@ -267,7 +270,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement(d, 'manufacturer').text = 'beebits.net'
         ET.SubElement(d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         ET.SubElement(d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
-        ET.SubElement(d, 'modelNumber').text = '0.1'
+        ET.SubElement(d, 'modelNumber').text = __version__
         ET.SubElement(d, 'modelURL').text = 'http://coherence.beebits.net'
         ET.SubElement(d, 'serialNumber').text = '0000001'
         ET.SubElement(d, 'UDN').text = uuid
@@ -309,10 +312,13 @@ class RootDeviceXML(static.Data):
                     else:
                         ET.SubElement(i, k).text = v
 
+        #if self.has_level(LOG_DEBUG):
+        #    indent( root)
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
-class MediaServer:
+class MediaServer(log.Loggable):
+    logCategory = 'media_server'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
@@ -326,7 +332,7 @@ class MediaServer:
             urlbase += '/'
         self.urlbase = urlbase + str(self.uuid)[5:]
 
-        log.msg('MediaServer urlbase %s' % self.urlbase)
+        self.msg('MediaServer urlbase %s' % self.urlbase)
 
         kwargs['urlbase'] = self.urlbase
         self.icons = kwargs.get('icons', [])
@@ -341,11 +347,11 @@ class MediaServer:
             self.backend = backend
 
         def backend_failure(x):
-            log.critical('backend not installed, MediaServer activation aborted')
+            self.critical('backend not installed, MediaServer activation aborted')
 
         def service_failure(x):
             print x
-            log.critical('required service not available, MediaServer activation aborted')
+            self.critical('required service not available, MediaServer activation aborted')
 
         d.addCallback(backend_ready).addErrback(service_failure)
         d.addErrback(backend_failure)
@@ -364,14 +370,14 @@ class MediaServer:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
-            log.warning( 'ConnectionManagerServer', msg)
+            self.warning( 'ConnectionManagerServer', msg)
             raise LookupError,msg
 
         try:
             self.content_directory_server = ContentDirectoryServer(self)
             self._services.append(self.content_directory_server)
         except LookupError,msg:
-            log.warning( 'ContentDirectoryServer', msg)
+            self.warning( 'ContentDirectoryServer', msg)
             raise LookupError,msg
 
         try:
@@ -379,7 +385,7 @@ class MediaServer:
                                                         backend=FakeMediaReceiverRegistrarBackend())
             self._services.append(self.media_receiver_registrar_server)
         except LookupError,msg:
-            log.warning( 'MediaReceiverRegistrarServer (optional)', msg)
+            self.warning( 'MediaReceiverRegistrarServer (optional)', msg)
 
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:
@@ -422,13 +428,13 @@ class MediaServer:
                                                StaticFile(icon['url'][7:]))
 
         self.register()
-        log.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
+        self.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
 
 
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
-        log.msg('%s register' % self.device_type)
+        self.msg('%s register' % self.device_type)
         # we need to do this after the children are there, since we send notifies
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,

@@ -14,9 +14,8 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core import service
+from coherence import log
 
-from coherence.extern.logger import Logger
-log = Logger('ConnectionManagerServer')
 
 class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 
@@ -26,8 +25,10 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class ConnectionManagerServer(service.ServiceServer, resource.Resource):
-
+class ConnectionManagerServer(service.ServiceServer, resource.Resource,
+                              log.Loggable):
+    logCategory = 'connection_manager_server'
+    
     def __init__(self, device, backend=None):
         self.device = device
         if backend == None:
@@ -173,7 +174,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
 
 
     def upnp_PrepareForConnection(self, *args, **kwargs):
-        log.info('upnp_PrepareForConnection')
+        self.info('upnp_PrepareForConnection')
         """ check if we really support that mimetype """
         RemoteProtocolInfo = kwargs['RemoteProtocolInfo']
         """ if we are a MR and this in not 'Input'
@@ -195,7 +196,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource):
             local_protocol_infos = self.get_variable('SinkProtocolInfo').value
         if self.device.device_type == 'MediaServer':
             local_protocol_infos = self.get_variable('SourceProtocolInfo').value
-        log.info(RemoteProtocolInfo, '--', local_protocol_infos)
+        self.info(RemoteProtocolInfo, '--', local_protocol_infos)
 
         for protocol_info in local_protocol_infos.split(','):
             print RemoteProtocolInfo

@@ -15,11 +15,11 @@ import louie
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
 
-from coherence.extern.logger import Logger
-log = Logger('MSEARCH')
+from coherence import log
 
-class MSearch(DatagramProtocol):
-
+class MSearch(DatagramProtocol, log.Loggable):
+    logCategory = 'msearch'
+    
     def __init__(self, ssdp_server):
         self.ssdp_server = ssdp_server
         port = reactor.listenUDP(0, self)
@@ -33,11 +33,11 @@ class MSearch(DatagramProtocol):
         louie.send('UPnT.msearch_datagram_received', None, data, host, port)
 
         cmd, headers = utils.parse_http_response(data)
-        log.msg('datagramReceived from %s:%d, code %s' % (host, port, cmd[1]))
+        self.msg('datagramReceived from %s:%d, code %s' % (host, port, cmd[1]))
         if cmd[0] == 'HTTP/1.1' and cmd[1] == '200':
-            log.msg('for', headers['usn'])
+            self.msg('for %r', headers['usn'])
             if not self.ssdp_server.isKnown(headers['usn']):
-                log.msg('register as remote %s, %s, %s' % (headers['usn'], headers['st'], headers['location']))
+                self.msg('register as remote %s, %s, %s' % (headers['usn'], headers['st'], headers['location']))
                 self.ssdp_server.register('remote',
                                             headers['usn'], headers['st'],
                                             headers['location'],
@@ -46,7 +46,7 @@ class MSearch(DatagramProtocol):
 
     def double_discover(self):
         " Because it's worth it (with UDP's reliability) "
-        log.msg('send out discovery for ssdp:all')
+        self.msg('send out discovery for ssdp:all')
         self.discover()
         self.discover()
         

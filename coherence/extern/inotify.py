@@ -161,6 +161,7 @@ class INotify(FileDescriptor, object):
 
     def inotify_add_watch(self, path, mask):
         if type(path) is unicode:
+            path = path.encode('utf-8')
             self.libc.syscall.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
             return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
         else:
@@ -205,6 +206,7 @@ class INotify(FileDescriptor, object):
                 continue # can this happen?
 
             path = iwp.path
+            name = unicode(name, 'utf-8')
             if name:
                 path = os.path.join(path, name)
 

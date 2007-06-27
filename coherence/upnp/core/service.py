@@ -24,8 +24,7 @@ from twisted.internet import task
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('Service')
+from coherence import log
 
 global subscribers
 subscribers = {}
@@ -37,8 +36,9 @@ def unsubscribe(service):
     if subscribers.has_key(service.get_sid()):
         del subscribers[service.get_sid()]
 
-class Service:
-
+class Service(log.Loggable):
+    logCategory = 'service'
+    
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
         if not control_url.startswith('/'):
@@ -70,7 +70,7 @@ class Service:
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
-        log.info("%s %s inizialized" % (self.service_type,self.id))
+        self.info("%s %s inizialized" % (self.service_type,self.id))
 
     def __repr__(self):
         return "Service %s %s" % (self.service_type,self.id)
@@ -87,10 +87,10 @@ class Service:
         return client
 
     def remove(self):
-        log.info("remove myself", self.service_type, self.id)
+        self.info("remove myself", self.service_type, self.id)
         self.unsubscribe()
         for name,action in self._actions.items():
-            log.info("remove", name,action)
+            self.info("remove", name,action)
             del self._actions[name]
             del action
         for instance,variables in self._variables.items():
@@ -204,7 +204,7 @@ class Service:
                 self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
             for var_node in tree.findall('.//{%s}stateVariable' % ns):
-                send_events = var_node.attrib.get('sendEvents','False')
+                send_events = var_node.attrib.get('sendEvents','yes')
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
@@ -221,8 +221,9 @@ class Service:
             louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
 
         def gotError(failure, url):
-            print "error requesting", url
-            print failure
+            self.warning('error requesting', url)
+            self.info('failure', failure)
+            louie.send('Coherence.UPnP.Service.detection_failed', self.device, device=self.device)
 
         #print 'getPage', self.get_scpd_url()
         utils.getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)
@@ -244,8 +245,9 @@ moderated_variables = \
             ['LastChange'],
         }
 
-class ServiceServer:
-
+class ServiceServer(log.Loggable):
+    logCategory = 'service_server'
+    
     def __init__(self, id, version, backend):
         self.id = id
         self.version = version
@@ -304,7 +306,7 @@ class ServiceServer:
         for vdict in self._variables.values():
             notify += [v for v in vdict.values() if v.send_events == True]
 
-        log.info("new_subscriber", subscriber, notify)
+        self.info("new_subscriber", subscriber, notify)
         if len(notify) <= 0:
             return
 
@@ -523,17 +525,17 @@ class ServiceServer:
                     issue a warning for now
                 """
                 if implementation == 'optional':
-                    log.warning('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                    self.warning('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
                     continue
                 else:
-                    log.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
+                    self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
                     raise LookupError,"missing callback"
 
             new_action = action.Action(self, name, implementation, arguments)
             self._actions[name] = new_action
             if callback != None:
                 new_action.set_callback(callback)
-                log.info('Add callback %s for %s/%s' % (callback, self.id, name))
+                self.info('Add callback %s for %s/%s' % (callback, self.id, name))
 
 
         backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
@@ -580,7 +582,7 @@ class ServiceServer:
                 if service_value_defaults:
                     variable_value_defaults = service_value_defaults.get(name, None)
                     if variable_value_defaults:
-                        log.info("overwriting %s default value with %s" % (name,
+                        self.info("overwriting %s default value with %s" % (name,
                                                                variable_value_defaults))
                         self._variables.get(instance)[name].set_allowed_values(variable_value_defaults)
 
@@ -600,11 +602,11 @@ class ServiceServer:
                             variable_range_defaults = service_range_defaults.get(name)
                             if( variable_range_defaults != None and
                                 variable_range_defaults.get(e.tag) != None):
-                                log.info("overwriting %s attribute %s with %s" % (name,
+                                self.info("overwriting %s attribute %s with %s" % (name,
                                                                e.tag, str(variable_range_defaults[e.tag])))
                                 range[e.tag] = variable_range_defaults[e.tag]
                             elif e.text == None:
-                                log.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
+                                self.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
                 self._variables.get(instance)[name].set_allowed_value_range(**range)
                 if vendor_values != None:
                     self._variables.get(instance)[name].has_vendor_values = True
@@ -676,7 +678,7 @@ class ServiceControl:
                             if no:  get StateVariable values and
                                     add them to result dict
         """
-        log.info('get_action_results', result)
+        self.info('get_action_results', result)
         #print 'get_action_results', action, instance
         r = result
         notify = []
@@ -696,7 +698,7 @@ class ServiceControl:
                     #print "r", r
             self.service.propagate_notification(notify)
         #r= { '%sResponse'%action.name: r}
-        log.info( 'action_results', action.name, r)
+        self.info( 'action_results', action.name, r)
         return r
 
     def soap__generic(self, *args, **kwargs):
@@ -714,7 +716,7 @@ class ServiceControl:
         except:
             instance = 0
 
-        log.info("soap__generic", action, __name__, kwargs)
+        self.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
         if( kwargs.has_key('X_UPnPClient') and
                 kwargs['X_UPnPClient'] == 'XBox'):
@@ -732,10 +734,10 @@ class ServiceControl:
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                log.critical('argument %s not valid for action %s' % (arg_name,action.name))
+                self.critical('argument %s not valid for action %s' % (arg_name,action.name))
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
-            log.critical('argument %s missing for action %s' %
+            self.critical('argument %s missing for action %s' %
                                 ([ a.get_name() for a in in_arguments],action.name))
             return failure.Failure(errorCode(402))
 
@@ -750,7 +752,7 @@ class ServiceControl:
 
         def got_error(x):
             #print 'failure', x
-            log.error('soap__generic error during call processing')
+            self.info('soap__generic error during call processing')
             return x
 
         # call plugin method for this action

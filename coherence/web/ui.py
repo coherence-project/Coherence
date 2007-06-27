@@ -14,8 +14,7 @@ from zope.interface import implements, Interface
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('WebUI')
+from coherence import log
 
 class IWeb(Interface):
 
@@ -29,8 +28,8 @@ class Web(object):
         self.coherence = coherence
 
 
-class MenuFragment(athena.LiveElement):
-
+class MenuFragment(athena.LiveElement, log.Loggable):
+    logCategory = 'web_ui_menu_fragment'
     jsClass = u'Coherence.Base'
     fragmentName = 'coherence-menu'
         
@@ -49,7 +48,7 @@ class MenuFragment(athena.LiveElement):
 
                 
     def going_live(self):
-        log.info("add a view to the MenuFragment")
+        self.info("add a view to the MenuFragment")
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
         d.addErrback( self.remove_me)
@@ -60,7 +59,7 @@ class MenuFragment(athena.LiveElement):
     athena.expose(going_live)
     
     def add_tab(self,title,active,id):
-        log.info("add tab %s to the MenuFragment" % title)
+        self.info("add tab %s to the MenuFragment" % title)
         new_tab = {u'title':unicode(title),
                    u'active':unicode(active),
                    u'athenaid':u'athenaid:%d' % id}
@@ -71,10 +70,10 @@ class MenuFragment(athena.LiveElement):
         self.callRemote('addTab', new_tab)
 
     def remove_me(self, result):
-        log.info("remove view from MenuFragment")
+        self.info("remove view from MenuFragment")
 
-class DevicesFragment(athena.LiveElement):
-
+class DevicesFragment(athena.LiveElement, log.Loggable):
+    logCategory = 'web_ui_device_fragment'
     jsClass = u'Coherence.Devices'
     fragmentName = 'coherence-devices'
     
@@ -92,7 +91,7 @@ class DevicesFragment(athena.LiveElement):
         self.active = active
         
     def going_live(self):
-        log.info("add a view to the DevicesFragment",self._athenaID)
+        self.info("add a view to the DevicesFragment",self._athenaID)
         self.page.menu.add_tab('Devices',self.active,self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
@@ -110,10 +109,10 @@ class DevicesFragment(athena.LiveElement):
     athena.expose(going_live)
         
     def remove_me(self, result):
-        log.info("remove view from the DevicesFragment")
+        self.info("remove view from the DevicesFragment")
         
     def add_device(self, device):
-        log.info("DevicesFragment found device %s %s of type %s" %(
+        self.info("DevicesFragment found device %s %s of type %s" %(
                                                 device.get_usn(),
                                                 device.get_friendly_name(),
                                                 device.get_device_type()))
@@ -123,12 +122,12 @@ class DevicesFragment(athena.LiveElement):
         self.callRemote('addDevice', {u'name':name,u'usn':usn})
                                                 
     def remove_device(self, usn):
-        log.info("DevicesFragment remove device",usn)
+        self.info("DevicesFragment remove device",usn)
         self.callRemote('removeDevice', unicode(usn))
     
     def render_devices(self, ctx, data):
         cl = []
-        log.info('children: %s' % self.coherence.children)
+        self.info('children: %s' % self.coherence.children)
         for c in self.coherence.children:
             device = self.coherence.get_device_with_id(c)
             if device != None:
@@ -142,8 +141,8 @@ class DevicesFragment(athena.LiveElement):
                 cl.append( tags.li[c])
         return ctx.tag[tags.ul[cl]]
         
-class LoggingFragment(athena.LiveElement):
-
+class LoggingFragment(athena.LiveElement, log.Loggable):
+    logCategory = 'web_ui_logging_fragment'
     jsClass = u'Coherence.Logging'
     fragmentName = 'coherence-logging'
     
@@ -161,7 +160,7 @@ class LoggingFragment(athena.LiveElement):
         self.active = active
         
     def going_live(self):
-        log.info("add a view to the LoggingFragment",self._athenaID)
+        self.info("add a view to the LoggingFragment",self._athenaID)
         self.page.menu.add_tab('Logging',self.active,self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
@@ -170,12 +169,12 @@ class LoggingFragment(athena.LiveElement):
     athena.expose(going_live)
         
     def remove_me(self, result):
-        log.info("remove view from the LoggingFragment")
+        self.info("remove view from the LoggingFragment")
 
-class WebUI(athena.LivePage):
+class WebUI(athena.LivePage, log.Loggable):
     """
     """
-    
+    logCategory = 'web_ui'
     jsClass = u'Coherence'
 
     addSlash = True
@@ -213,14 +212,14 @@ class WebUI(athena.LivePage):
         self.menu = MenuFragment(self)
 
     def childFactory(self, ctx, name):
-        log.info('WebUI childFactory: %s' % name)
+        self.info('WebUI childFactory: %s' % name)
         try:
             return self.rootObject.coherence.children[name]
         except:
             ch = super(WebUI, self).childFactory(ctx, name)
             if ch is None:
                 p = util.sibpath(__file__, name)
-                log.info('looking for file',p)
+                self.info('looking for file',p)
                 if os.path.exists(p):
                     ch = static.File(p)
             return ch
@@ -232,15 +231,15 @@ class WebUI(athena.LivePage):
         return ctx.tag[l]
 
     def render_menu(self, ctx, data):
-        log.info('render_menu')
+        self.info('render_menu')
         return self.menu
         
     def render_devices(self, ctx, data):
-        log.info('render_devices')
+        self.info('render_devices')
         f = DevicesFragment(self,'yes')
         return f
         
     def render_logging(self, ctx, data):
-        log.info('render_logging')
+        self.info('render_logging')
         f = LoggingFragment(self,'no')
         return f

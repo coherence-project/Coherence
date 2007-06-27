@@ -19,10 +19,10 @@ import gst
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('GStreamerPlayer')
+from coherence import log
 
-class Player(object):
+class Player(log.Loggable):
+    logCategory = 'gstreamer_player'
 
     def __init__(self, default_mimetype='audio/mpeg'):
         self.player = None
@@ -600,8 +600,14 @@ class GStreamerMediaRenderer(object):
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
                             ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                              'http-get:*:audio/mpeg:*',
+                             'internal:%s:audio/mp4:*' % self.server.coherence.hostname,
+                             'http-get:*:audio/mp4:*',
                              'internal:%s:application/ogg:*' % self.server.coherence.hostname,
-                             'http-get:*:application/ogg:*'],
+                             'http-get:*:application/ogg:*',
+                             'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
+                             'http-get:*:video/x-msvideo:*',
+                             'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
+                             'http-get:*:video/quicktime:*'],
                             default=True)
         self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)

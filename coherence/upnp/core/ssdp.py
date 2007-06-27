@@ -18,21 +18,18 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
 from twisted.internet import task
 
-from coherence import SERVER_ID
+from coherence import log, SERVER_ID
 
 import louie
 
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
 
-from coherence.extern.logger import Logger
-log = Logger('SSDP')
-
-class SSDPServer(DatagramProtocol):
+class SSDPServer(DatagramProtocol, log.Loggable):
     """A class implementing a SSDP server.  The notifyReceived and
     searchReceived methods are called when the appropriate type of
     datagram is received by the server."""
-
+    logCategory = 'ssdp'
     known = {}
 
     _callbacks = {}
@@ -42,8 +39,7 @@ class SSDPServer(DatagramProtocol):
         # Create SSDP server
         try:
             port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
-            # don't get our own sends
-            port.setLoopbackMode(0)
+            port.setLoopbackMode(1)
 
             port.joinGroup(SSDP_ADDR)
 
@@ -51,7 +47,7 @@ class SSDPServer(DatagramProtocol):
             l.start(777.0, now=False)
 
         except error.CannotListenError, err:
-            log.msg("There seems to be already a SSDP server running on this host, no need starting a second one.")
+            self.msg("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
     def shutdown(self):
         '''Make sure we send out the byebye notifications.'''
@@ -80,7 +76,7 @@ class SSDPServer(DatagramProtocol):
         headers = [string.split(x, ':', 1) for x in lines]
         headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
-        log.msg('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
+        self.msg('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
             self.discoveryRequest(headers, (host, port))
@@ -88,7 +84,7 @@ class SSDPServer(DatagramProtocol):
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            log.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
+            self.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
 
     def register(self, manifestation, usn, st, location,
                         server=SERVER_ID,
@@ -97,7 +93,7 @@ class SSDPServer(DatagramProtocol):
         """Register a service or device that this SSDP server will
         respond to."""
 
-        log.msg('Registering %s (%s)' % (st, location))
+        self.msg('Registering %s (%s)' % (st, location))
 
         self.known[usn] = {}
         self.known[usn]['USN'] = usn
@@ -114,7 +110,7 @@ class SSDPServer(DatagramProtocol):
         self.known[usn]['MANIFESTATION'] = manifestation
         self.known[usn]['SILENT'] = silent
 
-        log.msg(self.known[usn])
+        self.msg(self.known[usn])
 
         if manifestation == 'local':
             self.doNotify(usn)
@@ -124,8 +120,7 @@ class SSDPServer(DatagramProtocol):
             #self.callback("new_device", st, self.known[usn])
 
     def unRegister(self, usn):
-        log.msg("Un-registering %s" % usn)
-
+        self.msg("Un-registering %s" % usn)
         st = self.known[usn]['ST']
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=st, infos=self.known[usn])
@@ -140,8 +135,8 @@ class SSDPServer(DatagramProtocol):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
 
-        log.msg('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
-        log.msg('Notification headers:', headers)
+        self.msg('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
+        self.msg('Notification headers:', headers)
 
         if headers['nts'] == 'ssdp:alive':
             if not self.isKnown(headers['usn']):
@@ -151,15 +146,15 @@ class SSDPServer(DatagramProtocol):
             if self.isKnown(headers['usn']):
                 self.unRegister(headers['usn'])
         else:
-            log.msg('Unknown subtype %s for notification type %s' %
+            self.msg('Unknown subtype %s for notification type %s' %
                     (headers['nts'], headers['nt']))
 
     def discoveryRequest(self, headers, (host, port)):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
 
-        log.msg('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
-        log.msg('Discovery request for %s' % headers['st'])
+        self.msg('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
+        self.msg('Discovery request for %s' % headers['st'])
 
         # Do we know about this service?
         for i in self.known.values():
@@ -178,16 +173,16 @@ class SSDPServer(DatagramProtocol):
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
-                log.msg('send Discovery response with delay %d for %s' % (delay, usn))
+                self.msg('send Discovery response with delay %d for %s' % (delay, usn))
                 reactor.callLater(delay, self.transport.write,
                                 '\r\n'.join(response), (host, port))
 
     def doNotify(self, usn):
         """Do notification"""
 
-        if self.known[usn]['SILENT']:
+        if self.known[usn]['SILENT'] == True:
             return
-        log.msg('Sending alive notification for %s' % usn)
+        self.msg('Sending alive notification for %s' % usn)
 
         resp = [ 'NOTIFY * HTTP/1.1',
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
@@ -200,16 +195,14 @@ class SSDPServer(DatagramProtocol):
         del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
-        log.msg('doNotify content', resp)
+        self.msg('doNotify content', resp)
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 
     def doByebye(self, st):
         """Do byebye"""
 
-        if self.known[st]['SILENT']:
-            return
-        log.msg('Sending byebye notification for %s' % st)
+        self.msg('Sending byebye notification for %s' % st)
 
         resp = [ 'NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
@@ -222,6 +215,7 @@ class SSDPServer(DatagramProtocol):
         del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
+        self.msg('doByebye content', resp)
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 
     def resendNotify( self):

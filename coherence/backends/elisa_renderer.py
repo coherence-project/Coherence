@@ -21,15 +21,15 @@ import gst
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('ElisaPlayer')
+from coherence import log
 
-class ElisaPlayer:
+class ElisaPlayer(log.Loggable):
 
     """ a backend to the Elisa player
     
     """
-
+    logCategory = 'elisa_player'
+    
     implements = ['MediaRenderer']
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
@@ -46,7 +46,7 @@ class ElisaPlayer:
                 self.player = common.get_application().get_player()
                 louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
             except:
-                log.warning("this works only from within Elisa")
+                self.warning("this works only from within Elisa")
                 raise ImportError
         else:
             factory = pb.PBClientFactory()
@@ -59,7 +59,7 @@ class ElisaPlayer:
                 louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
                 
             def got_error(error):
-                log.warning("connection to Elisa failed!")
+                self.warning("connection to Elisa failed!")
 
             d.addCallback(lambda object: object.callRemote("get_player"))
             d.addCallback(result)
@@ -92,7 +92,7 @@ class ElisaPlayer:
     def poll_player( self):
         def got_result(result):
             print "poll_player", result
-            log.info("poll_player", result)
+            self.info("poll_player", result)
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
             if result == 'STOPPED':
@@ -115,7 +115,7 @@ class ElisaPlayer:
 
     def query_position( self):
         def got_result(result):
-            log.info("query_position", result)
+            self.info("query_position", result)
             position, duration = result
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
@@ -227,7 +227,7 @@ class ElisaPlayer:
         
     def get_mute(self):
         def got_infos(result):
-            log.info("get_mute", result)
+            self.info("get_mute", result)
             return result
 
         return self.call_player("get_mute", got_infos)
@@ -236,7 +236,7 @@ class ElisaPlayer:
         """ playbin volume is a double from 0.0 - 10.0
         """
         def got_infos(result):
-            log.info("get_volume", result)
+            self.info("get_volume", result)
             return result
 
         return self.call_player('get_volume', got_infos)

@@ -13,11 +13,11 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('AxisCamStore')
+from coherence import log
 
-class AxisCamItem:
-
+class AxisCamItem(log.Loggable):
+    logCategory = 'axis_cam_item'
+    
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
         if mimetype == 'directory':
@@ -77,7 +77,7 @@ class AxisCamItem:
 
             
     def remove_child(self, child):
-        log.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):

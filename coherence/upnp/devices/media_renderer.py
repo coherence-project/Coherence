@@ -10,7 +10,9 @@ from twisted.internet import reactor
 from twisted.internet import threads
 from twisted.web import xmlrpc, resource, static
 
-from coherence.extern.et import ET
+from coherence import __version__
+
+from coherence.extern.et import ET, indent
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
@@ -18,18 +20,18 @@ from coherence.upnp.services.servers.av_transport_server import AVTransportServe
 
 import louie
 
-from coherence.extern.logger import Logger
-log = Logger('MediaRenderer')
+from coherence import log
 
-class MRRoot(resource.Resource):
+class MRRoot(resource.Resource, log.Loggable):
+    logCategory = 'ms_root'
 
     def __init__(self, server):
         resource.Resource.__init__(self)
         self.server = server
 
     def getChildWithDefault(self, path, request):
-        log.info('MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
-        log.info( request.getAllHeaders())
+        self.info('MSRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
+        self.info( request.getAllHeaders())
         if self.children.has_key(path):
             return self.children[path]
         if request.uri == '/':
@@ -37,12 +39,12 @@ class MRRoot(resource.Resource):
         return self.getChild(path, request)
 
     def getChild(self, name, request):
-        log.info('MSRoot %s getChild %s' % (name, request))
+        self.info('MSRoot %s getChild %s' % (name, request))
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
-        log.info('MSRoot ch', ch)
+        self.info('MSRoot ch', ch)
         return ch
 
     def listchilds(self, uri):
@@ -55,7 +57,8 @@ class MRRoot(resource.Resource):
         return '<html><p>root of the MediaRenderer</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
 
-class RootDeviceXML(static.Data):
+class RootDeviceXML(static.Data, log.Loggable):
+    logCategory = 'ms_root'
 
     def __init__(self, hostname, uuid, urlbase,
                         device_type='MediaRenderer',
@@ -64,6 +67,7 @@ class RootDeviceXML(static.Data):
                         services=[],
                         devices=[],
                         icons=[]):
+        log.Loggable.__init__(self)
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
@@ -81,7 +85,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
         ET.SubElement( d, 'modelName').text = 'Coherence  UPnP A/V MediaRenderer'
-        ET.SubElement( d, 'modelNumber').text = '0.1'
+        ET.SubElement(d, 'modelNumber').text = __version__
         ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         ET.SubElement( d, 'serialNumber').text = '0000001'
         ET.SubElement( d, 'UDN').text = uuid
@@ -121,11 +125,14 @@ class RootDeviceXML(static.Data):
                             continue
                     ET.SubElement(i, k).text = v
 
-        #indent( root, 0)
+        #if self.has_level(LOG_DEBUG):
+        #    indent( root)
+
         self.xml = ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
-class MediaRenderer:
+class MediaRenderer(log.Loggable):
+    logCategory = 'media_renderer'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
@@ -147,11 +154,11 @@ class MediaRenderer:
             self.backend = backend
 
         def backend_failure(x):
-            log.critical('backend not installed, MediaRenderer activation aborted')
+            self.critical('backend not installed, MediaRenderer activation aborted')
 
         def service_failure(x):
             print x
-            log.critical('required service not available, MediaRenderer activation aborted')
+            self.critical('required service not available, MediaRenderer activation aborted')
 
         d.addCallback(backend_ready).addErrback(service_failure)
         d.addErrback(backend_failure)
@@ -171,21 +178,21 @@ class MediaRenderer:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
-            log.warning( 'ConnectionManagerServer', msg)
+            self.warning( 'ConnectionManagerServer', msg)
             raise LookupError,msg
 
         try:
             self.rendering_control_server = RenderingControlServer(self)
             self._services.append(self.rendering_control_server)
         except LookupError,msg:
-            log.warning( 'RenderingControlServer', msg)
+            self.warning( 'RenderingControlServer', msg)
             raise LookupError,msg
 
         try:
             self.av_transport_server = AVTransportServer(self)
             self._services.append(self.av_transport_server)
         except LookupError,msg:
-            log.warning( 'AVTransportServer', msg)
+            self.warning( 'AVTransportServer', msg)
             raise LookupError,msg
 
         upnp_init = getattr(self.backend, "upnp_init", None)
@@ -222,7 +229,7 @@ class MediaRenderer:
                                                static.File(icon['url'][7:]))
 
         self.register()
-        log.critical("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
+        self.critical("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
 
     def register(self):
         s = self.coherence.ssdp_server

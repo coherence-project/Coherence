@@ -12,19 +12,16 @@ from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
 from twisted.python import failure
 
-from coherence import SERVER_ID
+from coherence import log, SERVER_ID
 from coherence.upnp.core import utils
-
-from coherence.extern.logger import Logger
-log = Logger('Event')
-
 
 global hostname, web_server_port
 hostname = None
 web_server_port = None
 
-class EventServer(resource.Resource):
-
+class EventServer(resource.Resource, log.Loggable):
+    logCategory = 'event_server'
+    
     def __init__(self, control_point):
         self.coherence = control_point.coherence
         self.control_point = control_point
@@ -33,15 +30,15 @@ class EventServer(resource.Resource):
         global hostname, web_server_port
         hostname = self.coherence.hostname
         web_server_port = self.coherence.web_server_port
-        log.warning("EventServer ready...")
+        self.info("EventServer ready...")
 
     def render_NOTIFY(self, request):
-        log.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
+        self.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
-            log.info("data:", data)
+            self.info("data:", data)
         else:
-            log.debug("data:", data)
+            self.debug("data:", data)
             headers = request.getAllHeaders()
             sid = headers['sid']
             tree = utils.parse_xml(data).getroot()
@@ -56,7 +53,7 @@ class EventServer(resource.Resource):
         return ""
 
 
-class EventSubscriptionServer(resource.Resource):
+class EventSubscriptionServer(resource.Resource, log.Loggable):
     """
     we receive a subscription request
     {'callback': '<http://192.168.213.130:9083/BYvZMzfTSQkjHwzOThaP/ConnectionManager>',
@@ -75,6 +72,8 @@ class EventSubscriptionServer(resource.Resource):
          'timeout': 'Second-300',
          'sid': 'uuid:oAQbxiNlyYojCAdznJnC'}}
     """
+    log_category = 'event_subscription_server'
+    
     def __init__(self, service):
         self.service = service
         self.subscribers = service.get_subscribers()
@@ -84,13 +83,13 @@ class EventSubscriptionServer(resource.Resource):
             self.backend_name = self.service.backend
 
     def render_SUBSCRIBE(self, request):
-        log.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d" % (
+        self.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d" % (
                             self.service.id,
                             self.backend_name,
                             request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
-            log.debug("data:", data)
+            self.debug("data:", data)
         else:
             headers = request.getAllHeaders()
             try:
@@ -122,13 +121,13 @@ class EventSubscriptionServer(resource.Resource):
         return ""
 
     def render_UNSUBSCRIBE(self, request):
-        log.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d" % (
+        self.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d" % (
                             self.service.id,
                             self.backend_name,
                             request.client, request.code))
         data = request.content.getvalue()
         if request.code != 200:
-            log.debug("data:", data)
+            self.debug("data:", data)
         else:
             headers = request.getAllHeaders()
             try:
@@ -147,8 +146,9 @@ class Event(dict):
     def get_sid(self):
         return self._sid
 
-class EventProtocol(Protocol):
-
+class EventProtocol(Protocol, log.Loggable):
+    logCategory = 'event_protocol'
+    
     def __init__(self, service, action):
         self.service = service
         self.action = action
@@ -158,14 +158,14 @@ class EventProtocol(Protocol):
         #print "EventProtocol deleted"
 
     def dataReceived(self, data):
-        log.info("response received from the Service Events HTTP server ")
-        #log.debug(data)
+        self.info("response received from the Service Events HTTP server ")
+        #self.debug(data)
         cmd, headers = utils.parse_http_response(data)
-        log.debug(cmd, headers)
+        self.debug("%r %r", cmd, headers)
         try:
             self.service.set_sid(headers['sid'])
             timeout = headers['timeout']
-            log.debug(headers['sid'], headers['timeout'])
+            self.debug(headers['sid'], headers['timeout'])
             if timeout.startswith('Second-'):
                 timeout = int(timeout[len('Second-'):])
                 self.service.set_timeout(time.time() + timeout)
@@ -188,7 +188,8 @@ def subscribe(service, action='subscribe'):
     send a subscribe/renewal/unsubscribe request to a service
     return the device response
     """
-    log.info("event.subscribe, action:", action)
+    log_category = "event_protocol"
+    log.info(log_category, "event.subscribe, action: %r", action)
 
     _,host_port,path,_,_ = urlsplit(service.get_base_url())
     if host_port.find(':') != -1:
@@ -199,7 +200,8 @@ def subscribe(service, action='subscribe'):
         port = 80
 
     def send_request(p, action):
-        log.info("event.subscribe.send_request, action:", action, service.get_event_sub_url())
+        log.info(log_category, "event.subscribe.send_request, action: %r %r",
+                 action, service.get_event_sub_url())
         if action == 'subscribe':
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
@@ -226,23 +228,25 @@ def subscribe(service, action='subscribe'):
         request.append( "")
         request.append( "")
         request = '\r\n'.join(request)
-        log.debug("event.subscribe.send_request", request)
+        log.debug(log_category, "event.subscribe.send_request %r", request)
         return p.transport.write(request)
 
     def got_error(failure, action):
-        log.info("error on %s request with %s" % (action,service.get_base_url()))
-        log.debug(failure)
+        log.info(log_category, "error on %s request with %s" % (action,service.get_base_url()))
+        log.debug(log_category, failure)
 
     def teardown_connection(c, d):
-        log.info("event.subscribe.teardown_connection")
+        log.info(log_category, "event.subscribe.teardown_connection")
         del d
         del c
 
     def prepare_connection( service, action):
-        log.info("event.subscribe.prepare_connection action:", action, service.event_connection)
+        log.info(log_category, "event.subscribe.prepare_connection action:%r %r",
+                 action, service.event_connection)
         if service.event_connection == None:
             c = ClientCreator(reactor, EventProtocol, service=service, action=action)
-            log.info("event.subscribe.prepare_connection:", host, port)
+            log.info(log_category, "event.subscribe.prepare_connection: %r %r",
+                     host, port)
             d = c.connectTCP(host, port)
             d.addCallback(send_request, action=action)
             d.addErrback(got_error, action)
@@ -281,7 +285,8 @@ def send_notification(s, xml):
     send a notification a subscriber
     return its response
     """
-
+    log_category = "event_protocol"
+    
     _,host_port,path,_,_ = urlsplit(s['callback'])
     if host_port.find(':') != -1:
         host,port = tuple(host_port.split(':'))
@@ -303,14 +308,16 @@ def send_notification(s, xml):
                     xml]
 
         request = '\r\n'.join(request)
-        log.info("send_notification.send_request to", s['sid'], s['callback'])
-        log.debug("request:", request)
+        log.info(log_category, "send_notification.send_request to %r %r",
+                 s['sid'], s['callback'])
+        log.debug(log_category, "request: %r", request)
         s['seq'] += 1
         return p.transport.write(request)
 
     def got_error(failure):
-        log.info("error sending notification to", s['sid'], s['callback'])
-        log.debug(failure)
+        log.info(log_category, "error sending notification to %r %r",
+                 s['sid'], s['callback'])
+        log.debug(log_category, failure)
 
     c = ClientCreator(reactor, NotificationProtocol)
     d = c.connectTCP(host, port)

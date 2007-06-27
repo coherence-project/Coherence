@@ -29,13 +29,16 @@ class ContentDirectoryClient:
     def __del__(self):
         #print "ContentDirectoryClient deleted"
         pass
-        
+
     def remove(self):
         self.service.remove()
         self.service = None
         self.namespace = None
         self.url = None
         del self
+
+    def subscribe_for_variable(self, var_name, callback):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback)
 
     def get_search_capabilities(self):
         action = self.service.get_action('GetSearchCapabilities')
@@ -53,11 +56,61 @@ class ContentDirectoryClient:
         action = self.service.get_action('GetSystemUpdateID')
         return action.call()
 
+    def new_browse(self, object_id=0, browse_flag='BrowseDirectChildren',
+               filter='*', sort_criteria='',
+               starting_index=0, requested_count=0):
+
+        def process_result(result):
+            #print result
+            r = {}
+            r['number_returned'] = result['NumberReturned']
+            r['total_matches'] = result['TotalMatches']
+            r['update_id'] = result['UpdateID']
+            r['items'] = {}
+            elt = DIDLLite.DIDLElement.fromString(result['Result'])
+            for item in elt.getItems():
+                #print "process_result", item
+                i = {}
+                i['upnp_class'] = item.upnp_class
+                i['id'] =  item.id
+                i['title'] =  item.title
+                i['parent_id'] =  item.parentID
+                if hasattr(item,'childCount'):
+                    i['child_count'] =  item.childCount
+                i['date'] =  item.date
+                if hasattr(item,'res'):
+                    resources = {}
+                    for res in item.res:
+                        url = res.data
+                        resources[url] = res.protocolInfo
+                    i['resources']= resources
+                r['items'][item.id] = i
+            return r
+
+        action = self.service.get_action('Browse')
+        d = action.call( ObjectID=object_id,
+                            BrowseFlag=browse_flag,
+                            Filter=filter,SortCriteria=sort_criteria,
+                            StartingIndex=str(starting_index),
+                            RequestedCount=str(requested_count))
+        d.addCallback( process_result)
+        return d
+
     def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
-               starting_index=0, requested_count=0,
-               recursive=False):
+                     filter='*', sort_criteria='',
+                     starting_index=0, requested_count=0,
+                     backward_compatibility=True,
+                     recursive=False):
         """
         """
+        if backward_compatibility == True:
+            print """DeprecationWarning: content_directory_client.browse method will """ \
+                  """change in version 0.4.0 and be replaced with the now called """ \
+                  """new_browse method!"""
+        else:
+            return self.new_browse(object_id=object_id, browse_flag=browse_flag,
+                                   filter=filter, sort_criteria=sort_criteria,
+                                   starting_index=starting_index, requested_count=starting_index)
         finished = defer.Deferred()
         infos = {}
         action = self.service.get_action('Browse')
@@ -66,7 +119,7 @@ class ContentDirectoryClient:
                             Filter="*",SortCriteria="",
                             StartingIndex=str(starting_index),
                             RequestedCount=str(requested_count))
-                            
+
         def processResults( results):
             global work, pending
             if not results:
@@ -114,7 +167,7 @@ class ContentDirectoryClient:
                         pending[item.id] = int(item.childCount)
 
                 elif isinstance(item, DIDLLite.Object):
-                    urls = {}                    
+                    urls = {}
                     for res in item.res:
                         url = res.data
                         protocolInfo = res.protocolInfo
@@ -162,12 +215,12 @@ class ContentDirectoryClient:
 
         d.addCallback(gotResults)
         return d
-    
+
     def dict2item(self, elements):
         upnp_class = DIDLLite.upnp_classes.get(elements.get('upnp_class',None),None)
         if upnp_class is None:
             return None
-        
+
         del elements['upnp_class']
         item = upnp_class(id='',
                           parentID=elements.get('parentID',None),
@@ -178,9 +231,9 @@ class ContentDirectoryClient:
             if attribute is None:
                 continue
             attribute = v
-            
+
         return item
-        
+
     def create_object(self, container_id, elements):
         if isinstance(elements, dict):
             elements = self.dict2item(elements)

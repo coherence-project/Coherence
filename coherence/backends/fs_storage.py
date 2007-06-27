@@ -30,10 +30,10 @@ from coherence.extern.inotify import IN_CHANGED
 
 import louie
 
-from coherence.extern.logger import Logger, LOG_WARNING
-log = Logger('FSStore')
+from coherence import log
 
-class FSItem:
+class FSItem(log.Loggable):
+    logCategory = 'fs_item'
 
     def __init__(self, id, parent, path, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
@@ -41,9 +41,9 @@ class FSItem:
         if parent:
             parent.add_child(self,update=update)
         if mimetype == 'root':
-            self.location = path
+            self.location = unicode(path)
         else:
-            self.location = FilePath(path)
+            self.location = FilePath(unicode(path))
         self.mimetype = mimetype
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -171,9 +171,10 @@ class FSItem:
 
     def get_name(self):
         if isinstance( self.location,FilePath):
-            return self.location.basename()
+            name = self.location.basename()
         else:
-            self.location
+            name = self.location
+        return name
 
     def get_cover(self):
         try:
@@ -193,7 +194,8 @@ class FSItem:
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.location.basename()
 
-class FSStore:
+class FSStore(log.Loggable):
+    logCategory = 'fs_store'
 
     implements = ['MediaServer']
 
@@ -371,8 +373,14 @@ class FSStore:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                         ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                          'http-get:*:audio/mpeg:*',
+                         'internal:%s:audio/mp4:*' % self.server.coherence.hostname,
+                         'http-get:*:audio/mp4:*',
                          'internal:%s:application/ogg:*' % self.server.coherence.hostname,
-                         'http-get:*:application/ogg:*'],
+                         'http-get:*:application/ogg:*',
+                         'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
+                         'http-get:*:video/x-msvideo:*',
+                         'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
+                         'http-get:*:video/quicktime:*'],
                         default=True)
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
 
@@ -396,8 +404,8 @@ class FSStore:
             shutil.move(tmp_path, item.get_path())
 
         def gotError(error, url):
-            log.warning("error requesting", url)
-            log.info(error)
+            self.warning("error requesting", url)
+            self.info(error)
             os.unlink(tmp_path)
             return failure.Failure(errorCode(718))
 

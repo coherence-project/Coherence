@@ -7,10 +7,10 @@ from coherence.upnp.services.clients.connection_manager_client import Connection
 from coherence.upnp.services.clients.content_directory_client import ContentDirectoryClient
 from coherence.upnp.services.clients.av_transport_client import AVTransportClient
 
-from coherence.extern.logger import Logger
-log = Logger('MSClient')
+from coherence import log
 
-class MediaServerClient:
+class MediaServerClient(log.Loggable):
+    logCategory = 'ms_client'
 
     def __init__(self, device):
         self.device = device
@@ -30,33 +30,33 @@ class MediaServerClient:
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
                 self.av_transport = AVTransportClient( service)
             #if service.get_type()  in ["urn:schemas-upnp-org:service:ScheduledRecording:1",
-            #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:    
+            #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:
             #    self.scheduled_recording = ScheduledRecordingClient( service)
-        log.info("MediaServer %s" % (self.device.get_friendly_name()))
+        self.info("MediaServer %s" % (self.device.get_friendly_name()))
         if self.content_directory:
-            log.info("ContentDirectory available")
+            self.info("ContentDirectory available")
         else:
-            log.warning("ContentDirectory not available, device not implemented properly according to the UPnP specification")
+            self.warning("ContentDirectory not available, device not implemented properly according to the UPnP specification")
             return
         if self.connection_manager:
-            log.info("ConnectionManager available")
+            self.info("ConnectionManager available")
         else:
-            log.warning("ConnectionManager not available, device not implemented properly according to the UPnP specification")
+            self.warning("ConnectionManager not available, device not implemented properly according to the UPnP specification")
             return
         if self.av_transport:
-            log.info("AVTransport (optional) available")
+            self.info("AVTransport (optional) available")
         if self.scheduled_recording:
-            log.info("ScheduledRecording (optional) available")
-            
-        #d = self.content_directory.browse(0, recursive=False) # browse top level
+            self.info("ScheduledRecording (optional) available")
+
+        #d = self.content_directory.browse(0) # browse top level
         #d.addCallback( self.process_meta)
-        
+
     def __del__(self):
         #print "MediaServerClient deleted"
         pass
-        
+
     def remove(self):
-        log.info("removal of MediaServerClient started")
+        self.info("removal of MediaServerClient started")
         if self.content_directory != None:
             del self.content_directory
         if self.connection_manager != None:
@@ -66,15 +66,14 @@ class MediaServerClient:
         if self.scheduled_recording != None:
             del self.scheduled_recording
         del self
-        
-    def state_variable_change( self, variable):
-        log.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
+
+    def state_variable_change( self, variable, usn):
+        self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
 
     def print_results(self, results):
-        log.info("results=", results)
+        self.info("results=", results)
 
     def process_meta( self, results):
         for k,v in results.iteritems():
             dfr = self.content_directory.browse(k, "BrowseMetadata")
             dfr.addCallback( self.print_results)
-

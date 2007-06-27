@@ -1,3 +1,31 @@
+2007-06-19 23:28 philn
+
+	* coherence/backends/axiscam_storage.py:
+	* coherence/backends/buzztard_control.py:
+	* coherence/backends/elisa_renderer.py:
+	* coherence/backends/flickr_storage.py:
+	* coherence/backends/fs_storage.py:
+	* coherence/backends/gstreamer_audio_player.py:
+	* coherence/backends/mediadb_storage.py:
+	* coherence/base.py:
+	* coherence/upnp/core/action.py:
+	* coherence/upnp/core/device.py:
+	* coherence/upnp/core/event.py:
+	* coherence/upnp/core/msearch.py:
+	* coherence/upnp/core/service.py:
+	* coherence/upnp/core/soap_service.py:
+	* coherence/upnp/core/ssdp.py:
+	* coherence/upnp/core/variable.py:
+	* coherence/upnp/devices/control_point.py:
+	* coherence/upnp/devices/media_renderer.py:
+	* coherence/upnp/devices/media_renderer_client.py:
+	* coherence/upnp/devices/media_server.py:
+	* coherence/upnp/devices/media_server_client.py:
+	* coherence/upnp/services/servers/connection_manager_server.py:
+	* coherence/web/ui.py:
+	Slighly changed the way we do logging :-) There's now a
+	COHERENCE_DEBUG env variable you can use to debug Coherence.
+	
 2007-06-10 14:57  dev
 
 	* coherence/upnp/core/ssdp.py,
