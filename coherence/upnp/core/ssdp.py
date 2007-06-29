@@ -212,7 +212,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.msg('doByebye content', resp)
-        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        if self.transport:
+            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 
     def resendNotify( self):
         for usn in self.known:
