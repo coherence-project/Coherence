@@ -181,13 +181,13 @@ class Coherence(log.Loggable):
                 self.installed_plugins[entrypoint.name] = entrypoint.load()
             except ImportError:
                 self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
-                self.info(traceback.print_exc())
+                self.info(traceback.format_exc())
         for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_renderer"):
             try:
                 self.installed_plugins[entrypoint.name] = entrypoint.load()
             except ImportError:
                 self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
-                self.info(traceback.print_exc())
+                self.info(traceback.format_exc())
 
 
         plugins = config.get('plugins',None)
@@ -201,7 +201,7 @@ class Coherence(log.Loggable):
                     self.add_plugin(plugin, **arguments)
                 except Exception, msg:
                     self.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
-                    self.info(traceback.print_exc())
+                    self.info(traceback.format_exc())
 
         if config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
@@ -224,12 +224,12 @@ class Coherence(log.Loggable):
                     self.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
                     self.critical("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
-                    self.info(traceback.print_exc())
+                    self.info(traceback.format_exc())
         except KeyError:
             self.critical("Can't enable %s plugin, not found!" % plugin)
         except Exception, msg:
             self.critical("Can't enable %s plugin, %s!" % (plugin, msg))
-            self.info(traceback.print_exc())
+            self.info(traceback.format_exc())
 
 
     def receiver( self, signal, *args, **kwargs):
