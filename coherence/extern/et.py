@@ -19,9 +19,18 @@ except ImportError:
         import elementtree
         #print "simply using ET"
     except ImportError:
-        import sys
-        print "no ElementTree module found, critical error"
-        sys.exit(0)
+        """ this seems to be necessary with the python2.5 on the Maemo platform """
+        try:
+            from xml.etree import cElementTree as ET
+            from xml import etree as elementtree
+        except ImportError:
+            try:
+                from xml.etree import ElementTree as ET
+                from xml import etree as elementtree
+            except ImportError:
+                import sys
+                print "no ElementTree module found, critical error"
+                sys.exit(0)
 
 #try:
 #    from xml.etree import cElementTree as ET
