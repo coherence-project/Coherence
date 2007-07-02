@@ -75,7 +75,7 @@ class ElisaPlayer(log.Loggable):
         self.poll_LC = LoopingCall( self.poll_player)
 
     def call_player(self, method, callback, *args):
-        print '>> call player', method, str(args)
+        self.debug('call player.%s%s', method, args)
         if self.host == 'internal':
             dfr = Deferred()
             dfr.addCallback(callback)
@@ -89,13 +89,14 @@ class ElisaPlayer(log.Loggable):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def poll_player( self):
+    def poll_player(self):
+        
         def got_result(result):
-            print "poll_player", result
-            self.info("poll_player", result)
+            self.info("poll_player %r", result)
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-            if result == 'STOPPED':
+                
+            if result in ('STOPPED','READY'):
                 transport_state = 'STOPPED'
             if result == 'PLAYING':
                 transport_state = 'PLAYING'
@@ -109,7 +110,8 @@ class ElisaPlayer(log.Loggable):
                 self.state = transport_state                             
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id,
-                                                 'TransportState', transport_state)
+                                                                 'TransportState',
+                                                                 transport_state)
         self.call_player("get_readable_state", got_result)
         
 
@@ -227,7 +229,7 @@ class ElisaPlayer(log.Loggable):
         
     def get_mute(self):
         def got_infos(result):
-            self.info("get_mute", result)
+            self.info("got_mute: %r", result)
             return result
 
         return self.call_player("get_mute", got_infos)
@@ -236,7 +238,7 @@ class ElisaPlayer(log.Loggable):
         """ playbin volume is a double from 0.0 - 10.0
         """
         def got_infos(result):
-            self.info("get_volume", result)
+            self.info("got_volume: %r", result)
             return result
 
         return self.call_player('get_volume', got_infos)
@@ -290,7 +292,7 @@ class ElisaPlayer(log.Loggable):
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
         local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
-        print '>>>', local_protocol_info
+        #print '>>>', local_protocol_info
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
         else:
@@ -299,7 +301,7 @@ class ElisaPlayer(log.Loggable):
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
                 for res in item.res:
-                    print '>>>', res.protocolInfo
+                    #print '>>>', res.protocolInfo
                     if res.protocolInfo in local_protocol_info:
                         uri = res.data
                         self.load(uri,CurrentURIMetaData)

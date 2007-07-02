@@ -58,7 +58,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""
         try:
-            header, payload = data.split('\r\n\r\n')
+            header, payload = data.split('\r\n\r\n')[:2]
         except ValueError, err:
             print err
             print 'Arggg,', data
