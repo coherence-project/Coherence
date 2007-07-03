@@ -110,9 +110,9 @@ class CoverGetter(object):
 
     """
     retrieve a cover image for a given ASIN,
-                               an ARTIST or
+                               a TITLE or
                                an ARTIST/TITLE combo
-                               
+
     parameters are:
 
         filename: where to save a received image
