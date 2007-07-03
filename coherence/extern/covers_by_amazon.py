@@ -50,9 +50,6 @@ from twisted.web import client
 
 from et import parse_xml
 
-
-
-
 aws_server = { 'de': 'de',
                'jp': 'jp',
                'ca': 'ca',
@@ -125,7 +122,12 @@ class CoverGetter(object):
                   - a tuple with a callable,
                       - optional an argument or a tuple of arguments
                       - optional a dict with keyword arguments
-
+        not_found_callback: a method to call when the search at Amazon failed
+                  can be:
+                  - only a callable
+                  - a tuple with a callable,
+                      - optional an argument or a tuple of arguments
+                      - optional a dict with keyword arguments
         locale:   which Amazon Webservice Server to use, defaults to .com
         image_size: request the cover as large|medium|small image
                     resolution seems to be in pixels for
@@ -140,58 +142,44 @@ class CoverGetter(object):
 
     """
 
-    def __init__(self, filename, aws_key, callback=None, NotFoundCallback = None,
+    def __init__(self, filename, aws_key, callback=None, not_found_callback=None,
                        locale=None,
                        image_size='large',
                        title=None, artist=None, asin=None):
         self.aws_base_query = '/onca/xml?Service=AWSECommerceService' \
                               '&AWSAccessKeyId=%s' % aws_key
-        
+
         self.filename = filename
         self.callback = callback
-        self._errCall = NotFoundCallback
+        self._errcall = not_found_callback
         self.server = 'http://ecs.amazonaws.%s' % aws_server.get(locale,'com')
         self.image_size = image_size
+
+        def sanitize(s):
+            if s is not None:
+                s = unicode(s.lower())
+                s = s.replace(unicode(u'ä'),unicode('ae'))
+                s = s.replace(unicode(u'ö'),unicode('oe'))
+                s = s.replace(unicode(u'ü'),unicode('ue'))
+                s = s.replace(unicode(u'ß'),unicode('ss'))
+                if isinstance(s,unicode):
+                    s = s.encode('ascii','ignore')
+                else:
+                    s = s.decode('utf-8').encode('ascii','ignore')
+            return s
+
         if asin != None:
             query = aws_asin_query + '&ItemId=%s' % urllib.quote(asin)
-        elif (artist is not None and title is not None):
-            artist = unicode(artist.lower())
-            artist = artist.replace(unicode(u'ä'),unicode('ae'))
-            artist = artist.replace(unicode(u'ö'),unicode('oe'))
-            artist = artist.replace(unicode(u'ü'),unicode('ue'))
-            artist = artist.replace(unicode(u'ß'),unicode('ss'))
-            if isinstance(artist,unicode):
-                artist = artist.encode('ascii','ignore')
-            else:
-                artist = artist.decode('utf-8').encode('ascii','ignore')
-
-            title = unicode(title.lower())
-            title = title.replace(unicode(u'ä'),unicode('ae'))
-            title = title.replace(unicode(u'ö'),unicode('oe'))
-            title = title.replace(unicode(u'ü'),unicode('ue'))
-            title = title.replace(unicode(u'ß'),unicode('ss'))
-            if isinstance(title,unicode):
-                title = title.encode('ascii','ignore')
-            else:
-                title = title.decode('utf-8').encode('ascii','ignore')
-            query = aws_artist_query + '&Artist=%s&Title=%s' % (urllib.quote(artist),
-                                                                urllib.quote(title))
-        elif (title is not None):
-
-            title = unicode(title.lower())
-            title = title.replace(unicode(u'ä'),unicode('ae'))
-            title = title.replace(unicode(u'ö'),unicode('oe'))
-            title = title.replace(unicode(u'ü'),unicode('ue'))
-            title = title.replace(unicode(u'ß'),unicode('ss'))
-            if isinstance(title,unicode):
-                title = title.encode('ascii','ignore')
-            else:
-                title = title.decode('utf-8').encode('ascii','ignore')
-
-            query = aws_artist_query + '&Title=%s' % urllib.quote(title)
-
+        elif (artist is not None or title is not None):
+            query = aws_artist_query
+            if artist is not None:
+                artist = sanitize(artist)
+                query = '&'.join((query, 'Artist=%s' % urllib.quote(artist)))
+            if title is not None:
+                title = sanitize(title)
+                query = '&'.join((query, 'Title=%s' % urllib.quote(title)))
         else:
-            raise KeyError, "Please supply either asin or artist and title arguments"
+            raise KeyError, "Please supply either asin, title or artist and title arguments"
         url = self.server+self.aws_base_query+aws_response_group+query
         WorkQueue(self.send_request, url)
 
@@ -273,9 +261,26 @@ class CoverGetter(object):
             d.addCallback(self.got_image, convert_from=convert_from, convert_to=convert_to)
             d.addErrback(self.got_error, image_url)
         else:
-            if self._errCall != None:
-                a, args = self._errCall
-                a(*args)
+            if self._errcall is not None:
+                if isinstance(self._errcall,tuple):
+                    if len(self._errcall) == 3:
+                        c,a,kw = self._errcall
+                        if not isinstance(a,tuple):
+                            a = (a,)
+                        c(*a,**kw)
+                    if len(self._errcall) == 2:
+                        c,a = self._errcall
+                        if isinstance(a,dict):
+                            c(**a)
+                        else:
+                            if not isinstance(a,tuple):
+                                a = (a,)
+                            c(*a)
+                    if len(self._errcall) == 1:
+                        c = self._errcall
+                        c()
+                else:
+                    self._errcall()
 
     def got_error(self, failure, url):
         print "got_error", failure, url
