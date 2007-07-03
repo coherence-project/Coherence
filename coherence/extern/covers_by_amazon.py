@@ -48,7 +48,7 @@ from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.web import client
 
-from coherence.upnp.core.utils import parse_xml
+from coherence.extern.et import parse_xml
 
 aws_key = '1XHSE4FQJ0RK0X3S9WR2'
 

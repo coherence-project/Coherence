@@ -144,3 +144,31 @@ def indent(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
+
+def parse_xml(data, encoding="utf-8"):
+    p = ET.XMLParser(encoding=encoding)
+
+    # my version of twisted.web returns page_infos as a dictionary in
+    # the second item of the data list
+    if isinstance(data, (list, tuple)):
+        data, _ = data
+
+    try:
+        data = data.encode(encoding)
+    except UnicodeDecodeError:
+        pass
+    except Exception, error:
+        print "parse_xml encode Exception", error
+        import traceback
+        traceback.print_exc()
+
+    # Guess from who we're getting this?
+    data = data.replace('\x00','')
+    try:
+        p.feed(data)
+    except Exception, error:
+        print "parse_xml feed Exception", error
+        print error, repr(data)
+        return None
+    else:
+        return ET.ElementTree(p.close())
