@@ -15,8 +15,6 @@ from twisted.web import resource
 
 import louie
 
-import pkg_resources
-
 from coherence import __version__
 
 from coherence.upnp.core.ssdp import SSDPServer
@@ -174,21 +172,7 @@ class Coherence(log.Loggable):
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-        self.installed_plugins = {}
-
-        for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_server"):
-            try:
-                self.installed_plugins[entrypoint.name] = entrypoint.load()
-            except ImportError:
-                self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
-                self.info(traceback.format_exc())
-        for entrypoint in pkg_resources.iter_entry_points("coherence.plugins.backend.media_renderer"):
-            try:
-                self.installed_plugins[entrypoint.name] = entrypoint.load()
-            except ImportError:
-                self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
-                self.info(traceback.format_exc())
-
+        self.installed_plugins = None
 
         plugins = config.get('plugins',None)
         if plugins is None:
@@ -208,8 +192,24 @@ class Coherence(log.Loggable):
 
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin", plugin)
+
+        def get_installed_plugins(ids):
+            if self.installed_plugins is None:
+                self.installed_plugins = {}
+                import pkg_resources
+                if not isinstance(ids, (list,tuple)):
+                    ids = (ids)
+                for id in ids:
+                    for entrypoint in pkg_resources.iter_entry_points(id):
+                        try:
+                            self.installed_plugins[entrypoint.name] = entrypoint.load()
+                        except ImportError:
+                            self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
+                            self.info(traceback.format_exc())
+
+        get_installed_plugins(("coherence.plugins.backend.media_server",
+                               "coherence.plugins.backend.media_renderer"))
         try:
-            #plugin_class=globals().get(plugin,None)
             plugin_class = self.installed_plugins.get(plugin,None)
             if plugin_class == None:
                 raise KeyError
