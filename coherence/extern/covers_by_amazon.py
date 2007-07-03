@@ -48,7 +48,9 @@ from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.web import client
 
-from coherence.extern.et import parse_xml
+from et import parse_xml
+
+
 
 
 aws_server = { 'de': 'de',
@@ -138,16 +140,16 @@ class CoverGetter(object):
 
     """
 
-    def __init__(self, filename, aws_key, callback=None,
+    def __init__(self, filename, aws_key, callback=None, NotFoundCallback = None,
                        locale=None,
                        image_size='large',
                        title=None, artist=None, asin=None):
-        
         self.aws_base_query = '/onca/xml?Service=AWSECommerceService' \
                               '&AWSAccessKeyId=%s' % aws_key
         
         self.filename = filename
         self.callback = callback
+        self._errCall = NotFoundCallback
         self.server = 'http://ecs.amazonaws.%s' % aws_server.get(locale,'com')
         self.image_size = image_size
         if asin != None:
@@ -172,9 +174,22 @@ class CoverGetter(object):
                 title = title.encode('ascii','ignore')
             else:
                 title = title.decode('utf-8').encode('ascii','ignore')
-
             query = aws_artist_query + '&Artist=%s&Title=%s' % (urllib.quote(artist),
                                                                 urllib.quote(title))
+        elif (title is not None):
+
+            title = unicode(title.lower())
+            title = title.replace(unicode(u'ä'),unicode('ae'))
+            title = title.replace(unicode(u'ö'),unicode('oe'))
+            title = title.replace(unicode(u'ü'),unicode('ue'))
+            title = title.replace(unicode(u'ß'),unicode('ss'))
+            if isinstance(title,unicode):
+                title = title.encode('ascii','ignore')
+            else:
+                title = title.decode('utf-8').encode('ascii','ignore')
+
+            query = aws_artist_query + '&Title=%s' % urllib.quote(title)
+
         else:
             raise KeyError, "Please supply either asin or artist and title arguments"
         url = self.server+self.aws_base_query+aws_response_group+query
@@ -257,21 +272,25 @@ class CoverGetter(object):
                     d = client.downloadPage(image_url, self.filename)
             d.addCallback(self.got_image, convert_from=convert_from, convert_to=convert_to)
             d.addErrback(self.got_error, image_url)
+        else:
+            if self._errCall != None:
+                a, args = self._errCall
+                a(*args)
 
     def got_error(self, failure, url):
         print "got_error", failure, url
 
 if __name__ == '__main__':
-    aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-    
+
     def got_it(filename, *args, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
     def got_it2(filename, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key,callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
-    reactor.callWhenRunning(CoverGetter,"cover.png",aws_key,callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
-    reactor.callWhenRunning(CoverGetter,"cover2.jpg",aws_key,callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
+    aws_key = '1XHSE4FQJ0RK0X3S9WR2'
+    reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
+    reactor.callWhenRunning(CoverGetter,"cover.png",aws_key, callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
+    reactor.callWhenRunning(CoverGetter,"cover2.jpg",aws_key, callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
 
     reactor.run()
