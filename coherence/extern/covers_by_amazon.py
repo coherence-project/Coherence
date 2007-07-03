@@ -50,7 +50,6 @@ from twisted.web import client
 
 from coherence.extern.et import parse_xml
 
-aws_key = '1XHSE4FQJ0RK0X3S9WR2'
 
 aws_server = { 'de': 'de',
                'jp': 'jp',
@@ -58,8 +57,6 @@ aws_server = { 'de': 'de',
                'uk': 'co.uk',
                'fr': 'fr'}
 
-aws_base_query = '/onca/xml?Service=AWSECommerceService' \
-                 '&AWSAccessKeyId=%s' % aws_key
 
 aws_artist_query = '&Operation=ItemSearch' \
                    '&SearchIndex=Music'
@@ -141,10 +138,14 @@ class CoverGetter(object):
 
     """
 
-    def __init__(self, filename, callback=None,
+    def __init__(self, filename, aws_key, callback=None,
                        locale=None,
                        image_size='large',
                        title=None, artist=None, asin=None):
+        
+        self.aws_base_query = '/onca/xml?Service=AWSECommerceService' \
+                              '&AWSAccessKeyId=%s' % aws_key
+        
         self.filename = filename
         self.callback = callback
         self.server = 'http://ecs.amazonaws.%s' % aws_server.get(locale,'com')
@@ -176,7 +177,7 @@ class CoverGetter(object):
                                                                 urllib.quote(title))
         else:
             raise KeyError, "Please supply either asin or artist and title arguments"
-        url = self.server+aws_base_query+aws_response_group+query
+        url = self.server+self.aws_base_query+aws_response_group+query
         WorkQueue(self.send_request, url)
 
     def send_request(self,url,*args,**kwargs):
@@ -261,15 +262,16 @@ class CoverGetter(object):
         print "got_error", failure, url
 
 if __name__ == '__main__':
-
+    aws_key = '1XHSE4FQJ0RK0X3S9WR2'
+    
     def got_it(filename, *args, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
     def got_it2(filename, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
-    reactor.callWhenRunning(CoverGetter,"cover.png",callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
-    reactor.callWhenRunning(CoverGetter,"cover2.jpg",callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
+    reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key,callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
+    reactor.callWhenRunning(CoverGetter,"cover.png",aws_key,callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
+    reactor.callWhenRunning(CoverGetter,"cover2.jpg",aws_key,callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
 
     reactor.run()
