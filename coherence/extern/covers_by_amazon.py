@@ -109,7 +109,10 @@ class WorkQueue(object):
 class CoverGetter(object):
 
     """
-    retrieve a cover image for a given ASIN or a ARTIST/TITLE combo
+    retrieve a cover image for a given ASIN,
+                               an ARTIST or
+                               an ARTIST/TITLE combo
+                               
     parameters are:
 
         filename: where to save a received image
