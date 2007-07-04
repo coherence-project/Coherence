@@ -26,10 +26,10 @@ from coherence import log
 class ElisaPlayer(log.Loggable):
 
     """ a backend to the Elisa player
-    
+
     """
     logCategory = 'elisa_player'
-    
+
     implements = ['MediaRenderer']
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
@@ -39,7 +39,7 @@ class ElisaPlayer(log.Loggable):
         self.host = kwargs.get('host','127.0.0.1')
         self.player = None
         self.metadata = None
-        
+
         if self.host == 'internal':
             try:
                 from elisa.core import common
@@ -53,11 +53,11 @@ class ElisaPlayer(log.Loggable):
             factory.noisy = False
             reactor.connectTCP(self.host, 8789, factory)
             d = factory.getRootObject()
-            
+
             def result(player):
                 self.player = player
                 louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-                
+
             def got_error(error):
                 self.warning("connection to Elisa failed!")
 
@@ -65,7 +65,7 @@ class ElisaPlayer(log.Loggable):
             d.addCallback(result)
             d.addErrback(got_error)
 
-    
+
         self.playing = False
         self.state = None
         self.duration = None
@@ -75,7 +75,7 @@ class ElisaPlayer(log.Loggable):
         self.poll_LC = LoopingCall( self.poll_player)
 
     def call_player(self, method, callback, *args):
-        print '>> call player', method, str(args)
+        self.debug('call player.%s%s', method, args)
         if self.host == 'internal':
             dfr = Deferred()
             dfr.addCallback(callback)
@@ -85,33 +85,34 @@ class ElisaPlayer(log.Loggable):
             dfr = self.player.callRemote(method, *args)
             dfr.addCallback(callback)
         return dfr
-        
+
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def poll_player( self):
+    def poll_player(self):
+        
         def got_result(result):
-            print "poll_player", result
-            self.info("poll_player", result)
+            self.info("poll_player %r", result)
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-            if result == 'STOPPED':
+            if result in ('STOPPED','READY'):
                 transport_state = 'STOPPED'
             if result == 'PLAYING':
                 transport_state = 'PLAYING'
-            if result == 'PAUSED':                
+            if result == 'PAUSED':
                 transport_state = 'PAUSED_PLAYBACK'
-                
+
             if transport_state == 'PLAYING':
                 self.query_position()
 
             if self.state != transport_state:
-                self.state = transport_state                             
+                self.state = transport_state
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id,
-                                                 'TransportState', transport_state)
+                                                                 'TransportState',
+                                                                 transport_state)
         self.call_player("get_readable_state", got_result)
-        
+
 
     def query_position( self):
         def got_result(result):
@@ -127,15 +128,15 @@ class ElisaPlayer(log.Loggable):
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
                     self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                
+
             if duration is not None:
                 m,s = divmod( duration/1000000000, 60)
                 h,m = divmod(m,60)
-                
+
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
                     self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
-                
+
                 if self.duration is None:
                     if self.metadata is not None:
                         elt = DIDLLite.DIDLElement.fromString(self.metadata)
@@ -143,17 +144,17 @@ class ElisaPlayer(log.Loggable):
                             for res in item.findall('res'):
                                 res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
                         self.metadata = elt.toString()
- 
+
                         if self.server != None:
                             self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
                             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
-                            
+
                     self.duration = duration
-                    
+
         self.call_player("get_status", got_result)
-        
-        
-        
+
+
+
     def load( self, uri, metadata):
 
         def got_result(result):
@@ -170,12 +171,12 @@ class ElisaPlayer(log.Loggable):
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
         self.call_player("set_uri", got_result, uri)
-        
+
 
     def start(self, uri):
         self.load(uri)
         self.play()
-        
+
     def stop(self):
         def got_result(result):
             self.server.av_transport_server.set_variable( \
@@ -183,8 +184,8 @@ class ElisaPlayer(log.Loggable):
                                  'TransportState', 'STOPPED')
 
         self.call_player("stop", got_result)
-        
-    def play(self):   
+
+    def play(self):
         def got_result(result):
             self.server.av_transport_server.set_variable( \
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id),\
@@ -206,7 +207,7 @@ class ElisaPlayer(log.Loggable):
                             +nL = relative seek forward n seconds
                             -nL = relative seek backwards n seconds
         """
-        
+
 
 
     def mute(self):
@@ -216,7 +217,7 @@ class ElisaPlayer(log.Loggable):
             self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'True')
 
         self.call_player("mute", got_result)
-        
+
     def unmute(self):
         def got_result(result):
             rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
@@ -224,37 +225,37 @@ class ElisaPlayer(log.Loggable):
             self.server.rendering_control_server.set_variable(rcs_id, 'Mute', 'False')
 
         self.call_player("un_mute", got_result)
-        
+
     def get_mute(self):
         def got_infos(result):
-            self.info("get_mute", result)
+            self.info("got_mute: %r", result)
             return result
 
         return self.call_player("get_mute", got_infos)
-        
+
     def get_volume(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
         def got_infos(result):
-            self.info("get_volume", result)
+            self.info("got_volume: %r", result)
             return result
 
         return self.call_player('get_volume', got_infos)
-        
+
     def set_volume(self, volume):
         volume = int(volume)
         if volume < 0:
             volume=0
         if volume > 100:
             volume=100
-            
+
         def got_result(result):
             rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
             #FIXME: use result, not volume
             self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
 
         self.call_player("set_volume", got_result, volume)
-        
+
     def upnp_init(self):
         self.current_connection_id = None
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
@@ -268,29 +269,29 @@ class ElisaPlayer(log.Loggable):
         self.server.rendering_control_server.set_variable(0, 'Volume', self.get_volume())
         self.server.rendering_control_server.set_variable(0, 'Mute', self.get_mute())
         self.poll_LC.start( 1.0, True)
-        
+
     def upnp_Play(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         Speed = int(kwargs['Speed'])
         self.play()
         return {}
-        
+
     def upnp_Pause(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         self.pause()
         return {}
-        
+
     def upnp_Stop(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         self.stop()
         return {}
-        
+
     def upnp_SetAVTransportURI(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
-        print '>>>', local_protocol_info
+        local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        #print '>>>', local_protocol_infos
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
         else:
@@ -299,11 +300,24 @@ class ElisaPlayer(log.Loggable):
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
                 for res in item.res:
-                    print '>>>', res.protocolInfo
-                    if res.protocolInfo in local_protocol_info:
-                        uri = res.data
-                        self.load(uri,CurrentURIMetaData)
-                        return {}
+                    #print '>>>', res.protocolInfo
+                    for protocol_info in local_protocol_infos:
+                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                        #print '>>>', remote_protocol,remote_network,remote_content_format
+                        local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
+                        #print '>>>', local_protocol,local_network,local_content_format
+                        if((remote_protocol == local_protocol or
+                            remote_protocol == '*' or
+                            local_protocol == '*') and
+                           (remote_network == local_network or
+                            remote_network == '*' or
+                            local_network == '*') and
+                           (remote_content_format == local_content_format or
+                            remote_content_format == '*' or
+                            local_content_format == '*')):
+                            uri = res.data
+                            self.load(uri,CurrentURIMetaData)
+                            return {}
         return failure.Failure(errorCode(714))
 
     def upnp_SetMute(self, *args, **kwargs):
@@ -322,7 +336,7 @@ class ElisaPlayer(log.Loggable):
         DesiredVolume = int(kwargs['DesiredVolume'])
         self.set_volume(DesiredVolume)
         return {}
-        
+
 def main():
 
     f = ElisaPlayer(None)
@@ -331,9 +345,9 @@ def main():
         f.get_volume()
         f.get_mute()
         f.poll_player()
-    
+
     reactor.callLater(2,call_player)
-    
+
 if __name__ == '__main__':
 
     from twisted.internet import reactor

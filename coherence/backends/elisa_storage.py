@@ -90,7 +90,7 @@ class ElisaMediaStore:
                              'http-get:*:audio/mpeg:*'])
 
     def upnp_Browse(self, *args, **kwargs):
-        ObjectID = int(kwargs['ObjectID'])
+        ObjectID = kwargs['ObjectID']
         BrowseFlag = kwargs['BrowseFlag']
         Filter = kwargs['Filter']
         StartingIndex = int(kwargs['StartingIndex'])

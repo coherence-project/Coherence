@@ -61,7 +61,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         louie.send('UPnT.ssdp_datagram_received', None, data, host, port)
 
         try:
-            header, payload = data.split('\r\n\r\n')
+            header, payload = data.split('\r\n\r\n')[:2]
         except ValueError, err:
             print err
             print 'Arggg,', data
@@ -215,7 +215,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.msg('doByebye content', resp)
-        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        if self.transport:
+            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 
     def resendNotify( self):
         for usn in self.known:

@@ -171,9 +171,8 @@ class Device(log.Loggable):
                                          eventSubUrl, presentationUrl, scpdUrl, self))
 
         def gotError(failure, url):
-            self.warning("error requesting", url)
+            self.warning("error requesting %r", url)
             self.info(failure)
-            del self
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 

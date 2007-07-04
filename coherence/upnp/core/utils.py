@@ -4,7 +4,7 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-from coherence.extern.et import ET
+from coherence.extern.et import parse_xml as et_parse_xml
 
 from twisted.web import server, http, static
 from twisted.web import client, error
@@ -16,25 +16,8 @@ import fcntl
 import struct
 import string
 
-def parse_xml(data, encoding="iso-8859-1"):
-    p = ET.XMLParser(encoding=encoding)
-
-    # my version of twisted.web returns page_infos as a dictionary in
-    # the second item of the data list
-    if isinstance(data, (list, tuple)):
-        data, _ = data
-
-    data = data.encode(encoding)
-
-    # Guess from who we're getting this?
-    data = data.replace('\x00','')
-    try:
-        p.feed(data)
-    except Exception, error:
-        print error, repr(data)
-        return None
-    else:
-        return ET.ElementTree(p.close())
+def parse_xml(data, encoding="utf-8"):
+    return et_parse_xml(data,encoding)
 
 def parse_http_response(data):
 

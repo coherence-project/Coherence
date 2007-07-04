@@ -486,7 +486,8 @@ class MediaStore(log.Loggable):
                     print "cover saved:",f, a.title
                     a.cover = f
 
-                CoverGetter(cover_path,
+                aws_key = '1XHSE4FQJ0RK0X3S9WR2'
+                CoverGetter(cover_path,aws_key,
                             callback=(got_it,(album)),
                             artist=album.artist.name,
                             title=album.title)

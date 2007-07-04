@@ -53,7 +53,7 @@ def customStderrHandler(level, object, category, file, line, message):
 
 def init():
     externlog.init('COHERENCE_DEBUG')
-    externlog.setPackageScrubList('coherence', 'twisted')
+    externlog.setPackageScrubList('coherence', 'twisted', 'upntest')
 
     # log WARNINGS by default
     if not os.getenv('COHERENCE_DEBUG'):
