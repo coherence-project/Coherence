@@ -146,7 +146,7 @@ class MediaRenderer(log.Loggable):
         if kwargs.has_key('icon'):
             self.icons.append(kwargs['icon'])
 
-        if kwargs.get('no_thread_needed',False):
+        if kwargs.get('no_thread_needed',False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
             d = threads.deferToThread(backend, self, **kwargs)
