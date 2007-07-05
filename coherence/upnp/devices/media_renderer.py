@@ -146,27 +146,31 @@ class MediaRenderer(log.Loggable):
         if kwargs.has_key('icon'):
             self.icons.append(kwargs['icon'])
 
-        """ this could take some time, put it in a  thread to be sure it doesn't block
-            as we can't tell for sure that every backend is implemented properly """
-        d = threads.deferToThread(backend, self, **kwargs)
+        if kwargs.get('no_thread_needed',False):
+            """ this could take some time, put it in a  thread to be sure it doesn't block
+                as we can't tell for sure that every backend is implemented properly """
+            d = threads.deferToThread(backend, self, **kwargs)
 
-        def backend_ready(backend):
-            self.backend = backend
+            def backend_ready(backend):
+                self.backend = backend
 
-        def backend_failure(x):
-            self.critical('backend not installed, MediaRenderer activation aborted')
+            def backend_failure(x):
+                self.critical('backend not installed, MediaRenderer activation aborted')
 
-        def service_failure(x):
-            print x
-            self.critical('required service not available, MediaRenderer activation aborted')
+            def service_failure(x):
+                print x
+                self.critical('required service not available, MediaRenderer activation aborted')
 
-        d.addCallback(backend_ready).addErrback(service_failure)
-        d.addErrback(backend_failure)
+            d.addCallback(backend_ready).addErrback(service_failure)
+            d.addErrback(backend_failure)
 
-        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+            louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
-        # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
-        #        can close down this device
+            # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
+            #        can close down this device
+        else:
+            self.backend = backend(self, **kwargs)
+            self.init_complete(self.backend)
 
     def init_complete(self, backend):
         if self.backend != backend:
