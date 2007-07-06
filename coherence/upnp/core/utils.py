@@ -53,17 +53,38 @@ def get_ip_address(ifname):
     )[20:24])
 
 def get_host_address():
-    route_file = '/proc/net/route'
-    route = open(route_file)
-    if (route):
-        tmp = route.readline() #skip first line
-        while (tmp != ''):
-            tmp = route.readline()
-            l = tmp.split('\t')
-            if (len(l) > 2):
-                if l[2] != '00000000': #default gateway...
-                    route.close()
-                    return get_ip_address(l[0])
+    """ try to get determine the interface used for
+        the default route, as this is most likely
+        the interface we should bind to (on a single homed host!)
+    """
+    try:
+        route_file = '/proc/net/route'
+        route = open(route_file)
+        if (route):
+            tmp = route.readline() #skip first line
+            while (tmp != ''):
+                tmp = route.readline()
+                l = tmp.split('\t')
+                if (len(l) > 2):
+                    if l[2] != '00000000': #default gateway...
+                        route.close()
+                        return get_ip_address(l[0])
+    except IOerror:
+        """ fallback to parsing the output of netstat """
+        import os, posix
+        (osname,_, _, _,_) = os.uname()
+        osname = osname.lower()
+        f = posix.popen('netstat -rn')
+        lines = f.readlines()
+        f.close()
+        for l in lines:
+            parts = [x.strip() for x in l.split(' ') if len(x) > 0]
+            if parts[0] in ('0.0.0.0','default'):
+                if osname[:6] == 'darwin':
+                    return get_ip_address(parts[5])
+                else:
+                    return get_ip_address(parts[-1])
+
     """ return localhost if we havn't found anything """
     return '127.0.0.1'
 
