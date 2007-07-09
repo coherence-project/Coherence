@@ -5,7 +5,7 @@
 
 # AVTransport service
 
-from twisted.web import resource, static, soap
+from twisted.web import resource
 
 from coherence.upnp.core.soap_service import UPnPPublisher
 
