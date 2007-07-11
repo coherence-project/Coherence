@@ -238,9 +238,7 @@ class ContentDirectoryClient:
         if isinstance(elements, dict):
             elements = self.dict2item(elements)
         if isinstance(elements,DIDLLite.Object):
-            print elements
             didl = DIDLLite.DIDLElement()
-            print didl
             didl.addItem(elements)
             elements=didl.toString()
         if elements is None:

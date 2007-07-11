@@ -38,7 +38,7 @@ def unsubscribe(service):
 
 class Service(log.Loggable):
     logCategory = 'service'
-    
+
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
         if not control_url.startswith('/'):
@@ -247,7 +247,7 @@ moderated_variables = \
 
 class ServiceServer(log.Loggable):
     logCategory = 'service_server'
-    
+
     def __init__(self, id, version, backend):
         self.id = id
         self.version = version

@@ -125,6 +125,22 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
             self.waiting = 0
             self.deferred.callback((page, self.response_headers))
 
+
+class HeaderAwareHTTPDownloader(client.HTTPDownloader):
+
+    def gotHeaders(self, headers):
+        self.value = headers
+        if self.requestedPartial:
+            contentRange = headers.get("content-range", None)
+            if not contentRange:
+                # server doesn't support partial requests, oh well
+                self.requestedPartial = 0
+                return
+            start, end, realLength = http.parseContentRange(contentRange[0])
+            if start != self.requestedPartial:
+                # server is acting wierdly
+                self.requestedPartial = 0
+
 def getPage(url, contextFactory=None, *args, **kwargs):
     """Download a web page as a string.
 
@@ -152,7 +168,7 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
     See HTTPDownloader to see what extra args can be passed.
     """
     scheme, host, port, path = client._parse(url)
-    factory = client.HTTPDownloader(url, file, *args, **kwargs)
+    factory = HeaderAwareHTTPDownloader(url, file, *args, **kwargs)
     factory.noisy = False
     if scheme == 'https':
         from twisted.internet import ssl

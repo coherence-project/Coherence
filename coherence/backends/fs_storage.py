@@ -43,6 +43,8 @@ class FSItem(log.Loggable):
         if mimetype == 'root':
             self.location = unicode(path)
         else:
+            if mimetype == 'item' and path is None:
+                path = os.path.join(parent.get_path(),str(self.id))
             self.location = FilePath(unicode(path))
         self.mimetype = mimetype
         if urlbase[-1] != '/':
@@ -58,6 +60,7 @@ class FSItem(log.Loggable):
         self.item = UPnPClass(id, parent_id, self.get_name())
         self.child_count = 0
         self.children = []
+
 
         if mimetype in ['directory','root']:
             self.update_id = 0
@@ -84,14 +87,19 @@ class FSItem(log.Loggable):
             else:
                 host = host_port
 
-            res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
-            try:
-                res.size = self.location.getsize()
-            except:
-                res.size = 0
-            self.item.res.append(res)
+            if mimetype != 'item':
+                res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+                try:
+                    res.size = self.location.getsize()
+                except:
+                    res.size = 0
+                self.item.res.append(res)
 
-            res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            if mimetype != 'item':
+                res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            else:
+                res = Resource(self.url, 'http-get:*:*:*')
+
             try:
                 res.size = self.location.getsize()
             except:
@@ -104,6 +112,53 @@ class FSItem(log.Loggable):
             except:
                 self.item.date = None
 
+    def rebuild(self, urlbase):
+        #print "rebuild", self.mimetype
+        if self.mimetype != 'item':
+            return
+        #print "rebuild for", self.get_path()
+        mimetype,_ = mimetypes.guess_type(self.get_path(),strict=False)
+        if mimetype == None:
+            return
+        self.mimetype = mimetype
+        #print "rebuild", self.mimetype
+        UPnPClass = classChooser(self.mimetype)
+        self.item = UPnPClass(self.id, self.parent.id, self.get_name())
+        if hasattr(self.parent, 'cover'):
+            _,ext =  os.path.splitext(self.parent.cover)
+            """ add the cover image extension to help clients not reacting on
+                the mimetype """
+            self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+
+        self.item.res = []
+
+        _,host_port,_,_,_ = urlsplit(urlbase)
+        if host_port.find(':') != -1:
+            host,port = tuple(host_port.split(':'))
+        else:
+            host = host_port
+
+        res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+        try:
+            res.size = self.location.getsize()
+        except:
+            res.size = 0
+        self.item.res.append(res)
+        res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+
+        try:
+            res.size = self.location.getsize()
+        except:
+            res.size = 0
+        self.item.res.append(res)
+
+        try:
+            # FIXME: getmtime is deprecated in Twisted 2.6
+            self.item.date = datetime.fromtimestamp(self.location.getmtime())
+        except:
+            self.item.date = None
+
+        self.parent.update_id += 1
 
     def __del__(self):
         #print "FSItem __del__", self.id, self.get_name()
@@ -173,6 +228,17 @@ class FSItem(log.Loggable):
             return self.location.path
         else:
             self.location
+
+    def set_path(self,path=None,extension=None):
+        if path is None:
+            path = self.get_path()
+        if extension is not None:
+            path,old_ext = os.path.splitext(path)
+            path = ''.join((path,extension))
+        if isinstance( self.location,FilePath):
+            self.location = FilePath(unicode(path))
+        else:
+            self.location = path
 
     def get_name(self):
         if isinstance( self.location,FilePath):
@@ -309,7 +375,8 @@ class FSStore(log.Loggable):
         return id
 
     def append(self,path,parent):
-        mimetype,_ = mimetypes.guess_type(path)
+        #print "append", path
+        mimetype,_ = mimetypes.guess_type(path, strict=False)
         if mimetype == None:
             if os.path.isdir(path):
                 mimetype = 'directory'
@@ -407,9 +474,26 @@ class FSStore(log.Loggable):
         if item == None:
             return failure.Failure(errorCode(718))
 
-        def gotPage(x):
-            #print "gotPage", x
+        def gotPage(headers):
+            #print "gotPage", headers
+            content_type = headers.get('content-type',[])
+            if not isinstance(content_type, list):
+                content_type = list(content_type)
+            if len(content_type) > 0:
+                extension = mimetypes.guess_extension(content_type[0], strict=False)
+                item.set_path(None,extension)
             shutil.move(tmp_path, item.get_path())
+            item.rebuild(self.urlbase)
+            if hasattr(self, 'update_id'):
+                self.update_id += 1
+                if self.server:
+                    if hasattr(self.server,'content_directory_server'):
+                        self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                if item.parent is not None:
+                    value = (item.parent.get_id(),item.parent.get_update_id())
+                    if self.server:
+                        if hasattr(self.server,'content_directory_server'):
+                            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         def gotError(error, url):
             self.warning("error requesting", url)
@@ -477,12 +561,13 @@ class FSStore(log.Loggable):
             return {'ObjectID': id, 'Result': didl.toString()}
 
         if item.upnp_class.startswith('object.item.'):
-            path = os.path.join(parent_item.get_path(),item.title)
-            id = self.create('item',path,parent_item)
+            #path = os.path.join(parent_item.get_path(),item.title)
+            id = self.create('item',None,parent_item)
 
             new_item = self.get_by_id(id)
             for res in new_item.item.res:
                 res.importUri = new_item.url+'?import'
+                res.data = None
             didl = DIDLElement()
             didl.addItem(new_item.item)
             return {'ObjectID': id, 'Result': didl.toString()}
