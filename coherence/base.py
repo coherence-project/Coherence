@@ -7,6 +7,7 @@ import string
 import socket
 import os, sys
 import traceback
+import urllib2
 
 from twisted.python import filepath, util
 from twisted.internet import task, address, defer
@@ -327,6 +328,10 @@ class Coherence(log.Loggable):
             device.remove()
             if infos['ST'] == 'upnp:rootdevice':
                 louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
+                parsed = urllib2.urlparse.urlparse(infos['LOCATION'])
+                ip = parsed[1].split(':')[0]
+                print 'UPnT.host_removed(%r)' % ip
+                louie.send('UPnT.host_removed', None, ip)
                 self.callback("removed_device", infos['ST'], infos['USN'])
 
 
