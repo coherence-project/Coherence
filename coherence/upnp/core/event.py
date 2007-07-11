@@ -12,6 +12,8 @@ from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
 from twisted.python import failure
 
+import louie
+
 from coherence import log, SERVER_ID
 from coherence.upnp.core import utils
 
@@ -20,6 +22,11 @@ hostname = None
 web_server_port = None
 
 class EventServer(resource.Resource, log.Loggable):
+    """
+    This class represents the server part that listens to event messages sent
+    by devices where we have a subscription for these events. It is only
+    used for the ControlPoint.
+    """
     logCategory = 'event_server'
     
     def __init__(self, control_point):
@@ -34,12 +41,15 @@ class EventServer(resource.Resource, log.Loggable):
 
     def render_NOTIFY(self, request):
         self.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
+        command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
+        headers = request.received_headers
+        louie.send('UPnT.event.message_received', None, command, headers, data)
+
         if request.code != 200:
             self.info("data:", data)
         else:
             self.debug("data:", data)
-            headers = request.getAllHeaders()
             sid = headers['sid']
             tree = utils.parse_xml(data).getroot()
             ns = "urn:schemas-upnp-org:event-1-0"
@@ -55,6 +65,11 @@ class EventServer(resource.Resource, log.Loggable):
 
 class EventSubscriptionServer(resource.Resource, log.Loggable):
     """
+    This class ist the server part on the device side. It listens to subscribe
+    requests and registers the subscriber to send event messages to this device.
+    If an unsubscribe request is received, the subscription is cancelled and no 
+    more event messages will be sent.
+    
     we receive a subscription request
     {'callback': '<http://192.168.213.130:9083/BYvZMzfTSQkjHwzOThaP/ConnectionManager>',
      'host': '192.168.213.107:30020',
@@ -87,14 +102,18 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                             self.service.id,
                             self.backend_name,
                             request.client, request.code))
+        command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
+        headers = request.received_headers
+        louie.send('UPnT.event.message_received', None, command, headers, data)
+
         if request.code != 200:
             self.debug("data:", data)
         else:
             headers = request.getAllHeaders()
             try:
-                #print self.subscribers
-                #print headers['sid']
+                self.debug(self.subscribers)
+                self.debug(headers['sid'])
                 if self.subscribers.has_key(headers['sid']):
                     s = self.subscribers[headers['sid']]
                 elif not headers.has_key('callback'):
@@ -125,7 +144,11 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                             self.service.id,
                             self.backend_name,
                             request.client, request.code))
+        command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
+        headers = request.received_headers
+        louie.send('UPnT.event.message_received', None, command, headers, data)
+
         if request.code != 200:
             self.debug("data:", data)
         else:
@@ -135,7 +158,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             except:
                 """ XXX if not found set right error code """
                 pass
-            #print self.subscribers
+            self.debug(self.subscribers)
         return ""
 
 class Event(dict):
@@ -154,12 +177,12 @@ class EventProtocol(Protocol, log.Loggable):
         self.action = action
 
     def __del__(self):
+        self.debug("EventProtocol deleted")
         pass
-        #print "EventProtocol deleted"
 
     def dataReceived(self, data):
         self.info("response received from the Service Events HTTP server ")
-        #self.debug(data)
+        self.debug(data)
         cmd, headers = utils.parse_http_response(data)
         self.debug("%r %r", cmd, headers)
         try:
@@ -170,14 +193,14 @@ class EventProtocol(Protocol, log.Loggable):
                 timeout = int(timeout[len('Second-'):])
                 self.service.set_timeout(time.time() + timeout)
         except:
-            #print headers
+            self.debug(headers)
             pass
 
         #del self.service
         #del self
 
     def connectionLost( self, reason):
-        #print "connection closed from the Service Events HTTP server"
+        self.debug("connection closed from the Service Events HTTP server")
         pass
 
 def unsubscribe(service, action='unsubscribe'):
@@ -219,7 +242,7 @@ def subscribe(service, action='subscribe'):
             # XXX use address and port set in the coherence instance
             #ip_address = p.transport.getHost().host
             global hostname, web_server_port
-            #print hostname, web_server_port
+            log.debug(log_category, "hostname %s, port: %s", hostname, web_server_port)
             url = 'http://%s:%d/events' % (hostname, web_server_port)
             request.append("CALLBACK: <%s>" % url)
             request.append("NT: upnp:event")
@@ -262,21 +285,23 @@ def subscribe(service, action='subscribe'):
 
     prepare_connection(service, action)
 
-    #print "event.subscribe finished"
+    print 'DEBUG event_protocol\t' + "event.subscribe finished" + '\t(coherence/upnp/core/event.py:222)'
 
-class NotificationProtocol(Protocol):
+class NotificationProtocol(Protocol, log.Loggable):
+    logCategory = 'event_notification_protocol'
 
     def __init__(self):
         pass
 
     def dataReceived(self, data):
-        #print "Notificationresponse received"
+        self.debug("Notification response received (%r)", data)
+        #louie.send('UPnT.event.notification_response', None, data)
         #cmd, headers = utils.parse_http_response(data)
-        #print cmd, headers
+        #self.debug(cmd, headers)
         pass
 
     def connectionLost( self, reason):
-        #print "connection closed from the Service Events HTTP server"
+        self.debug("connection closed from the Service Events HTTP server")
         pass
 
 
