@@ -158,9 +158,9 @@ class Coherence(log.Loggable):
                 self.error("hostname can't be resolved, maybe a system misconfiguration?")
                 self.hostname = '127.0.0.1'
 
-            if self.hostname == '127.0.0.1':
-                """ use interface detection via routing table as last resort """
-                self.hostname = get_host_address()
+        if self.hostname == '127.0.0.1':
+            """ use interface detection via routing table as last resort """
+            self.hostname = get_host_address()
 
         self.info('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
