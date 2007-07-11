@@ -121,6 +121,7 @@ class INotify(FileDescriptor, object):
         if obj is not None:
             return obj
         else:
+
             obj = super(INotify, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
             if ctypes == None:
@@ -152,10 +153,19 @@ class INotify(FileDescriptor, object):
             obj._watchpoints = {}
             return obj
 
-    def __del__(self):
-        if os and self._fd >= 0:
-            os.close(self._fd)
+    def release(self):
+        reactor.removeReader(self)
+        if self._fd >= 0:
+            try:
+                os.close(self._fd)
+            except OSError:
+                pass
+            
+        if hasattr(INotify, '_instance_'):
+            del INotify._instance_
 
+    __del__ = release
+    
     def inotify_init(self):
         return self.libc.syscall(self._init_syscall_id)
 
