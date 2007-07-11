@@ -82,10 +82,7 @@ class SOAPProxy(object):
                 result[elem.tag] = self.decode_result(elem)
         #print "_cbGotResult 3", result
 
-        if len(result) == 1:
-            return result[0]
-        else:
-            return result
+        return result
 
     def decode_result(self, element):
         type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')
