@@ -123,7 +123,8 @@ class Object:
     writeStatus = None
     date = None
     albumArtURI = None
-    
+    artist = None
+
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
         self.res = []
@@ -178,6 +179,8 @@ class Object:
             e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
             e.attrib['dlna:profileID'] = 'JPEG_TN'
 
+        if self.artist is not None:
+            ET.SubElement(root, 'upnp:artist').text = self.artist
 
         return root
 
@@ -201,6 +204,10 @@ class Object:
         for child in elt.getchildren():
             if child.tag.endswith('title'):
                 self.title = child.text
+            if child.tag.endswith('albumArtURI'):
+                self.albumArtURI = child.text
+            if child.tag.endswith('artist'):
+                self.artist = child.text
             elif child.tag.endswith('class'):
                 self.upnp_class = child.text
             elif child.tag.endswith('res'):
@@ -343,7 +350,6 @@ class MusicTrack(AudioItem):
 
     upnp_class = AudioItem.upnp_class + '.musicTrack'
 
-    artist = None
     album = None
     originalTrackNumber = None
     playlist = None
@@ -353,9 +359,6 @@ class MusicTrack(AudioItem):
     def toElement(self):
 
         root = AudioItem.toElement(self)
-
-        if self.artist is not None:
-            ET.SubElement(root, 'upnp:artist').text = self.artist
 
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
