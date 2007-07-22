@@ -294,7 +294,7 @@ class FSStore(log.Loggable):
         except:
             self.inotify = None
 
-        ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
+        self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
         if len(self.content)>1:
@@ -303,9 +303,9 @@ class FSStore(log.Loggable):
             parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True)
 
         for path in self.content:
-            if ignore_file_pattern.match(path):
+            if self.ignore_file_pattern.match(path):
                 continue
-            self.walk(path, parent, ignore_file_pattern)
+            self.walk(path, parent, self.ignore_file_pattern)
 
         #self.update_id = 0
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -423,7 +423,8 @@ class FSStore(log.Loggable):
 
         if mask & IN_CHANGED:
             # FIXME react maybe on access right changes, loss of read rights?
-            print '%s was changed, parent %d (%s)' % (path, parameter, iwp.path)
+            #print '%s was changed, parent %d (%s)' % (path, parameter, iwp.path)
+            pass
 
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
             #print '%s was deleted, parent %d (%s)' % (path, parameter, iwp.path)
@@ -435,7 +436,10 @@ class FSStore(log.Loggable):
             #else:
             #    print 'file %s was created, parent %d (%s)' % (path, parameter, iwp.path)
             if self.get_id_by_name(parameter,filename) is None:
-                self.append( path, self.get_by_id(parameter))
+                if mask & IN_ISDIR:
+                    self.walk(path, self.get_by_id(parameter), self.ignore_file_pattern)
+                else:
+                    self.append(path, self.get_by_id(parameter))
 
     def getnextID(self):
         ret = self.next_id
