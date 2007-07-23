@@ -129,8 +129,7 @@ class Coherence(log.Loggable):
         network_if = config.get('interface')
 
         self.web_server_port = int(config.get('serverport', 0))
-        log.init()
-
+        log.init(config.get('logfile', None))
 
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)

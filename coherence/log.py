@@ -21,9 +21,9 @@ def customStderrHandler(level, object, category, file, line, message):
 
     if isinstance(message, unicode):
         message = message.encode('utf-8')
- 
+
     message = "".join(message.splitlines())
- 
+
     o = ""
     if object:
         o = '"' + object + '"'
@@ -34,7 +34,7 @@ def customStderrHandler(level, object, category, file, line, message):
 
         # level   cat      time
         # 5 + 1 + 27 + 1 + 15 + 1 + 30 == 80
-     
+
         sys.stderr.write('%-5s %-27s %-15s ' % (
             getLevelName(level), category, time.strftime("%b %d %H:%M:%S")))
         sys.stderr.write(' %s %s\n' % (message, where))
@@ -51,14 +51,17 @@ def customStderrHandler(level, object, category, file, line, message):
             os._exit(os.EX_OSERR)
         # otherwise ignore it, there's nothing you can do
 
-def init():
+def init(logfile=None,loglevel='*:2'):
     externlog.init('COHERENCE_DEBUG')
     externlog.setPackageScrubList('coherence', 'twisted')
 
+    if logfile is not None:
+        outputToFiles(logfile, logfile)
+
     # log WARNINGS by default
     if not os.getenv('COHERENCE_DEBUG'):
-        setDebug('*:2')
-    
+        setDebug(loglevel)
+
     if externlog.stderrHandler in externlog._log_handlers_limited:
         externlog.removeLimitedLogHandler(externlog.stderrHandler)
         externlog.addLimitedLogHandler(customStderrHandler)
@@ -86,4 +89,3 @@ class Loggable(externlog.Loggable, object):
 
     def msg(self, message, *args):
         self.info(message, *args)
-
