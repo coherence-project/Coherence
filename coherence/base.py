@@ -203,8 +203,8 @@ class Coherence(log.Loggable):
                     for entrypoint in pkg_resources.iter_entry_points(id):
                         try:
                             self.installed_plugins[entrypoint.name] = entrypoint.load()
-                        except ImportError:
-                            self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
+                        except ImportError, msg:
+                            self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                             self.info(traceback.format_exc())
 
         get_installed_plugins(("coherence.plugins.backend.media_server",
