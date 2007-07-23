@@ -7,6 +7,18 @@ from coherence.extern.log import log as externlog
 from coherence.extern.log.log import *
 import os
 
+def human2level(levelname):
+    levelname = levelname.lower()
+    if levelname.startswith('error'):
+        return 1
+    if levelname.startswith('warn'):
+        return 2
+    if levelname.startswith('info'):
+        return 3
+    if levelname.startswith('debug'):
+        return 4
+    return 5
+
 def customStderrHandler(level, object, category, file, line, message):
     """
     A log handler that writes to stderr.
@@ -66,6 +78,11 @@ def init(logfile=None,loglevel='*:2'):
         externlog.removeLimitedLogHandler(externlog.stderrHandler)
         externlog.addLimitedLogHandler(customStderrHandler)
 
+def set_debug(loglevel):
+    setDebug(loglevel)
+
+def show_levels():
+    print externlog._categories
 
 # Make Loggable a new-style object
 class Loggable(externlog.Loggable, object):
