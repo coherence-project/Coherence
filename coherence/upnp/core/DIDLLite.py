@@ -124,6 +124,7 @@ class Object:
     date = None
     albumArtURI = None
     artist = None
+    originalTrackNumber=None
 
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
@@ -182,6 +183,9 @@ class Object:
         if self.artist is not None:
             ET.SubElement(root, 'upnp:artist').text = self.artist
 
+        if self.originalTrackNumber is not None:
+            ET.SubElement(root, 'upnp:originalTrackNumber').text = str(self.originalTrackNumber)
+
         return root
 
     def toString(self):
@@ -206,6 +210,8 @@ class Object:
                 self.title = child.text
             if child.tag.endswith('albumArtURI'):
                 self.albumArtURI = child.text
+            if child.tag.endswith('originalTrackNumber'):
+                self.originalTrackNumber = child.text
             if child.tag.endswith('artist'):
                 self.artist = child.text
             elif child.tag.endswith('class'):
@@ -268,7 +274,7 @@ class ImageItem(Item):
             ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
 
         if self.rating is not None:
-            ET.SubElement(root, 'upnp:rating').text = self.rating
+            ET.SubElement(root, 'upnp:rating').text = str(self.rating)
 
         if self.storageMedium is not None:
             ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
