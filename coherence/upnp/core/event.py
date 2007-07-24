@@ -21,7 +21,7 @@ web_server_port = None
 
 class EventServer(resource.Resource, log.Loggable):
     logCategory = 'event_server'
-    
+
     def __init__(self, control_point):
         self.coherence = control_point.coherence
         self.control_point = control_point
@@ -73,7 +73,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
          'sid': 'uuid:oAQbxiNlyYojCAdznJnC'}}
     """
     log_category = 'event_subscription_server'
-    
+
     def __init__(self, service):
         self.service = service
         self.subscribers = service.get_subscribers()
@@ -148,7 +148,7 @@ class Event(dict):
 
 class EventProtocol(Protocol, log.Loggable):
     logCategory = 'event_protocol'
-    
+
     def __init__(self, service, action):
         self.service = service
         self.action = action
@@ -224,6 +224,7 @@ def subscribe(service, action='subscribe'):
             request.append("CALLBACK: <%s>" % url)
             request.append("NT: upnp:event")
 
+        resonse.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
         request.append( "Content-Length: 0")
         request.append( "")
         request.append( "")
@@ -286,7 +287,7 @@ def send_notification(s, xml):
     return its response
     """
     log_category = "event_protocol"
-    
+
     _,host_port,path,_,_ = urlsplit(s['callback'])
     if host_port.find(':') != -1:
         host,port = tuple(host_port.split(':'))
