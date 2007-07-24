@@ -32,7 +32,7 @@ class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):
         self.service = server
         self.variables = server.get_variables()
         self.actions = server.get_actions()
-        
+
 
 class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
 
@@ -41,15 +41,15 @@ class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
         if backend == None:
             backend = self.device.backend
         resource.Resource.__init__(self)
-        version = 1
+        self.version = 1
         self.namespace = 'microsoft.com'
-        service.ServiceServer.__init__(self, 'X_MS_MediaReceiverRegistrar', version, backend)
-        
+        service.ServiceServer.__init__(self, 'X_MS_MediaReceiverRegistrar', self.version, backend)
+
         self.control = MediaReceiverRegistrarControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
         self.putChild('control', self.control)
 
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:

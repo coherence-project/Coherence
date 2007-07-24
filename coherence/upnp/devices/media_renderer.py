@@ -101,7 +101,12 @@ class RootDeviceXML(static.Data, log.Loggable):
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                ET.SubElement( s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, version)
+                if( hasattr(service,'version') and
+                    service.version < version):
+                    v = service.version
+                else:
+                    v = version
+                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(v))
                 try:
                     namespace = service.namespace
                 except:
@@ -263,6 +268,9 @@ class MediaRenderer(log.Loggable):
                         silent=silent)
 
             for service in self._services:
+                if( hasattr(service,'version') and
+                    version > service.version):
+                        continue
                 try:
                     namespace = service.namespace
                 except:
