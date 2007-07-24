@@ -313,6 +313,8 @@ def send_notification(s, xml):
                  s['sid'], s['callback'])
         log.debug(log_category, "request: %r", request)
         s['seq'] += 1
+        if s['seq'] > 0xffffffff:
+            s['seq'] = 1
         return p.transport.write(request)
 
     def got_error(failure):
