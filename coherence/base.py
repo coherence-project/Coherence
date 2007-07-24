@@ -130,14 +130,21 @@ class Coherence(log.Loggable):
 
         self.web_server_port = int(config.get('serverport', 0))
 
-        log.init(config.get('logfile', None),'*:%d' % log.human2level(config.get('logmode', 'error')))
+        """ initializes logsystem
+            a COHERENCE_DEBUG environment variable overwrites
+            all level settings here
+        """
         subsystem_log = config.get('subsystem_log',{})
         _debug = []
         for subsystem,level in subsystem_log.items():
             self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
             _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
         if len(_debug) > 0:
-            log.set_debug(','.join(_debug))
+            _debug = ','.join(_debug)
+        else:
+            _debug = '*:%d' % log.human2level(config.get('logmode', 'error'))
+        log.init(config.get('logfile', None),_debug)
+
 
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
