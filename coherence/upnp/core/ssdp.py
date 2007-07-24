@@ -166,7 +166,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                         usn = v
                     if k != 'MANIFESTATION':
                         response.append('%s: %s' % (k, v))
-                resonse.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
+                response.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))

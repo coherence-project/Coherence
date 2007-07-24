@@ -224,7 +224,7 @@ def subscribe(service, action='subscribe'):
             request.append("CALLBACK: <%s>" % url)
             request.append("NT: upnp:event")
 
-        resonse.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
+        request.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
         request.append( "Content-Length: 0")
         request.append( "")
         request.append( "")
