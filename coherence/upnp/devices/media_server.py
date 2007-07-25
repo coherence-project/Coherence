@@ -468,9 +468,12 @@ class MediaServer(log.Loggable):
                         silent=silent)
 
             for service in self._services:
-                if( hasattr(service,'version') and
-                    service.version < version):
+                silencio = silent
+                if hasattr(service,'version'):
+                    if service.version < version:
                         continue
+                    elif service.version == version:
+                        silencio = False
                 try:
                     namespace = service.namespace
                 except:
@@ -480,6 +483,6 @@ class MediaServer(log.Loggable):
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, version),
                             self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                            silent=silent)
+                            silent=silencio)
 
             version -= 1
