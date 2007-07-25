@@ -521,8 +521,12 @@ class DIDLElement(ElementInterface):
         return self._items
 
     def toString(self):
-        preamble = """<?xml version="1.0" encoding="utf-8"?>"""
-        return preamble + ET.tostring(self,encoding='utf-8')
+        """ sigh - having that optional preamble here
+            breaks some of the older ContentDirectoryClients
+        """
+        #preamble = """<?xml version="1.0" encoding="utf-8"?>"""
+        #return preamble + ET.tostring(self,encoding='utf-8')
+        return ET.tostring(self,encoding='utf-8')
 
     @classmethod
     def fromString(cls, aString):
