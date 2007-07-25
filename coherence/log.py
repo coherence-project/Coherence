@@ -98,8 +98,8 @@ class Loggable(externlog.Loggable, object):
             args = (format,) + arguments
         return args
 
-    def critical(self, msg):
-        self.log(msg)
+    def critical(self, msg, *args):
+        self.log(msg, *args)
 
     def error(self, msg, *args):
         self.log(msg, *args)
