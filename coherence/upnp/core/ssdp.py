@@ -164,7 +164,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 for k, v in i.items():
                     if k == 'USN':
                         usn = v
-                    if k != 'MANIFESTATION':
+                    if k not in ('MANIFESTATION','SILENT'):
                         response.append('%s: %s' % (k, v))
                 response.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
 
