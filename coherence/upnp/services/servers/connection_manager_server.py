@@ -28,7 +28,7 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                               log.Loggable):
     logCategory = 'connection_manager_server'
-    
+
     def __init__(self, device, backend=None):
         self.device = device
         if backend == None:
@@ -196,15 +196,19 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
             local_protocol_infos = self.get_variable('SinkProtocolInfo').value
         if self.device.device_type == 'MediaServer':
             local_protocol_infos = self.get_variable('SourceProtocolInfo').value
-        self.info(RemoteProtocolInfo, '--', local_protocol_infos)
+        self.debug('ProtocalInfos:',RemoteProtocolInfo, '--', local_protocol_infos)
+
+        try:
+            remote_protocol,remote_network,remote_content_format,_ = RemoteProtocolInfo.split(':')
+        except:
+            self.warning("unable to process RemoteProtocolInfo", RemoteProtocolInfo)
+            return failure.Failure(errorCode(701))
 
         for protocol_info in local_protocol_infos.split(','):
-            print RemoteProtocolInfo
-            remote_protocol,remote_network,remote_content_format,_ = RemoteProtocolInfo.split(':')
-            print remote_protocol,remote_network,remote_content_format
-            print protocol_info
+            #print remote_protocol,remote_network,remote_content_format
+            #print protocol_info
             local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
-            print local_protocol,local_network,local_content_format
+            #print local_protocol,local_network,local_content_format
             if((remote_protocol == local_protocol or
                 remote_protocol == '*' or
                 local_protocol == '*') and
@@ -221,6 +225,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                                         PeerConnectionID,
                                         PeerConnectionManager)
             return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
+
         return failure.Failure(errorCode(701))
 
     def upnp_ConnectionComplete(self, *args, **kwargs):
