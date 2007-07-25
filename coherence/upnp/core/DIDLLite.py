@@ -123,7 +123,9 @@ class Object:
     writeStatus = None
     date = None
     albumArtURI = None
-    
+    artist = None
+    originalTrackNumber=None
+
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
         self.res = []
@@ -178,6 +180,11 @@ class Object:
             e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
             e.attrib['dlna:profileID'] = 'JPEG_TN'
 
+        if self.artist is not None:
+            ET.SubElement(root, 'upnp:artist').text = self.artist
+
+        if self.originalTrackNumber is not None:
+            ET.SubElement(root, 'upnp:originalTrackNumber').text = str(self.originalTrackNumber)
 
         return root
 
@@ -201,6 +208,12 @@ class Object:
         for child in elt.getchildren():
             if child.tag.endswith('title'):
                 self.title = child.text
+            if child.tag.endswith('albumArtURI'):
+                self.albumArtURI = child.text
+            if child.tag.endswith('originalTrackNumber'):
+                self.originalTrackNumber = child.text
+            if child.tag.endswith('artist'):
+                self.artist = child.text
             elif child.tag.endswith('class'):
                 self.upnp_class = child.text
             elif child.tag.endswith('res'):
@@ -261,7 +274,7 @@ class ImageItem(Item):
             ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
 
         if self.rating is not None:
-            ET.SubElement(root, 'upnp:rating').text = self.rating
+            ET.SubElement(root, 'upnp:rating').text = str(self.rating)
 
         if self.storageMedium is not None:
             ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
@@ -343,7 +356,6 @@ class MusicTrack(AudioItem):
 
     upnp_class = AudioItem.upnp_class + '.musicTrack'
 
-    artist = None
     album = None
     originalTrackNumber = None
     playlist = None
@@ -353,9 +365,6 @@ class MusicTrack(AudioItem):
     def toElement(self):
 
         root = AudioItem.toElement(self)
-
-        if self.artist is not None:
-            ET.SubElement(root, 'upnp:artist').text = self.artist
 
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
@@ -512,8 +521,12 @@ class DIDLElement(ElementInterface):
         return self._items
 
     def toString(self):
-        preamble = """<?xml version="1.0" encoding="utf-8"?>"""
-        return preamble + ET.tostring(self,encoding='utf-8')
+        """ sigh - having that optional preamble here
+            breaks some of the older ContentDirectoryClients
+        """
+        #preamble = """<?xml version="1.0" encoding="utf-8"?>"""
+        #return preamble + ET.tostring(self,encoding='utf-8')
+        return ET.tostring(self,encoding='utf-8')
 
     @classmethod
     def fromString(cls, aString):

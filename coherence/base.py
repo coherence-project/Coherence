@@ -130,7 +130,21 @@ class Coherence(log.Loggable):
         network_if = config.get('interface')
 
         self.web_server_port = int(config.get('serverport', 0))
-        log.init()
+
+        """ initializes logsystem
+            a COHERENCE_DEBUG environment variable overwrites
+            all level settings here
+        """
+        subsystem_log = config.get('subsystem_log',{})
+        _debug = []
+        for subsystem,level in subsystem_log.items():
+            self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
+            _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
+        if len(_debug) > 0:
+            _debug = ','.join(_debug)
+        else:
+            _debug = '*:%d' % log.human2level(config.get('logmode', 'error'))
+        log.init(config.get('logfile', None),_debug)
 
 
         plugin = louie.TwistedDispatchPlugin()
@@ -159,9 +173,9 @@ class Coherence(log.Loggable):
                 self.error("hostname can't be resolved, maybe a system misconfiguration?")
                 self.hostname = '127.0.0.1'
 
-            if self.hostname == '127.0.0.1':
-                """ use interface detection via routing table as last resort """
-                self.hostname = get_host_address()
+        if self.hostname == '127.0.0.1':
+            """ use interface detection via routing table as last resort """
+            self.hostname = get_host_address()
 
         self.info('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
@@ -204,8 +218,8 @@ class Coherence(log.Loggable):
                     for entrypoint in pkg_resources.iter_entry_points(id):
                         try:
                             self.installed_plugins[entrypoint.name] = entrypoint.load()
-                        except ImportError:
-                            self.warning("Can't load plugin %s, maybe missing dependencies..." % entrypoint.name)
+                        except ImportError, msg:
+                            self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                             self.info(traceback.format_exc())
 
         get_installed_plugins(("coherence.plugins.backend.media_server",

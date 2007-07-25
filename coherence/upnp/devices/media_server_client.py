@@ -22,10 +22,10 @@ class MediaServerClient(log.Loggable):
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:ContentDirectory:1",
                                       "urn:schemas-upnp-org:service:ContentDirectory:2"]:
-                self.content_directory = ContentDirectoryClient( service)
+                self.content_directory = ContentDirectoryClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:ConnectionManager:1",
                                       "urn:schemas-upnp-org:service:ConnectionManager:2"]:
-                self.connection_manager = ConnectionManagerClient( service)
+                self.connection_manager = ConnectionManagerClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:AVTransport:1",
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
                 self.av_transport = AVTransportClient( service)

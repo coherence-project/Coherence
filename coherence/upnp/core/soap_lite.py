@@ -35,7 +35,7 @@ UPNPERRORS = {401:'Invalid Action',
               609:'Not Encrypted',
               610:'Invalid Sequence',
               611:'Invalid Control URL',
-              612:'No Such Session',}
+              612:'No Such Session'}
 
 def build_soap_error(status,description='without words'):
     """ builds an UPnP SOAP error msg

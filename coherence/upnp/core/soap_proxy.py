@@ -8,8 +8,10 @@ from coherence.extern.et import ET, namespace_map_update
 from coherence.upnp.core.utils import getPage, parse_xml
 
 from coherence.upnp.core import soap_lite
+from coherence import log
 
-class SOAPProxy(object):
+class SOAPProxy(log.Loggable):
+    logCategory = 'soap_proxy'
     """ A Proxy for making remote SOAP calls.
 
         Based upon twisted.web.soap.Proxy and
@@ -38,13 +40,14 @@ class SOAPProxy(object):
         payload = soap_lite.build_soap_call("{%s}%s" % (ns[1], soapmethod), kwargs,
                                             encoding=None)
 
-        #print "soapaction:", soapaction
-        #print "callRemote:", payload
-        #print "url:", self.url
+        self.debug("soapaction: %r" % soapaction)
+        self.debug("callRemote: %r" % payload)
+        self.debug("url: %r" % self.url)
 
         def gotError(failure, url):
-            print "error requesting", url
-            print failure
+            self.debug("error requesting %s" % url)
+            self.debug(failure)
+            return failure
 
         return getPage(self.url, postdata=payload, method="POST",
                         headers={'content-type': 'text/xml ;charset="utf-8"',
@@ -82,10 +85,7 @@ class SOAPProxy(object):
                 result[elem.tag] = self.decode_result(elem)
         #print "_cbGotResult 3", result
 
-        if len(result) == 1:
-            return result[0]
-        else:
-            return result
+        return result
 
     def decode_result(self, element):
         type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')

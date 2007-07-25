@@ -77,7 +77,10 @@ class ContentDirectoryClient:
                 i['parent_id'] =  item.parentID
                 if hasattr(item,'childCount'):
                     i['child_count'] =  item.childCount
-                i['date'] =  item.date
+                if hasattr(item,'date'):
+                    i['date'] =  item.date
+                if hasattr(item,'albumArtURI'):
+                    i['album_art_uri'] = item.albumArtURI
                 if hasattr(item,'res'):
                     resources = {}
                     for res in item.res:
@@ -238,9 +241,7 @@ class ContentDirectoryClient:
         if isinstance(elements, dict):
             elements = self.dict2item(elements)
         if isinstance(elements,DIDLLite.Object):
-            print elements
             didl = DIDLLite.DIDLElement()
-            print didl
             didl.addItem(elements)
             elements=didl.toString()
         if elements is None:

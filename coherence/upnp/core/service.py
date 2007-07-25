@@ -38,7 +38,7 @@ def unsubscribe(service):
 
 class Service(log.Loggable):
     logCategory = 'service'
-    
+
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
         if not control_url.startswith('/'):
@@ -247,7 +247,7 @@ moderated_variables = \
 
 class ServiceServer(log.Loggable):
     logCategory = 'service_server'
-    
+
     def __init__(self, id, version, backend):
         self.id = id
         self.version = version
@@ -310,11 +310,11 @@ class ServiceServer(log.Loggable):
         if len(notify) <= 0:
             return
 
-        root = ET.Element('propertyset')
-        root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
+        root = ET.Element('e:propertyset')
+        root.attrib['xmlns:e']='urn:schemas-upnp-org:event-1-0'
         evented_variables = 0
         for n in notify:
-            e = ET.SubElement( root, 'property')
+            e = ET.SubElement( root, 'e:property')
             if n.name == 'LastChange':
                 text = self.build_last_change_event(n.instance)
                 if text is not None:
@@ -386,9 +386,9 @@ class ServiceServer(log.Loggable):
             return None
 
     def build_single_notification(self, instance, variable_name, value):
-        root = ET.Element('propertyset')
-        root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
-        e = ET.SubElement( root, 'property')
+        root = ET.Element('e:propertyset')
+        root.attrib['xmlns:e']='urn:schemas-upnp-org:event-1-0'
+        e = ET.SubElement( root, 'e:property')
         s = ET.SubElement( e, variable_name).text = str(value)
         return ET.tostring( root, encoding='utf-8')
 
@@ -424,15 +424,15 @@ class ServiceServer(log.Loggable):
         if len(notify) <= 0:
             return
 
-        root = ET.Element('propertyset')
-        root.attrib['xmlns']='urn:schemas-upnp-org:event-1-0'
+        root = ET.Element('e:propertyset')
+        root.attrib['xmlns:e']='urn:schemas-upnp-org:event-1-0'
 
         if isinstance( notify, variable.StateVariable):
             notify = [notify,]
 
         evented_variables = 0
         for n in notify:
-            e = ET.SubElement( root, 'property')
+            e = ET.SubElement( root, 'e:property')
             if n.name == 'LastChange':
                 text = self.build_last_change_event(instance=n.instance)
                 if text is not None:

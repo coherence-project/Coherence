@@ -36,7 +36,7 @@ depends on:
             CoversByAmazon - https://coherence.beebits.net/browser/trunk/coherence/extern/covers_by_amazon.py
 """
 
-import os
+import os, shutil
 import string
 import urllib
 
@@ -80,8 +80,7 @@ except ImportError:
             return tags
 
     except ImportError:
-        log.critical("we need some installed id3 tag library for this backend")
-        raise ImportError
+        raise ImportError, "we need some installed id3 tag library for this backend"
 
 
 
@@ -166,7 +165,7 @@ class Artist(item.Item):
                             sort=(Track.title.ascending)
                             ))])
 
-        children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self))
+        children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self,sort=Album.title.ascending))
         if request_count == 0:
             return children[start:]
         else:
@@ -203,7 +202,7 @@ class Album(item.Item):
     cover = attributes.text(default=u'')
 
     def get_children(self,start=0,request_count=0):
-        children = list(self.store.query(Track, Track.album == self))
+        children = list(self.store.query(Track, Track.album == self,sort=Track.track_nr.ascending))
         if request_count == 0:
             return children[start:]
         else:
@@ -351,9 +350,9 @@ class MediaStore(log.Loggable):
         self.server = server
         self.update_id = 0
 
-        self.medialocation = kwargs.get('medialocation','content/audio')
-        self.coverlocation = kwargs.get('coverlocation','content/covers')
-        if self.coverlocation[-1] != '/':
+        self.medialocation = kwargs.get('medialocation','tests/content/audio')
+        self.coverlocation = kwargs.get('coverlocation',None)
+        if self.coverlocation is not None and self.coverlocation[-1] != '/':
             self.coverlocation = self.coverlocation + '/'
         self.mediadb = kwargs.get('mediadb',MEDIA_DB)
 
@@ -383,6 +382,7 @@ class MediaStore(log.Loggable):
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def walk(self, path):
+        #print "walk", path
         if os.path.exists(path):
             for filename in os.listdir(path):
                 if os.path.isdir(os.path.join(path,filename)):
@@ -398,6 +398,22 @@ class MediaStore(log.Loggable):
         self.filelist = []
         for path in musiclocation:
             self.walk(path)
+
+        def check_for_cover_art(path):
+            #print "check_for_cover_art", path
+            """ let's try to find in the current directory some jpg file,
+                or png if the jpg search fails, and take the first one
+                that comes around
+            """
+            jpgs = [i for i in os.listdir(path) if os.path.splitext(i)[1] in ('.jpg', '.JPG')]
+            try:
+                return unicode(jpgs[0])
+            except IndexError:
+                pngs = [i for i in os.listdir(path) if os.path.splitext(i)[1] in ('.png', '.PNG')]
+                try:
+                    return unicode(pngs[0])
+                except IndexError:
+                    return u''
 
         for file in self.filelist:
             tags = get_tags(file)
@@ -416,12 +432,22 @@ class MediaStore(log.Loggable):
                 continue;
                 title = u'UNKNOWN_TITLE'
 
-            #print "Tags:", album, artist, file
+            #print "Tags:", file, album, artist, title, track
 
             artist_ds = self.db.findOrCreate(Artist, name=unicode(artist,'utf8'))
             album_ds = self.db.findOrCreate(Album,
                                             title=unicode(album,'utf8'),
                                             artist=artist_ds)
+            if len(album_ds.cover) == 0:
+                dirname = unicode(os.path.dirname(file),'utf-8')
+                album_ds.cover = check_for_cover_art(dirname)
+                if len(album_ds.cover) > 0:
+                    filename = u"%s - %s" % ( album_ds.artist.name, album_ds.title)
+                    filename = sanitize(filename + os.path.splitext(album_ds.cover)[1])
+                    filename = os.path.join(dirname,filename)
+                    shutil.move(os.path.join(dirname,album_ds.cover),filename)
+                    album_ds.cover = filename
+            #print album_ds.cover
             track_ds = self.db.findOrCreate(Track,
                                             title=unicode(title,'utf8'),
                                             track_nr=int(track),
@@ -477,7 +503,8 @@ class MediaStore(log.Loggable):
             filename = "%s - %s" % ( album.artist.name, album.title)
             filename = sanitize(filename)
 
-            cover_path = os.path.join(self.coverlocation,filename +'.jpg')
+            if self.coverlocation is not None:
+                cover_path = os.path.join(self.coverlocation,filename +'.jpg')
             if os.path.exists(cover_path) is True:
                 print "cover found:", cover_path
                 album.cover = cover_path
@@ -511,6 +538,7 @@ class MediaStore(log.Loggable):
         return item
 
     def upnp_init(self):
+        #print "MediaStore upnp_init"
         db_is_new = False
         if os.path.exists(self.mediadb) is False:
             db_is_new = True

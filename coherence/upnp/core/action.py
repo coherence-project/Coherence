@@ -29,7 +29,7 @@ class Argument:
 
 class Action(log.Loggable):
     logCategory = 'action'
-    
+
     def __init__(self, service, name, implementation, arguments_list):
         self.service = service
         self.name = name
@@ -73,7 +73,7 @@ class Action(log.Loggable):
         self.info("in arguments", [a.get_name() for a in in_arguments])
         instance_id = 0
         for arg_name, arg in kwargs.iteritems():
-            l = [ a for a in in_arguments if arg_name == a.get_name()]
+            l = [a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
@@ -90,6 +90,7 @@ class Action(log.Loggable):
                                                             service.service_type,
                                                             self.service.control_url))
             self.info(failure)
+            return failure
 
         client = self._get_client()
         d = client.callRemote(self.name, **kwargs)
@@ -105,11 +106,11 @@ class Action(log.Loggable):
                                                                     results))
 
         # XXX A_ARG_TYPE_ arguments probably don't need a variable update
-        if len(out_arguments) == 1:
-            self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
-        elif len(out_arguments) > 1:
-            if not isinstance(results, dict):
-                results = results._asdict()
+        #if len(out_arguments) == 1:
+        #    self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
+        #elif len(out_arguments) > 1:
+
+        if len(out_arguments) > 0:
             for arg_name, value in results.items():
                 state_variable_name = [a.get_state_variable() for a in out_arguments if a.get_name() == arg_name]
                 self.service.get_state_variable(state_variable_name[0], instance_id).update(value)

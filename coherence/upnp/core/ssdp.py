@@ -47,7 +47,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             l.start(777.0, now=False)
 
         except error.CannotListenError, err:
-            self.msg("There seems to be already a SSDP server running on this host, no need starting a second one.")
+            self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
     def shutdown(self):
         '''Make sure we send out the byebye notifications.'''
@@ -83,7 +83,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            self.msg('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
+            self.warning('Unknown SSDP command %s %s' % (cmd[0], cmd[1]))
 
     def register(self, manifestation, usn, st, location,
                         server=SERVER_ID,
@@ -92,7 +92,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         """Register a service or device that this SSDP server will
         respond to."""
 
-        self.msg('Registering %s (%s)' % (st, location))
+        self.info('Registering %s (%s)' % (st, location))
 
         self.known[usn] = {}
         self.known[usn]['USN'] = usn
@@ -134,8 +134,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
 
-        self.msg('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
-        self.msg('Notification headers:', headers)
+        self.info('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
+        self.debug('Notification headers:', headers)
 
         if headers['nts'] == 'ssdp:alive':
             if not self.isKnown(headers['usn']):
@@ -145,19 +145,22 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if self.isKnown(headers['usn']):
                 self.unRegister(headers['usn'])
         else:
-            self.msg('Unknown subtype %s for notification type %s' %
+            self.warning('Unknown subtype %s for notification type %s' %
                     (headers['nts'], headers['nt']))
 
     def discoveryRequest(self, headers, (host, port)):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
 
-        self.msg('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
-        self.msg('Discovery request for %s' % headers['st'])
+        self.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
+        self.info('Discovery request for %s' % headers['st'])
 
         # Do we know about this service?
         for i in self.known.values():
             if i['MANIFESTATION'] == 'remote':
+                continue
+            if(headers['st'] == 'ssdp:all' and
+               i['SILENT'] == True):
                 continue
             if( i['ST'] == headers['st'] or
                 headers['st'] == 'ssdp:all'):
@@ -167,12 +170,13 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 for k, v in i.items():
                     if k == 'USN':
                         usn = v
-                    if k != 'MANIFESTATION':
+                    if k not in ('MANIFESTATION','SILENT'):
                         response.append('%s: %s' % (k, v))
+                response.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
-                self.msg('send Discovery response with delay %d for %s' % (delay, usn))
+                self.info('send Discovery response with delay %d for %s' % (delay, usn))
                 reactor.callLater(delay, self.transport.write,
                                 '\r\n'.join(response), (host, port))
 
@@ -181,7 +185,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         if self.known[usn]['SILENT'] == True:
             return
-        self.msg('Sending alive notification for %s' % usn)
+        self.info('Sending alive notification for %s' % usn)
 
         resp = [ 'NOTIFY * HTTP/1.1',
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
@@ -194,14 +198,14 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
-        self.msg('doNotify content', resp)
+        self.debug('doNotify content', resp)
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
         self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 
     def doByebye(self, st):
         """Do byebye"""
 
-        self.msg('Sending byebye notification for %s' % st)
+        self.info('Sending byebye notification for %s' % st)
 
         resp = [ 'NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
@@ -214,7 +218,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['SILENT']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
-        self.msg('doByebye content', resp)
+        self.debug('doByebye content', resp)
         if self.transport:
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
 

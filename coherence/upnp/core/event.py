@@ -28,7 +28,7 @@ class EventServer(resource.Resource, log.Loggable):
     used for the ControlPoint.
     """
     logCategory = 'event_server'
-    
+
     def __init__(self, control_point):
         self.coherence = control_point.coherence
         self.control_point = control_point
@@ -44,7 +44,7 @@ class EventServer(resource.Resource, log.Loggable):
         command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
         headers = request.received_headers
-        louie.send('UPnT.event.message_received', None, command, headers, data)
+        louie.send('UPnT.event.server_message_received', None, command, headers, data)
 
         if request.code != 200:
             self.info("data:", data)
@@ -88,7 +88,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
          'sid': 'uuid:oAQbxiNlyYojCAdznJnC'}}
     """
     log_category = 'event_subscription_server'
-    
+
     def __init__(self, service):
         self.service = service
         self.subscribers = service.get_subscribers()
@@ -105,7 +105,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
         headers = request.received_headers
-        louie.send('UPnT.event.message_received', None, command, headers, data)
+        louie.send('UPnT.event.client_message_received', None, command, headers, data)
 
         if request.code != 200:
             self.debug("data:", data)
@@ -147,7 +147,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
         headers = request.received_headers
-        louie.send('UPnT.event.message_received', None, command, headers, data)
+        louie.send('UPnT.event.client_message_received', None, command, headers, data)
 
         if request.code != 200:
             self.debug("data:", data)
@@ -171,7 +171,7 @@ class Event(dict):
 
 class EventProtocol(Protocol, log.Loggable):
     logCategory = 'event_protocol'
-    
+
     def __init__(self, service, action):
         self.service = service
         self.action = action
@@ -247,6 +247,7 @@ def subscribe(service, action='subscribe'):
             request.append("CALLBACK: <%s>" % url)
             request.append("NT: upnp:event")
 
+        request.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
         request.append( "Content-Length: 0")
         request.append( "")
         request.append( "")
@@ -311,7 +312,7 @@ def send_notification(s, xml):
     return its response
     """
     log_category = "event_protocol"
-    
+
     _,host_port,path,_,_ = urlsplit(s['callback'])
     if host_port.find(':') != -1:
         host,port = tuple(host_port.split(':'))
@@ -337,6 +338,8 @@ def send_notification(s, xml):
                  s['sid'], s['callback'])
         log.debug(log_category, "request: %r", request)
         s['seq'] += 1
+        if s['seq'] > 0xffffffff:
+            s['seq'] = 1
         return p.transport.write(request)
 
     def got_error(failure):

@@ -160,12 +160,12 @@ class INotify(FileDescriptor, object):
                 os.close(self._fd)
             except OSError:
                 pass
-            
+
         if hasattr(INotify, '_instance_'):
             del INotify._instance_
 
     __del__ = release
-    
+
     def inotify_init(self):
         return self.libc.syscall(self._init_syscall_id)
 
@@ -216,11 +216,11 @@ class INotify(FileDescriptor, object):
                 continue # can this happen?
 
             path = iwp.path
-            name = unicode(name, 'utf-8')
             if name:
+                name = unicode(name, 'utf-8')
                 path = os.path.join(path, name)
 
-            iwp.notify( name, mask)
+                iwp.notify( name, mask)
 
             if( iwp.auto_add and mask & IN_ISDIR and mask & IN_CREATE):
                 self.watch(path, mask = iwp.mask, auto_add = True, callbacks=iwp.callbacks)
