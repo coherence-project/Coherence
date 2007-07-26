@@ -35,36 +35,20 @@ def customStderrHandler(level, object, category, file, line, message):
         message = message.encode('utf-8')
 
     message = "".join(message.splitlines())
-
-    o = ""
-    if object:
-        o = '"' + object + '"'
-
     where = "(%s:%d)" % (file, line)
+    
+    formatted_level = getFormattedLevelName(level)
+    formatted_time = time.strftime("%b %d %H:%M:%S")
+    formatted = '%s %-27s %-15s ' % (formatted_level, category,
+                                     formatted_time)
 
-    try:
+    safeprintf(sys.stderr, formatted)
+    safeprintf(sys.stderr, ' %s %s\n', message, where)
 
-        # level   cat      time
-        # 5 + 1 + 27 + 1 + 15 + 1 + 30 == 80
-
-        sys.stderr.write('%-5s %-27s %-15s ' % (
-            getLevelName(level), category, time.strftime("%b %d %H:%M:%S")))
-        sys.stderr.write(' %s %s\n' % (message, where))
-
-        # old: 5 + 1 + 20 + 1 + 12 + 1 + 32 + 1 + 7 == 80
-        #sys.stderr.write('%-5s %-20s %-12s %-32s [%5d] %-4s %-15s %s\n' % (
-        #    level, o, category, where, os.getpid(),
-        #    "", time.strftime("%b %d %H:%M:%S"), message))
-        sys.stderr.flush()
-    except IOError, e:
-        if e.errno == errno.EPIPE:
-            # if our output is closed, exit; e.g. when logging over an
-            # ssh connection and the ssh connection is closed
-            os._exit(os.EX_OSERR)
-        # otherwise ignore it, there's nothing you can do
+    sys.stderr.flush()
 
 def init(logfile=None,loglevel='*:2'):
-    externlog.init('COHERENCE_DEBUG')
+    externlog.init('COHERENCE_DEBUG', True)
     externlog.setPackageScrubList('coherence', 'twisted')
 
     if logfile is not None:
