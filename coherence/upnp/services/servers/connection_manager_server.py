@@ -224,7 +224,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                                         Direction,
                                         PeerConnectionID,
                                         PeerConnectionManager)
-            return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
+                return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
 
         return failure.Failure(errorCode(701))
 
