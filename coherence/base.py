@@ -144,8 +144,7 @@ class Coherence(log.Loggable):
             _debug = ','.join(_debug)
         else:
             _debug = '*:%d' % log.human2level(config.get('logmode', 'error'))
-        log.init(config.get('logfile', None),_debug)
-
+        log.init(config.get('logfile', None), _debug)
 
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
@@ -260,10 +259,14 @@ class Coherence(log.Loggable):
             pass
         l = []
         for root_device in self.get_devices():
-            l.append(root_device.unsubscribe_service_subscriptions())
             for device in root_device.get_devices():
-                l.append(device.unsubscribe_service_subscriptions())
-            root_device.remove()
+                d = device.unsubscribe_service_subscriptions()
+                l.append(d)
+                d.addCallback(device.remove)
+            d = root_device.unsubscribe_service_subscriptions()
+            l.append(d)
+            d.addCallback(root_device.remove)
+
         self.ssdp_server.shutdown()
         dl = defer.DeferredList(l)
         self.info('Coherence UPnP framework shutdown')

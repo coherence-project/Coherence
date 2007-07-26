@@ -60,19 +60,19 @@ class MediaRendererClient(log.Loggable):
             #self.av_transport.get_transport_info()
             #self.av_transport.get_current_transport_actions()
 
-    def __del__(self):
-        #print "MediaRendererClient deleted"
-        pass
+    #def __del__(self):
+    #    #print "MediaRendererClient deleted"
+    #    pass
 
     def remove(self):
         self.info("removal of MediaRendererClient started")
         if self.rendering_control != None:
-            del self.rendering_control
+            self.rendering_control.remove()
         if self.connection_manager != None:
-            del self.connection_manager
+            self.connection_manager.remove()
         if self.av_transport != None:
-            del self.av_transport
-        del self
+            self.av_transport.remove()
+        #del self
 
     def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

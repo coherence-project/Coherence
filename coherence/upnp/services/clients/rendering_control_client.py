@@ -11,18 +11,18 @@ class RenderingControlClient:
         self.url = service.get_control_url()
         self.service.subscribe()
         #print "RenderingControlClient __init__", self.url
-        
-    def __del__(self):
-        #print "RenderingControlClient deleted"
-        pass
-        
+
+    #def __del__(self):
+    #    #print "RenderingControlClient deleted"
+    #    pass
+
     def remove(self):
         self.service.remove()
         self.service = None
         self.namespace = None
         self.url = None
         del self
-        
+
     def list_presets(self, instance_id=0):
         action = self.service.get_action('ListPresets')
         return action.call(InstanceID=instance_id)

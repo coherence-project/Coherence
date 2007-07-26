@@ -7,6 +7,8 @@ from twisted.web import server, resource
 from twisted.python import log, failure
 from twisted.internet import defer
 
+import louie
+
 from coherence import log, SERVER_ID
 
 from coherence.extern.et import ET, namespace_map_update
@@ -90,6 +92,9 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         """Handle a SOAP command."""
         data = request.content.read()
         headers = request.getAllHeaders()
+        remotehost = request.getClientIP()
+        command = {'method': request.method, 'path': request.path}
+        louie.send('UPnT.control_message', None, command, headers, data, remotehost)
         self.info('soap_request:', headers)
 
         def print_c(e):

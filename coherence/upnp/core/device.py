@@ -37,11 +37,11 @@ class Device(log.Loggable):
 
         self.parse_description()
 
-    def __del__(self):
-        #print "Device removal completed"
-        pass
+    #def __del__(self):
+    #    #print "Device removal completed"
+    #    pass
 
-    def remove(self):
+    def remove(self,*args):
         self.info(self.usn, "removal started")
         while len(self.services)>0:
             service = self.services.pop()
@@ -50,7 +50,7 @@ class Device(log.Loggable):
         if self.client != None:
             louie.send('Coherence.UPnP.Device.remove_client', None, self.usn, self.client)
             self.client = None
-        del self
+        #del self
 
     def is_local(self):
         if self.manifestation == 'local':
@@ -116,7 +116,7 @@ class Device(log.Loggable):
         """ iterate over device's services and renew subscriptions """
         now = time.time()
         for service in self.get_services():
-            if service.get_sid():
+            if service.get_sid() != None:
                 if service.get_timeout() < now:
                     self.warning("wow, we lost an event subscription for %s, " % service.get_id(),
                           "maybe we need to rethink the loop time and timeout calculation?")
@@ -127,7 +127,7 @@ class Device(log.Loggable):
         """ iterate over device's services and unsubscribe subscriptions """
         l = []
         for service in self.get_services():
-            if service.get_sid():
+            if service.get_sid() != None:
                 l.append(service.unsubscribe())
         dl = defer.DeferredList(l)
         return dl

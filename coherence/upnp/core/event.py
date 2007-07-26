@@ -7,7 +7,7 @@
 import time
 from urlparse import urlsplit
 
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 from twisted.web import resource, server
 from twisted.internet.protocol import Protocol, ClientCreator
 from twisted.python import failure
@@ -90,6 +90,8 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
     log_category = 'event_subscription_server'
 
     def __init__(self, service):
+        resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
         self.service = service
         self.subscribers = service.get_subscribers()
         try:
@@ -176,9 +178,9 @@ class EventProtocol(Protocol, log.Loggable):
         self.service = service
         self.action = action
 
-    def __del__(self):
-        self.debug("EventProtocol deleted")
-        pass
+    #def __del__(self):
+    #    pass
+    #    #print "EventProtocol deleted"
 
     def dataReceived(self, data):
         self.info("response received from the Service Events HTTP server ")
@@ -188,7 +190,7 @@ class EventProtocol(Protocol, log.Loggable):
         try:
             self.service.set_sid(headers['sid'])
             timeout = headers['timeout']
-            self.debug(headers['sid'], headers['timeout'])
+            self.debug("%r %r", headers['sid'], headers['timeout'])
             if timeout.startswith('Second-'):
                 timeout = int(timeout[len('Second-'):])
                 self.service.set_timeout(time.time() + timeout)
@@ -204,7 +206,7 @@ class EventProtocol(Protocol, log.Loggable):
         pass
 
 def unsubscribe(service, action='unsubscribe'):
-    subscribe(service, action)
+    return subscribe(service, action)
 
 def subscribe(service, action='subscribe'):
     """
@@ -223,8 +225,8 @@ def subscribe(service, action='subscribe'):
         port = 80
 
     def send_request(p, action):
-        log.info(log_category, "event.subscribe.send_request, action: %r %r",
-                 action, service.get_event_sub_url())
+        log.info(log_category, "event.subscribe.send_request %r, action: %r %r",
+                 p, action, service.get_event_sub_url())
         if action == 'subscribe':
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
@@ -252,8 +254,10 @@ def subscribe(service, action='subscribe'):
         request.append( "")
         request.append( "")
         request = '\r\n'.join(request)
-        log.debug(log_category, "event.subscribe.send_request %r", request)
-        return p.transport.write(request)
+        log.debug(log_category, "event.subscribe.send_request %r %r", request, p)
+        p.transport.writeSomeData(request)
+       # print "event.subscribe.send_request", d
+        #return d
 
     def got_error(failure, action):
         log.info(log_category, "error on %s request with %s" % (action,service.get_base_url()))
@@ -265,7 +269,7 @@ def subscribe(service, action='subscribe'):
         del c
 
     def prepare_connection( service, action):
-        log.info(log_category, "event.subscribe.prepare_connection action:%r %r",
+        log.info(log_category, "event.subscribe.prepare_connection action: %r %r",
                  action, service.event_connection)
         if service.event_connection == None:
             c = ClientCreator(reactor, EventProtocol, service=service, action=action)
@@ -276,7 +280,11 @@ def subscribe(service, action='subscribe'):
             d.addErrback(got_error, action)
             #reactor.callLater(3, teardown_connection, c, d)
         else:
-            send_request(service.event_connection, action)
+            d = defer.Deferred()
+            d.addCallback(send_request, action=action)
+            d.callback(service.event_connection)
+            #send_request(service.event_connection, action)
+        return d
 
     """ FIXME:
         we need to find a way to be sure that our unsubscribe calls get through
@@ -284,8 +292,7 @@ def subscribe(service, action='subscribe'):
         reactor.addSystemEventTrigger( 'before', 'shutdown', prepare_connection, service, action)
     """
 
-    prepare_connection(service, action)
-
+    return prepare_connection(service, action)
     print 'DEBUG event_protocol\t' + "event.subscribe finished" + '\t(coherence/upnp/core/event.py:222)'
 
 class NotificationProtocol(Protocol, log.Loggable):

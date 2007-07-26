@@ -11,11 +11,11 @@ class ConnectionManagerClient:
         self.url = service.get_control_url()
         self.service.subscribe()
         #print "ConnectionManagerClient __init__", self.url
-        
-    def __del__(self):
-        #print "ConnectionManagerClient deleted"
-        pass
-        
+
+    #def __del__(self):
+    #    #print "ConnectionManagerClient deleted"
+    #    pass
+
     def remove(self):
         self.service.remove()
         self.service = None
