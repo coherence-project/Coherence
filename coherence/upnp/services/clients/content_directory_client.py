@@ -26,9 +26,9 @@ class ContentDirectoryClient:
         self.service.subscribe()
         #print "ContentDirectoryClient __init__", self.url
 
-    def __del__(self):
-        #print "ContentDirectoryClient deleted"
-        pass
+    #def __del__(self):
+    #    print "ContentDirectoryClient deleted"
+    #    pass
 
     def remove(self):
         self.service.remove()

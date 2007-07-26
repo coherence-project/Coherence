@@ -51,21 +51,21 @@ class MediaServerClient(log.Loggable):
         #d = self.content_directory.browse(0) # browse top level
         #d.addCallback( self.process_meta)
 
-    def __del__(self):
-        #print "MediaServerClient deleted"
-        pass
+    #def __del__(self):
+    #    #print "MediaServerClient deleted"
+    #    pass
 
     def remove(self):
         self.info("removal of MediaServerClient started")
         if self.content_directory != None:
-            del self.content_directory
+            self.content_directory.remove()
         if self.connection_manager != None:
-            del self.connection_manager
+            self.connection_manager.remove()
         if self.av_transport != None:
-            del self.av_transport
+            self.av_transport.remove()
         if self.scheduled_recording != None:
-            del self.scheduled_recording
-        del self
+            self.scheduled_recording.remove()
+        #del self
 
     def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

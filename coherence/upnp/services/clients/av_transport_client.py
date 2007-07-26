@@ -11,11 +11,11 @@ class AVTransportClient:
         self.url = service.get_control_url()
         self.service.subscribe()
         #print "AVTransportClient __init__", self.url
-        
-    def __del__(self):
-        #print "AVTransportClient deleted"
-        pass
-        
+
+    #def __del__(self):
+    #    #print "AVTransportClient deleted"
+    #    pass
+
     def remove(self):
         self.service.remove()
         self.service = None
@@ -38,7 +38,7 @@ class AVTransportClient:
     def get_media_info(self, instance_id=0):
         action = self.service.get_action('GetMediaInfo')
         return action.call( InstanceID=instance_id)
-        
+
     def get_media_info_ext(self, instance_id=0):
         action = self.service.get_action('GetMediaInfo_Ext')
         return action.call( InstanceID=instance_id)
@@ -46,11 +46,11 @@ class AVTransportClient:
     def get_transport_info(self, instance_id=0):
         action = self.service.get_action('GetTransportInfo')
         return action.call( InstanceID=instance_id)
-        
+
     def get_position_info(self, instance_id=0):
         action = self.service.get_action('GetPositionInfo')
         return action.call( InstanceID=instance_id)
-        
+
     def get_device_capabilities(self, instance_id=0):
         action = self.service.get_action('GetDeviceCapabilities')
         return action.call( InstanceID=instance_id)
@@ -80,11 +80,11 @@ class AVTransportClient:
         return action.call( InstanceID=instance_id,
                             Unit=unit,
                             Target=target)
-        
+
     def next(self, instance_id=0):
         action = self.service.get_action('Next')
         return action.call( InstanceID=instance_id)
-        
+
     def previous(self, instance_id=0):
         action = self.service.get_action('Previous')
         return action.call( InstanceID=instance_id)

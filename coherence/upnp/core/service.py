@@ -61,7 +61,7 @@ class Service(log.Loggable):
         self._actions = {}
         self._variables = { 0: {}}
         self._var_subscribers = {}
-        self.subscription_id = ""
+        self.subscription_id = None
         self.timeout = 0
 
         self.event_connection = None
@@ -75,9 +75,9 @@ class Service(log.Loggable):
     def __repr__(self):
         return "Service %s %s" % (self.service_type,self.id)
 
-    def __del__(self):
-        #print "Service deleted"
-        pass
+    #def __del__(self):
+    #    print "Service deleted"
+    #    pass
 
     def _get_client(self, name):
         url = self.get_control_url()
@@ -88,7 +88,9 @@ class Service(log.Loggable):
 
     def remove(self):
         self.info("remove myself", self.service_type, self.id)
-        self.unsubscribe()
+        if self.subscription_id != None:
+            print "unsubscribe me"
+            self.unsubscribe()
         for name,action in self._actions.items():
             self.info("remove", name,action)
             del self._actions[name]
@@ -100,7 +102,6 @@ class Service(log.Loggable):
             if variables.has_key(instance):
                 del variables[instance]
             del variables
-        del self.device
         del self
 
     def get_device(self):
@@ -123,7 +124,7 @@ class Service(log.Loggable):
 
     def set_sid(self, sid):
         self.subscription_id = sid
-        if sid:
+        if sid is not None:
             subscribe(self)
 
     def get_actions(self):
@@ -161,17 +162,15 @@ class Service(log.Loggable):
         subscribers[self.get_sid()] = self
 
     def unsubscribe(self):
-        d = defer.Deferred()
 
-        def remove_it(r):
+        def remove_it(r, sid):
+            self.subscription_id = None
             global subscribers
-            if subscribers.has_key(self.get_sid()):
-                del subscribers[self.get_sid()]
+            if subscribers.has_key(sid):
+                del subscribers[sid]
 
-        d.addCallback(event.unsubscribe)
-        d.addCallback(remove_it)
-        d.callback(self)
-
+        d = event.unsubscribe(self)
+        d.addCallback(remove_it, self.get_sid())
         return d
 
     def subscribe_for_variable(self, var_name, instance=0, callback=None):
