@@ -89,7 +89,6 @@ class Service(log.Loggable):
     def remove(self):
         self.info("remove myself", self.service_type, self.id)
         if self.subscription_id != None:
-            print "unsubscribe me"
             self.unsubscribe()
         for name,action in self._actions.items():
             self.info("remove", name,action)
