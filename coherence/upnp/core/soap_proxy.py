@@ -45,6 +45,7 @@ class SOAPProxy(object):
         def gotError(failure, url):
             print "error requesting", url
             print failure
+            return failure
 
         return getPage(self.url, postdata=payload, method="POST",
                         headers={'content-type': 'text/xml ;charset="utf-8"',
