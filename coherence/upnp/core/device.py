@@ -36,16 +36,17 @@ class Device(log.Loggable):
         louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
         self.parse_description()
+        self.info("device %s %s initialized, manifestation %s" % (self.friendly_name,self.st,self.manifestation))
 
     #def __del__(self):
     #    #print "Device removal completed"
     #    pass
 
     def remove(self,*args):
-        self.info(self.usn, "removal started")
+        self.info("removal of ", self.friendly_name, self.usn)
         while len(self.services)>0:
             service = self.services.pop()
-            self.info("try to remove", service)
+            self.debug("try to remove", service)
             service.remove()
         if self.client != None:
             louie.send('Coherence.UPnP.Device.remove_client', None, self.usn, self.client)
@@ -114,11 +115,13 @@ class Device(log.Loggable):
 
     def renew_service_subscriptions(self):
         """ iterate over device's services and renew subscriptions """
+        self.info("renew service subscriptions for %s" % self.friendly_name)
         now = time.time()
         for service in self.get_services():
+            self.info("check service %r %r " % (service.id, service.get_sid()), service.get_timeout(), now)
             if service.get_sid() != None:
                 if service.get_timeout() < now:
-                    self.warning("wow, we lost an event subscription for %s, " % service.get_id(),
+                    self.warning("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
                           "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
@@ -184,9 +187,9 @@ class RootDevice(Device):
         self.devices = []
 
     def add_device(self, device):
-        self.info("RootDevice add_device", device)
+        self.debug("RootDevice add_device", device)
         self.devices.append(device)
 
     def get_devices(self):
-        self.info("RootDevice get_devices:", self.devices)
+        self.debug("RootDevice get_devices:", self.devices)
         return self.devices
