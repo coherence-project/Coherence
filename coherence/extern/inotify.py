@@ -155,7 +155,7 @@ class INotify(FileDescriptor, object):
 
     def release(self):
         reactor.removeReader(self)
-        if self._fd >= 0:
+        if hasattr(self, '_fd') and self._fd >= 0:
             try:
                 os.close(self._fd)
             except OSError:
