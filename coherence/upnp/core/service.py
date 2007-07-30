@@ -523,7 +523,7 @@ class ServiceServer(log.Loggable):
                     issue a warning for now
                 """
                 if implementation == 'optional':
-                    self.warning('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                    self.info('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
                     continue
                 else:
                     self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))

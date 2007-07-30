@@ -302,7 +302,7 @@ class FlickrStore(log.Loggable):
         for photo in result.getiterator('photo'):
             self.append(photo, parent)
             count += 1
-        self.warning("initialized photo set %s with %d images" % (parent.get_name(), count))
+        self.info("initialized photo set %s with %d images" % (parent.get_name(), count))
 
     def len(self):
         return len(self.store)

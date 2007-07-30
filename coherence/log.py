@@ -36,7 +36,7 @@ def customStderrHandler(level, object, category, file, line, message):
 
     message = "".join(message.splitlines())
     where = "(%s:%d)" % (file, line)
-    
+
     formatted_level = getFormattedLevelName(level)
     formatted_time = time.strftime("%b %d %H:%M:%S")
     formatted = '%s %-27s %-15s ' % (formatted_level, category,
@@ -56,11 +56,14 @@ def init(logfile=None,loglevel='*:2'):
 
     # log WARNINGS by default
     if not os.getenv('COHERENCE_DEBUG'):
-        setDebug(loglevel)
+        if loglevel.lower() != 'none':
+            setDebug(loglevel)
 
     if externlog.stderrHandler in externlog._log_handlers_limited:
         externlog.removeLimitedLogHandler(externlog.stderrHandler)
-        externlog.addLimitedLogHandler(customStderrHandler)
+        if os.getenv('COHERENCE_DEBUG') or loglevel.lower() != 'none':
+            "print addLimitedLogHandler(customStderrHandler)"
+            externlog.addLimitedLogHandler(customStderrHandler)
 
 def set_debug(loglevel):
     setDebug(loglevel)
