@@ -69,7 +69,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
 
 class WebServer(log.Loggable):
-    logCategory = 'web_server'
+    logCategory = 'webserver'
 
     def __init__(self, ui, port, coherence):
         try:

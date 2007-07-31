@@ -23,7 +23,7 @@ import louie
 from coherence import log
 
 class MRRoot(resource.Resource, log.Loggable):
-    logCategory = 'ms_root'
+    logCategory = 'MediaRenderer'
 
     def __init__(self, server):
         resource.Resource.__init__(self)
@@ -57,8 +57,7 @@ class MRRoot(resource.Resource, log.Loggable):
         return '<html><p>root of the MediaRenderer</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
 
-class RootDeviceXML(static.Data, log.Loggable):
-    logCategory = 'ms_root'
+class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
                         device_type='MediaRenderer',
@@ -67,7 +66,6 @@ class RootDeviceXML(static.Data, log.Loggable):
                         services=[],
                         devices=[],
                         icons=[]):
-        log.Loggable.__init__(self)
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
@@ -137,7 +135,7 @@ class RootDeviceXML(static.Data, log.Loggable):
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaRenderer(log.Loggable):
-    logCategory = 'media_renderer'
+    logCategory = 'MediaRenderer'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence

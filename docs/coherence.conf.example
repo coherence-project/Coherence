@@ -2,13 +2,13 @@
 #
 # keywords are case-sensitive
 
-logmode = warning                         # none, critical, error, warning, info, debug
+logmode = warning                         # none, error, warning, info, debug, log
 #logfile = coherence.log
 #interface = eth0
-serverport = 30020                       # if not specified or set to 0
+#serverport = 30020                       # if not specified or set to 0
                                           # coherence will let the OS choose the port
 
-#controlpoint = yes                        # if set to yes coherence will activate its
+#controlpoint = yes                       # if set to yes coherence will activate its
                                           # internal ControlPoint
 
 web-ui = no                               # set this to yes to enable some interactive
@@ -23,7 +23,8 @@ web-ui = no                               # set this to yes to enable some inter
 #Action = info
 #Variable = info
 #Event = info
-#Service = info
+#ServiceServer = info
+#ServiceClient = info
 #Device = info
 #ConnectionManagerServer = info
 #MediaServer= info
@@ -38,21 +39,33 @@ web-ui = no                               # set this to yes to enable some inter
     [[FSStore]]
         content = tests/content           # append more directories seperated by commas
         name = Coherence Test Content
-        
+
     #[[GStreamerPlayer]]
     #    name = GStreamer Audio Player
-    
+
     #[[ElisaPlayer]]
     #    name = Elisa
     #    host = localhost
-    
+
     [[FlickrStore]]
         name = Flickr Images
         proxy = yes                       # if set to yes coherence will fetch the images
-    #                                      # from Flickr for your client
-    #                            
-    #    refresh = 60                      # check every 60 minutes with Flickr for new images in the set
-    
+                                          # from Flickr for your client
+
+        refresh = 60                      # check every 60 minutes with Flickr for new images in the set
+
+    #[[MediaStore]]
+    #    medialocation = /data/audio/music  # append more directories seperated by commas
+    #    coverlocation = /data/audio/covers # optional
+    #    mediadb= /tmp/media.db
+    #    name = Coherence MediaStore
+    #    [[[icon]]]
+    #        mimetype = image/png
+    #        height = 48
+    #        width = 48
+    #        depth = 24
+    #        url = file:///home/dev/elisa/elisa.png
+
     #[[AxisCamStore]]
     #    name = Elisa is watching you
     #    [[[Cam 1]]]
@@ -61,14 +74,13 @@ web-ui = no                               # set this to yes to enable some inter
     #    [[[Cam 2]]]
     #        url = http://192.168.1.222:554/mpeg4/2/media.amp
     #        protocol = rtsp-rtp-udp:*:video/MP4V-ES:*
-    
+
     #[[BuzztardStore]]
     #    name = Buzztard
     #    host = localhost
     #    port = 7654
-    
+
     #[[BuzztardPlayer]]
     #    name = Buzztard
     #    host = localhost
     #    port = 7654
-    

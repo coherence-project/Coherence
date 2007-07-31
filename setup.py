@@ -5,23 +5,33 @@ from coherence import __version__
 setup(
     name="Coherence",
     version=__version__,
-    description="""Coherence - Python framework for the digital living""",
-    long_description="""Coherence is a framework written in Python enabling your application to
-participate in digital living networks, at the moment primarily the UPnP universe.
+    description="""Coherence - DLNA/UPnP framework for the digital living""",
+    long_description="""Coherence is a framework written in Python enabling
+your application to participate in digital living networks, at the moment
+primarily the DLNA/UPnP universe.
 
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-This 0.3 release brings
+This 0.4 release brings
 
-* better DLNA support, especially for the PlayStation 3
-* cover art in the MediaServers
-* object creation and import in the MediaServers
-* a new experimental MediaServer with an All, Artist, Album based structure
-* support for deployment on the Nokia N800 - notably a working GStreamer UPnP MediaRenderer there, with mp3 and ogg playback
-* an album art (helper) module to fetch the album covers from the Amazon WebService
-* icon support in the UPnP device description
-* the usual bugfixes
+* integration of a new logging module
+  logging can now be configured via the config file or through an
+  environment variable COHERENCE_DEBUG, which overrides the config values.
+
+  Usage is like
+      COHERENCE_DEBUG=*:3           emit INFO level messages from all modules
+      COHERENCE_DEBUG=*:2,ssdp:4    WARNING level messages from all modules,
+                                    plus debug level for the ssdp module
+
+* removed the dependency for SOAPpy, now using own methods and ElementTree only
+* start reworking the client API, to make things there easier too,
+  see as an example https://coherence.beebits.net/wiki/CoherenceMediaRenderer
+* serving cover art now to DLNA MediaRenderers
+* refinements on the object creation and the import into the MediaServers
+* an installable package for the Nokia Maemo platform on the N800,
+  complete with all dependecies, thanks to Rob Tylor of http://codethink.co.uk
+* and a lot more of the usual bugfixes and enhancements
 
 """,
     author="Frank Scholz",

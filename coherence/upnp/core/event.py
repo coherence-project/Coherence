@@ -72,7 +72,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
          'timeout': 'Second-300',
          'sid': 'uuid:oAQbxiNlyYojCAdznJnC'}}
     """
-    log_category = 'event_subscription_server'
+    logCategory = 'event_subscription_server'
 
     def __init__(self, service):
         resource.Resource.__init__(self)

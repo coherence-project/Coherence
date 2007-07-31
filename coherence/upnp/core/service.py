@@ -37,7 +37,7 @@ def unsubscribe(service):
         del subscribers[service.get_sid()]
 
 class Service(log.Loggable):
-    logCategory = 'service'
+    logCategory = 'ServiceClient'
 
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
@@ -249,7 +249,7 @@ moderated_variables = \
         }
 
 class ServiceServer(log.Loggable):
-    logCategory = 'service_server'
+    logCategory = 'ServiceServer'
 
     def __init__(self, id, version, backend):
         self.id = id
