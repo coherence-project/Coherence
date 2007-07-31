@@ -122,10 +122,10 @@ class INotify(FileDescriptor, object):
             return obj
         else:
 
-            obj = super(INotify, cls).__new__(cls, *args, **kwargs)
-            cls._instance_ = obj
             if ctypes == None:
                 raise SystemError, "ctypes not detected on this system, INotify support disabled"
+
+            obj = super(INotify, cls).__new__(cls, *args, **kwargs)
             try:
                 obj.libc = ctypes.CDLL("libc.so.6")
             except:
@@ -151,6 +151,7 @@ class INotify(FileDescriptor, object):
 
             obj._buffer = ''
             obj._watchpoints = {}
+            cls._instance_ = obj
             return obj
 
     def release(self):
