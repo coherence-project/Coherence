@@ -1,3 +1,43 @@
+2007-07-31 16:08  dev
+
+	* ChangeLog, coherence/__init__.py,
+	  coherence/backends/flickr_storage.py, coherence/base.py,
+	  coherence/upnp/core/event.py, coherence/upnp/core/service.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/services/servers/connection_manager_server.py,
+	  coherence/web/ui.py, docs/coherence.conf.example, setup.py:
+	  Preparations for the 0.4.0 release.
+	  
+	  This release brings
+	  
+	  * integration of a new logging module
+	  logging can now be configured via the config file or through an
+	  environment variable COHERENCE_DEBUG, which overrides the config
+	  values.
+	  
+	  Usage is like
+	  COHERENCE_DEBUG=*:3 emit INFO level messages from all modules
+	  COHERENCE_DEBUG=*:2,ssdp:4 WARNING level messages from all
+	  modules,
+	  plus debug level for the ssdp module
+	  
+	  * removed the dependency for SOAPpy, now using own methods and
+	  ElementTree only
+	  * start reworking the client API, to make things there easier
+	  too,
+	  see as an example
+	  https://coherence.beebits.net/wiki/CoherenceMediaRenderer
+	  * serving cover art now to DLNA MediaRenderers
+	  * refinements on the object creation and the import into the
+	  MediaServers
+	  * an installable package for the Nokia Maemo platform on the
+	  N800,
+	  complete with all dependecies, thanks to Rob Tylor of
+	  http://codethink.co.uk
+	  * and a lot more of the usual bugfixes and enhancements
+
 2007-07-31 08:51  philn
 
 	* coherence/extern/inotify.py: don't set _instance_ too early
