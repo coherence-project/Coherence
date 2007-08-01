@@ -48,6 +48,8 @@ class SOAPProxy(log.Loggable):
             self.debug("error requesting %s" % url)
             self.debug(failure)
             return failure
+            return failure
+            return failure
 
         return getPage(self.url, postdata=payload, method="POST",
                         headers={'content-type': 'text/xml ;charset="utf-8"',

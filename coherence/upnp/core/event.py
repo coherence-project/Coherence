@@ -87,7 +87,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
          'timeout': 'Second-300',
          'sid': 'uuid:oAQbxiNlyYojCAdznJnC'}}
     """
-    log_category = 'event_subscription_server'
+    logCategory = 'event_subscription_server'
 
     def __init__(self, service):
         resource.Resource.__init__(self)
@@ -255,7 +255,10 @@ def subscribe(service, action='subscribe'):
         request.append( "")
         request = '\r\n'.join(request)
         log.debug(log_category, "event.subscribe.send_request %r %r", request, p)
-        p.transport.writeSomeData(request)
+        try:
+            p.transport.writeSomeData(request)
+        except AttributeError:
+            log.info(log_category, "transport for event %r already gone", action)
        # print "event.subscribe.send_request", d
         #return d
 

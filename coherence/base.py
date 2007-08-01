@@ -70,7 +70,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
 
 class WebServer(log.Loggable):
-    logCategory = 'web_server'
+    logCategory = 'webserver'
 
     def __init__(self, ui, port, coherence):
         try:
@@ -136,6 +136,7 @@ class Coherence(log.Loggable):
             all level settings here
         """
         subsystem_log = config.get('subsystem_log',{})
+        logmode = config.get('logmode', 'warning')
         _debug = []
         for subsystem,level in subsystem_log.items():
             self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
@@ -143,13 +144,16 @@ class Coherence(log.Loggable):
         if len(_debug) > 0:
             _debug = ','.join(_debug)
         else:
-            _debug = '*:%d' % log.human2level(config.get('logmode', 'error'))
+            if logmode.lower() == 'none':
+                _debug = logmode.lower()
+            else:
+                _debug = '*:%d' % log.human2level(logmode)
         log.init(config.get('logfile', None), _debug)
 
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
 
-        self.info("Coherence UPnP framework version %s starting..." % __version__)
+        self.warning("Coherence UPnP framework version %s starting..." % __version__)
         self.ssdp_server = SSDPServer()
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
@@ -269,7 +273,7 @@ class Coherence(log.Loggable):
 
         self.ssdp_server.shutdown()
         dl = defer.DeferredList(l)
-        self.info('Coherence UPnP framework shutdown')
+        self.warning('Coherence UPnP framework shutdown')
         return dl
 
     def check_devices(self):
@@ -347,7 +351,6 @@ class Coherence(log.Loggable):
                 louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
                 parsed = urllib2.urlparse.urlparse(infos['LOCATION'])
                 ip = parsed[1].split(':')[0]
-                print 'UPnT.host_removed(%r)' % ip
                 louie.send('UPnT.host_removed', None, ip)
                 self.callback("removed_device", infos['ST'], infos['USN'])
 

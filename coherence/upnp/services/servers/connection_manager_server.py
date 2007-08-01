@@ -27,7 +27,7 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 
 class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                               log.Loggable):
-    logCategory = 'connection_manager_server'
+    logCategory = 'ConnectionManagerServer'
 
     def __init__(self, device, backend=None):
         self.device = device
@@ -225,7 +225,6 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                                         PeerConnectionID,
                                         PeerConnectionManager)
                 return {'ConnectionID': connection_id, 'AVTransportID': avt_id, 'RcsID': rcs_id}
-
 
         return failure.Failure(errorCode(701))
 

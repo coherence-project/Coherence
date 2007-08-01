@@ -37,7 +37,7 @@ def unsubscribe(service):
         del subscribers[service.get_sid()]
 
 class Service(log.Loggable):
-    logCategory = 'service'
+    logCategory = 'ServiceClient'
 
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
@@ -70,7 +70,7 @@ class Service(log.Loggable):
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
-        self.info("%s %s inizialized" % (self.service_type,self.id))
+        self.info("%s %s %s initialized" % (self.device.friendly_name,self.service_type,self.id))
 
     def __repr__(self):
         return "Service %s %s" % (self.service_type,self.id)
@@ -87,12 +87,11 @@ class Service(log.Loggable):
         return client
 
     def remove(self):
-        self.info("remove myself", self.service_type, self.id)
+        self.info("removal of ", self.device.friendly_name, self.service_type, self.id)
         if self.subscription_id != None:
-            print "unsubscribe me"
             self.unsubscribe()
         for name,action in self._actions.items():
-            self.info("remove", name,action)
+            self.debug("remove", name,action)
             del self._actions[name]
             del action
         for instance,variables in self._variables.items():
@@ -126,6 +125,7 @@ class Service(log.Loggable):
         self.subscription_id = sid
         if sid is not None:
             subscribe(self)
+            self.debug("add subscription for %s", self.id)
 
     def get_actions(self):
         return self._actions
@@ -157,18 +157,22 @@ class Service(log.Loggable):
         return self.url_base
 
     def subscribe(self):
+        self.debug("subscribe %s", self.id)
         event.subscribe(self)
-        global subscribers
-        subscribers[self.get_sid()] = self
+        #global subscribers
+        #subscribers[self.get_sid()] = self
 
     def unsubscribe(self):
 
         def remove_it(r, sid):
+            self.debug("remove subscription for %s", self.id)
+            unsubscribe(self)
             self.subscription_id = None
-            global subscribers
-            if subscribers.has_key(sid):
-                del subscribers[sid]
+            #global subscribers
+            #if subscribers.has_key(sid):
+            #    del subscribers[sid]
 
+        self.debug("unsubscribe %s", self.id)
         d = event.unsubscribe(self)
         d.addCallback(remove_it, self.get_sid())
         return d
@@ -245,7 +249,7 @@ moderated_variables = \
         }
 
 class ServiceServer(log.Loggable):
-    logCategory = 'service_server'
+    logCategory = 'ServiceServer'
 
     def __init__(self, id, version, backend):
         self.id = id
@@ -524,7 +528,7 @@ class ServiceServer(log.Loggable):
                     issue a warning for now
                 """
                 if implementation == 'optional':
-                    self.warning('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                    self.info('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
                     continue
                 else:
                     self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))

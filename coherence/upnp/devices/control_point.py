@@ -22,20 +22,20 @@ import louie
 from coherence import log
 
 class ControlPoint(log.Loggable):
-    logCategory = 'control_point'
-    
+    logCategory = 'ControlPoint'
+
     def __init__(self, coherence):
         self.coherence = coherence
-        
+
         self.info("Coherence UPnP ControlPoint starting...")
         self.event_server = EventServer(self)
-        
+
         self.coherence.add_web_resource('RPC2',
                                         XMLRPC(self))
 
         for device in self.coherence.get_nonlocal_devices():
             self.check_device( device)
-            
+
         louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
@@ -44,10 +44,10 @@ class ControlPoint(log.Loggable):
         if not device:
             return
         self.check_device( device)
-        
+
     def get_devices(self):
         return self.coherence.get_nonlocal_devices()
-        
+
     def get_device_with_id(self, id):
         return self.coherence.get_device_with_id(id)
 
@@ -64,7 +64,7 @@ class ControlPoint(log.Loggable):
                                    client=client,usn=device.get_usn())
 
             if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
-                                      "urn:schemas-upnp-org:device:MediaRenderer:2"]:    
+                                      "urn:schemas-upnp-org:device:MediaRenderer:2"]:
                 self.info("identified MediaRenderer", device.get_friendly_name())
                 client = MediaRendererClient(device)
                 device.set_client( client)
@@ -75,7 +75,7 @@ class ControlPoint(log.Loggable):
         self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
         client.remove()
-    
+
     def propagate(self, event):
         #print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
@@ -91,7 +91,7 @@ class ControlPoint(log.Loggable):
                         for var in instance.getchildren():
                             namespace_uri, tag = string.split(var.tag[1:], "}", 1)
                             target_service.get_state_variable(tag, instance_id).update(var.attrib['val'])
-                else:    
+                else:
                     target_service.get_state_variable(var_name, 0).update(var_value)
 
 
@@ -172,7 +172,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.av_transport.play()
             return "Ok"
         return "Error"
-        
+
     def xmlrpc_pause(self, device_id):
         print "pause"
         device = self.control_point.get_device_with_id(device_id)
@@ -190,7 +190,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.av_transport.stop()
             return "Ok"
         return "Error"
-        
+
     def xmlrpc_next(self, device_id):
         print "next"
         device = self.control_point.get_device_with_id(device_id)
@@ -199,7 +199,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.av_transport.next()
             return "Ok"
         return "Error"
-        
+
     def xmlrpc_previous(self, device_id):
         print "previous"
         device = self.control_point.get_device_with_id(device_id)
@@ -208,7 +208,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.av_transport.previous()
             return "Ok"
         return "Error"
-        
+
     def xmlrpc_set_av_transport_uri(self, device_id, uri):
         print "set_av_transport_uri"
         device = self.control_point.get_device_with_id(device_id)
@@ -217,7 +217,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.av_transport.set_av_transport_uri(current_uri=uri)
             return "Ok"
         return "Error"
-    
+
     def xmlrpc_create_object(self, device_id, container_id, arguments):
         print "create_object", arguments
         device = self.control_point.get_device_with_id(device_id)
@@ -226,7 +226,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.content_directory.create_object(container_id, arguments)
             return "Ok"
         return "Error"
-    
+
     def xmlrpc_import_resource(self, device_id, source_uri, destination_uri):
         print "import_resource", source_uri, destination_uri
         device = self.control_point.get_device_with_id(device_id)
@@ -235,7 +235,7 @@ class XMLRPC( xmlrpc.XMLRPC):
             client.content_directory.import_resource(source_uri, destination_uri)
             return "Ok"
         return "Error"
-    
+
     def xmlrpc_put_resource(self, url, path):
         print "put_resource", url, path
         self.control_point.put_resource(url, path)
@@ -245,20 +245,20 @@ class XMLRPC( xmlrpc.XMLRPC):
         print "ping"
         return "Ok"
 
-        
+
 def startXMLRPC( control_point, port):
     from twisted.web import server
     r = XMLRPC( control_point)
     print "XMLRPC-API on port %d ready" % port
-    reactor.listenTCP(port, server.Site(r))            
+    reactor.listenTCP(port, server.Site(r))
 
-                    
+
 if __name__ == '__main__':
 
     from coherence.base import Coherence
     from coherence.upnp.devices.media_server_client import MediaServerClient
     from coherence.upnp.devices.media_renderer_client import MediaRendererClient
-    
+
     config = {}
     config['logmode'] = 'warning'
     config['serverport'] = 30020

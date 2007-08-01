@@ -270,7 +270,7 @@ class FlickrStore(log.Loggable):
 
         def update_photo_details(result, photo):
             dates = result.find('dates')
-            self.info("update_photo_details", dates.get('posted'), dates.get('taken'))
+            self.debug("update_photo_details", dates.get('posted'), dates.get('taken'))
             photo.item.date = datetime(*time.strptime(dates.get('taken'),
                                                "%Y-%m-%d %H:%M:%S")[0:6])
 
@@ -302,7 +302,7 @@ class FlickrStore(log.Loggable):
         for photo in result.getiterator('photo'):
             self.append(photo, parent)
             count += 1
-        self.warning("initialized photo set %s with %d images" % (parent.get_name(), count))
+        self.info("initialized photo set %s with %d images" % (parent.get_name(), count))
 
     def len(self):
         return len(self.store)
@@ -322,7 +322,7 @@ class FlickrStore(log.Loggable):
         return ret
 
     def refresh_store(self):
-        self.info("refresh_store")
+        self.debug("refresh_store")
 
         def update_flickr_result(result, parent):
             """ - is in in the store, but not in the update,
@@ -349,9 +349,9 @@ class FlickrStore(log.Loggable):
             for photo in new_ones.values():
                 self.append(photo, parent)
 
-            self.info("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+            self.debug("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
             if len(new_ones) > 0:
-                self.warning("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
+                self.info("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
 
         d = self.flickr_interestingness()
         d.addCallback(update_flickr_result, self.most_wanted)
@@ -363,7 +363,7 @@ class FlickrStore(log.Loggable):
             return result
 
         def got_error(error):
-            self.info(error)
+            self.warning(error)
             self.error("connection to Flickr service failed!")
             return error
 

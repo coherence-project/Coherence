@@ -122,10 +122,10 @@ class INotify(FileDescriptor, object):
             return obj
         else:
 
-            obj = super(INotify, cls).__new__(cls, *args, **kwargs)
-            cls._instance_ = obj
             if ctypes == None:
                 raise SystemError, "ctypes not detected on this system, INotify support disabled"
+
+            obj = super(INotify, cls).__new__(cls, *args, **kwargs)
             try:
                 obj.libc = ctypes.CDLL("libc.so.6")
             except:
@@ -151,11 +151,12 @@ class INotify(FileDescriptor, object):
 
             obj._buffer = ''
             obj._watchpoints = {}
+            cls._instance_ = obj
             return obj
 
     def release(self):
         reactor.removeReader(self)
-        if self._fd >= 0:
+        if hasattr(self, '_fd') and self._fd >= 0:
             try:
                 os.close(self._fd)
             except OSError:
