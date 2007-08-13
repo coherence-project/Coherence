@@ -21,6 +21,8 @@ from coherence.upnp.core.soap_service import errorCode
 
 import louie
 
+from coherence.extern.simple_plugin import Plugin
+
 from coherence import log
 
 from urlparse import urlsplit
@@ -201,7 +203,7 @@ class FlickrItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url
 
-class FlickrStore(log.Loggable):
+class FlickrStore(log.Loggable, Plugin):
     logCategory = 'flickr_storage'
 
     implements = ['MediaServer']
@@ -353,8 +355,13 @@ class FlickrStore(log.Loggable):
             if len(new_ones) > 0:
                 self.info("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
 
+        def got_error(error):
+            self.warning("trouble refreshing Flickr data %r", error)
+            self.debug("%r", error.getTraceback())
+
         d = self.flickr_interestingness()
         d.addCallback(update_flickr_result, self.most_wanted)
+        d.addErrback(got_error)
 
     def flickr_call(self, method, **kwargs):
         def got_result(result):
@@ -363,8 +370,8 @@ class FlickrStore(log.Loggable):
             return result
 
         def got_error(error):
-            self.warning(error)
-            self.error("connection to Flickr service failed!")
+            self.warning("connection to Flickr service failed! %r", error)
+            self.debug("%r", error.getTraceback())
             return error
 
         args = {}

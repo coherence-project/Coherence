@@ -214,16 +214,25 @@ class Coherence(log.Loggable):
         def get_installed_plugins(ids):
             if self.installed_plugins is None:
                 self.installed_plugins = {}
-                import pkg_resources
                 if not isinstance(ids, (list,tuple)):
                     ids = (ids)
-                for id in ids:
-                    for entrypoint in pkg_resources.iter_entry_points(id):
-                        try:
-                            self.installed_plugins[entrypoint.name] = entrypoint.load()
-                        except ImportError, msg:
-                            self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
-                            self.info(traceback.format_exc())
+                try:
+                    import pkg_resources
+                    for id in ids:
+                        for entrypoint in pkg_resources.iter_entry_points(id):
+                            try:
+                                self.installed_plugins[entrypoint.name] = entrypoint.load()
+                            except ImportError, msg:
+                                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
+                                self.info(traceback.format_exc())
+                except ImportError:
+                    """ no pkg_resources/setuptools installed """
+                    self.info("plugin reception activated, no pkg_resources")
+                    from coherence.extern.simple_plugin import Reception
+                    reception = Reception(os.path.join(os.path.dirname(__file__),'backends'))
+                    for cls in reception.guestlist():
+                        self.installed_plugins[cls.__name__.split('.')[-1]] = cls
+
 
         get_installed_plugins(("coherence.plugins.backend.media_server",
                                "coherence.plugins.backend.media_renderer"))

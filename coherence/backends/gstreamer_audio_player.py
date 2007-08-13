@@ -19,6 +19,8 @@ import gst
 
 import louie
 
+from coherence.extern.simple_plugin import Plugin
+
 from coherence import log
 
 class Player(log.Loggable):
@@ -364,7 +366,7 @@ class Player(log.Loggable):
                 self.update()
 
 
-class GStreamerMediaRenderer(object):
+class GStreamerMediaRenderer(Plugin):
 
     """ a backend with a GStreamer based audio player
 

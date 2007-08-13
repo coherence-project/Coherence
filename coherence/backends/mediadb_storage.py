@@ -54,6 +54,8 @@ from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence import log
 
+from coherence.extern.simple_plugin import Plugin
+
 try:
     import libmtag
 
@@ -341,7 +343,7 @@ class Playlist(item.Item):
     name = attributes.text(allowNone=False, indexed=True)
     # references to tracks
 
-class MediaStore(log.Loggable):
+class MediaStore(log.Loggable, Plugin):
     logCategory = 'media_store'
     implements = ['MediaServer']
 

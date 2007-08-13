@@ -18,11 +18,13 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 
 import louie
 
+from coherence.extern.simple_plugin import Plugin
+
 from coherence import log
 
 class BzClient(LineReceiver, log.Loggable):
     logCategory = 'buzztard_client'
-    
+
     def connectionMade(self):
         self.info("connected to Buzztard")
         self.factory.clientReady(self)
@@ -85,7 +87,7 @@ class BzConnection(log.Loggable):
     """ a singleton class
     """
     logCategory = 'buzztard_connection'
-    
+
     def __new__(cls, *args, **kwargs):
         self.debug("BzConnection __new__")
         obj = getattr(cls,'_instance_',None)
@@ -104,7 +106,7 @@ class BzConnection(log.Loggable):
 
 class BuzztardItem(log.Loggable):
     logCategory = 'buzztard_item'
-    
+
     def __init__(self, id, name, parent, mimetype, urlbase, host, update=False):
         self.id = id
         self.name = name
@@ -214,7 +216,7 @@ class BuzztardItem(log.Loggable):
             parent = str(self.parent.get_id())
         return 'id: ' + str(self.id) +'/' + self.name + '/' + parent + ' ' + str(self.child_count) + ' @ ' + self.url
 
-class BuzztardStore(log.Loggable):
+class BuzztardStore(log.Loggable,Plugin):
     logCategory = 'buzztard_store'
     implements = ['MediaServer']
 
