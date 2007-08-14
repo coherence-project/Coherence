@@ -366,7 +366,7 @@ class Player(log.Loggable):
                 self.update()
 
 
-class GStreamerPlayer(Plugin):
+class GStreamerPlayer(log.Loggable,Plugin):
 
     """ a backend with a GStreamer based audio player
 
@@ -384,6 +384,7 @@ class GStreamerPlayer(Plugin):
 
     """
 
+    logCategory = 'gstreamer_player'
     implements = ['MediaRenderer']
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
@@ -391,7 +392,7 @@ class GStreamerPlayer(Plugin):
     def __init__(self, device, **kwargs):
         self.name = kwargs.get('name','GStreamer Audio Player')
 
-        self.player = Player()
+        #self.player = Player()
         self.player.add_view(self.update)
 
         self.metadata = None

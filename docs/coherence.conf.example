@@ -15,7 +15,7 @@ web-ui = no                               # set this to yes to enable some inter
                                           # Web-UI
 
 [subsystem_log]
-#Coherence = info
+#coherence = info
 #WebUI = info
 #SSDP = info
 #MSEARCH = info
@@ -23,15 +23,15 @@ web-ui = no                               # set this to yes to enable some inter
 #Action = info
 #Variable = info
 #Event = info
-#ServiceServer = info
-#ServiceClient = info
+#Service_Server = info
+#Service_Client = info
 #Device = info
-#ConnectionManagerServer = info
+#Connection_Manager_Server = info
 #MediaServer= info
-#MediaRenderer= info
+#MediaRenderer= log
 #ControlPoint = info
-#MSClient = info
-#FlickrStore = info
+#MS_Client = info
+#flickr_storage = info
 #Buzztard=info
 
 

@@ -38,7 +38,7 @@ from coherence import log
 COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
 
 class MSRoot(resource.Resource, log.Loggable):
-    logCategory = 'MediaServer'
+    logCategory = 'mediaserver'
 
     def __init__(self, server, store):
         resource.Resource.__init__(self)
@@ -323,7 +323,7 @@ class RootDeviceXML(static.Data):
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaServer(log.Loggable):
-    logCategory = 'MediaServer'
+    logCategory = 'mediaserver'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence

@@ -23,7 +23,7 @@ import louie
 from coherence import log
 
 class MRRoot(resource.Resource, log.Loggable):
-    logCategory = 'MediaRenderer'
+    logCategory = 'mediarenderer'
 
     def __init__(self, server):
         resource.Resource.__init__(self)
@@ -135,7 +135,7 @@ class RootDeviceXML(static.Data):
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaRenderer(log.Loggable):
-    logCategory = 'MediaRenderer'
+    logCategory = 'mediarenderer'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence

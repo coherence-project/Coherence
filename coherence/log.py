@@ -9,6 +9,8 @@ import os
 
 def human2level(levelname):
     levelname = levelname.lower()
+    if levelname.startswith('none'):
+        return 0
     if levelname.startswith('error'):
         return 1
     if levelname.startswith('warn'):

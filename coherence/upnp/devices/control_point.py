@@ -22,7 +22,7 @@ import louie
 from coherence import log
 
 class ControlPoint(log.Loggable):
-    logCategory = 'ControlPoint'
+    logCategory = 'controlpoint'
 
     def __init__(self, coherence):
         self.coherence = coherence

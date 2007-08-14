@@ -138,17 +138,13 @@ class Coherence(log.Loggable):
         logmode = config.get('logmode', 'warning')
         _debug = []
         for subsystem,level in subsystem_log.items():
-            self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
+            #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
             _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
         if len(_debug) > 0:
             _debug = ','.join(_debug)
         else:
-            if logmode.lower() == 'none':
-                _debug = logmode.lower()
-            else:
-                _debug = '*:%d' % log.human2level(logmode)
+            _debug = '*:%d' % log.human2level(logmode)
         log.init(config.get('logfile', None),_debug)
-
 
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)

@@ -27,7 +27,7 @@ class ConnectionManagerControl(service.ServiceControl,UPnPPublisher):
 
 class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                               log.Loggable):
-    logCategory = 'ConnectionManagerServer'
+    logCategory = 'connection_manager_server'
 
     def __init__(self, device, backend=None):
         self.device = device
