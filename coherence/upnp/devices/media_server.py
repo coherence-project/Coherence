@@ -353,13 +353,10 @@ class MediaServer(log.Loggable):
                 self.backend = backend
 
             def backend_failure(x):
-                self.critical('backend not installed, MediaServer activation aborted')
+                self.warning('backend not installed, MediaServer activation aborted')
+                self.debug(x)
 
-            def service_failure(x):
-                print x
-                self.critical('required service not available, MediaServer activation aborted')
-
-            d.addCallback(backend_ready).addErrback(service_failure)
+            d.addCallback(backend_ready)
             d.addErrback(backend_failure)
             louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 

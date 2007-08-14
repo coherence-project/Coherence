@@ -202,7 +202,7 @@ class Coherence(log.Loggable):
                         arguments = {}
                     self.add_plugin(plugin, **arguments)
                 except Exception, msg:
-                    self.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
+                    self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
                     self.info(traceback.format_exc())
 
         if config.get('controlpoint', 'no') == 'yes':
@@ -245,18 +245,18 @@ class Coherence(log.Loggable):
                     device_class=globals().get(device,None)
                     if device_class == None:
                         raise KeyError
-                    self.critical("Activating %s plugin as %s..." % (plugin, device))
+                    self.info("Activating %s plugin as %s..." % (plugin, device))
                     device_class(self, plugin_class, **kwargs)
                 except KeyError:
-                    self.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
+                    self.warning("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
-                    self.critical("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
-                    self.info(traceback.format_exc())
+                    self.warning("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
+                    self.debug(traceback.format_exc())
         except KeyError:
-            self.critical("Can't enable %s plugin, not found!" % plugin)
+            self.warning("Can't enable %s plugin, not found!" % plugin)
         except Exception, msg:
-            self.critical("Can't enable %s plugin, %s!" % (plugin, msg))
-            self.info(traceback.format_exc())
+            self.warning("Can't enable %s plugin, %s!" % (plugin, msg))
+            self.debug(traceback.format_exc())
 
 
     def receiver( self, signal, *args, **kwargs):

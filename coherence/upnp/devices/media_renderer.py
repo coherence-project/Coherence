@@ -141,6 +141,7 @@ class MediaRenderer(log.Loggable):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
         self.version = int(kwargs.get('version',2))
+        #log.Loggable.__init__(self)
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
@@ -149,6 +150,9 @@ class MediaRenderer(log.Loggable):
         if kwargs.has_key('icon'):
             self.icons.append(kwargs['icon'])
 
+        reactor.callLater(0, self.fire, backend, **kwargs)
+
+    def fire(self,backend,**kwargs):
         if kwargs.get('no_thread_needed',False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
@@ -158,13 +162,10 @@ class MediaRenderer(log.Loggable):
                 self.backend = backend
 
             def backend_failure(x):
-                self.critical('backend not installed, MediaRenderer activation aborted')
+                self.warning('backend not installed, MediaRenderer activation aborted')
+                self.debug(x)
 
-            def service_failure(x):
-                print x
-                self.critical('required service not available, MediaRenderer activation aborted')
-
-            d.addCallback(backend_ready).addErrback(service_failure)
+            d.addCallback(backend_ready)
             d.addErrback(backend_failure)
 
             louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
@@ -236,7 +237,7 @@ class MediaRenderer(log.Loggable):
                                                static.File(icon['url'][7:]))
 
         self.register()
-        self.critical("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
+        self.info("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
 
     def register(self):
         s = self.coherence.ssdp_server

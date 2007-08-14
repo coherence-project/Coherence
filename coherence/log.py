@@ -86,10 +86,10 @@ class Loggable(externlog.Loggable, object):
         return args
 
     def critical(self, msg, *args):
-        self.log(msg, *args)
+        self.warning(msg, *args)
 
-    def error(self, msg, *args):
-        self.log(msg, *args)
+    #def error(self, msg, *args):
+    #    self.log(msg, *args)
 
     def msg(self, message, *args):
         self.info(message, *args)
