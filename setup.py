@@ -61,7 +61,7 @@ This 0.4 release brings
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
-        GStreamerPlayer = coherence.backends.gstreamer_audio_player:GStreamerMediaRenderer
+        GStreamerPlayer = coherence.backends.gstreamer_audio_player:GStreamerPlayer
         BuzztardPlayer = coherence.backends.buzztard_control:BuzztardPlayer
 
     """,

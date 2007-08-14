@@ -366,7 +366,7 @@ class Player(log.Loggable):
                 self.update()
 
 
-class GStreamerMediaRenderer(Plugin):
+class GStreamerPlayer(Plugin):
 
     """ a backend with a GStreamer based audio player
 
