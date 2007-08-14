@@ -3,7 +3,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2007, Frank Scholz <coherence@beebits.net>
 
 """ real simple plugin system
     meant as a replacement when setuptools/pkg_resources
@@ -41,10 +41,11 @@ class Reception(object):
             cls._instance_ = obj
             return obj
 
-    def __init__(self,plugin_path=None):
+    def __init__(self,plugin_path=None,log=None):
         """ initializes the class and
             checks in if a path is provided
         """
+        self.log = log
         if plugin_path is not None:
             self.checkin(plugin_path)
 
@@ -55,7 +56,13 @@ class Reception(object):
         for plugin in os.listdir(plugin_path):
             p = os.path.join(plugin_path, plugin)
             if plugin != '__init__.py' and os.path.isfile(p) and os.path.splitext(p)[1] == '.py':
-                __import__(os.path.splitext(plugin)[0], None, None, [''])
+                try:
+                    __import__(os.path.splitext(plugin)[0], None, None, [''])
+                except Exception, msg:
+                    if self.log is None:
+                        print "can't import %r - %s" % (os.path.splitext(plugin)[0], msg)
+                    else:
+                        self.log("can't import %r - %r" % (os.path.splitext(plugin)[0], msg))
 
 
     def guestlist(self):

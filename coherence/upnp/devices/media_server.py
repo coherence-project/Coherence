@@ -434,7 +434,7 @@ class MediaServer(log.Loggable):
                                                StaticFile(icon['url'][7:]))
 
         self.register()
-        self.critical("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
+        self.info("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
 
 
     def register(self):

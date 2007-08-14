@@ -217,7 +217,7 @@ class Coherence(log.Loggable):
                 if not isinstance(ids, (list,tuple)):
                     ids = (ids)
                 try:
-                    import pkg_resources
+                    import XXXpkg_resources
                     for id in ids:
                         for entrypoint in pkg_resources.iter_entry_points(id):
                             try:
@@ -229,7 +229,7 @@ class Coherence(log.Loggable):
                     """ no pkg_resources/setuptools installed """
                     self.info("plugin reception activated, no pkg_resources")
                     from coherence.extern.simple_plugin import Reception
-                    reception = Reception(os.path.join(os.path.dirname(__file__),'backends'))
+                    reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
                     for cls in reception.guestlist():
                         self.installed_plugins[cls.__name__.split('.')[-1]] = cls
 
