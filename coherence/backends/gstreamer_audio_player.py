@@ -392,7 +392,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
     def __init__(self, device, **kwargs):
         self.name = kwargs.get('name','GStreamer Audio Player')
 
-        #self.player = Player()
+        self.player = Player()
         self.player.add_view(self.update)
 
         self.metadata = None
