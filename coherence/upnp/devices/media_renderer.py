@@ -7,8 +7,7 @@
 
 from twisted.internet import task
 from twisted.internet import reactor
-from twisted.internet import threads
-from twisted.web import xmlrpc, resource, static
+from twisted.web import resource, static
 
 from coherence import __version__
 
@@ -150,12 +149,15 @@ class MediaRenderer(log.Loggable):
         if kwargs.has_key('icon'):
             self.icons.append(kwargs['icon'])
 
-        reactor.callLater(0, self.fire, backend, **kwargs)
+        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+        reactor.callLater(0.2, self.fire, backend, **kwargs)
 
     def fire(self,backend,**kwargs):
         if kwargs.get('no_thread_needed',False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
+
+            from twisted.internet import threads
             d = threads.deferToThread(backend, self, **kwargs)
 
             def backend_ready(backend):
@@ -168,13 +170,10 @@ class MediaRenderer(log.Loggable):
             d.addCallback(backend_ready)
             d.addErrback(backend_failure)
 
-            louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
-
             # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
             #        can close down this device
         else:
             self.backend = backend(self, **kwargs)
-            self.init_complete(self.backend)
 
     def init_complete(self, backend):
         if self.backend != backend:
