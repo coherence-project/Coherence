@@ -4,6 +4,8 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import os
+
 import time
 import urllib2
 from coherence.upnp.core import action
@@ -494,7 +496,7 @@ class ServiceServer(log.Loggable):
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
     def init_var_and_actions(self):
-        desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, int(self.version)))
+        desc_file = util.sibpath(__file__, os.path.join('xml-service-descriptions', '%s%d.xml' % (self.id, int(self.version))))
         tree = ET.parse(desc_file)
 
         for action_node in tree.findall('.//action'):

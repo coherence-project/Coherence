@@ -328,12 +328,12 @@ class Coherence(log.Loggable):
         return [d for d in self.devices if d.manifestation == 'remote']
 
     def create_device(self, device_type, infos):
-        self.info("creating", infos['ST'],infos['USN'])
+        self.info("creating ", infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
-            self.info("creating upnp:rootdevice", infos['USN'])
+            self.info("creating upnp:rootdevice ", infos['USN'])
             root = RootDevice(infos)
         else:
-            self.info("creating device/service",infos['USN'])
+            self.info("creating device/service ",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
