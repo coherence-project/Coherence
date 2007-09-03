@@ -54,7 +54,7 @@ def init(logfile=None,loglevel='*:2'):
     externlog.setPackageScrubList('coherence', 'twisted')
 
     if logfile is not None:
-        outputToFiles(logfile, logfile)
+        outputToFiles(stdout=None, stderr=logfile)
 
     # log WARNINGS by default
     if not os.getenv('COHERENCE_DEBUG'):

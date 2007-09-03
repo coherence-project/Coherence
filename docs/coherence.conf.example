@@ -3,7 +3,7 @@
 # keywords are case-sensitive
 
 logmode = warning                         # none, error, warning, info, debug, log
-#logfile = coherence.log
+logfile = coherence.log
 #interface = eth0
 #serverport = 30020                       # if not specified or set to 0
                                           # coherence will let the OS choose the port
