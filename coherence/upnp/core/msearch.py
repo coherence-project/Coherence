@@ -53,4 +53,7 @@ class MSearch(DatagramProtocol, log.Loggable):
                 '','']
         req = '\r\n'.join(req)
 
-        self.transport.write(req, (SSDP_ADDR, SSDP_PORT))
+        try:
+            self.transport.write(req, (SSDP_ADDR, SSDP_PORT))
+        except socket.error, msg:
+            self.info("failure sending out the discovery message: %r" % msg)

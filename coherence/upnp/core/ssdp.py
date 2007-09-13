@@ -152,6 +152,13 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
         self.info('Discovery request for %s' % headers['st'])
 
+        def send_it(response, destination, delay, usn):
+            self.info('send discovery response delayed by %ds for %s' % (delay, usn))
+            try:
+                self.transport.write(response, destination)
+            except socket.error, msg:
+                self.info("failure sending out byebye notification: %r" % msg)
+
         # Do we know about this service?
         for i in self.known.values():
             if i['MANIFESTATION'] == 'remote':
@@ -173,9 +180,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
-                self.info('send Discovery response with delay %d for %s' % (delay, usn))
-                reactor.callLater(delay, self.transport.write,
-                                '\r\n'.join(response), (host, port))
+                reactor.callLater(delay, send_it,
+                                '\r\n'.join(response), (host, port), delay, usn)
 
     def doNotify(self, usn):
         """Do notification"""
@@ -196,8 +202,11 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.debug('doNotify content', resp)
-        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        try:
+            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        except socket.error, msg:
+            self.info("failure sending out alive notification: %r" % msg)
 
     def doByebye(self, st):
         """Do byebye"""
@@ -217,7 +226,10 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         resp.extend(('', ''))
         self.debug('doByebye content', resp)
         if self.transport:
-            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+            try:
+                self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+            except socket.error, msg:
+                self.info("failure sending out byebye notification: %r" % msg)
 
     def resendNotify( self):
         for usn in self.known:
