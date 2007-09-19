@@ -178,7 +178,7 @@ class Coherence(log.Loggable):
 
         self.info('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
-            self.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
+            self.warning('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
         self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
@@ -186,7 +186,7 @@ class Coherence(log.Loggable):
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-        self.installed_plugins = None
+        self.available_plugins = None
 
         plugins = config.get('plugins',None)
         if plugins is None:
@@ -207,17 +207,17 @@ class Coherence(log.Loggable):
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin", plugin)
 
-        def get_installed_plugins(ids):
-            if self.installed_plugins is None:
-                self.installed_plugins = {}
+        def get_available_plugins(ids):
+            if self.available_plugins is None:
+                self.available_plugins = {}
                 if not isinstance(ids, (list,tuple)):
                     ids = (ids)
                 try:
-                    import XXXpkg_resources
+                    import pkg_resources
                     for id in ids:
                         for entrypoint in pkg_resources.iter_entry_points(id):
                             try:
-                                self.installed_plugins[entrypoint.name] = entrypoint.load()
+                                self.available_plugins[entrypoint.name] = entrypoint.load()
                             except ImportError, msg:
                                 self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                                 self.info(traceback.format_exc())
@@ -227,13 +227,13 @@ class Coherence(log.Loggable):
                     from coherence.extern.simple_plugin import Reception
                     reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
                     for cls in reception.guestlist():
-                        self.installed_plugins[cls.__name__.split('.')[-1]] = cls
+                        self.available_plugins[cls.__name__.split('.')[-1]] = cls
 
 
-        get_installed_plugins(("coherence.plugins.backend.media_server",
+        get_available_plugins(("coherence.plugins.backend.media_server",
                                "coherence.plugins.backend.media_renderer"))
         try:
-            plugin_class = self.installed_plugins.get(plugin,None)
+            plugin_class = self.available_plugins.get(plugin,None)
             if plugin_class == None:
                 raise KeyError
             for device in plugin_class.implements:
@@ -242,7 +242,7 @@ class Coherence(log.Loggable):
                     if device_class == None:
                         raise KeyError
                     self.info("Activating %s plugin as %s..." % (plugin, device))
-                    device_class(self, plugin_class, **kwargs)
+                    return device_class(self, plugin_class, **kwargs)
                 except KeyError:
                     self.warning("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
