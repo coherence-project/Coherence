@@ -13,6 +13,7 @@ import random
 import string
 import sys
 import time
+import socket
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
