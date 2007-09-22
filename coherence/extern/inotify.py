@@ -77,10 +77,13 @@ _flag_to_human = {
     IN_ISDIR: 'is_dir',
     IN_ONESHOT: 'one_shot'}
 
+# system call numbers are architecture-specific
+# see /usr/include/linux/asm/unistd.h and look for inotify
 _inotify_syscalls = { 'i386': (291,292,293),  # FIXME, there has to be a better way for this
                       'i486': (291,292,293),
                       'i586': (291,292,293),
                       'i686': (291,292,293),
+                      'x86_64': (253,254,255), # gotten from FC-6 and F-7
                       'armv6l':(316,317,318),              # Nokia N800
                       'armv5tej1':(316,317,318),           # Nokia N770
                       'ppc': (275,276,277),                # PPC, like PS3
@@ -137,7 +140,7 @@ class INotify(FileDescriptor, object):
                 obj._add_watch_syscall_id = _inotify_syscalls[machine][1]
                 obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
             except:
-                raise SystemError, "unknown system, INotify support disabled"
+                raise SystemError, "unknown system '%s', INotify support disabled" % machine
 
             FileDescriptor.__init__(obj)
 
