@@ -129,7 +129,7 @@ class FlickrItem(log.Loggable):
             self.warning("error requesting", failure, url)
             self.info(failure)
 
-        getPage(self.real_url,method='HEAD').addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
+        getPage(self.real_url,method='HEAD',timeout=60).addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
 
     def remove(self):
         #print "FSItem remove", self.id, self.get_name(), self.parent
