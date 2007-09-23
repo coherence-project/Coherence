@@ -86,7 +86,7 @@ except ImportError:
 
 
 
-MEDIA_DB = 'content/media.db'
+MEDIA_DB = 'tests/media.db'
 
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER = 10
