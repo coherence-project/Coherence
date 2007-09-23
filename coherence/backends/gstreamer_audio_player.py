@@ -249,7 +249,7 @@ class Player(log.Loggable):
         r[u'human'] = {u'position':position_human, u'remaining':remaining_human, u'duration':duration_human}
         r[u'percent'] = {u'position':position*100/self.duration, u'remaining':100-(position*100/self.duration)}
 
-        #print r
+        self.debug(r)
         return r
 
     def load( self, uri, mimetype):
