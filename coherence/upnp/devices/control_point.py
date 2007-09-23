@@ -4,6 +4,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import string
+import traceback
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -24,7 +25,7 @@ from coherence import log
 class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
 
-    def __init__(self, coherence):
+    def __init__(self,coherence):
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -33,7 +34,7 @@ class ControlPoint(log.Loggable):
         self.coherence.add_web_resource('RPC2',
                                         XMLRPC(self))
 
-        for device in self.coherence.get_nonlocal_devices():
+        for device in self.get_devices():
             self.check_device( device)
 
         louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
@@ -46,34 +47,33 @@ class ControlPoint(log.Loggable):
         self.check_device( device)
 
     def get_devices(self):
-        return self.coherence.get_nonlocal_devices()
+        return self.coherence.get_devices()
 
     def get_device_with_id(self, id):
         return self.coherence.get_device_with_id(id)
 
     def check_device( self, device):
-        if device.is_remote():
-            self.info("found device %s of type %s" %(device.get_friendly_name(),
-                                                    device.get_device_type()))
-            if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
-                                      "urn:schemas-upnp-org:device:MediaServer:2"]:
-                self.info("identified MediaServer", device.get_friendly_name())
-                client = MediaServerClient(device)
-                device.set_client( client)
-                louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
-                                   client=client,usn=device.get_usn())
+        self.info("found device %s of type %s" %(device.get_friendly_name(),
+                                                device.get_device_type()))
+        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
+                                  "urn:schemas-upnp-org:device:MediaServer:2"]:
+            self.info("identified MediaServer", device.get_friendly_name())
+            client = MediaServerClient(device)
+            device.set_client( client)
+            louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
+                               client=client,usn=device.get_usn())
 
-            if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
-                                      "urn:schemas-upnp-org:device:MediaRenderer:2"]:
-                self.info("identified MediaRenderer", device.get_friendly_name())
-                client = MediaRendererClient(device)
-                device.set_client( client)
-                louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
-                                   client=client,usn=device.get_usn())
+        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
+                                  "urn:schemas-upnp-org:device:MediaRenderer:2"]:
+            self.info("identified MediaRenderer", device.get_friendly_name())
+            client = MediaRendererClient(device)
+            device.set_client( client)
+            louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
+                               client=client,usn=device.get_usn())
 
     def remove_client(self, usn, client):
-        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
+        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         client.remove()
 
     def propagate(self, event):

@@ -56,7 +56,7 @@ class ContentDirectoryClient:
         action = self.service.get_action('GetSystemUpdateID')
         return action.call()
 
-    def new_browse(self, object_id=0, browse_flag='BrowseDirectChildren',
+    def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
                filter='*', sort_criteria='',
                starting_index=0, requested_count=0):
 
@@ -76,17 +76,18 @@ class ContentDirectoryClient:
                 i['title'] =  item.title
                 i['parent_id'] =  item.parentID
                 if hasattr(item,'childCount'):
-                    i['child_count'] =  item.childCount
-                if hasattr(item,'date'):
+                    i['child_count'] =  str(item.childCount)
+                if hasattr(item,'date') and item.date:
                     i['date'] =  item.date
-                if hasattr(item,'albumArtURI'):
+                if hasattr(item,'albumArtURI') and item.albumArtURI:
                     i['album_art_uri'] = item.albumArtURI
                 if hasattr(item,'res'):
                     resources = {}
                     for res in item.res:
                         url = res.data
                         resources[url] = res.protocolInfo
-                    i['resources']= resources
+                    if len(resources):
+                        i['resources']= resources
                 r['items'][item.id] = i
             return r
 
@@ -98,102 +99,6 @@ class ContentDirectoryClient:
                             RequestedCount=str(requested_count))
         d.addCallback( process_result)
         return d
-
-    def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
-                     filter='*', sort_criteria='',
-                     starting_index=0, requested_count=0,
-                     backward_compatibility=True,
-                     recursive=False):
-        """
-        """
-        if backward_compatibility == True:
-            print """DeprecationWarning: content_directory_client.browse method will """ \
-                  """change in version 0.4.0 and be replaced with the now called """ \
-                  """new_browse method!"""
-        else:
-            return self.new_browse(object_id=object_id, browse_flag=browse_flag,
-                                   filter=filter, sort_criteria=sort_criteria,
-                                   starting_index=starting_index, requested_count=starting_index)
-        finished = defer.Deferred()
-        infos = {}
-        action = self.service.get_action('Browse')
-        d = action.call( ObjectID=object_id,
-                            BrowseFlag=browse_flag,
-                            Filter="*",SortCriteria="",
-                            StartingIndex=str(starting_index),
-                            RequestedCount=str(requested_count))
-
-        def processResults( results):
-            global work, pending
-            if not results:
-                finished.callback({})
-                return
-
-            try:
-                returned_nb = results['NumberReturned']
-            except:
-                finished.callback({})
-                return
-            total_matches = results['TotalMatches']
-
-            #print "Browsing returned %s results. Total matches: %s" % (returned_nb,
-            #                                                    total_matches)
-            elt = DIDLLite.DIDLElement.fromString(results['Result'])
-            work.extend(elt.getItems())
-
-            _infos = {}
-            while work:
-                item = work.pop()
-                if isinstance(item, DIDLLite.Container):
-                    childCount = 1
-                else:
-                    childCount = 0
-                _infos[item.id] = {'title': item.title,
-                                   'childCount': childCount,
-                                   'parentID': item.parentID}
-                title = item.title.encode('utf-8')
-                #title = item.title.encode('iso-8859-15')
-                #print "%s <- %s : %s (%s)" % (item.parentID, item.id,
-                #                                title, childCount)
-                if isinstance(item, DIDLLite.Container):
-                    #print 'Folder "%s" with %s children' % (title,
-                    #                                          item.childCount)
-                    _infos[item.id].update({'search_class': item.searchClass})
-                    if recursive:
-                        next_deferred = action.call( ObjectID=item.id,
-                                         BrowseFlag=browse_flag,
-                                         Filter="*",SortCriteria="",
-                                         StartingIndex="0",
-                                         RequestedCount="0")
-                        next_deferred.addCallback( processResults)
-                        next_deferred.addErrback(finished.errback)
-                        pending[item.id] = int(item.childCount)
-
-                elif isinstance(item, DIDLLite.Object):
-                    urls = {}
-                    for res in item.res:
-                        url = res.data
-                        protocolInfo = res.protocolInfo
-                        urls[url] = protocolInfo
-                    _infos[item.id].update({'urls': urls})
-
-                pending.keys().sort()
-                if item.parentID in pending.keys():
-                    if pending[item.parentID] > 0:
-                        pending[item.parentID] -= 1
-
-                for k in pending.keys():
-                    v = pending[k]
-                    if not v:
-                        del pending[k]
-
-                infos.update(_infos)
-
-            if not pending and not finished.called:
-                finished.callback(infos)
-
-        d.addCallback( processResults)
-        return finished
 
     def search(self, container_id, criteria, starting_index=0,
                requested_count=0):

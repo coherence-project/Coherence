@@ -126,6 +126,9 @@ class Coherence(log.Loggable):
         self.children = {}
         self._callbacks = {}
 
+        self.dbus = None
+        self.config = config
+
         network_if = config.get('interface')
 
         self.web_server_port = int(config.get('serverport', 0))
@@ -150,6 +153,15 @@ class Coherence(log.Loggable):
         louie.install_plugin(plugin)
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
+
+        if config.get('use_dbus', 'no') == 'yes':
+            try:
+                from coherence import dbus_service
+                self.dbus = dbus_service.DBusService(self)
+            except Exception, msg:
+                self.warning("Unable to activate dbus sub-system: %r" % msg)
+                self.debug(traceback.format_exc())
+
         self.ssdp_server = SSDPServer()
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)

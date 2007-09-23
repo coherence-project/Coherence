@@ -7,7 +7,6 @@
 
 import os, sys
 
-from twisted.internet import reactor
 from twisted.python import usage
 
 from coherence.base import Coherence
@@ -18,27 +17,13 @@ class Options(usage.Options):
     optParameters = [['configfile', 'c', '', 'path to configfile'],
                     ]
 
-def main(options):
+def main(config):
 
-    # get settings or options
-    def setConfigFile(filename):
-        def findConfigDir():
-            try: 
-                configDir = os.path.expanduser('~')
-            except:
-                configDir = os.getcwd()
-            return configDir
-
-        if filename is '':
-            filename = os.path.join( findConfigDir(), '.coherence')
-        return filename
-
-    config = ConfigObj( setConfigFile( options['configfile']))
     c = Coherence(config)
     #c = Coherence(plugins={'FSStore': {'content_directory':'tests/content'},
     #                       'Player': {})
     #c.add_plugin('FSStore', content_directory='tests/content', version=1)
-    
+
 if __name__ == '__main__':
 
     options = Options()
@@ -49,5 +34,29 @@ if __name__ == '__main__':
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(1)
 
-    reactor.callWhenRunning(main, options)
+    # get settings or options
+    def setConfigFile(filename):
+        def findConfigDir():
+            try:
+                configDir = os.path.expanduser('~')
+            except:
+                configDir = os.getcwd()
+            return configDir
+
+        if filename is '':
+            filename = os.path.join( findConfigDir(), '.coherence')
+        return filename
+
+    config = ConfigObj( setConfigFile( options['configfile']))
+
+    if config.get('use_dbus', 'no') == 'yes':
+        try:
+            from twisted.internet import glib2reactor
+            glib2reactor.install()
+        except AssertionError:
+            pass
+
+    from twisted.internet import reactor
+
+    reactor.callWhenRunning(main, config)
     reactor.run()
