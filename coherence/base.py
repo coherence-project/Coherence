@@ -157,7 +157,7 @@ class Coherence(log.Loggable):
         if config.get('use_dbus', 'no') == 'yes':
             try:
                 from coherence import dbus_service
-                self.dbus = dbus_service.DBusService(self)
+                self.dbus = dbus_service.DBusPontoon(self)
             except Exception, msg:
                 self.warning("Unable to activate dbus sub-system: %r" % msg)
                 self.debug(traceback.format_exc())
