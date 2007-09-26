@@ -24,6 +24,7 @@ class ContentDirectoryClient:
         self.namespace = service.get_type()
         self.url = service.get_control_url()
         self.service.subscribe()
+        self.service.client = self
         #print "ContentDirectoryClient __init__", self.url
 
     #def __del__(self):

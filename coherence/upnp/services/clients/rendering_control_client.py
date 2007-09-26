@@ -10,6 +10,7 @@ class RenderingControlClient:
         self.namespace = service.get_type()
         self.url = service.get_control_url()
         self.service.subscribe()
+        self.service.client = self
         #print "RenderingControlClient __init__", self.url
 
     #def __del__(self):

@@ -68,6 +68,8 @@ class Service(log.Loggable):
 
         self.event_connection = None
 
+        self.client = None
+
         parsed = urllib2.urlparse.urlparse(location)
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
