@@ -18,4 +18,3 @@
 build
 temp
 dist
-*.egg-info
