@@ -37,20 +37,21 @@ class DBusService(dbus.service.Object,log.Loggable):
         self.dbus_device = dbus_device
         self.type = self.service.service_type.split(':')[3] # get the service name
         bus_name = dbus.service.BusName(BUS_NAME+'.service', bus)
-        dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type)
+        s = dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type)
+        self.debug("DBusService %r %r %r", service, self.type, s)
         louie.connect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
 
         self.subscribe()
 
     def variable_changed(self,variable):
         #print self.service, "got signal for change of", variable
-        #print variable.name, variable.instance, variable.value
-        #print type(variable.name), type(variable.instance), type(variable.value)
-        self.StateVariableChanged(str(variable.name), int(variable.instance), str(variable.value))
+        #print variable.name, variable.value
+        #print type(variable.name), type(variable.value)
+        self.StateVariableChanged(variable.name, variable.value)
 
     @dbus.service.signal(BUS_NAME+'.service',
-                         signature='sis')
-    def StateVariableChanged(self, variable, instance, value):
+                         signature='sv')
+    def StateVariableChanged(self, variable, value):
         self.info("%s service %s signals StateVariable %s changed" % (self.dbus_device.device.get_friendly_name(), self.type, variable))
 
     @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
@@ -106,7 +107,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         self.device = device
         self.id = device.get_id()[5:].replace('-','')
         bus_name = dbus.service.BusName(BUS_NAME+'.device', bus)
-        dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + self.id)
+        d = dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + self.id)
+        self.debug("DBusDevice %r %r %r", device, self.id, d)
         self.services = []
         for service in device.get_services():
             self.services.append(DBusService(service,self,bus))
@@ -144,7 +146,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         self.bus_name = dbus.service.BusName(BUS_NAME, self.bus)
         dbus.service.Object.__init__(self, self.bus_name, OBJECT_PATH)
 
-        #print "pontoon", self, self.bus, self.bus_name
+        self.debug("D-Bus pontoon %r %r %r" % (self, self.bus, self.bus_name))
 
         self.devices = []
 
@@ -175,13 +177,6 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             r.append(device)
         return r
 
-    @dbus.service.method(BUS_NAME,in_signature='',out_signature='v')
-    def get_devices_old(self):
-        r = []
-        for device in self.controlpoint.get_devices():
-            r.append(device.get_id())
-        return r
-
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_device_with_id(self,id):
         r = {}
@@ -192,23 +187,10 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         r['type'] = device.get_device_type()
         return r
 
-    @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='v',
-                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
-    def mediaserver_cds_browse(self,device_id,arguments,dbus_async_cb,dbus_async_err_cb):
-
-        def reply(data):
-            dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
-
-        device = self.controlpoint.get_device_with_id(device_id)
-        if device is not None:
-            client = device.get_client()
-            kwargs = {}
-            for k,v in arguments.items():
-                kwargs[str(k)] = str(v)
-            d = client.content_directory.browse(**kwargs)
-            d.addCallback(reply)
-            d.addErrback(dbus_async_err_cb)
-        return ''
+    @dbus.service.method(BUS_NAME,in_signature='sso',out_signature='s')
+    def register(self, device_type, name, dbus_object):
+        id = "n/a"
+        return id
 
     def cp_ms_detected(self,client,usn):
         self.devices.append(DBusDevice(client.device,self.bus))
