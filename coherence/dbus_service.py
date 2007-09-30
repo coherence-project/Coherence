@@ -38,10 +38,19 @@ class DBusService(dbus.service.Object,log.Loggable):
         self.type = self.service.service_type.split(':')[3] # get the service name
         bus_name = dbus.service.BusName(BUS_NAME+'.service', bus)
         dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type)
+        louie.connect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
+
+        self.subscribe()
+
+    def variable_changed(self,variable):
+        #print self.service, "got signal for change of", variable
+        #print variable.name, variable.instance, variable.value
+        #print type(variable.name), type(variable.instance), type(variable.value)
+        self.StateVariableChanged(str(variable.name), int(variable.instance), str(variable.value))
 
     @dbus.service.signal(BUS_NAME+'.service',
-                         signature='ss')
-    def StateVariableChanged(self, variable, value):
+                         signature='sis')
+    def StateVariableChanged(self, variable, instance, value):
         self.info("%s service %s signals StateVariable %s changed" % (self.dbus_device.device.get_friendly_name(), self.type, variable))
 
     @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
@@ -59,6 +68,36 @@ class DBusService(dbus.service.Object,log.Loggable):
             d.addCallback(reply)
             d.addErrback(dbus_async_err_cb)
         return ''
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='v')
+    def subscribe(self):
+        notify = [v for v in self.service._variables[0].values() if v.send_events == True]
+        if len(notify) == 0:
+            return
+        data = {}
+        for n in notify:
+            if n.name == 'LastChange':
+                lc = {}
+                for instance, vdict in self.service._variables.items():
+                    v = {}
+                    for variable in vdict.values():
+                        if( variable.name != 'LastChange' and
+                            variable.name[0:11] != 'A_ARG_TYPE_' and
+                            variable.never_evented == False):
+                                if hasattr(variable, dbus_updated) == False:
+                                    variable.dbus_update = None
+                                if variable.dbus_updated != variable.last_touched:
+                                    v[unicode(variable.name)] = unicode(variable.value)
+                                    variable.dbus_updated = time.time()
+                                    #FIXME: we are missing variable dependencies here
+                    if len(v) > 0:
+                        lc[str(instance)] = v
+                if len(lc) > 0:
+                    data[unicode(n.name)] = lc
+            else:
+                data[unicode(n.name)] = unicode(n.value)
+        return dbus.Dictionary(data,signature='sv',variant_level=3)
+
 
 class DBusDevice(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'

@@ -9,6 +9,8 @@ from coherence.upnp.services.clients.av_transport_client import AVTransportClien
 
 from coherence import log
 
+import louie
+
 class MediaRendererClient(log.Loggable):
     logCategory = 'mr_client'
 
@@ -18,6 +20,11 @@ class MediaRendererClient(log.Loggable):
         self.rendering_control = None
         self.connection_manager = None
         self.av_transport = None
+
+        self.detection_completed = False
+
+        louie.connect(self.service_notified, signal='Coherence.UPnP.DeviceClient.Service.notified', sender=self.device)
+
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:RenderingControl:1",
                                       "urn:schemas-upnp-org:service:RenderingControl:2"]:
@@ -73,6 +80,22 @@ class MediaRendererClient(log.Loggable):
         if self.av_transport != None:
             self.av_transport.remove()
         #del self
+
+    def service_notified(self, service):
+        if self.detection_completed == True:
+            return
+        if self.rendering_control != None:
+            if self.rendering_control.service.last_time_updated == None:
+                return
+        if self.connection_manager != None:
+            if self.connection_manager.service.last_time_updated == None:
+                return
+        if self.av_transport != None:
+            if self.av_transport.service.last_time_updated == None:
+                return
+        self.detection_completed = True
+        louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
+                               client=self,usn=self.device.get_usn())
 
     def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

@@ -16,8 +16,6 @@ from coherence.upnp.core.event import EventServer
 from coherence.upnp.devices.media_server_client import MediaServerClient
 from coherence.upnp.devices.media_renderer_client import MediaRendererClient
 
-from coherence.upnp.core.utils import parse_xml
-
 import louie
 
 from coherence import log
@@ -40,6 +38,8 @@ class ControlPoint(log.Loggable):
         louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
+        louie.connect(self.completed, 'Coherence.UPnP.DeviceClient.detection_completed', louie.Any)
+
     def browse( self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
@@ -60,16 +60,20 @@ class ControlPoint(log.Loggable):
             self.info("identified MediaServer", device.get_friendly_name())
             client = MediaServerClient(device)
             device.set_client( client)
-            louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
-                               client=client,usn=device.get_usn())
+            #louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
+            #                   client=client,usn=device.get_usn())
 
         if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
                                   "urn:schemas-upnp-org:device:MediaRenderer:2"]:
             self.info("identified MediaRenderer", device.get_friendly_name())
             client = MediaRendererClient(device)
             device.set_client( client)
-            louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
-                               client=client,usn=device.get_usn())
+            #louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
+            #                   client=client,usn=device.get_usn())
+
+    def completed(self, client, usn):
+        louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
+                               client=client,usn=usn)
 
     def remove_client(self, usn, client):
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
@@ -79,21 +83,10 @@ class ControlPoint(log.Loggable):
     def propagate(self, event):
         #print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
-            target_service = service.subscribers[event.get_sid()]
-            for var_name, var_value  in event.items():
-                if var_name == 'LastChange':
-                    """ we have an AVTransport or RenderingControl event """
-                    target_service.get_state_variable(var_name, 0).update(var_value)
-                    tree = parse_xml(var_value).getroot()
-                    namespace_uri, tag = string.split(tree.tag[1:], "}", 1)
-                    for instance in tree.findall('{%s}InstanceID' % namespace_uri):
-                        instance_id = instance.attrib['val']
-                        for var in instance.getchildren():
-                            namespace_uri, tag = string.split(var.tag[1:], "}", 1)
-                            target_service.get_state_variable(tag, instance_id).update(var.attrib['val'])
-                else:
-                    target_service.get_state_variable(var_name, 0).update(var_value)
-
+            try:
+                service.subscribers[event.get_sid()].process_event(event)
+            except:
+                pass
 
     def put_resource(self, url, path):
         def got_result(result):

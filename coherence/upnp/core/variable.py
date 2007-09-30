@@ -19,6 +19,8 @@ except ImportError:
 
 from coherence import log
 
+import louie
+
 class StateVariable(log.Loggable):
     logCategory = 'variable'
 
@@ -35,7 +37,7 @@ class StateVariable(log.Loggable):
         self.default_value = ''
         self.old_value = ''
         self.value = ''
-        self.last_time_touched = time.time()
+        self.last_time_touched = None
         self.allowed_value_range = None
         self.never_evented = False
         if send_events in [True,1,'1','true','True','yes','Yes']:
@@ -173,11 +175,14 @@ class StateVariable(log.Loggable):
         self._callbacks.append(callback)
 
     def notify(self):
+        if self.send_events == False or self.old_value == '':
+            return
+        louie.send('Coherence.UPnP.StateVariable.changed', self.service, self)
         for callback in self._callbacks:
             callback( self, self.service.device.usn)
 
     def __repr__(self):
-        return "Variable: %s, %s, %d, %s, %s, %s, %s, %s, %s" % \
+        return "Variable: %s, %s, %d, %s, %s, %s, %s, %s, %s, %s" % \
                         (self.name,
                          str(self.service),
                          self.instance,
@@ -185,5 +190,6 @@ class StateVariable(log.Loggable):
                          self.data_type,
                          str(self.allowed_values),
                          str(self.default_value),
+                         str(self.old_value),
                          str(self.value),
                          str(self.send_events))

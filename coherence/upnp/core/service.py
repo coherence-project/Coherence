@@ -67,6 +67,7 @@ class Service(log.Loggable):
         self.timeout = 0
 
         self.event_connection = None
+        self.last_time_updated = None
 
         self.client = None
 
@@ -189,6 +190,23 @@ class Service(log.Loggable):
     def renew_subscription(self):
         event.subscribe(self)
 
+    def process_event(self,event):
+        for var_name, var_value  in event.items():
+            if var_name == 'LastChange':
+                """ we have an AVTransport or RenderingControl event """
+                self.get_state_variable(var_name, 0).update(var_value)
+                tree = utils.parse_xml(var_value).getroot()
+                namespace_uri, tag = string.split(tree.tag[1:], "}", 1)
+                for instance in tree.findall('{%s}InstanceID' % namespace_uri):
+                    instance_id = instance.attrib['val']
+                    for var in instance.getchildren():
+                        namespace_uri, tag = string.split(var.tag[1:], "}", 1)
+                        self.get_state_variable(tag, instance_id).update(var.attrib['val'])
+            else:
+                self.get_state_variable(var_name, 0).update(var_value)
+        if self.last_time_updated == None:
+            louie.send('Coherence.UPnP.DeviceClient.Service.notified', self.device, self)
+        self.last_time_updated = time.time()
 
     def parse_actions(self):
 
