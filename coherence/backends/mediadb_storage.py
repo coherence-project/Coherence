@@ -111,12 +111,13 @@ class Container(object):
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = DIDLLite.StorageFolder(id, parent_id,self.name)
+        self.item = DIDLLite.Container(id, parent_id,self.name)
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
         else:
             self.children = []
+        self.item.childCount = self.get_child_count()
 
     def add_child(self, child):
         self.children.append(child)

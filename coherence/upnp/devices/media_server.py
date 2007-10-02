@@ -7,6 +7,7 @@
 
 import os
 import re
+import traceback
 from StringIO import StringIO
 import urllib
 
@@ -139,10 +140,12 @@ class MSRoot(resource.Resource, log.Loggable):
                     return ch.location
             try:
                 p = ch.get_path()
-            except:
+            except Exception, msg:
+                self.debug("error accessing items path %r" % msg)
+                self.debug(traceback.format_exc())
                 return self.list_content(name, ch, request)
             if os.path.exists(p):
-                self.info("accessing path", p)
+                self.info("accessing path %r" % p)
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                             'Output',
                                                                             -1,
@@ -153,6 +156,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 d.addErrback(self.requestFinished, new_id)
                 ch = StaticFile(p.encode('utf-8'))
             else:
+                self.debug("accessing path %r failed" % p)
                 return self.list_content(name, ch, request)
 
         if ch is None:

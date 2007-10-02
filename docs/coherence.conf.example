@@ -14,7 +14,7 @@ controlpoint = yes                        # if set to yes coherence will activat
 web-ui = no                               # set this to yes to enable some interactive
                                           # Web-UI
 
-use_dbus = yes                            # set this to yes to let Coherence signal
+#use_dbus = yes                            # set this to yes to let Coherence signal
                                           # devices and services via dbus and provide
                                           # access to them
                                           # only useful when controlpoint is enabled too
