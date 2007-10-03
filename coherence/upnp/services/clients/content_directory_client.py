@@ -59,7 +59,8 @@ class ContentDirectoryClient:
 
     def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
                filter='*', sort_criteria='',
-               starting_index=0, requested_count=0):
+               starting_index=0, requested_count=0,
+               backward_compatibility=False):
 
         def process_result(result):
             #print result
