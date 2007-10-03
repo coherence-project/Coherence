@@ -181,7 +181,7 @@ class Coherence(log.Loggable):
             try:
                 self.hostname = socket.gethostbyname(socket.gethostname())
             except socket.gaierror:
-                self.error("hostname can't be resolved, maybe a system misconfiguration?")
+                self.warning("hostname can't be resolved, maybe a system misconfiguration?")
                 self.hostname = '127.0.0.1'
 
         if self.hostname == '127.0.0.1':
