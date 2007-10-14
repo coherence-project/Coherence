@@ -157,7 +157,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             self.info('send discovery response delayed by %ds for %s' % (delay, usn))
             try:
                 self.transport.write(response, destination)
-            except socket.error, msg:
+            except (AttributeError,socket.error), msg:
                 self.info("failure sending out byebye notification: %r" % msg)
 
         # Do we know about this service?
@@ -206,7 +206,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         try:
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        except socket.error, msg:
+        except (AttributeError,socket.error), msg:
             self.info("failure sending out alive notification: %r" % msg)
 
     def doByebye(self, st):
@@ -229,7 +229,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         if self.transport:
             try:
                 self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-            except socket.error, msg:
+            except (AttributeError,socket.error), msg:
                 self.info("failure sending out byebye notification: %r" % msg)
 
     def resendNotify( self):
