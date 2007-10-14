@@ -75,11 +75,14 @@ except ImportError:
         def get_tags(filename):
             audio_file = pyid3lib.tag(filename)
             tags = {}
-            tags['artist'] = audio_file.artist.strip()
-            tags['album'] = audio_file.album.strip()
-            tags['title'] = audio_file.title.strip()
-            tags['track'] = audio_file.track[0]
-            return tags
+            try:
+                tags['artist'] = audio_file.artist.strip()
+                tags['album'] = audio_file.album.strip()
+                tags['title'] = audio_file.title.strip()
+                tags['track'] = audio_file.track[0]
+                return tags
+            except AttributeError,msg:
+                raise AttributeError
 
     except ImportError:
         raise ImportError, "we need some installed id3 tag library for this backend"
@@ -369,18 +372,6 @@ class MediaStore(log.Loggable, Plugin):
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                 Container( ROOT_CONTAINER_ID,-1, self.name)
-        self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
-        self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
-                          children_callback=lambda :list(self.db.query(Album,sort=Album.title.ascending)))
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
-        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
-                          children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
@@ -546,8 +537,24 @@ class MediaStore(log.Loggable, Plugin):
         if os.path.exists(self.mediadb) is False:
             db_is_new = True
         self.db = store.Store(self.mediadb)
+
+        self.containers[AUDIO_ALL_CONTAINER_ID] = \
+                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
+        self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
+                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                          children_callback=lambda :list(self.db.query(Album,sort=Album.title.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
+        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
+                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                          children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+
         self.db.urlbase = self.urlbase
         self.db.containers = self.containers
+
+
 
         if db_is_new is True:
             self.get_music_files(self.medialocation)

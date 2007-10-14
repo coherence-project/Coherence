@@ -501,7 +501,6 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.mimetype = mimetype
         self.tags = {}
 
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)

@@ -96,6 +96,8 @@ class FlickrItem(log.Loggable):
             parent_id = parent.get_id()
 
         self.item = UPnPClass(id, parent_id, self.get_name())
+        if isinstance(self.item, Container):
+            self.item.childCount = 0
         self.child_count = 0
         self.children = []
 

@@ -60,6 +60,8 @@ class FSItem(log.Loggable):
             parent_id = parent.get_id()
 
         self.item = UPnPClass(id, parent_id, self.get_name())
+        if isinstance(self.item, Container):
+            self.item.childCount = 0
         self.child_count = 0
         self.children = []
 
@@ -380,7 +382,7 @@ class FSStore(log.Loggable,Plugin):
         #print "append", path
         mimetype,_ = mimetypes.guess_type(path, strict=False)
         if mimetype == None:
-            if os.path.isdir(path):
+            if os.path.isdir(path) or os.path.islink(path):
                 mimetype = 'directory'
         if mimetype == None:
             return None
