@@ -194,6 +194,7 @@ class CoverGetter(object):
         return d
 
     def got_image(self, result, convert_from='', convert_to=''):
+        #print "got_image"
         if(len(convert_from) and len(convert_to)):
             #print "got_image %d, convert to %s" % (len(result), convert_to)
             try:
@@ -237,7 +238,6 @@ class CoverGetter(object):
                 self.callback(data)
 
     def got_response(self, result):
-        #print x
         convert_from = convert_to = ''
         result = parse_xml(result, encoding='utf-8')
         image_tag = result.find('.//{%s}%s' % (aws_ns,aws_image_size.get(self.image_size,'large')))
@@ -290,6 +290,22 @@ class CoverGetter(object):
 
 if __name__ == '__main__':
 
+    from twisted.python import usage
+
+    class Options(usage.Options):
+        optParameters = [['artist', 'a', '', 'artist name'],
+                         ['title', 't', '', 'title'],
+                         ['asin', 's', '', 'ASIN'],
+                    ]
+
+    options = Options()
+    try:
+        options.parseOptions()
+    except usage.UsageError, errortext:
+        print '%s: %s' % (sys.argv[0], errortext)
+        print '%s: Try --help for usage details.' % (sys.argv[0])
+        sys.exit(1)
+
     def got_it(filename, *args, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
@@ -297,8 +313,13 @@ if __name__ == '__main__':
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
     aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-    reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
-    reactor.callWhenRunning(CoverGetter,"cover.png",aws_key, callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
-    reactor.callWhenRunning(CoverGetter,"cover2.jpg",aws_key, callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
+    print options['asin'],options['artist'],options['title']
+    if len(options['asin']):
+        reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=got_it,asin=options['asin'])
+    elif len(options['artist']) and len(options['title']):
+        reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=got_it,artist=options['artist'],title=options['title'])
+    #reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
+    #reactor.callWhenRunning(CoverGetter,"cover.png",aws_key, callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
+    #reactor.callWhenRunning(CoverGetter,"cover2.jpg",aws_key, callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
 
     reactor.run()
