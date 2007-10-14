@@ -202,7 +202,7 @@ class Coherence(log.Loggable):
 
         plugins = config.get('plugins',None)
         if plugins is None:
-            self.warning("No plugin defined!")
+            self.info("No plugin defined!")
         else:
             for plugin,arguments in plugins.items():
                 try:
