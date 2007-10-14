@@ -370,10 +370,7 @@ class Coherence(log.Loggable):
 
 
     def add_web_resource(self, name, sub):
-        #self.web_server.web_root_resource.putChild(name, sub)
         self.children[name] = sub
-        #print self.web_server.web_root_resource.children
 
     def remove_web_resource(self, name):
-        # XXX implement me
-        pass
+        del self.children[name]

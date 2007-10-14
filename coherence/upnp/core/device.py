@@ -121,7 +121,7 @@ class Device(log.Loggable):
             self.info("check service %r %r " % (service.id, service.get_sid()), service.get_timeout(), now)
             if service.get_sid() != None:
                 if service.get_timeout() < now:
-                    self.warning("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
+                    self.debug("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
                           "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()

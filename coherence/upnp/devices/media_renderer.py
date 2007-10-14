@@ -274,7 +274,7 @@ class MediaRenderer(log.Loggable):
                         silencio = False
                 try:
                     namespace = service.namespace
-                except:
+                except AttributeError:
                     namespace = 'schemas-upnp-org'
 
                 s.register('local',
@@ -284,3 +284,23 @@ class MediaRenderer(log.Loggable):
                             silent=silencio)
 
             version -= 1
+
+    def unregister(self):
+        s = self.coherence.ssdp_server
+        uuid = str(self.uuid)
+        self.coherence.remove_web_resource(uuid[5:])
+
+        version = self.version
+        while version > 0:
+            s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
+            for service in self._services:
+                try:
+                    namespace = service.namespace
+                except AttributeError:
+                    namespace = 'schemas-upnp-org'
+                s.doByebye('%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version))
+
+            version -= 1
+
+        s.doByebye(uuid)
+        s.doByebye('%s::upnp:rootdevice' % uuid)

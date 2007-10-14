@@ -209,7 +209,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         except (AttributeError,socket.error), msg:
             self.info("failure sending out alive notification: %r" % msg)
 
-    def doByebye(self, st):
+    def doByebye(self, usn):
         """Do byebye"""
 
         self.info('Sending byebye notification for %s' % st)
@@ -218,7 +218,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
                 'NTS: ssdp:byebye',
                 ]
-        stcpy = dict(self.known[st].iteritems())
+        stcpy = dict(self.known[usn].iteritems())
         stcpy['NT'] = stcpy['ST']
         del stcpy['ST']
         del stcpy['MANIFESTATION']
