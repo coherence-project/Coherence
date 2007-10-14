@@ -414,7 +414,7 @@ class Container(Object):
     upnp_class = Object.upnp_class + '.container'
 
     elementName = 'container'
-    childCount = 0
+    childCount = None
     createClass = None
     searchable = None
 
@@ -427,7 +427,8 @@ class Container(Object):
 
         root = Object.toElement(self)
 
-        root.attrib['childCount'] = str(self.childCount)
+        if self.childCount is not None:
+            root.attrib['childCount'] = str(self.childCount)
 
         if self.createClass is not None:
             ET.SubElement(root, 'upnp:createclass').text = self.createClass
@@ -449,7 +450,9 @@ class Container(Object):
 
     def fromElement(self, elt):
         Object.fromElement(self, elt)
-        self.childCount = int(elt.attrib.get('childCount','0'))
+        v = elt.attrib.get('childCount',None)
+        if v is not None:
+            self.childCount = int(v)
         #self.searchable = int(elt.attrib.get('searchable','0'))
         self.searchable = elt.attrib.get('searchable','0') in [1,'True','true','1']
         self.searchClass = []
@@ -534,8 +537,11 @@ class DIDLElement(ElementInterface):
         elt = utils.parse_xml(aString, 'utf-8')
         elt = elt.getroot()
         for node in elt.getchildren():
-            upnp_class_name = node.tag[node.tag.find('}')+1:].title()
-            upnp_class = eval(upnp_class_name)
+            upnp_class_name =  node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
+            try:
+                upnp_class = upnp_classes[upnp_class_name]()
+            except Exception, msg:
+                print msg
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance

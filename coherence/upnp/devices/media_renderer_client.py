@@ -61,7 +61,7 @@ class MediaRendererClient(log.Loggable):
             return
         if self.av_transport:
             self.info("AVTransport (optional) available")
-            self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
+            #self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('TransportState', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('CurrentTransportActions', 0, self.state_variable_change)
             #self.av_transport.get_transport_info()
@@ -82,6 +82,7 @@ class MediaRendererClient(log.Loggable):
         #del self
 
     def service_notified(self, service):
+        self.info("Service %r sent notification" % service);
         if self.detection_completed == True:
             return
         if self.rendering_control != None:
@@ -97,5 +98,5 @@ class MediaRendererClient(log.Loggable):
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
                                client=self,usn=self.device.get_usn())
 
-    def state_variable_change( self, variable, usn):
+    def state_variable_change( self, variable):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

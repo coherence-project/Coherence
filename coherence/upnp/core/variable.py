@@ -173,13 +173,16 @@ class StateVariable(log.Loggable):
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
+        callback( self)
 
     def notify(self):
-        if self.send_events == False or self.old_value == '':
-            return
-        louie.send('Coherence.UPnP.StateVariable.changed', self.service, self)
+        self.info("Variable %s sends notify about new value >%r<" %(self.name, self.value))
+        #if self.old_value == '':
+        #    return
+        louie.send(signal='Coherence.UPnP.StateVariable.%s.changed' % self.name, sender=self.service, variable=self)
+        louie.send(signal='Coherence.UPnP.StateVariable.changed',sender=self.service, variable=self)
         for callback in self._callbacks:
-            callback( self, self.service.device.usn)
+            callback( self)
 
     def __repr__(self):
         return "Variable: %s, %s, %d, %s, %s, %s, %s, %s, %s, %s" % \

@@ -24,6 +24,9 @@ class RenderingControlClient:
         self.url = None
         del self
 
+    def subscribe_for_variable(self, var_name, callback,signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+
     def list_presets(self, instance_id=0):
         action = self.service.get_action('ListPresets')
         return action.call(InstanceID=instance_id)

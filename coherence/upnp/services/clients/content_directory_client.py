@@ -38,8 +38,8 @@ class ContentDirectoryClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback)
+    def subscribe_for_variable(self, var_name, callback,signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
 
     def get_search_capabilities(self):
         action = self.service.get_action('GetSearchCapabilities')

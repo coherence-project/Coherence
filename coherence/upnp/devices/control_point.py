@@ -72,6 +72,7 @@ class ControlPoint(log.Loggable):
             #                   client=client,usn=device.get_usn())
 
     def completed(self, client, usn):
+        self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected ' % client.device_type)
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
                                client=client,usn=usn)
 
@@ -85,7 +86,9 @@ class ControlPoint(log.Loggable):
         if event.get_sid() in service.subscribers.keys():
             try:
                 service.subscribers[event.get_sid()].process_event(event)
-            except:
+            except Exception, msg:
+                self.debug(msg)
+                self.debug(traceback.format_exc())
                 pass
 
     def put_resource(self, url, path):

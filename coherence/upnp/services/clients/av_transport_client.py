@@ -24,6 +24,9 @@ class AVTransportClient:
         self.url = None
         del self
 
+    def subscribe_for_variable(self, var_name, callback,signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+
     def set_av_transport_uri(self, instance_id=0, current_uri='', current_uri_metadata=''):
         action = self.service.get_action('SetAVTransportURI')
         return action.call( InstanceID=instance_id,
