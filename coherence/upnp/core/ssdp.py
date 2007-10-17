@@ -74,6 +74,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
         self.msg('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
+        self.debug('with headers:', headers)
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
             self.discoveryRequest(headers, (host, port))
