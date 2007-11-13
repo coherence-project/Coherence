@@ -206,7 +206,7 @@ class INotify(FileDescriptor, object):
             if len(self._buffer) < 16:
                 break
 
-            wd, mask, cookie, size = struct.unpack("LLLL", self._buffer[0:16])
+            wd, mask, cookie, size = struct.unpack("=LLLL", self._buffer[0:16])
             if size:
                 name = self._buffer[16:16+size].rstrip('\0')
             else:
