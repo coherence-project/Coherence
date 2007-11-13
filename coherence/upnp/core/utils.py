@@ -15,6 +15,7 @@ import socket
 import fcntl
 import struct
 import string
+import os
 
 def parse_xml(data, encoding="utf-8"):
     return et_parse_xml(data,encoding)
@@ -43,12 +44,21 @@ def get_ip_address(ifname):
     Uses the Linux SIOCGIFADDR ioctl to find the IP address associated
     with a network interface, given the name of that interface, e.g. "eth0".
     The address is returned as a string containing a dotted quad.
+
+    Updated to work on BSD. OpenBSD and OSX share the same value for
+    SIOCGIFADDR, and its likely that other BSDs do too.
     """
+
+    system_type = os.uname()[0]
+    if system_type == "Linux":
+        SIOCGIFADDR = 0x8915
+    else:
+        SIOCGIFADDR = 0xc0206921
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
-        0x8915,  # SIOCGIFADDR
+        SIOCGIFADDR, 
         struct.pack('256s', ifname[:15])
     )[20:24])
 
