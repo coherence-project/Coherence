@@ -69,10 +69,8 @@ class Resource:
                     additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=01'))
                 if content_format == 'video/mpeg':
                     additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=01'))
-                if content_format == 'video/x-xvid':
-                    additional_info = ';'.join(('DLNA.ORG_PN=','DLNA.ORG_OP=01'))
-                if content_format == 'video/x-divx':
-                    additional_info = ';'.join(('DLNA.ORG_PN=','DLNA.ORG_OP=01'))
+                if content_format == 'video/mp4':
+                    additional_info = ';'.join(('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC','DLNA.ORG_OP=01'))
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self):

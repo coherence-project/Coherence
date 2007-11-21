@@ -12,6 +12,7 @@ from datetime import datetime
 
 import mimetypes
 mimetypes.init()
+mimetypes.add_type('video/mp4', '.mp4')
 
 from urlparse import urlsplit
 
