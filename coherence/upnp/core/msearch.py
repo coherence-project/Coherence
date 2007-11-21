@@ -38,7 +38,8 @@ class MSearch(DatagramProtocol, log.Loggable):
                                             headers['usn'], headers['st'],
                                             headers['location'],
                                             headers['server'],
-                                            headers['cache-control'])
+                                            headers['cache-control'],
+                                            host=host)
 
     def double_discover(self):
         " Because it's worth it (with UDP's reliability) "

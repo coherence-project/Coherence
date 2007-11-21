@@ -447,17 +447,20 @@ class MediaServer(log.Loggable):
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
+        host = self.coherence.hostname
         self.msg('%s register' % self.device_type)
         # we need to do this after the children are there, since we send notifies
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,
                     'upnp:rootdevice',
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
+                    host=host)
 
         s.register('local',
                     uuid,
                     uuid,
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
+                    host=host)
 
         version = self.version
         while version > 0:
@@ -469,7 +472,8 @@ class MediaServer(log.Loggable):
                         '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
                         'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
                         self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                        silent=silent)
+                        silent=silent,
+                        host=host)
 
             for service in self._services:
                 silencio = silent
@@ -487,6 +491,7 @@ class MediaServer(log.Loggable):
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, version),
                             self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                            silent=silencio)
+                            silent=silencio,
+                            host=host)
 
             version -= 1

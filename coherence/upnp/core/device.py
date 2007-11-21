@@ -25,6 +25,7 @@ class Device(log.Loggable):
         self.st = infos['ST']
         self.location = infos['LOCATION']
         self.manifestation = infos['MANIFESTATION']
+        self.host = infos['HOST']
         self.services = []
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
@@ -36,7 +37,10 @@ class Device(log.Loggable):
         louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
         self.parse_description()
-        self.info("device %s %s initialized, manifestation %s" % (self.friendly_name,self.st,self.manifestation))
+        self.info("device %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation))
+
+    def __repr__(self):
+        return "device %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation)
 
     #def __del__(self):
     #    #print "Device removal completed"
@@ -78,6 +82,9 @@ class Device(log.Loggable):
 
     def get_id(self):
         return self.udn
+
+    def get_host(self):
+        return self.host
 
     def get_usn(self):
         return self.usn

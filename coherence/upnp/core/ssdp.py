@@ -87,7 +87,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def register(self, manifestation, usn, st, location,
                         server=SERVER_ID,
                         cache_control='max-age=1800',
-                        silent=False):
+                        silent=False,
+                        host=None):
         """Register a service or device that this SSDP server will
         respond to."""
 
@@ -98,15 +99,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.known[usn]['LOCATION'] = location
         self.known[usn]['ST'] = st
         self.known[usn]['EXT'] = ''
-        if manifestation == 'local':
-            self.known[usn]['SERVER'] = server
-            self.known[usn]['CACHE-CONTROL'] = cache_control
-        else:
-            self.known[usn]['SERVER'] = server
-            self.known[usn]['CACHE-CONTROL'] = cache_control
+        self.known[usn]['SERVER'] = server
+        self.known[usn]['CACHE-CONTROL'] = cache_control
 
         self.known[usn]['MANIFESTATION'] = manifestation
         self.known[usn]['SILENT'] = silent
+        self.known[usn]['HOST'] = host
 
         self.msg(self.known[usn])
 
@@ -139,7 +137,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         if headers['nts'] == 'ssdp:alive':
             if not self.isKnown(headers['usn']):
                 self.register('remote', headers['usn'], headers['nt'], headers['location'],
-                              headers['server'], headers['cache-control'])
+                              headers['server'], headers['cache-control'], host=host)
         elif headers['nts'] == 'ssdp:byebye':
             if self.isKnown(headers['usn']):
                 self.unRegister(headers['usn'])
@@ -176,7 +174,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 for k, v in i.items():
                     if k == 'USN':
                         usn = v
-                    if k not in ('MANIFESTATION','SILENT'):
+                    if k not in ('MANIFESTATION','SILENT','HOST'):
                         response.append('%s: %s' % (k, v))
                 response.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
 
@@ -201,6 +199,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['ST']
         del stcpy['MANIFESTATION']
         del stcpy['SILENT']
+        del stcpy['HOST']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.debug('doNotify content', resp)
@@ -213,7 +212,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def doByebye(self, usn):
         """Do byebye"""
 
-        self.info('Sending byebye notification for %s' % st)
+        self.info('Sending byebye notification for %s' % usn)
 
         resp = [ 'NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
@@ -224,6 +223,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['ST']
         del stcpy['MANIFESTATION']
         del stcpy['SILENT']
+        del stcpy['HOST']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.debug('doByebye content', resp)

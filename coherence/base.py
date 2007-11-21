@@ -313,6 +313,12 @@ class Coherence(log.Loggable):
         for callback in self._callbacks.get(name,[]):
             callback(*args)
 
+    def get_device_by_host(self, host):
+        found = []
+        for device in self.devices:
+            if device.get_host() == host:
+                found.append(device)
+        return found
 
     def get_device_with_usn(self, usn):
         found = None

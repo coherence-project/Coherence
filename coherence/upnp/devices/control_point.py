@@ -20,10 +20,37 @@ import louie
 
 from coherence import log
 
+class DeviceQuery(object):
+
+    def __init__(self, type, pattern, callback, timeout=0, oneshot=True):
+        self.type = type
+        self.pattern = pattern
+        self.callback = callback
+        self.fired = False
+        self.timeout = timeout
+        self.oneshot = oneshot
+
+    def fire(self, device):
+        if callable(self.callback):
+            self.callback(device)
+        elif isinstance(self.callback,basestring):
+            louie.send(self.callback, None, device=device)
+        self.fired = True
+
+    def check(self, device):
+        if self.fired and self.oneshot:
+            return
+        if(self.type == 'host' and
+           device.host == self.pattern):
+            self.fire(device)
+        elif(self.type == 'friendly_name' and
+           device.friendly_name == self.pattern):
+            self.fire(device)
+
 class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
 
-    def __init__(self,coherence):
+    def __init__(self,coherence,auto_client=['MediaServer','MediaRenderer']):
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -31,6 +58,9 @@ class ControlPoint(log.Loggable):
 
         self.coherence.add_web_resource('RPC2',
                                         XMLRPC(self))
+
+        self.auto_client = auto_client
+        self.queries=[]
 
         for device in self.get_devices():
             self.check_device( device)
@@ -40,11 +70,23 @@ class ControlPoint(log.Loggable):
 
         louie.connect(self.completed, 'Coherence.UPnP.DeviceClient.detection_completed', louie.Any)
 
-    def browse( self, device):
+    def browse(self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
             return
         self.check_device( device)
+
+    def process_queries(self, device):
+        for query in self.queries:
+            query.check(device)
+
+    def add_query(self, query):
+        for device in self.get_devices():
+            query.check(device)
+        if query.fired == False and query.timeout == 0:
+            query.callback(None)
+        else:
+            self.queries.append(query)
 
     def get_devices(self):
         return self.coherence.get_devices()
@@ -52,24 +94,25 @@ class ControlPoint(log.Loggable):
     def get_device_with_id(self, id):
         return self.coherence.get_device_with_id(id)
 
+    def get_device_by_host(self, host):
+        return self.coherence.get_device_by_host(host)
+
     def check_device( self, device):
         self.info("found device %s of type %s" %(device.get_friendly_name(),
                                                 device.get_device_type()))
-        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
-                                  "urn:schemas-upnp-org:device:MediaServer:2"]:
-            self.info("identified MediaServer", device.get_friendly_name())
-            client = MediaServerClient(device)
-            device.set_client( client)
-            #louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
-            #                   client=client,usn=device.get_usn())
+        short_type = device.get_device_type().split(':')[3]
+        if short_type in self.auto_client:
+            if short_type == 'MediaServer':
+                self.info("identified MediaServer", device.get_friendly_name())
+                client = MediaServerClient(device)
+                device.set_client( client)
 
-        if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
-                                  "urn:schemas-upnp-org:device:MediaRenderer:2"]:
-            self.info("identified MediaRenderer", device.get_friendly_name())
-            client = MediaRendererClient(device)
-            device.set_client( client)
-            #louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
-            #                   client=client,usn=device.get_usn())
+            if short_type == 'MediaRenderer':
+                self.info("identified MediaRenderer", device.get_friendly_name())
+                client = MediaRendererClient(device)
+                device.set_client( client)
+
+        self.process_queries(device)
 
     def completed(self, client, usn):
         self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected ' % client.device_type)
@@ -259,7 +302,29 @@ if __name__ == '__main__':
     config['logmode'] = 'warning'
     config['serverport'] = 30020
 
-    ctrl = ControlPoint(Coherence(config))
+    ctrl = ControlPoint(Coherence(config),auto_client=[])
+
+    def show_devices():
+        print "show_devices"
+        for d in ctrl.get_devices():
+            print d
+
+    def the_result(r):
+        print "result", r
+
+    def query_devices():
+        print "query_devices"
+        ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result))
+
+    def query_devices2():
+        print "query_devices with timeout"
+        ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result, timeout=10, oneshot=False))
+
+    reactor.callLater(2, show_devices)
+    reactor.callLater(3, query_devices)
+    reactor.callLater(4, query_devices2)
+    reactor.callLater(5, ctrl.add_query, DeviceQuery('friendly_name', 'Coherence Test Content', the_result, timeout=10, oneshot=False))
+
 
 
     reactor.run()
