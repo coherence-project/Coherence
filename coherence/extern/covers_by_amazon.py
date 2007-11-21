@@ -296,12 +296,14 @@ if __name__ == '__main__':
         optParameters = [['artist', 'a', '', 'artist name'],
                          ['title', 't', '', 'title'],
                          ['asin', 's', '', 'ASIN'],
+                         ['filename', 'f', 'cover.jpg', 'filename'],
                     ]
 
     options = Options()
     try:
         options.parseOptions()
     except usage.UsageError, errortext:
+        import sys
         print '%s: %s' % (sys.argv[0], errortext)
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(1)
@@ -309,17 +311,11 @@ if __name__ == '__main__':
     def got_it(filename, *args, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
-    def got_it2(filename, **kwargs):
-        print "Mylady, it is an image and its name is", filename, args, kwargs
-
     aws_key = '1XHSE4FQJ0RK0X3S9WR2'
     print options['asin'],options['artist'],options['title']
     if len(options['asin']):
-        reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=got_it,asin=options['asin'])
+        reactor.callWhenRunning(CoverGetter,options['filename'],aws_key, callback=got_it,asin=options['asin'])
     elif len(options['artist']) and len(options['title']):
-        reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=got_it,artist=options['artist'],title=options['title'])
-    #reactor.callWhenRunning(CoverGetter,"cover.jpg",aws_key, callback=(got_it, ("a", 1), {'test':1}),asin='B000NJLNPO')
-    #reactor.callWhenRunning(CoverGetter,"cover.png",aws_key, callback=(got_it, {'test':2}),artist='Beyonce',title="B'Day [Deluxe]")
-    #reactor.callWhenRunning(CoverGetter,"cover2.jpg",aws_key, callback=(got_it, {'herby':12}),artist=u'Herbert Grönemeyer',title='12')
+        reactor.callWhenRunning(CoverGetter,options['filename'],aws_key, callback=got_it,artist=options['artist'],title=options['title'])
 
     reactor.run()
