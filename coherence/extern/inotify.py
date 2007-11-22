@@ -6,7 +6,6 @@
 
 import os
 import struct
-import platform
 
 try:
     import ctypes
@@ -134,13 +133,20 @@ class INotify(FileDescriptor, object):
             except:
                 raise SystemError, "libc not found, INotify support disabled"
 
-            machine = platform.machine()
             try:
-                obj._init_syscall_id = _inotify_syscalls[machine][0]
-                obj._add_watch_syscall_id = _inotify_syscalls[machine][1]
-                obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
+                obj.inotify_init = obj.libc.inotify_init
+                #print "horray, we have a libc with inotify support"
+                obj.inotify_add_watch = obj.libc_inotify_add_watch
+                obj.inotify_rm_watch = obj.libc_inotify_rm_watch
             except:
-                raise SystemError, "unknown system '%s', INotify support disabled" % machine
+                import platform
+                machine = platform.machine()
+                try:
+                    obj._init_syscall_id = _inotify_syscalls[machine][0]
+                    obj._add_watch_syscall_id = _inotify_syscalls[machine][1]
+                    obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
+                except:
+                    raise SystemError, "unknown system '%s', INotify support disabled" % machine
 
             FileDescriptor.__init__(obj)
 
@@ -177,13 +183,23 @@ class INotify(FileDescriptor, object):
         if type(path) is unicode:
             path = path.encode('utf-8')
             self.libc.syscall.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
-            return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
         else:
             self.libc.syscall.argtypes = None
-            return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
+        return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
 
     def inotify_rm_watch(self, wd):
         return self.libc.syscall(self._rm_watch_syscall_id, self._fd, wd)
+
+    def libc_inotify_add_watch(self, path, mask):
+        if type(path) is unicode:
+            path = path.encode('utf-8')
+            self.libc.inotify_add_watch.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+        else:
+            self.libc.inotify_add_watch.argtypes = None
+        return self.libc.inotify_add_watch(self._fd, path, mask)
+
+    def libc_inotify_rm_watch(self, wd):
+        return self.libc.inotify_rm_watch(self._fd, wd)
 
     def fileno(self):
         return self._fd
