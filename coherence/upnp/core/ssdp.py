@@ -218,20 +218,23 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
                 'NTS: ssdp:byebye',
                 ]
-        stcpy = dict(self.known[usn].iteritems())
-        stcpy['NT'] = stcpy['ST']
-        del stcpy['ST']
-        del stcpy['MANIFESTATION']
-        del stcpy['SILENT']
-        del stcpy['HOST']
-        resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
-        resp.extend(('', ''))
-        self.debug('doByebye content', resp)
-        if self.transport:
-            try:
-                self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-            except (AttributeError,socket.error), msg:
-                self.info("failure sending out byebye notification: %r" % msg)
+        try:
+            stcpy = dict(self.known[usn].iteritems())
+            stcpy['NT'] = stcpy['ST']
+            del stcpy['ST']
+            del stcpy['MANIFESTATION']
+            del stcpy['SILENT']
+            del stcpy['HOST']
+            resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+            resp.extend(('', ''))
+            self.debug('doByebye content', resp)
+            if self.transport:
+                try:
+                    self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+                except (AttributeError,socket.error), msg:
+                    self.info("failure sending out byebye notification: %r" % msg)
+        except KeyError, msg:
+            self.debug("error building byebye notification: %r" % msg)
 
     def resendNotify( self):
         for usn in self.known:

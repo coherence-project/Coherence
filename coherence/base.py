@@ -100,7 +100,7 @@ class WebServer(log.Loggable):
         port = reactor.listenTCP( port, self.site)
         coherence.web_server_port = port._realPortNumber
         # XXX: is this the right way to do it?
-        self.info( "WebServer on port %d ready" % coherence.web_server_port)
+        self.warning( "WebServer on port %d ready" % coherence.web_server_port)
 
 
 class Coherence(log.Loggable):
@@ -217,7 +217,7 @@ class Coherence(log.Loggable):
             self.ctrl = ControlPoint(self)
 
     def add_plugin(self, plugin, **kwargs):
-        self.info("adding plugin", plugin)
+        self.info("adding plugin %r", plugin)
 
         def get_available_plugins(ids):
             if self.available_plugins is None:
@@ -266,6 +266,12 @@ class Coherence(log.Loggable):
             self.warning("Can't enable %s plugin, %s!" % (plugin, msg))
             self.debug(traceback.format_exc())
 
+    def remove_plugin(self, plugin):
+        """ removes a backend from Coherence          """
+        """ plugin is the object return by add_plugin """
+        
+        self.info("removing plugin %r", plugin)
+        plugin.unregister()
 
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal

@@ -25,6 +25,7 @@ from coherence import __version__
 
 from coherence.upnp.core.service import ServiceServer
 from coherence.upnp.core.utils import StaticFile
+#from coherence.upnp.core.utils import ReverseProxyResource
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -495,3 +496,25 @@ class MediaServer(log.Loggable):
                             host=host)
 
             version -= 1
+
+    def unregister(self):
+        s = self.coherence.ssdp_server
+        uuid = str(self.uuid)
+        self.coherence.remove_web_resource(uuid[5:])
+
+        version = self.version
+        while version > 0:
+            s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
+            for service in self._services:
+                if hasattr(service,'version') and service.version < version:
+                    continue
+                try:
+                    namespace = service.namespace
+                except AttributeError:
+                    namespace = 'schemas-upnp-org'
+                s.doByebye('%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version))
+
+            version -= 1
+
+        s.doByebye(uuid)
+        s.doByebye('%s::upnp:rootdevice' % uuid)

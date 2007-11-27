@@ -299,6 +299,8 @@ class MediaRenderer(log.Loggable):
         while version > 0:
             s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
             for service in self._services:
+                if hasattr(service,'version') and service.version < version:
+                    continue
                 try:
                     namespace = service.namespace
                 except AttributeError:
