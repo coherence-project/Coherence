@@ -8,7 +8,8 @@ from coherence.extern.et import parse_xml as et_parse_xml
 
 from twisted.web import server, http, static
 from twisted.web import client, error
-from twisted.internet import reactor
+from twisted.web import proxy, resource, server
+from twisted.internet import reactor, protocol
 from twisted.python import failure
 
 import socket
@@ -16,6 +17,7 @@ import fcntl
 import struct
 import string
 import os
+import urlparse
 
 def parse_xml(data, encoding="utf-8"):
     return et_parse_xml(data,encoding)
@@ -58,7 +60,7 @@ def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
-        SIOCGIFADDR, 
+        SIOCGIFADDR,
         struct.pack('256s', ifname[:15])
     )[20:24])
 
@@ -104,6 +106,124 @@ class Site(server.Site):
 
     def startFactory(self):
         http._logDateTimeStart()
+
+
+class ProxyClient(http.HTTPClient):
+    """Used by ProxyClientFactory to implement a simple web proxy."""
+
+    def __init__(self, command, rest, version, headers, data, father):
+        self.father = father
+        self.command = command
+        self.rest = rest
+        if headers.has_key("proxy-connection"):
+            del headers["proxy-connection"]
+        #headers["connection"] = "close"
+        self.headers = headers
+        #if not headers.has_key("keep-alive"):
+        #    headers["keep-alive"] = ''
+        print "command", command
+        print "rest", rest
+        print "headers", headers
+        self.data = data
+
+    def connectionMade(self):
+        self.sendCommand(self.command, self.rest)
+        for header, value in self.headers.items():
+            self.sendHeader(header, value)
+        self.endHeaders()
+        self.transport.write(self.data)
+
+    def handleStatus(self, version, code, message):
+        if version == 'ICY':
+            version = 'HTTP/1.1'
+        print "ProxyClient handleStatus", version, code, message
+        self.father.transport.write("%s %s %s\r\n" % (version, code, message))
+
+    def handleHeader(self, key, value):
+        #print "ProxyClient handleHeader", key, value
+        if not key.startswith('icy-'):
+            print "ProxyClient handleHeader", key, value
+            self.father.transport.write("%s: %s\r\n" % (key, value))
+
+    def handleEndHeaders(self):
+        #self.father.transport.write("%s: %s\r\n" % ( 'Keep-Alive', ''))
+        #self.father.transport.write("%s: %s\r\n" % ( 'Accept-Ranges', 'bytes'))
+        #self.father.transport.write("%s: %s\r\n" % ( 'Content-Length', '2000000'))
+        #self.father.transport.write("%s: %s\r\n" % ( 'Date', 'Mon, 26 Nov 2007 11:04:12 GMT'))
+        #self.father.transport.write("%s: %s\r\n" % ( 'Last-Modified', 'Sun, 25 Nov 2007 23:19:51 GMT'))
+        ##self.father.transport.write("%s: %s\r\n" % ( 'Server', 'Apache/2.0.52 (Red Hat)'))
+        self.father.transport.write("\r\n")
+
+    def handleResponsePart(self, buffer):
+        #print "ProxyClient hanhttp://twistedmatrix.com/trac/ticket/1089dleResponsePart", len(buffer)
+        self.father.transport.write(buffer)
+
+    def handleResponseEnd(self):
+        self.transport.loseConnection()
+        self.father.channel.transport.loseConnection()
+
+
+class ProxyClientFactory(protocol.ClientFactory):
+    """ Used by ProxyRequest to implement a simple web proxy."""
+    """ Taken from twisted.web.proxy, to get around          """
+    """ http://twistedmatrix.com/trac/ticket/1089            """
+    """ until that's in the mainstream                       """
+
+    protocol = proxy.ProxyClient
+
+    def __init__(self, command, rest, version, headers, data, father):
+        self.father = father
+        self.command = command
+        self.rest = rest
+        self.headers = headers
+        self.data = data
+        self.version = version
+
+
+    def buildProtocol(self, addr):
+        return self.protocol(self.command, self.rest, self.version,
+                             self.headers, self.data, self.father)
+
+
+    def clientConnectionFailed(self, connector, reason):
+        self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
+        self.father.transport.write("Content-Type: text/html\r\n")
+        self.father.transport.write("\r\n")
+        self.father.transport.write('''<H1>Could not connect</H1>''')
+        self.father.transport.loseConnection()
+
+
+class ReverseProxyResource(proxy.ReverseProxyResource):
+    """Resource that renders the results gotten from another server
+
+    Put this resource in the tree to cause everything below it to be relayed
+    to a different server.
+    """
+
+    def __init__(self, host, port, path):
+        resource.Resource.__init__(self)
+        self.host = host
+        self.port = port
+        self.path = path
+
+    def getChild(self, path, request):
+        return ReverseProxyResource(self.host, self.port, self.path+'/'+path)
+
+    def render(self, request):
+        request.received_headers['host'] = self.host
+        request.content.seek(0, 0)
+        qs = urlparse.urlparse(request.uri)[4]
+        if qs:
+            rest = self.path + '?' + qs
+        else:
+            rest = self.path
+        clientFactory = ProxyClientFactory(request.method, rest,
+                                     request.clientproto,
+                                     request.getAllHeaders(),
+                                     request.content.read(),
+                                     request)
+        reactor.connectTCP(self.host, self.port, clientFactory)
+        return server.NOT_DONE_YET
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 
@@ -196,6 +316,8 @@ class StaticFile(static.File):
     """
 
     def render(self, request):
+        #print "StaticFile", request
+
         """You know what you doing."""
         self.restat()
 
@@ -236,6 +358,7 @@ class StaticFile(static.File):
         trans = True
 
         range = request.getHeader('range')
+        #print "StaticFile", range
 
         tsize = size
         if range is not None:
@@ -272,6 +395,7 @@ class StaticFile(static.File):
                 request.setResponseCode(http.PARTIAL_CONTENT)
                 request.setHeader('content-range',"bytes %s-%s/%s " % (
                     str(start), str(end), str(tsize)))
+                #print "StaticFile", start, end, tsize
 
         request.setHeader('content-length', str(fsize))
         if request.method == 'HEAD' or trans == False:

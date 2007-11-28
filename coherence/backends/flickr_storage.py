@@ -9,11 +9,10 @@ from datetime import datetime
 from email.Utils import parsedate_tz
 
 from twisted.python import failure
-from twisted.web import proxy
 from twisted.web.xmlrpc import Proxy
 from twisted.internet import task
 
-from coherence.upnp.core.utils import parse_xml
+from coherence.upnp.core.utils import parse_xml, ReverseProxyResource
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 from coherence.upnp.core.soap_proxy import SOAPProxy
@@ -27,13 +26,7 @@ from coherence import log
 
 from urlparse import urlsplit
 
-def myGetPage(url, contextFactory=None, *args, **kwargs):
-    scheme, host, port, path = _parse(url)
-    factory = HTTPClientFactory(url, *args, **kwargs)
-    reactor.connectTCP(host, port, factory)
-    return factory
-
-class ProxyImage(proxy.ReverseProxyResource):
+class ProxyImage(ReverseProxyResource):
 
     def __init__(self, uri):
         self.uri = uri
@@ -45,7 +38,7 @@ class ProxyImage(proxy.ReverseProxyResource):
             host = host_port
             port = 80
 
-        proxy.ReverseProxyResource.__init__(self, host, port, path)
+        ReverseProxyResource.__init__(self, host, port, path)
 
 class FlickrItem(log.Loggable):
     logCategory = 'flickr_storage'
