@@ -345,8 +345,9 @@ class MediaServer(log.Loggable):
 
         kwargs['urlbase'] = self.urlbase
         self.icons = kwargs.get('icons', [])
-        if kwargs.has_key('icon'):
-            self.icons.append(kwargs['icon'])
+        if len(self.icons) == 0:
+            if kwargs.has_key('icon'):
+                self.icons.append(kwargs['icon'])
 
         louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
         reactor.callLater(0.2, self.fire, backend, **kwargs)

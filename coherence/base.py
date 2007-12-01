@@ -137,12 +137,22 @@ class Coherence(log.Loggable):
             a COHERENCE_DEBUG environment variable overwrites
             all level settings here
         """
-        subsystem_log = config.get('subsystem_log',{})
-        logmode = config.get('logmode', 'warning')
+
+        try:
+            logmode = config['logging'].get('level','warning')
+        except KeyError:
+            logmode = config.get('logmode', 'warning')
         _debug = []
-        for subsystem,level in subsystem_log.items():
-            #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
-            _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
+
+        try:
+            for subsystem in config['logging'].get('subsystems',[]):
+                self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
+                _debug.append('%s:%d' % (subsystem['name'].lower(), log.human2level(subsystem['level'])))
+        except KeyError:
+            subsystem_log = config.get('subsystem_log',{})
+            for subsystem,level in subsystem_log.items():
+                #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
+                _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
         if len(_debug) > 0:
             _debug = ','.join(_debug)
         else:
@@ -204,14 +214,24 @@ class Coherence(log.Loggable):
         if plugins is None:
             self.info("No plugin defined!")
         else:
-            for plugin,arguments in plugins.items():
-                try:
-                    if not isinstance(arguments, dict):
-                        arguments = {}
-                    self.add_plugin(plugin, **arguments)
-                except Exception, msg:
-                    self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
-                    self.info(traceback.format_exc())
+            if isinstance(plugins,dict):
+                for plugin,arguments in plugins.items():
+                    try:
+                        if not isinstance(arguments, dict):
+                            arguments = {}
+                        self.add_plugin(plugin, **arguments)
+                    except Exception, msg:
+                        self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
+                        self.info(traceback.format_exc())
+            else:
+                for plugin in plugins:
+                    try:
+                        backend = plugin['backend']
+                        del plugin['backend']
+                        self.add_plugin(backend, **plugin)
+                    except Exception, msg:
+                        self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
+                        self.info(traceback.format_exc())
 
         if config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
@@ -269,7 +289,7 @@ class Coherence(log.Loggable):
     def remove_plugin(self, plugin):
         """ removes a backend from Coherence          """
         """ plugin is the object return by add_plugin """
-        
+
         self.info("removing plugin %r", plugin)
         plugin.unregister()
 

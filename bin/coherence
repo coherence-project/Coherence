@@ -9,10 +9,24 @@ import os, sys
 
 from twisted.python import usage
 
-from configobj import ConfigObj
+from coherence import __version__
+
+from coherence.extern.config import Config
+
+
+def setConfigFile():
+    def findConfigDir():
+        try:
+            configDir = os.path.expanduser('~')
+        except:
+            configDir = os.getcwd()
+        return configDir
+
+    return os.path.join( findConfigDir(), '.coherence')
+
 
 class Options(usage.Options):
-    optParameters = [['configfile', 'c', '', 'path to configfile'],
+    optParameters = [['configfile', 'c', setConfigFile(), 'path to configfile']
                     ]
 
 def main(config):
@@ -34,20 +48,23 @@ if __name__ == '__main__':
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(1)
 
-    # get settings or options
-    def setConfigFile(filename):
-        def findConfigDir():
-            try:
-                configDir = os.path.expanduser('~')
-            except:
-                configDir = os.getcwd()
-            return configDir
+    config = {}
 
-        if filename is '':
-            filename = os.path.join( findConfigDir(), '.coherence')
-        return filename
+    try:
+        config = Config(options['configfile'])
+    except SyntaxError:
+        import traceback
+        print traceback.format_exc()
+        try:
+            from configobj import ConfigObj
+            config = ConfigObj(options['configfile'])
+        except:
+            print "hmm, seems we are in trouble reading in any sort of config file"
+    except IOError:
+        print "no config file %r found" % options['configfile']
+        pass
 
-    config = ConfigObj( setConfigFile( options['configfile']))
+    #print config
 
     if config.get('use_dbus', 'no') == 'yes':
         try:
