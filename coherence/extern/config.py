@@ -65,5 +65,12 @@ class Config(dict):
         val = self.config.get(key, None)
         return val
 
+    def get(self, key, default=None):
+        """ our version of ``get`` """
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
     def __repr__(self):
         return "%r" % self.config
