@@ -126,7 +126,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                     if result == None:
                         result = []
                     for i in result:
-                        didl.addItem(i[1])
+                        if i[0] == True:
+                            didl.addItem(i[1])
 
                     return build_response(tm)
 
@@ -158,17 +159,17 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
 
+        root_id = ObjectID
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         """ fake a Windows Media Connect Server
             and return for the moment an error
             for the things we can't support now
         """
         if( kwargs.get('X_UPnPClient', '') == 'XBox' and
-                wmc_mapping != None and
-                wmc_mapping.has_key(ObjectID)):
-            root_id = wmc_mapping[ObjectID]
-        else:
-            root_id = ObjectID
+                wmc_mapping != None):
+            ObjectID = kwargs['ContainerID']
+            if wmc_mapping.has_key(ObjectID):
+                root_id = wmc_mapping[ObjectID]
 
         item = self.backend.get_by_id(root_id)
         if item == None:
@@ -202,8 +203,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                     if result == None:
                         result = []
                     for i in result:
-                        print i[0],i[1]
-                        didl.addItem(i[1])
+                        if i[0] == True:
+                            didl.addItem(i[1])
 
                     return build_response(tm)
 

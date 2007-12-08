@@ -156,7 +156,11 @@ class Object:
             ET.SubElement(root, 'dc:title').text = self.title
 
         root.attrib['parentID'] = str(self.parentID)
-        ET.SubElement(root, 'upnp:class').text = self.upnp_class
+
+        if(isinstance(self, Container) and kwargs.get('upnp_client','') == 'XBox'):
+            ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+        else:
+            ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
             root.attrib['restricted'] = '1'

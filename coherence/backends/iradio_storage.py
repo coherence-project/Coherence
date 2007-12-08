@@ -253,7 +253,11 @@ class IRadioStore(log.Loggable,Plugin):
         return len(self.store)
 
     def get_by_id(self,id):
-        id = int(id)
+        try:
+            id = int(id)
+        except ValueError:
+            id = 1000
+
         if id == 0:
             id = 1000
         try:
@@ -290,7 +294,8 @@ class IRadioStore(log.Loggable,Plugin):
 
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                    ['http-get:*:audio/mpeg:*'],
+                                                                    ['http-get:*:audio/mpeg:*',
+                                                                     'http-get:*:audio/x-scpls:*'],
                                                                     default=True)
 
 def main():

@@ -100,10 +100,8 @@ AUDIO_ALBUM_CONTAINER_ID = 13
 def sanitize(filename):
     badchars = ''.join(set(string.punctuation) - set('-_+.~'))
     f = unicode(filename.lower())
-    f = f.replace(unicode(u'ä'),unicode('ae'))
-    f = f.replace(unicode(u'ö'),unicode('oe'))
-    f = f.replace(unicode(u'ü'),unicode('ue'))
-    f = f.replace(unicode(u'ß'),unicode('ss'))
+    for old, new in ((u'ä','ae'),(u'ö','oe'),(u'ü','ue'),(u'ß','ss')):
+        f = f.replace(unicode(old),unicode(new))
     f = f.replace(badchars, '_')
     return f
 
@@ -219,6 +217,9 @@ class Album(item.Item):
 
     def get_item(self):
         item = DIDLLite.MusicAlbum(self.storeID+1000, AUDIO_ALBUM_CONTAINER_ID, self.title)
+        if len(self.cover)>0:
+            _,ext =  os.path.splitext(self.cover)
+            item.albumArtURI = ''.join((self.store.urlbase,str(self.get_id()),'?cover',ext))
         return item
 
     def get_id(self):
@@ -520,7 +521,10 @@ class MediaStore(log.Loggable, Plugin):
                 return self.containers[id]
             except:
                 return None
-        id = int(id)
+        try:
+            id = int(id)
+        except ValueError:
+            id = 1000
         try:
             item = self.containers[id]
         except:
@@ -583,8 +587,11 @@ if __name__ == '__main__':
     from twisted.internet import reactor
     from twisted.internet import task
 
-    reactor.callWhenRunning(MediaStore, None,
-                                        medialocation='/data/audio/music',
-                                        coverlocation='/data/audio/covers',
-                                        mediadb='/tmp/media.db')
+    def run():
+        m = MediaStore(None, medialocation='/data/audio/music',
+                             coverlocation='/data/audio/covers',
+                             mediadb='/tmp/media.db')
+        m.upnp_init()
+
+    reactor.callWhenRunning(run)
     reactor.run()
