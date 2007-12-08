@@ -18,6 +18,8 @@ from coherence.upnp.core.DIDLLite import DIDLElement
 
 from coherence.upnp.core import service
 
+from coherence import log
+
 class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
 
     def __init__(self, server):
@@ -26,7 +28,9 @@ class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class ContentDirectoryServer(service.ServiceServer, resource.Resource):
+class ContentDirectoryServer(service.ServiceServer, resource.Resource,
+                             log.Loggable):
+    logCategory = 'content_directory_server'
 
     def __init__(self, device, backend=None):
         self.device = device
@@ -152,7 +156,11 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         return build_response(total)
 
     def upnp_Browse(self, *args, **kwargs):
-        ObjectID = kwargs['ObjectID']
+        try:
+            ObjectID = kwargs['ObjectID']
+        except:
+            self.debug("hmm, a Browse action and no ObjectID argument? An XBox maybe?")
+            ObjectID = 0
         BrowseFlag = kwargs['BrowseFlag']
         Filter = kwargs['Filter']
         StartingIndex = int(kwargs['StartingIndex'])
@@ -167,7 +175,10 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         """
         if( kwargs.get('X_UPnPClient', '') == 'XBox' and
                 wmc_mapping != None):
-            ObjectID = kwargs['ContainerID']
+            try:
+                ObjectID = kwargs['ContainerID']
+            except:
+                pass
             if wmc_mapping.has_key(ObjectID):
                 root_id = wmc_mapping[ObjectID]
 
