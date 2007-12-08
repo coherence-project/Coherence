@@ -53,7 +53,7 @@ if __name__ == '__main__':
     try:
         config = Config(options['configfile'])
     except SyntaxError:
-        #import traceback
+        import traceback
         #print traceback.format_exc()
         try:
             from configobj import ConfigObj
