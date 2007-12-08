@@ -210,9 +210,8 @@ class Coherence(log.Loggable):
 
         self.available_plugins = None
 
-        try:
-            plugins = config.get('pluginlist',None)
-        except:
+        plugins = config.get('pluginlist')
+        if plugins is None:
             plugins = config.get('plugins',None)
 
         if plugins is None:
