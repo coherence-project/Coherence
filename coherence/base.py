@@ -145,7 +145,7 @@ class Coherence(log.Loggable):
         _debug = []
 
         try:
-            for subsystem in config['logging'].get('subsystems',[]):
+            for subsystem in config['logging'].get('subsystemlist',[]):
                 self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
                 _debug.append('%s:%d' % (subsystem['name'].lower(), log.human2level(subsystem['level'])))
         except KeyError:
@@ -210,7 +210,11 @@ class Coherence(log.Loggable):
 
         self.available_plugins = None
 
-        plugins = config.get('plugins',None)
+        try:
+            plugins = config.get('pluginlist',None)
+        except:
+            plugins = config.get('plugins',None)
+
         if plugins is None:
             self.info("No plugin defined!")
         else:

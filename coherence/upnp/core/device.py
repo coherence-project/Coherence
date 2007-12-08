@@ -176,6 +176,8 @@ class Device(log.Loggable):
                         self.icons.append(i)
                         self.debug("adding icon %r for %r" % (i,self.friendly_name))
                     except:
+                        import traceback
+                        self.debug(traceback.format_exc())
                         self.warning("device %r seems to have an invalid icon description, ignoring that icon" % self.friendly_name)
 
             s = d.find('.//{%s}serviceList' % ns)

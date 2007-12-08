@@ -64,7 +64,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         item = None
         items = []
 
-        didl = DIDLElement()
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
 
         def build_response(tm):
             r = { 'Result': didl.toString(), 'TotalMatches': tm,
@@ -174,7 +174,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         if item == None:
             return failure.Failure(errorCode(701))
 
-        didl = DIDLElement()
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
 
         def got_error(r):
             return r
@@ -202,6 +202,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
                     if result == None:
                         result = []
                     for i in result:
+                        print i[0],i[1]
                         didl.addItem(i[1])
 
                     return build_response(tm)

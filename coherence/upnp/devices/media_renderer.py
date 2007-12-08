@@ -125,7 +125,7 @@ class RootDeviceXML(static.Data):
                         if v.startswith('file://'):
                             ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
                             continue
-                    ET.SubElement(i, k).text = v
+                    ET.SubElement(i, k).text = str(v)
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
@@ -145,7 +145,7 @@ class MediaRenderer(log.Loggable):
         self.uuid = UUID()
         self.backend = None
 
-        self.icons = kwargs.get('icons', [])
+        self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
         if len(self.icons) == 0:
             if kwargs.has_key('icon'):
                 self.icons.append(kwargs['icon'])

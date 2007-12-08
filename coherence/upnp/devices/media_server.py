@@ -316,10 +316,8 @@ class RootDeviceXML(static.Data):
                     if k == 'url':
                         if v.startswith('file://'):
                             ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
-                        else:
-                            ET.SubElement(i, k).text = v
-                    else:
-                        ET.SubElement(i, k).text = v
+                            continue
+                    ET.SubElement(i, k).text = str(v)
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
@@ -344,7 +342,7 @@ class MediaServer(log.Loggable):
         self.msg('MediaServer urlbase %s' % self.urlbase)
 
         kwargs['urlbase'] = self.urlbase
-        self.icons = kwargs.get('icons', [])
+        self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
         if len(self.icons) == 0:
             if kwargs.has_key('icon'):
                 self.icons.append(kwargs['icon'])

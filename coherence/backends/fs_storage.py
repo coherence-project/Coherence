@@ -92,12 +92,14 @@ class FSItem(log.Loggable):
             else:
                 host = host_port
 
+            try:
+                size = self.location.getsize()
+            except:
+                size = 0
+
             if mimetype != 'item':
                 res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
-                try:
-                    res.size = self.location.getsize()
-                except:
-                    res.size = 0
+                res.size = size
                 self.item.res.append(res)
 
             if mimetype != 'item':
@@ -105,10 +107,7 @@ class FSItem(log.Loggable):
             else:
                 res = Resource(self.url, 'http-get:*:*:*')
 
-            try:
-                res.size = self.location.getsize()
-            except:
-                res.size = 0
+            res.size = size
             self.item.res.append(res)
 
             try:
@@ -278,7 +277,7 @@ class FSStore(log.Loggable,Plugin):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4':1000}
+    wmc_mapping = {'4':1000, '8':1000}
 
     def __init__(self, server, **kwargs):
         self.next_id = 1000
