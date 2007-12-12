@@ -299,6 +299,8 @@ def send_notification(s, xml):
     log_category = "event_protocol"
 
     _,host_port,path,_,_ = urlsplit(s['callback'])
+    if path == '':
+        path = '/'
     if host_port.find(':') != -1:
         host,port = tuple(host_port.split(':'))
         port = int(port)
