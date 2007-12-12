@@ -105,7 +105,7 @@ class RootDeviceXML(static.Data):
                     v = version
                 ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(v))
                 try:
-                    namespace = service.namespace
+                    namespace = service.id_namespace
                 except:
                     namespace = 'upnp-org'
                 ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
@@ -130,7 +130,7 @@ class RootDeviceXML(static.Data):
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
 
-        self.xml = ET.tostring( root, encoding='utf-8')
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaRenderer(log.Loggable):

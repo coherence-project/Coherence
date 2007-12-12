@@ -305,7 +305,11 @@ class ServiceServer(log.Loggable):
         self.backend = backend
         if getattr(self, "namespace", None) == None:
             self.namespace = 'schemas-upnp-org'
+        if getattr(self, "id_namespace", None) == None:
+            self.id_namespace = 'upnp-org'
+
         self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, int(self.version))
+
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
@@ -717,7 +721,7 @@ class scpdXML(static.Data):
                          if value != None:
                             ET.SubElement( avl, name).text = str(value)
 
-        self.xml = ET.tostring( root, encoding='utf-8')
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 
