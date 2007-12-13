@@ -25,7 +25,7 @@
         <allowedValue>BrowseDirectChildren</allowedValue>
       </allowedValueList>
     </stateVariable>
-    <stateVariable> 
+    <stateVariable>
       <name>A_ARG_TYPE_Filter</name>
 <sendEventsAttribute>no</sendEventsAttribute>
       <dataType>string</dataType>
@@ -73,7 +73,7 @@
       <dataType>string</dataType>
     </stateVariable>
     <stateVariable> <Optional/>
-      <name>A_ARG_TYPE_URI</name> 
+      <name>A_ARG_TYPE_URI</name>
 <sendEventsAttribute>no</sendEventsAttribute>
       <dataType>uri</dataType>
     </stateVariable>
@@ -105,7 +105,7 @@
         <argument>
           <name>SearchCaps</name>
           <direction>out</direction>
-          <relatedStateVariable>SearchCapabilities </relatedStateVariable>
+          <relatedStateVariable>SearchCapabilities</relatedStateVariable>
         </argument>
       </argumentList>
     </action>
@@ -195,7 +195,7 @@
         <argument>
           <name>SearchCriteria</name>
           <direction>in</direction>
-          <relatedStateVariable>A_ARG_TYPE_SearchCriteria </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_SearchCriteria</relatedStateVariable>
         </argument>
         <argument>
           <name>Filter</name>
@@ -285,12 +285,12 @@
         <argument>
           <name>CurrentTagValue</name>
           <direction>in</direction>
-          <relatedStateVariable>A_ARG_TYPE_TagValueList </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TagValueList</relatedStateVariable>
         </argument>
         <argument>
           <name>NewTagValue</name>
           <direction>in</direction>
-          <relatedStateVariable>A_ARG_TYPE_TagValueList </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TagValueList</relatedStateVariable>
         </argument>
       </argumentList>
     </action>
@@ -310,7 +310,7 @@
         <argument>
           <name>TransferID</name>
           <direction>out</direction>
-          <relatedStateVariable>A_ARG_TYPE_TransferID </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TransferID</relatedStateVariable>
         </argument>
       </argumentList>
     </action>
@@ -330,7 +330,7 @@
         <argument>
           <name>TransferID</name>
           <direction>out</direction>
-          <relatedStateVariable>A_ARG_TYPE_TransferID </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TransferID</relatedStateVariable>
         </argument>
       </argumentList>
     </action>
@@ -340,7 +340,7 @@
         <argument>
           <name>TransferID</name>
           <direction>in</direction>
-          <relatedStateVariable>A_ARG_TYPE_TransferID </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TransferID</relatedStateVariable>
         </argument>
       </argumentList>
     </action>
@@ -350,17 +350,17 @@
         <argument>
           <name>TransferID</name>
           <direction>in</direction>
-          <relatedStateVariable>A_ARG_TYPE_TransferID </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TransferID</relatedStateVariable>
         </argument>
         <argument>
           <name>TransferStatus</name>
           <direction>out</direction>
-          <relatedStateVariable>A_ARG_TYPE_TransferStatus </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TransferStatus</relatedStateVariable>
         </argument>
         <argument>
           <name>TransferLength</name>
           <direction>out</direction>
-          <relatedStateVariable>A_ARG_TYPE_TransferLength </relatedStateVariable>
+          <relatedStateVariable>A_ARG_TYPE_TransferLength</relatedStateVariable>
         </argument>
         <argument>
           <name>TransferTotal</name>
@@ -402,4 +402,3 @@
   </actionList>
 
 </scpd>
-
