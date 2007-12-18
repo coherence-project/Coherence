@@ -73,12 +73,15 @@ class Resource:
                     additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=01'))
                 if content_format == 'video/mp4':
                     additional_info = ';'.join(('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC','DLNA.ORG_OP=01'))
+                if content_format == 'video/x-msvideo':
+                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC','DLNA.ORG_OP=01'))
+
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self,**kwargs):
 
         root = ET.Element('res')
-        if kwargs.get('upnp_client','') == 'XBox':
+        if kwargs.get('upnp_client','') in ('XBox', 'PLAYSTATION3'):
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format == 'video/x-msvideo':
                 content_format = 'video/avi'

@@ -466,6 +466,8 @@ class FSStore(log.Loggable,Plugin):
                          'http-get:*:application/ogg:*',
                          'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
                          'http-get:*:video/x-msvideo:*',
+                         'internal:%s:video/avi:*' % self.server.coherence.hostname,
+                         'http-get:*:video/avi:*',
                          'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
                          'http-get:*:video/quicktime:*'],
                         default=True)
