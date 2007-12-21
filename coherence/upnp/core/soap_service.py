@@ -129,11 +129,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             self._gotError(failure.Failure(errorCode(415)), request, methodName)
             return server.NOT_DONE_YET
 
-        # deal with changes in SOAPpy 0.11
-        #if callable(args):
-        #    args = args()
-        #if callable(kwargs):
-        #    kwargs = kwargs()
+        self.debug('headers: %r' % headers)
 
         function, useKeywords = self.lookupFunction(methodName)
         #print 'function', function, 'keywords', useKeywords, 'args', args, 'kwargs', kwargs
@@ -146,6 +142,9 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             if(headers.has_key('user-agent') and
                     headers['user-agent'].find('Xbox/') == 0):
                 keywords['X_UPnPClient'] = 'XBox'
+            if(headers.has_key('x-av-client-info') and
+                    headers['x-av-client-info'].find('"PLAYSTATION3') > 0):
+                keywords['X_UPnPClient'] = 'PLAYSTATION3'
 
             for k, v in kwargs.items():
                 keywords[str(k)] = v

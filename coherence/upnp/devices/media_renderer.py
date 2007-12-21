@@ -7,8 +7,7 @@
 
 from twisted.internet import task
 from twisted.internet import reactor
-from twisted.internet import threads
-from twisted.web import xmlrpc, resource, static
+from twisted.web import resource, static
 
 from coherence import __version__
 
@@ -23,7 +22,7 @@ import louie
 from coherence import log
 
 class MRRoot(resource.Resource, log.Loggable):
-    logCategory = 'MediaRenderer'
+    logCategory = 'mediarenderer'
 
     def __init__(self, server):
         resource.Resource.__init__(self)
@@ -106,7 +105,7 @@ class RootDeviceXML(static.Data):
                     v = version
                 ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(v))
                 try:
-                    namespace = service.namespace
+                    namespace = service.id_namespace
                 except:
                     namespace = 'upnp-org'
                 ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
@@ -126,54 +125,56 @@ class RootDeviceXML(static.Data):
                         if v.startswith('file://'):
                             ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
                             continue
-                    ET.SubElement(i, k).text = v
+                    ET.SubElement(i, k).text = str(v)
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
 
-        self.xml = ET.tostring( root, encoding='utf-8')
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaRenderer(log.Loggable):
-    logCategory = 'MediaRenderer'
+    logCategory = 'mediarenderer'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
         self.version = int(kwargs.get('version',2))
+        #log.Loggable.__init__(self)
         from coherence.upnp.core.uuid import UUID
         self.uuid = UUID()
         self.backend = None
 
-        self.icons = kwargs.get('icons', [])
-        if kwargs.has_key('icon'):
-            self.icons.append(kwargs['icon'])
+        self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
+        if len(self.icons) == 0:
+            if kwargs.has_key('icon'):
+                self.icons.append(kwargs['icon'])
 
+        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+        reactor.callLater(0.2, self.fire, backend, **kwargs)
+
+    def fire(self,backend,**kwargs):
         if kwargs.get('no_thread_needed',False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
+
+            from twisted.internet import threads
             d = threads.deferToThread(backend, self, **kwargs)
 
             def backend_ready(backend):
                 self.backend = backend
 
             def backend_failure(x):
-                self.critical('backend not installed, MediaRenderer activation aborted')
+                self.warning('backend not installed, MediaRenderer activation aborted')
+                self.debug(x)
 
-            def service_failure(x):
-                print x
-                self.critical('required service not available, MediaRenderer activation aborted')
-
-            d.addCallback(backend_ready).addErrback(service_failure)
+            d.addCallback(backend_ready)
             d.addErrback(backend_failure)
-
-            louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
             # FIXME: we need a timeout here so if the signal we wait for not arrives we'll
             #        can close down this device
         else:
             self.backend = backend(self, **kwargs)
-            self.init_complete(self.backend)
 
     def init_complete(self, backend):
         if self.backend != backend:
@@ -236,22 +237,25 @@ class MediaRenderer(log.Loggable):
                                                static.File(icon['url'][7:]))
 
         self.register()
-        self.critical("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
+        self.info("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
 
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
+        host = self.coherence.hostname
         #print '%s register' % self.device_type
         # we need to do this after the children are there, since we send notifies
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,
                     'upnp:rootdevice',
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
+                    host=host)
 
         s.register('local',
                     uuid,
                     uuid,
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version)
+                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
+                    host=host)
 
         version = self.version
         while version > 0:
@@ -263,7 +267,8 @@ class MediaRenderer(log.Loggable):
                         '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
                         'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
                         self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                        silent=silent)
+                        silent=silent,
+                        host=host)
 
             for service in self._services:
                 silencio = silent
@@ -274,13 +279,36 @@ class MediaRenderer(log.Loggable):
                         silencio = False
                 try:
                     namespace = service.namespace
-                except:
+                except AttributeError:
                     namespace = 'schemas-upnp-org'
 
                 s.register('local',
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, version),
                             self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                            silent=silencio)
+                            silent=silencio,
+                            host=host)
 
             version -= 1
+
+    def unregister(self):
+        s = self.coherence.ssdp_server
+        uuid = str(self.uuid)
+        self.coherence.remove_web_resource(uuid[5:])
+
+        version = self.version
+        while version > 0:
+            s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
+            for service in self._services:
+                if hasattr(service,'version') and service.version < version:
+                    continue
+                try:
+                    namespace = service.namespace
+                except AttributeError:
+                    namespace = 'schemas-upnp-org'
+                s.doByebye('%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version))
+
+            version -= 1
+
+        s.doByebye(uuid)
+        s.doByebye('%s::upnp:rootdevice' % uuid)

@@ -9,15 +9,23 @@ from coherence.upnp.services.clients.av_transport_client import AVTransportClien
 
 from coherence import log
 
+import louie
+
 class MediaRendererClient(log.Loggable):
     logCategory = 'mr_client'
 
     def __init__(self, device):
         self.device = device
         self.device_type,self.version = device.get_device_type().split(':')[3:5]
+        self.icons = device.icons
         self.rendering_control = None
         self.connection_manager = None
         self.av_transport = None
+
+        self.detection_completed = False
+
+        louie.connect(self.service_notified, signal='Coherence.UPnP.DeviceClient.Service.notified', sender=self.device)
+
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:RenderingControl:1",
                                       "urn:schemas-upnp-org:service:RenderingControl:2"]:
@@ -54,7 +62,7 @@ class MediaRendererClient(log.Loggable):
             return
         if self.av_transport:
             self.info("AVTransport (optional) available")
-            self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
+            #self.av_transport.service.subscribe_for_variable('LastChange', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('TransportState', 0, self.state_variable_change)
             #self.av_transport.service.subscribe_for_variable('CurrentTransportActions', 0, self.state_variable_change)
             #self.av_transport.get_transport_info()
@@ -74,5 +82,22 @@ class MediaRendererClient(log.Loggable):
             self.av_transport.remove()
         #del self
 
-    def state_variable_change( self, variable, usn):
+    def service_notified(self, service):
+        self.info("Service %r sent notification" % service);
+        if self.detection_completed == True:
+            return
+        if self.rendering_control != None:
+            if self.rendering_control.service.last_time_updated == None:
+                return
+        if self.connection_manager != None:
+            if self.connection_manager.service.last_time_updated == None:
+                return
+        if self.av_transport != None:
+            if self.av_transport.service.last_time_updated == None:
+                return
+        self.detection_completed = True
+        louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
+                               client=self,usn=self.device.get_usn())
+
+    def state_variable_change( self, variable):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

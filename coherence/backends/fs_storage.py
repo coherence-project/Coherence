@@ -12,6 +12,7 @@ from datetime import datetime
 
 import mimetypes
 mimetypes.init()
+mimetypes.add_type('video/mp4', '.mp4')
 
 from urlparse import urlsplit
 
@@ -29,6 +30,8 @@ from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOV
 from coherence.extern.inotify import IN_CHANGED
 
 import louie
+
+from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
@@ -58,6 +61,8 @@ class FSItem(log.Loggable):
             parent_id = parent.get_id()
 
         self.item = UPnPClass(id, parent_id, self.get_name())
+        if isinstance(self.item, Container):
+            self.item.childCount = 0
         self.child_count = 0
         self.children = []
 
@@ -87,12 +92,14 @@ class FSItem(log.Loggable):
             else:
                 host = host_port
 
+            try:
+                size = self.location.getsize()
+            except:
+                size = 0
+
             if mimetype != 'item':
                 res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
-                try:
-                    res.size = self.location.getsize()
-                except:
-                    res.size = 0
+                res.size = size
                 self.item.res.append(res)
 
             if mimetype != 'item':
@@ -100,10 +107,7 @@ class FSItem(log.Loggable):
             else:
                 res = Resource(self.url, 'http-get:*:*:*')
 
-            try:
-                res.size = self.location.getsize()
-            except:
-                res.size = 0
+            res.size = size
             self.item.res.append(res)
 
             try:
@@ -268,12 +272,12 @@ class FSItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.location.basename()
 
-class FSStore(log.Loggable):
+class FSStore(log.Loggable,Plugin):
     logCategory = 'fs_store'
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4':1000}
+    wmc_mapping = {'4':1000, '8':1000}
 
     def __init__(self, server, **kwargs):
         self.next_id = 1000
@@ -317,7 +321,11 @@ class FSStore(log.Loggable):
         return len(self.store)
 
     def get_by_id(self,id):
-        id = int(id)
+        try:
+            id = int(id)
+        except ValueError:
+            id = 1000
+
         if id == 0:
             id = 1000
         try:
@@ -378,7 +386,7 @@ class FSStore(log.Loggable):
         #print "append", path
         mimetype,_ = mimetypes.guess_type(path, strict=False)
         if mimetype == None:
-            if os.path.isdir(path):
+            if os.path.isdir(path) or os.path.islink(path):
                 mimetype = 'directory'
         if mimetype == None:
             return None
@@ -452,12 +460,14 @@ class FSStore(log.Loggable):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                         ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                          'http-get:*:audio/mpeg:*',
-                         'internal:%s:audio/mp4:*' % self.server.coherence.hostname,
-                         'http-get:*:audio/mp4:*',
+                         'internal:%s:video/mp4:*' % self.server.coherence.hostname,
+                         'http-get:*:video/mp4:*',
                          'internal:%s:application/ogg:*' % self.server.coherence.hostname,
                          'http-get:*:application/ogg:*',
                          'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
                          'http-get:*:video/x-msvideo:*',
+                         'internal:%s:video/avi:*' % self.server.coherence.hostname,
+                         'http-get:*:video/avi:*',
                          'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
                          'http-get:*:video/quicktime:*'],
                         default=True)

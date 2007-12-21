@@ -19,6 +19,8 @@ import gst
 
 import louie
 
+from coherence.extern.simple_plugin import Plugin
+
 from coherence import log
 
 class Player(log.Loggable):
@@ -247,7 +249,7 @@ class Player(log.Loggable):
         r[u'human'] = {u'position':position_human, u'remaining':remaining_human, u'duration':duration_human}
         r[u'percent'] = {u'position':position*100/self.duration, u'remaining':100-(position*100/self.duration)}
 
-        #print r
+        self.debug(r)
         return r
 
     def load( self, uri, mimetype):
@@ -364,7 +366,7 @@ class Player(log.Loggable):
                 self.update()
 
 
-class GStreamerMediaRenderer(object):
+class GStreamerPlayer(log.Loggable,Plugin):
 
     """ a backend with a GStreamer based audio player
 
@@ -382,6 +384,7 @@ class GStreamerMediaRenderer(object):
 
     """
 
+    logCategory = 'gstreamer_player'
     implements = ['MediaRenderer']
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
@@ -498,7 +501,6 @@ class GStreamerMediaRenderer(object):
         self.mimetype = mimetype
         self.tags = {}
 
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)

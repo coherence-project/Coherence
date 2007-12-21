@@ -28,37 +28,8 @@ except ImportError:
                 from xml.etree import ElementTree as ET
                 from xml import etree as elementtree
             except ImportError:
-                import sys
-                print "no ElementTree module found, critical error"
-                sys.exit(0)
-
-#try:
-#    from xml.etree import cElementTree as ET
-#except ImportError:
-#    try:
-#        import cElementTree as ET
-#    except ImportError:
-#        try:
-#            from xml.etree import ElementTree as ET
-#        except ImportError:
-#            try:
-#                from elementtree import ElementTree as ET
-#            except ImportError:
-#                import sys
-#                print "no ElementTree module found, critical error"
-#               sys.exit(0)
-
-#try:
-#    from xml.etree.ElementTree import _ElementInterface
-#except ImportError:
-#    from elementtree.ElementTree import _ElementInterface
-
-#try:
-#    from xml.etree.ElementTree import _encode_entity as old_encode_entity
-#    from xml.etree.ElementTree import _escape,_escape_map,_encode,_raise_serialization_error
-#except ImportError:
-#    from elementtree.ElementTree import _encode_entity as old_encode_entity
-#    from elementtree.ElementTree import _escape,_escape_map,_encode,_raise_serialization_error
+                #print "no ElementTree module found, critical error"
+                raise ImportError, "no ElementTree module found, critical error"
 
 utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
 escape = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))

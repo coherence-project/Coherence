@@ -4,6 +4,8 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import socket
+
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from twisted.internet import task
@@ -42,7 +44,8 @@ class MSearch(DatagramProtocol, log.Loggable):
                                             headers['usn'], headers['st'],
                                             headers['location'],
                                             headers['server'],
-                                            headers['cache-control'])
+                                            headers['cache-control'],
+                                            host=host)
 
     def double_discover(self):
         " Because it's worth it (with UDP's reliability) "
@@ -59,4 +62,7 @@ class MSearch(DatagramProtocol, log.Loggable):
                 '','']
         req = '\r\n'.join(req)
 
-        self.transport.write(req, (SSDP_ADDR, SSDP_PORT))
+        try:
+            self.transport.write(req, (SSDP_ADDR, SSDP_PORT))
+        except socket.error, msg:
+            self.info("failure sending out the discovery message: %r" % msg)

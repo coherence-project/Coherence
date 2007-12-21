@@ -9,16 +9,24 @@ from coherence.upnp.services.clients.av_transport_client import AVTransportClien
 
 from coherence import log
 
+import louie
+
 class MediaServerClient(log.Loggable):
     logCategory = 'ms_client'
 
     def __init__(self, device):
         self.device = device
         self.device_type,self.version = device.get_device_type().split(':')[3:5]
+        self.icons = device.icons
         self.scheduled_recording = None
         self.content_directory = None
         self.connection_manager = None
         self.av_transport = None
+
+        self.detection_completed = False
+
+        louie.connect(self.service_notified, signal='Coherence.UPnP.DeviceClient.Service.notified', sender=self.device)
+
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:ContentDirectory:1",
                                       "urn:schemas-upnp-org:service:ContentDirectory:2"]:
@@ -66,6 +74,25 @@ class MediaServerClient(log.Loggable):
         if self.scheduled_recording != None:
             self.scheduled_recording.remove()
         #del self
+
+    def service_notified(self, service):
+        if self.detection_completed == True:
+            return
+        if self.content_directory != None:
+            if self.content_directory.service.last_time_updated == None:
+                return
+        if self.connection_manager != None:
+            if self.connection_manager.service.last_time_updated == None:
+                return
+        if self.av_transport != None:
+            if self.av_transport.service.last_time_updated == None:
+                return
+        if self.scheduled_recording != None:
+            if self.scheduled_recording.service.last_time_updated == None:
+                return
+        self.detection_completed = True
+        louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
+                               client=self,usn=self.device.get_usn())
 
     def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

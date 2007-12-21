@@ -4,6 +4,8 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import os
+
 import time
 import urllib2
 from coherence.upnp.core import action
@@ -37,7 +39,7 @@ def unsubscribe(service):
         del subscribers[service.get_sid()]
 
 class Service(log.Loggable):
-    logCategory = 'ServiceClient'
+    logCategory = 'service_client'
 
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
@@ -65,6 +67,9 @@ class Service(log.Loggable):
         self.timeout = 0
 
         self.event_connection = None
+        self.last_time_updated = None
+
+        self.client = None
 
         parsed = urllib2.urlparse.urlparse(location)
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
@@ -177,14 +182,43 @@ class Service(log.Loggable):
         d.addCallback(remove_it, self.get_sid())
         return d
 
-    def subscribe_for_variable(self, var_name, instance=0, callback=None):
+    def subscribe_for_variable(self, var_name, instance=0, callback=None, signal=False):
         variable = self.get_state_variable(var_name)
         if variable:
-            variable.subscribe(callback)
+            if callback != None:
+                if signal == True:
+                    callback(variable)
+                    louie.connect(callback, signal='Coherence.UPnP.StateVariable.%s.changed' % var_name, sender=self)
+                else:
+                    variable.subscribe(callback)
+
 
     def renew_subscription(self):
         event.subscribe(self)
 
+    def process_event(self,event):
+        self.info("process event %r" % self)
+        for var_name, var_value  in event.items():
+            if var_name == 'LastChange':
+                self.info("we have a LastChange event")
+                self.get_state_variable(var_name, 0).update(var_value)
+                tree = utils.parse_xml(var_value, 'utf-8').getroot()
+                namespace_uri, tag = tree.tag[1:].split( "}", 1)
+                for instance in tree.findall('{%s}InstanceID' % namespace_uri):
+                    instance_id = instance.attrib['val']
+                    self.info("instance_id %r %r" % (instance,instance_id))
+                    for var in instance.getchildren():
+                        self.info("var %r" % var)
+                        namespace_uri, tag = var.tag[1:].split("}", 1)
+                        self.info("%r %r %r" % (namespace_uri, tag,var.attrib['val']))
+                        self.get_state_variable(tag, instance_id).update(var.attrib['val'])
+                        self.info("updated var %r" % var)
+            else:
+                self.get_state_variable(var_name, 0).update(var_value)
+        if self.last_time_updated == None:
+            louie.send('Coherence.UPnP.DeviceClient.Service.notified', sender=self.device, service=self)
+            self.info("send signal Coherence.UPnP.DeviceClient.Service.notified for %r" % self)
+        self.last_time_updated = time.time()
 
     def parse_actions(self):
 
@@ -211,17 +245,31 @@ class Service(log.Loggable):
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
-                for allowed in var_node.findall('.//{%s}allowedValue' % ns):
-                    values.append(allowed.text)
+                """ we need to ignore this, as there we don't get there our
+                    {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
+                    attibute there
+                """
+                #for allowed in var_node.findall('.//{%s}allowedValue' % ns):
+                #    values.append(allowed.text)
                 instance = 0
                 self._variables.get(instance)[name] = variable.StateVariable(self, name,
                                                                'n/a',
                                                                instance, send_events,
                                                                data_type, values)
+
+
             #print 'service parse:', self, self.device
             self.detection_completed = True
 
-            louie.send('Coherence.UPnP.Service.detection_completed', self.device, device=self.device)
+            louie.send('Coherence.UPnP.Service.detection_completed', sender=self.device, device=self.device)
+            self.info("send signal Coherence.UPnP.Service.detection_completed for %r" % self)
+            """
+            if (self.last_time_updated == None):
+                if( self.id.endswith('AVTransport') or
+                    self.id.endswith('RenderingControl')):
+                    louie.send('Coherence.UPnP.DeviceClient.Service.notified', sender=self.device, service=self)
+                    self.last_time_updated = time.time()
+            """
 
         def gotError(failure, url):
             self.warning('error requesting', url)
@@ -249,7 +297,7 @@ moderated_variables = \
         }
 
 class ServiceServer(log.Loggable):
-    logCategory = 'ServiceServer'
+    logCategory = 'service_server'
 
     def __init__(self, id, version, backend):
         self.id = id
@@ -257,7 +305,11 @@ class ServiceServer(log.Loggable):
         self.backend = backend
         if getattr(self, "namespace", None) == None:
             self.namespace = 'schemas-upnp-org'
+        if getattr(self, "id_namespace", None) == None:
+            self.id_namespace = 'upnp-org'
+
         self.service_type = 'urn:%s:service:%s:%d' % (self.namespace, id, int(self.version))
+
         self.scpd_url = 'scpd.xml'
         self.control_url = 'control'
         self.subscription_url = 'subscribe'
@@ -319,7 +371,10 @@ class ServiceServer(log.Loggable):
         for n in notify:
             e = ET.SubElement( root, 'e:property')
             if n.name == 'LastChange':
-                text = self.build_last_change_event(n.instance)
+                if subscriber['seq'] == 0:
+                    text = self.build_last_change_event(n.instance, force=True)
+                else:
+                    text = self.build_last_change_event(n.instance)
                 if text is not None:
                     ET.SubElement( e, n.name).text = text
                     evented_variables += 1
@@ -395,7 +450,7 @@ class ServiceServer(log.Loggable):
         s = ET.SubElement( e, variable_name).text = str(value)
         return ET.tostring( root, encoding='utf-8')
 
-    def build_last_change_event(self, instance=0):
+    def build_last_change_event(self, instance=0, force=False):
         got_one = False
         root = ET.Element('Event')
         root.attrib['xmlns']=self.event_metadata
@@ -406,7 +461,7 @@ class ServiceServer(log.Loggable):
                 if( variable.name != 'LastChange' and
                     variable.name[0:11] != 'A_ARG_TYPE_' and
                     variable.never_evented == False and
-                    variable.updated == True):
+                    (variable.updated == True or force == True)):
                     s = ET.SubElement( e, variable.name)
                     s.attrib['val'] = str(variable.value)
                     variable.updated = False
@@ -494,7 +549,7 @@ class ServiceServer(log.Loggable):
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
     def init_var_and_actions(self):
-        desc_file = util.sibpath(__file__, 'xml-service-descriptions/%s%d.xml' % (self.id, int(self.version)))
+        desc_file = util.sibpath(__file__, os.path.join('xml-service-descriptions', '%s%d.xml' % (self.id, int(self.version))))
         tree = ET.parse(desc_file)
 
         for action_node in tree.findall('.//action'):
@@ -666,7 +721,7 @@ class scpdXML(static.Data):
                          if value != None:
                             ET.SubElement( avl, name).text = str(value)
 
-        self.xml = ET.tostring( root, encoding='utf-8')
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 

@@ -54,6 +54,8 @@ from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence import log
 
+from coherence.extern.simple_plugin import Plugin
+
 try:
     import libmtag
 
@@ -73,18 +75,21 @@ except ImportError:
         def get_tags(filename):
             audio_file = pyid3lib.tag(filename)
             tags = {}
-            tags['artist'] = audio_file.artist.strip()
-            tags['album'] = audio_file.album.strip()
-            tags['title'] = audio_file.title.strip()
-            tags['track'] = audio_file.track[0]
-            return tags
+            try:
+                tags['artist'] = audio_file.artist.strip()
+                tags['album'] = audio_file.album.strip()
+                tags['title'] = audio_file.title.strip()
+                tags['track'] = audio_file.track[0]
+                return tags
+            except AttributeError,msg:
+                raise AttributeError
 
     except ImportError:
         raise ImportError, "we need some installed id3 tag library for this backend"
 
 
 
-MEDIA_DB = 'content/media.db'
+MEDIA_DB = 'tests/media.db'
 
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER = 10
@@ -95,10 +100,8 @@ AUDIO_ALBUM_CONTAINER_ID = 13
 def sanitize(filename):
     badchars = ''.join(set(string.punctuation) - set('-_+.~'))
     f = unicode(filename.lower())
-    f = f.replace(unicode(u'ä'),unicode('ae'))
-    f = f.replace(unicode(u'ö'),unicode('oe'))
-    f = f.replace(unicode(u'ü'),unicode('ue'))
-    f = f.replace(unicode(u'ß'),unicode('ss'))
+    for old, new in ((u'ä','ae'),(u'ö','oe'),(u'ü','ue'),(u'ß','ss')):
+        f = f.replace(unicode(old),unicode(new))
     f = f.replace(badchars, '_')
     return f
 
@@ -109,12 +112,13 @@ class Container(object):
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = DIDLLite.StorageFolder(id, parent_id,self.name)
+        self.item = DIDLLite.Container(id, parent_id,self.name)
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
         else:
             self.children = []
+        self.item.childCount = self.get_child_count()
 
     def add_child(self, child):
         self.children.append(child)
@@ -213,6 +217,9 @@ class Album(item.Item):
 
     def get_item(self):
         item = DIDLLite.MusicAlbum(self.storeID+1000, AUDIO_ALBUM_CONTAINER_ID, self.title)
+        if len(self.cover)>0:
+            _,ext =  os.path.splitext(self.cover)
+            item.albumArtURI = ''.join((self.store.urlbase,str(self.get_id()),'?cover',ext))
         return item
 
     def get_id(self):
@@ -341,7 +348,7 @@ class Playlist(item.Item):
     name = attributes.text(allowNone=False, indexed=True)
     # references to tracks
 
-class MediaStore(log.Loggable):
+class MediaStore(log.Loggable, Plugin):
     logCategory = 'media_store'
     implements = ['MediaServer']
 
@@ -366,18 +373,6 @@ class MediaStore(log.Loggable):
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                 Container( ROOT_CONTAINER_ID,-1, self.name)
-        self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
-        self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
-                          children_callback=lambda :list(self.db.query(Album,sort=Album.title.ascending)))
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
-        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
-                          children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
@@ -526,7 +521,10 @@ class MediaStore(log.Loggable):
                 return self.containers[id]
             except:
                 return None
-        id = int(id)
+        try:
+            id = int(id)
+        except ValueError:
+            id = 1000
         try:
             item = self.containers[id]
         except:
@@ -543,8 +541,24 @@ class MediaStore(log.Loggable):
         if os.path.exists(self.mediadb) is False:
             db_is_new = True
         self.db = store.Store(self.mediadb)
+
+        self.containers[AUDIO_ALL_CONTAINER_ID] = \
+                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
+        self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
+                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                          children_callback=lambda :list(self.db.query(Album,sort=Album.title.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
+        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
+                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                          children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+
         self.db.urlbase = self.urlbase
         self.db.containers = self.containers
+
+
 
         if db_is_new is True:
             self.get_music_files(self.medialocation)
@@ -573,8 +587,11 @@ if __name__ == '__main__':
     from twisted.internet import reactor
     from twisted.internet import task
 
-    reactor.callWhenRunning(MediaStore, None,
-                                        medialocation='/data/audio/music',
-                                        coverlocation='/data/audio/covers',
-                                        mediadb='/tmp/media.db')
+    def run():
+        m = MediaStore(None, medialocation='/data/audio/music',
+                             coverlocation='/data/audio/covers',
+                             mediadb='/tmp/media.db')
+        m.upnp_init()
+
+    reactor.callWhenRunning(run)
     reactor.run()

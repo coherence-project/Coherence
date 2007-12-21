@@ -31,6 +31,8 @@ def classChooser(mimetype, sub=None):
     if mimetype == 'item':
         return Item
     if mimetype == 'directory':
+        if sub == 'music':
+            return MusicAlbum
         return Container
     else:
         if string.find (mimetype,'image/') == 0:
@@ -69,16 +71,23 @@ class Resource:
                     additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=01'))
                 if content_format == 'video/mpeg':
                     additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=01'))
-                if content_format == 'video/x-xvid':
-                    additional_info = ';'.join(('DLNA.ORG_PN=','DLNA.ORG_OP=01'))
-                if content_format == 'video/x-divx':
-                    additional_info = ';'.join(('DLNA.ORG_PN=','DLNA.ORG_OP=01'))
+                if content_format == 'video/mp4':
+                    additional_info = ';'.join(('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC','DLNA.ORG_OP=01'))
+                if content_format == 'video/x-msvideo':
+                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC','DLNA.ORG_OP=01'))
+
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
-    def toElement(self):
+    def toElement(self,**kwargs):
 
         root = ET.Element('res')
-        root.attrib['protocolInfo'] = self.protocolInfo
+        if kwargs.get('upnp_client','') in ('XBox', 'PLAYSTATION3'):
+            protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+            if content_format == 'video/x-msvideo':
+                content_format = 'video/avi'
+            root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
+        else:
+            root.attrib['protocolInfo'] = self.protocolInfo
         root.text = self.data
 
         if self.bitrate is not None:
@@ -103,8 +112,8 @@ class Resource:
         self.duration = elt.attrib.get('duration',None)
         self.importUri = elt.attrib.get('importUri',None)
 
-    def toString(self):
-        return ET.tostring(self.toElement(),encoding='utf-8')
+    def toString(self,**kwargs):
+        return ET.tostring(self.toElement(**kwargs),encoding='utf-8')
 
     @classmethod
     def fromString(cls, aString):
@@ -138,7 +147,7 @@ class Object:
     def checkUpdate(self):
         return self
 
-    def toElement(self):
+    def toElement(self,**kwargs):
 
         root = ET.Element(self.elementName)
 
@@ -150,7 +159,11 @@ class Object:
             ET.SubElement(root, 'dc:title').text = self.title
 
         root.attrib['parentID'] = str(self.parentID)
-        ET.SubElement(root, 'upnp:class').text = self.upnp_class
+
+        if(isinstance(self, Container) and kwargs.get('upnp_client','') == 'XBox'):
+            ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+        else:
+            ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
             root.attrib['restricted'] = '1'
@@ -161,7 +174,7 @@ class Object:
             ET.SubElement(root, 'dc:creator').text = self.creator
 
         for res in self.res:
-            root.append(res.toElement())
+            root.append(res.toElement(**kwargs))
 
         if self.writeStatus is not None:
             ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
@@ -188,8 +201,8 @@ class Object:
 
         return root
 
-    def toString(self):
-        return ET.tostring(self.toElement(),encoding='utf-8')
+    def toString(self,**kwargs):
+        return ET.tostring(self.toElement(**kwargs),encoding='utf-8')
 
     def fromElement(self, elt):
         """
@@ -238,9 +251,9 @@ class Item(Object):
     elementName = 'item'
     refID = None
 
-    def toElement(self):
+    def toElement(self,**kwargs):
 
-        root = Object.toElement(self)
+        root = Object.toElement(self,**kwargs)
 
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
@@ -265,8 +278,8 @@ class ImageItem(Item):
     publisher = None
     rights = None
 
-    def toElement(self):
-        root = Item.toElement(self)
+    def toElement(self,**kwargs):
+        root = Item.toElement(self,**kwargs)
         if self.description is not None:
             ET.SubElement(root, 'dc:description').text = self.description
 
@@ -291,8 +304,8 @@ class Photo(ImageItem):
     upnp_class = ImageItem.upnp_class + '.photo'
     album = None
 
-    def toElement(self):
-        root = ImageItem.toElement(self)
+    def toElement(self,**kwargs):
+        root = ImageItem.toElement(self,**kwargs)
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
         return root
@@ -314,9 +327,9 @@ class AudioItem(Item):
                   'langugage', 'relation', 'rights', 'albumArtURI']
 
     #@dlna.AudioItem
-    def toElement(self):
+    def toElement(self,**kwargs):
 
-        root = Item.toElement(self)
+        root = Item.toElement(self,**kwargs)
 
         if self.genre is not None:
             ET.SubElement(root, 'upnp:genre').text = self.genre
@@ -362,9 +375,9 @@ class MusicTrack(AudioItem):
     storageMedium = None
     contributor = None
 
-    def toElement(self):
+    def toElement(self,**kwargs):
 
-        root = AudioItem.toElement(self)
+        root = AudioItem.toElement(self,**kwargs)
 
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
@@ -414,7 +427,7 @@ class Container(Object):
     upnp_class = Object.upnp_class + '.container'
 
     elementName = 'container'
-    childCount = 0
+    childCount = None
     createClass = None
     searchable = None
 
@@ -423,11 +436,12 @@ class Container(Object):
         Object.__init__(self, id, parentID, title, restricted, creator)
         self.searchClass = []
 
-    def toElement(self):
+    def toElement(self,**kwargs):
 
-        root = Object.toElement(self)
+        root = Object.toElement(self,**kwargs)
 
-        root.attrib['childCount'] = str(self.childCount)
+        if self.childCount is not None:
+            root.attrib['childCount'] = str(self.childCount)
 
         if self.createClass is not None:
             ET.SubElement(root, 'upnp:createclass').text = self.createClass
@@ -449,7 +463,9 @@ class Container(Object):
 
     def fromElement(self, elt):
         Object.fromElement(self, elt)
-        self.childCount = int(elt.attrib.get('childCount','0'))
+        v = elt.attrib.get('childCount',None)
+        if v is not None:
+            self.childCount = int(v)
         #self.searchable = int(elt.attrib.get('searchable','0'))
         self.searchable = elt.attrib.get('searchable','0') in [1,'True','true','1']
         self.searchClass = []
@@ -497,7 +513,8 @@ class StorageFolder(Container):
     upnp_class = Container.upnp_class + '.storageFolder'
 
 class DIDLElement(ElementInterface):
-    def __init__(self):
+
+    def __init__(self, upnp_client=''):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
         self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
@@ -505,13 +522,14 @@ class DIDLElement(ElementInterface):
         self.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
         self.attrib['xmlns:pv'] = 'http://www.pv.com/pvns/'
         self._items = []
+        self.upnp_client = upnp_client
 
     def addContainer(self, id, parentID, title, restricted = False):
         e = Container(id, parentID, title, restricted, creator = '')
         self.append(e.toElement())
 
     def addItem(self, item):
-        self.append(item.toElement())
+        self.append(item.toElement(upnp_client=self.upnp_client))
         self._items.append(item)
 
     def numItems(self):
@@ -534,8 +552,11 @@ class DIDLElement(ElementInterface):
         elt = utils.parse_xml(aString, 'utf-8')
         elt = elt.getroot()
         for node in elt.getchildren():
-            upnp_class_name = node.tag[node.tag.find('}')+1:].title()
-            upnp_class = eval(upnp_class_name)
+            upnp_class_name =  node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
+            try:
+                upnp_class = upnp_classes[upnp_class_name]()
+            except Exception, msg:
+                print msg
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance

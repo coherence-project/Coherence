@@ -14,7 +14,9 @@ from coherence.upnp.core.soap_service import errorCode
 
 import louie
 
-class ElisaMediaStore:
+from coherence.extern.simple_plugin import Plugin
+
+class ElisaMediaStore(Plugin):
 
     """ this is a backend to the Elisa Media DB
 

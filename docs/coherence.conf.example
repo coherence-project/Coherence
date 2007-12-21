@@ -5,17 +5,22 @@
 logmode = warning                         # none, error, warning, info, debug, log
 #logfile = coherence.log
 #interface = eth0
-#serverport = 30020                       # if not specified or set to 0
+serverport = 30020                       # if not specified or set to 0
                                           # coherence will let the OS choose the port
 
-#controlpoint = yes                       # if set to yes coherence will activate its
+controlpoint = yes                        # if set to yes coherence will activate its
                                           # internal ControlPoint
 
 web-ui = no                               # set this to yes to enable some interactive
                                           # Web-UI
 
+#use_dbus = yes                            # set this to yes to let Coherence signal
+                                          # devices and services via dbus and provide
+                                          # access to them
+                                          # only useful when controlpoint is enabled too
+
 [subsystem_log]
-#Coherence = info
+#coherence = info
 #WebUI = info
 #SSDP = info
 #MSEARCH = info
@@ -23,22 +28,29 @@ web-ui = no                               # set this to yes to enable some inter
 #Action = info
 #Variable = info
 #Event = info
-#ServiceServer = info
-#ServiceClient = info
+#Service_Server = info
+#Service_Client = info
 #Device = info
-#ConnectionManagerServer = info
+#Connection_Manager_Server = info
 #MediaServer= info
-#MediaRenderer= info
+#MediaRenderer= log
 #ControlPoint = info
-#MSClient = info
-#FlickrStore = info
+#MS_Client = info
+#flickr_storage = info
 #Buzztard=info
 
 
 [plugins]
     [[FSStore]]
         content = tests/content           # append more directories seperated by commas
+    #    #content = /data/audio/music
         name = Coherence Test Content
+    #    [[[icon]]]
+    #        mimetype = image/png
+    #        width = 120
+    #        height = 106
+    #        depth = 24
+    #        url = file:///home/dev/Projects/Coherence/tests/coherence-icon.png
 
     #[[GStreamerPlayer]]
     #    name = GStreamer Audio Player
@@ -47,15 +59,24 @@ web-ui = no                               # set this to yes to enable some inter
     #    name = Elisa
     #    host = localhost
 
+    #[[IRadioStore]]
+    #    name = iRadio
+
     [[FlickrStore]]
         name = Flickr Images
+        refresh = 60                      # check every 60 minutes with Flickr for new images in the set
         proxy = yes                       # if set to yes coherence will fetch the images
                                           # from Flickr for your client
-
-        refresh = 60                      # check every 60 minutes with Flickr for new images in the set
+    #    [[[icon]]]
+    #        mimetype = image/png
+    #        width = 98
+    #        height = 26
+    #        depth = 24
+    #        url = file:///home/dev/Projects/Coherence/tests/flickr-icon.png
 
     #[[MediaStore]]
     #    medialocation = /data/audio/music  # append more directories seperated by commas
+    #    #medialocation = tests/content/audio
     #    coverlocation = /data/audio/covers # optional
     #    mediadb= /tmp/media.db
     #    name = Coherence MediaStore

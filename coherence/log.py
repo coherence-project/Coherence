@@ -9,6 +9,8 @@ import os
 
 def human2level(levelname):
     levelname = levelname.lower()
+    if levelname.startswith('none'):
+        return 0
     if levelname.startswith('error'):
         return 1
     if levelname.startswith('warn'):
@@ -52,7 +54,7 @@ def init(logfile=None, loglevel='*:2'):
     externlog.setPackageScrubList('coherence', 'twisted', 'upntest')
 
     if logfile is not None:
-        outputToFiles(logfile, logfile)
+        outputToFiles(stdout=None, stderr=logfile)
 
     # log WARNINGS by default
     if not os.getenv('COHERENCE_DEBUG'):
@@ -86,10 +88,10 @@ class Loggable(externlog.Loggable, object):
         return args
 
     def critical(self, msg, *args):
-        self.log(msg, *args)
+        self.warning(msg, *args)
 
-    def error(self, msg, *args):
-        self.log(msg, *args)
+    #def error(self, msg, *args):
+    #    self.log(msg, *args)
 
     def msg(self, message, *args):
         self.info(message, *args)

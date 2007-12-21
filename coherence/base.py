@@ -101,7 +101,7 @@ class WebServer(log.Loggable):
         port = reactor.listenTCP( port, self.site)
         coherence.web_server_port = port._realPortNumber
         # XXX: is this the right way to do it?
-        self.info( "WebServer on port %d ready" % coherence.web_server_port)
+        self.warning( "WebServer on port %d ready" % coherence.web_server_port)
 
 
 class Coherence(log.Loggable):
@@ -127,6 +127,9 @@ class Coherence(log.Loggable):
         self.children = {}
         self._callbacks = {}
 
+        self.dbus = None
+        self.config = config
+
         network_if = config.get('interface')
 
         self.web_server_port = int(config.get('serverport', 0))
@@ -135,25 +138,40 @@ class Coherence(log.Loggable):
             a COHERENCE_DEBUG environment variable overwrites
             all level settings here
         """
-        subsystem_log = config.get('subsystem_log',{})
-        logmode = config.get('logmode', 'warning')
+
+        try:
+            logmode = config['logging'].get('level','warning')
+        except KeyError:
+            logmode = config.get('logmode', 'warning')
         _debug = []
-        for subsystem,level in subsystem_log.items():
-            self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
-            _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
+
+        try:
+            for subsystem in config['logging'].get('subsystemlist',[]):
+                self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
+                _debug.append('%s:%d' % (subsystem['name'].lower(), log.human2level(subsystem['level'])))
+        except KeyError:
+            subsystem_log = config.get('subsystem_log',{})
+            for subsystem,level in subsystem_log.items():
+                #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
+                _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
         if len(_debug) > 0:
             _debug = ','.join(_debug)
         else:
-            if logmode.lower() == 'none':
-                _debug = logmode.lower()
-            else:
-                _debug = '*:%d' % log.human2level(logmode)
+            _debug = '*:%d' % log.human2level(logmode)
         log.init(config.get('logfile', None), _debug)
-
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
+
+        if config.get('use_dbus', 'no') == 'yes':
+            try:
+                from coherence import dbus_service
+                self.dbus = dbus_service.DBusPontoon(self)
+            except Exception, msg:
+                self.warning("Unable to activate dbus sub-system: %r" % msg)
+                self.debug(traceback.format_exc())
+
         self.ssdp_server = SSDPServer()
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
@@ -173,7 +191,7 @@ class Coherence(log.Loggable):
             try:
                 self.hostname = socket.gethostbyname(socket.gethostname())
             except socket.gaierror:
-                self.error("hostname can't be resolved, maybe a system misconfiguration?")
+                self.warning("hostname can't be resolved, maybe a system misconfiguration?")
                 self.hostname = '127.0.0.1'
 
         if self.hostname == '127.0.0.1':
@@ -182,7 +200,7 @@ class Coherence(log.Loggable):
 
         self.info('running on host: %s' % self.hostname)
         if self.hostname == '127.0.0.1':
-            self.error('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
+            self.warning('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
         self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
@@ -190,45 +208,67 @@ class Coherence(log.Loggable):
         self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         self.renew_service_subscription_loop.start(20.0, now=False)
 
-        self.installed_plugins = None
+        self.available_plugins = None
 
-        plugins = config.get('plugins',None)
+        plugins = config.get('pluginlist')
         if plugins is None:
-            self.warning("No plugin defined!")
+            plugins = config.get('plugins',None)
+
+        if plugins is None:
+            self.info("No plugin defined!")
         else:
-            for plugin,arguments in plugins.items():
-                try:
-                    if not isinstance(arguments, dict):
-                        arguments = {}
-                    self.add_plugin(plugin, **arguments)
-                except Exception, msg:
-                    self.critical("Can't enable plugin, %s: %s!" % (plugin, msg))
-                    self.info(traceback.format_exc())
+            if isinstance(plugins,dict):
+                for plugin,arguments in plugins.items():
+                    try:
+                        if not isinstance(arguments, dict):
+                            arguments = {}
+                        self.add_plugin(plugin, **arguments)
+                    except Exception, msg:
+                        self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
+                        self.info(traceback.format_exc())
+            else:
+                for plugin in plugins:
+                    try:
+                        backend = plugin['backend']
+                        del plugin['backend']
+                        self.add_plugin(backend, **plugin)
+                    except Exception, msg:
+                        self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
+                        self.info(traceback.format_exc())
 
         if config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
 
     def add_plugin(self, plugin, **kwargs):
-        self.info("adding plugin", plugin)
+        self.info("adding plugin %r", plugin)
 
-        def get_installed_plugins(ids):
-            if self.installed_plugins is None:
-                self.installed_plugins = {}
-                import pkg_resources
+        def get_available_plugins(ids):
+            if self.available_plugins is None:
+                self.available_plugins = {}
                 if not isinstance(ids, (list,tuple)):
                     ids = (ids)
-                for id in ids:
-                    for entrypoint in pkg_resources.iter_entry_points(id):
-                        try:
-                            self.installed_plugins[entrypoint.name] = entrypoint.load()
-                        except ImportError, msg:
-                            self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
-                            self.info(traceback.format_exc())
+                try:
+                    import pkg_resources
+                    for id in ids:
+                        for entrypoint in pkg_resources.iter_entry_points(id):
+                            try:
+                                self.available_plugins[entrypoint.name] = entrypoint.load()
+                            except ImportError, msg:
+                                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
+                                self.info(traceback.format_exc())
+                except ImportError:
+                    """ no pkg_resources/setuptools installed """
+                    self.info("plugin reception activated, no pkg_resources")
+                    from coherence.extern.simple_plugin import Reception
+                    reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
+                    for cls in reception.guestlist():
+                        self.available_plugins[cls.__name__.split('.')[-1]] = cls
 
-        get_installed_plugins(("coherence.plugins.backend.media_server",
+
+        get_available_plugins(("coherence.plugins.backend.media_server",
                                "coherence.plugins.backend.media_renderer"))
         try:
-            plugin_class = self.installed_plugins.get(plugin,None)
+            plugin_class = self.available_plugins.get(plugin,None)
             if plugin_class == None:
                 raise KeyError
             for device in plugin_class.implements:
@@ -236,19 +276,25 @@ class Coherence(log.Loggable):
                     device_class=globals().get(device,None)
                     if device_class == None:
                         raise KeyError
-                    self.critical("Activating %s plugin as %s..." % (plugin, device))
-                    device_class(self, plugin_class, **kwargs)
+                    self.info("Activating %s plugin as %s..." % (plugin, device))
+                    return device_class(self, plugin_class, **kwargs)
                 except KeyError:
-                    self.critical("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
+                    self.warning("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
-                    self.critical("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
-                    self.info(traceback.format_exc())
+                    self.warning("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
+                    self.debug(traceback.format_exc())
         except KeyError:
-            self.critical("Can't enable %s plugin, not found!" % plugin)
+            self.warning("Can't enable %s plugin, not found!" % plugin)
         except Exception, msg:
-            self.critical("Can't enable %s plugin, %s!" % (plugin, msg))
-            self.info(traceback.format_exc())
+            self.warning("Can't enable %s plugin, %s!" % (plugin, msg))
+            self.debug(traceback.format_exc())
 
+    def remove_plugin(self, plugin):
+        """ removes a backend from Coherence          """
+        """ plugin is the object return by add_plugin """
+
+        self.info("removing plugin %r", plugin)
+        plugin.unregister()
 
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
@@ -296,6 +342,12 @@ class Coherence(log.Loggable):
         for callback in self._callbacks.get(name,[]):
             callback(*args)
 
+    def get_device_by_host(self, host):
+        found = []
+        for device in self.devices:
+            if device.get_host() == host:
+                found.append(device)
+        return found
 
     def get_device_with_usn(self, usn):
         found = None
@@ -323,12 +375,12 @@ class Coherence(log.Loggable):
         return [d for d in self.devices if d.manifestation == 'remote']
 
     def create_device(self, device_type, infos):
-        self.info("creating", infos['ST'],infos['USN'])
+        self.info("creating ", infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
-            self.info("creating upnp:rootdevice", infos['USN'])
+            self.info("creating upnp:rootdevice ", infos['USN'])
             root = RootDevice(infos)
         else:
-            self.info("creating device/service",infos['USN'])
+            self.info("creating device/service ",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
@@ -356,10 +408,7 @@ class Coherence(log.Loggable):
 
 
     def add_web_resource(self, name, sub):
-        #self.web_server.web_root_resource.putChild(name, sub)
         self.children[name] = sub
-        #print self.web_server.web_root_resource.children
 
     def remove_web_resource(self, name):
-        # XXX implement me
-        pass
+        del self.children[name]

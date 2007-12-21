@@ -13,6 +13,7 @@ import random
 import string
 import sys
 import time
+import socket
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
@@ -76,6 +77,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
         self.msg('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
+        self.debug('with headers:', headers)
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
             self.discoveryRequest(headers, (host, port))
@@ -88,7 +90,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def register(self, manifestation, usn, st, location,
                         server=SERVER_ID,
                         cache_control='max-age=1800',
-                        silent=False):
+                        silent=False,
+                        host=None):
         """Register a service or device that this SSDP server will
         respond to."""
 
@@ -99,15 +102,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.known[usn]['LOCATION'] = location
         self.known[usn]['ST'] = st
         self.known[usn]['EXT'] = ''
-        if manifestation == 'local':
-            self.known[usn]['SERVER'] = server
-            self.known[usn]['CACHE-CONTROL'] = cache_control
-        else:
-            self.known[usn]['SERVER'] = server
-            self.known[usn]['CACHE-CONTROL'] = cache_control
+        self.known[usn]['SERVER'] = server
+        self.known[usn]['CACHE-CONTROL'] = cache_control
 
         self.known[usn]['MANIFESTATION'] = manifestation
         self.known[usn]['SILENT'] = silent
+        self.known[usn]['HOST'] = host
 
         self.msg(self.known[usn])
 
@@ -140,7 +140,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         if headers['nts'] == 'ssdp:alive':
             if not self.isKnown(headers['usn']):
                 self.register('remote', headers['usn'], headers['nt'], headers['location'],
-                              headers['server'], headers['cache-control'])
+                              headers['server'], headers['cache-control'], host=host)
         elif headers['nts'] == 'ssdp:byebye':
             if self.isKnown(headers['usn']):
                 self.unRegister(headers['usn'])
@@ -154,6 +154,13 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
         self.info('Discovery request for %s' % headers['st'])
+
+        def send_it(response, destination, delay, usn):
+            self.info('send discovery response delayed by %ds for %s' % (delay, usn))
+            try:
+                self.transport.write(response, destination)
+            except (AttributeError,socket.error), msg:
+                self.info("failure sending out byebye notification: %r" % msg)
 
         # Do we know about this service?
         for i in self.known.values():
@@ -170,15 +177,14 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 for k, v in i.items():
                     if k == 'USN':
                         usn = v
-                    if k not in ('MANIFESTATION','SILENT'):
+                    if k not in ('MANIFESTATION','SILENT','HOST'):
                         response.append('%s: %s' % (k, v))
                 response.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
-                self.info('send Discovery response with delay %d for %s' % (delay, usn))
-                reactor.callLater(delay, self.transport.write,
-                                '\r\n'.join(response), (host, port))
+                reactor.callLater(delay, send_it,
+                                '\r\n'.join(response), (host, port), delay, usn)
 
     def doNotify(self, usn):
         """Do notification"""
@@ -196,31 +202,42 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['ST']
         del stcpy['MANIFESTATION']
         del stcpy['SILENT']
+        del stcpy['HOST']
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.debug('doNotify content', resp)
-        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        try:
+            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        except (AttributeError,socket.error), msg:
+            self.info("failure sending out alive notification: %r" % msg)
 
-    def doByebye(self, st):
+    def doByebye(self, usn):
         """Do byebye"""
 
-        self.info('Sending byebye notification for %s' % st)
+        self.info('Sending byebye notification for %s' % usn)
 
         resp = [ 'NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
                 'NTS: ssdp:byebye',
                 ]
-        stcpy = dict(self.known[st].iteritems())
-        stcpy['NT'] = stcpy['ST']
-        del stcpy['ST']
-        del stcpy['MANIFESTATION']
-        del stcpy['SILENT']
-        resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
-        resp.extend(('', ''))
-        self.debug('doByebye content', resp)
-        if self.transport:
-            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+        try:
+            stcpy = dict(self.known[usn].iteritems())
+            stcpy['NT'] = stcpy['ST']
+            del stcpy['ST']
+            del stcpy['MANIFESTATION']
+            del stcpy['SILENT']
+            del stcpy['HOST']
+            resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+            resp.extend(('', ''))
+            self.debug('doByebye content', resp)
+            if self.transport:
+                try:
+                    self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+                except (AttributeError,socket.error), msg:
+                    self.info("failure sending out byebye notification: %r" % msg)
+        except KeyError, msg:
+            self.debug("error building byebye notification: %r" % msg)
 
     def resendNotify( self):
         for usn in self.known:

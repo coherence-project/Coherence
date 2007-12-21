@@ -6,7 +6,6 @@
 
 import os
 import struct
-import platform
 
 try:
     import ctypes
@@ -77,10 +76,13 @@ _flag_to_human = {
     IN_ISDIR: 'is_dir',
     IN_ONESHOT: 'one_shot'}
 
+# system call numbers are architecture-specific
+# see /usr/include/linux/asm/unistd.h and look for inotify
 _inotify_syscalls = { 'i386': (291,292,293),  # FIXME, there has to be a better way for this
                       'i486': (291,292,293),
                       'i586': (291,292,293),
                       'i686': (291,292,293),
+                      'x86_64': (253,254,255), # gotten from FC-6 and F-7
                       'armv6l':(316,317,318),              # Nokia N800
                       'armv5tej1':(316,317,318),           # Nokia N770
                       'ppc': (275,276,277),                # PPC, like PS3
@@ -131,13 +133,20 @@ class INotify(FileDescriptor, object):
             except:
                 raise SystemError, "libc not found, INotify support disabled"
 
-            machine = platform.machine()
             try:
-                obj._init_syscall_id = _inotify_syscalls[machine][0]
-                obj._add_watch_syscall_id = _inotify_syscalls[machine][1]
-                obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
+                obj.inotify_init = obj.libc.inotify_init
+                #print "horray, we have a libc with inotify support"
+                obj.inotify_add_watch = obj.libc_inotify_add_watch
+                obj.inotify_rm_watch = obj.libc_inotify_rm_watch
             except:
-                raise SystemError, "unknown system, INotify support disabled"
+                import platform
+                machine = platform.machine()
+                try:
+                    obj._init_syscall_id = _inotify_syscalls[machine][0]
+                    obj._add_watch_syscall_id = _inotify_syscalls[machine][1]
+                    obj._rm_watch_syscall_id = _inotify_syscalls[machine][2]
+                except:
+                    raise SystemError, "unknown system '%s', INotify support disabled" % machine
 
             FileDescriptor.__init__(obj)
 
@@ -174,13 +183,23 @@ class INotify(FileDescriptor, object):
         if type(path) is unicode:
             path = path.encode('utf-8')
             self.libc.syscall.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
-            return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
         else:
             self.libc.syscall.argtypes = None
-            return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
+        return self.libc.syscall(self._add_watch_syscall_id, self._fd, path, mask)
 
     def inotify_rm_watch(self, wd):
         return self.libc.syscall(self._rm_watch_syscall_id, self._fd, wd)
+
+    def libc_inotify_add_watch(self, path, mask):
+        if type(path) is unicode:
+            path = path.encode('utf-8')
+            self.libc.inotify_add_watch.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+        else:
+            self.libc.inotify_add_watch.argtypes = None
+        return self.libc.inotify_add_watch(self._fd, path, mask)
+
+    def libc_inotify_rm_watch(self, wd):
+        return self.libc.inotify_rm_watch(self._fd, wd)
 
     def fileno(self):
         return self._fd
@@ -203,7 +222,7 @@ class INotify(FileDescriptor, object):
             if len(self._buffer) < 16:
                 break
 
-            wd, mask, cookie, size = struct.unpack("LLLL", self._buffer[0:16])
+            wd, mask, cookie, size = struct.unpack("=LLLL", self._buffer[0:16])
             if size:
                 name = self._buffer[16:16+size].rstrip('\0')
             else:

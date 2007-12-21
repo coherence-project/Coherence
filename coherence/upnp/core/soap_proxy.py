@@ -3,6 +3,8 @@
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
+from coherence import log
+
 from coherence.extern.et import ET, namespace_map_update
 
 from coherence.upnp.core.utils import getPage, parse_xml
@@ -11,7 +13,6 @@ from coherence.upnp.core import soap_lite
 from coherence import log
 
 class SOAPProxy(log.Loggable):
-    logCategory = 'soap_proxy'
     """ A Proxy for making remote SOAP calls.
 
         Based upon twisted.web.soap.Proxy and
@@ -23,6 +24,8 @@ class SOAPProxy(log.Loggable):
         'foobar' with args 1 and 2, proxy.callRemote('foobar', x=1)
         will call foobar with named argument 'x'.
     """
+
+    logCategory = 'soap'
 
     def __init__(self, url, namespace=None, envelope_attrib=None, header=None, soapaction=None):
         self.url = url
@@ -40,9 +43,8 @@ class SOAPProxy(log.Loggable):
         payload = soap_lite.build_soap_call("{%s}%s" % (ns[1], soapmethod), kwargs,
                                             encoding=None)
 
-        self.debug("soapaction: %r" % soapaction)
-        self.debug("callRemote: %r" % payload)
-        self.debug("url: %r" % self.url)
+        self.info("callRemote soapaction: ", soapaction,self.url)
+        self.debug("callRemote payload: ", payload)
 
         def gotError(failure, url):
             self.debug("error requesting %s" % url)
@@ -80,7 +82,7 @@ class SOAPProxy(log.Loggable):
         if response == None:
             """ fallback for improper SOAP action responses """
             response = body.find('%sResponse' % self.action)
-        #print "response", response
+        self.debug("callRemote response ", response)
         result = {}
         if response != None:
             for elem in response:

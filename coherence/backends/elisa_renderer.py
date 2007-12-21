@@ -21,9 +21,11 @@ import gst
 
 import louie
 
+from coherence.extern.simple_plugin import Plugin
+
 from coherence import log
 
-class ElisaPlayer(log.Loggable):
+class ElisaPlayer(log.Loggable, Plugin):
 
     """ a backend to the Elisa player
 
@@ -90,7 +92,7 @@ class ElisaPlayer(log.Loggable):
         return str(self.__class__).split('.')[-1]
 
     def poll_player(self):
-        
+
         def got_result(result):
             self.info("poll_player %r", result)
             if self.server != None:

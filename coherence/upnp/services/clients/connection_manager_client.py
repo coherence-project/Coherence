@@ -10,6 +10,7 @@ class ConnectionManagerClient:
         self.namespace = service.get_type()
         self.url = service.get_control_url()
         self.service.subscribe()
+        self.service.client = self
         #print "ConnectionManagerClient __init__", self.url
 
     #def __del__(self):
@@ -22,6 +23,9 @@ class ConnectionManagerClient:
         self.namespace = None
         self.url = None
         del self
+
+    def subscribe_for_variable(self, var_name, callback,signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
 
     def get_protocol_info(self):
         action = self.service.get_action('GetProtocolInfo')

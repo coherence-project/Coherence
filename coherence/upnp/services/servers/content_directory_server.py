@@ -9,12 +9,16 @@
 
 from twisted.python import failure
 from twisted.web import resource
+from twisted.internet import defer
+
 
 from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core.DIDLLite import DIDLElement
 
 from coherence.upnp.core import service
+
+from coherence import log
 
 class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
 
@@ -24,7 +28,9 @@ class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class ContentDirectoryServer(service.ServiceServer, resource.Resource):
+class ContentDirectoryServer(service.ServiceServer, resource.Resource,
+                             log.Loggable):
+    logCategory = 'content_directory_server'
 
     def __init__(self, device, backend=None):
         self.device = device
@@ -62,6 +68,21 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
         item = None
         items = []
 
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
+
+        def build_response(tm):
+            r = { 'Result': didl.toString(), 'TotalMatches': tm,
+                'NumberReturned': didl.numItems()}
+
+            if hasattr(item, 'update_id'):
+                r['UpdateID'] = item.update_id
+            elif hasattr(self.backend, 'update_id'):
+                r['UpdateID'] = self.backend.update_id # FIXME
+            else:
+                r['UpdateID'] = 0
+
+            return r
+
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         """ fake a Windows Media Connect Server
             and return for the moment an error
@@ -97,64 +118,126 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource):
             if item == None:
                 return failure.Failure(errorCode(701))
 
-            items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
-            total = item.get_child_count()
+            def got_error(r):
+                return r
 
-        didl = DIDLElement()
+            def process_result(result):
+                if result == None:
+                    result = []
+                l = []
+
+                def process_items(result, tm):
+                    if result == None:
+                        result = []
+                    for i in result:
+                        if i[0] == True:
+                            didl.addItem(i[1])
+
+                    return build_response(tm)
+
+                for i in result:
+                    d = defer.maybeDeferred( i.get_item)
+                    l.append(d)
+                total = item.get_child_count()
+                dl = defer.DeferredList(l)
+                dl.addCallback(process_items, total)
+                return dl
+
+            #items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
+            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+            d.addCallback( process_result)
+            d.addErrback(got_error)
+
+            return d
+
         for i in items:
             didl.addItem(i.get_item())
 
-        r = { 'Result': didl.toString(), 'TotalMatches': total,
-            'NumberReturned': didl.numItems()}
-
-        if(item != None and hasattr(item, 'update_id')):
-            r['UpdateID'] = item.update_id
-        else:
-            r['UpdateID'] = self.backend.update_id # FIXME
-
-        return r
+        return build_response(total)
 
     def upnp_Browse(self, *args, **kwargs):
-        ObjectID = kwargs['ObjectID']
+        try:
+            ObjectID = kwargs['ObjectID']
+        except:
+            self.debug("hmm, a Browse action and no ObjectID argument? An XBox maybe?")
+            ObjectID = 0
         BrowseFlag = kwargs['BrowseFlag']
         Filter = kwargs['Filter']
         StartingIndex = int(kwargs['StartingIndex'])
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
 
+        root_id = ObjectID
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         """ fake a Windows Media Connect Server
             and return for the moment an error
             for the things we can't support now
         """
         if( kwargs.get('X_UPnPClient', '') == 'XBox' and
-                wmc_mapping != None and
-                wmc_mapping.has_key(ObjectID)):
-            root_id = wmc_mapping[ObjectID]
-        else:
-            root_id = ObjectID
+                wmc_mapping != None):
+            try:
+                ObjectID = kwargs['ContainerID']
+            except:
+                pass
+            if wmc_mapping.has_key(ObjectID):
+                root_id = wmc_mapping[ObjectID]
 
         item = self.backend.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
 
-        didl = DIDLElement()
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
+
+        def got_error(r):
+            return r
+
+        def build_response(tm):
+            r = { 'Result': didl.toString(), 'TotalMatches': tm,
+                'NumberReturned': didl.numItems()}
+
+            if hasattr(item, 'update_id'):
+                r['UpdateID'] = item.update_id
+            elif hasattr(self.backend, 'update_id'):
+                r['UpdateID'] = self.backend.update_id # FIXME
+            else:
+                r['UpdateID'] = 0
+
+            return r
+
+        def process_result(result):
+            if result == None:
+                result = []
+            if BrowseFlag == 'BrowseDirectChildren':
+                l = []
+
+                def process_items(result, tm):
+                    if result == None:
+                        result = []
+                    for i in result:
+                        if i[0] == True:
+                            didl.addItem(i[1])
+
+                    return build_response(tm)
+
+                for i in result:
+                    d = defer.maybeDeferred( i.get_item)
+                    l.append(d)
+                total = item.get_child_count()
+                dl = defer.DeferredList(l)
+                dl.addCallback(process_items, total)
+                return dl
+            else:
+                didl.addItem(result)
+                total = 1
+
+            return build_response(total)
 
         if BrowseFlag == 'BrowseDirectChildren':
-            childs = item.get_children(StartingIndex, StartingIndex + RequestedCount)
-            for i in childs:
-                didl.addItem(i.get_item())
-            total = item.get_child_count()
+            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
         else:
-            didl.addItem(item.get_item())
-            total = 1
+            d = defer.maybeDeferred( item.get_item)
 
-        r = { 'Result': didl.toString(), 'TotalMatches': total,
-            'NumberReturned': didl.numItems()}
+        d.addCallback( process_result)
+        d.addErrback(got_error)
 
-        if hasattr(item, 'update_id'):
-            r['UpdateID'] = item.update_id
-        else:
-            r['UpdateID'] = self.backend.update_id # FIXME
-
-        return r
+        return d

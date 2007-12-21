@@ -10,6 +10,7 @@ class RenderingControlClient:
         self.namespace = service.get_type()
         self.url = service.get_control_url()
         self.service.subscribe()
+        self.service.client = self
         #print "RenderingControlClient __init__", self.url
 
     #def __del__(self):
@@ -22,6 +23,9 @@ class RenderingControlClient:
         self.namespace = None
         self.url = None
         del self
+
+    def subscribe_for_variable(self, var_name, callback,signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
 
     def list_presets(self, instance_id=0):
         action = self.service.get_action('ListPresets')

@@ -4,6 +4,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import string
+import traceback
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -15,16 +16,41 @@ from coherence.upnp.core.event import EventServer
 from coherence.upnp.devices.media_server_client import MediaServerClient
 from coherence.upnp.devices.media_renderer_client import MediaRendererClient
 
-from coherence.upnp.core.utils import parse_xml
-
 import louie
 
 from coherence import log
 
-class ControlPoint(log.Loggable):
-    logCategory = 'ControlPoint'
+class DeviceQuery(object):
 
-    def __init__(self, coherence):
+    def __init__(self, type, pattern, callback, timeout=0, oneshot=True):
+        self.type = type
+        self.pattern = pattern
+        self.callback = callback
+        self.fired = False
+        self.timeout = timeout
+        self.oneshot = oneshot
+
+    def fire(self, device):
+        if callable(self.callback):
+            self.callback(device)
+        elif isinstance(self.callback,basestring):
+            louie.send(self.callback, None, device=device)
+        self.fired = True
+
+    def check(self, device):
+        if self.fired and self.oneshot:
+            return
+        if(self.type == 'host' and
+           device.host == self.pattern):
+            self.fire(device)
+        elif(self.type == 'friendly_name' and
+           device.friendly_name == self.pattern):
+            self.fire(device)
+
+class ControlPoint(log.Loggable):
+    logCategory = 'controlpoint'
+
+    def __init__(self,coherence,auto_client=['MediaServer','MediaRenderer']):
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -33,67 +59,80 @@ class ControlPoint(log.Loggable):
         self.coherence.add_web_resource('RPC2',
                                         XMLRPC(self))
 
-        for device in self.coherence.get_nonlocal_devices():
+        self.auto_client = auto_client
+        self.queries=[]
+
+        for device in self.get_devices():
             self.check_device( device)
 
         louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
-    def browse( self, device):
+        louie.connect(self.completed, 'Coherence.UPnP.DeviceClient.detection_completed', louie.Any)
+
+    def browse(self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
             return
         self.check_device( device)
 
+    def process_queries(self, device):
+        for query in self.queries:
+            query.check(device)
+
+    def add_query(self, query):
+        for device in self.get_devices():
+            query.check(device)
+        if query.fired == False and query.timeout == 0:
+            query.callback(None)
+        else:
+            self.queries.append(query)
+
     def get_devices(self):
-        return self.coherence.get_nonlocal_devices()
+        return self.coherence.get_devices()
 
     def get_device_with_id(self, id):
         return self.coherence.get_device_with_id(id)
 
+    def get_device_by_host(self, host):
+        return self.coherence.get_device_by_host(host)
+
     def check_device( self, device):
-        if device.is_remote():
-            self.info("found device %s of type %s" %(device.get_friendly_name(),
-                                                    device.get_device_type()))
-            if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaServer:1",
-                                      "urn:schemas-upnp-org:device:MediaServer:2"]:
+        self.info("found device %s of type %s" %(device.get_friendly_name(),
+                                                device.get_device_type()))
+        short_type = device.get_device_type().split(':')[3]
+        if short_type in self.auto_client:
+            if short_type == 'MediaServer':
                 self.info("identified MediaServer", device.get_friendly_name())
                 client = MediaServerClient(device)
                 device.set_client( client)
-                louie.send('Coherence.UPnP.ControlPoint.MediaServer.detected', None,
-                                   client=client,usn=device.get_usn())
 
-            if device.get_device_type() in [ "urn:schemas-upnp-org:device:MediaRenderer:1",
-                                      "urn:schemas-upnp-org:device:MediaRenderer:2"]:
+            if short_type == 'MediaRenderer':
                 self.info("identified MediaRenderer", device.get_friendly_name())
                 client = MediaRendererClient(device)
                 device.set_client( client)
-                louie.send('Coherence.UPnP.ControlPoint.MediaRenderer.detected', None,
-                                   client=client,usn=device.get_usn())
+
+        self.process_queries(device)
+
+    def completed(self, client, usn):
+        self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected ' % client.device_type)
+        louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
+                               client=client,usn=usn)
 
     def remove_client(self, usn, client):
-        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
+        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         client.remove()
 
     def propagate(self, event):
         #print 'propagate:', event
         if event.get_sid() in service.subscribers.keys():
-            target_service = service.subscribers[event.get_sid()]
-            for var_name, var_value  in event.items():
-                if var_name == 'LastChange':
-                    """ we have an AVTransport or RenderingControl event """
-                    target_service.get_state_variable(var_name, 0).update(var_value)
-                    tree = parse_xml(var_value).getroot()
-                    namespace_uri, tag = string.split(tree.tag[1:], "}", 1)
-                    for instance in tree.findall('{%s}InstanceID' % namespace_uri):
-                        instance_id = instance.attrib['val']
-                        for var in instance.getchildren():
-                            namespace_uri, tag = string.split(var.tag[1:], "}", 1)
-                            target_service.get_state_variable(tag, instance_id).update(var.attrib['val'])
-                else:
-                    target_service.get_state_variable(var_name, 0).update(var_value)
-
+            try:
+                service.subscribers[event.get_sid()].process_event(event)
+            except Exception, msg:
+                self.debug(msg)
+                self.debug(traceback.format_exc())
+                pass
 
     def put_resource(self, url, path):
         def got_result(result):
@@ -263,7 +302,29 @@ if __name__ == '__main__':
     config['logmode'] = 'warning'
     config['serverport'] = 30020
 
-    ctrl = ControlPoint(Coherence(config))
+    ctrl = ControlPoint(Coherence(config),auto_client=[])
+
+    def show_devices():
+        print "show_devices"
+        for d in ctrl.get_devices():
+            print d
+
+    def the_result(r):
+        print "result", r
+
+    def query_devices():
+        print "query_devices"
+        ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result))
+
+    def query_devices2():
+        print "query_devices with timeout"
+        ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result, timeout=10, oneshot=False))
+
+    reactor.callLater(2, show_devices)
+    reactor.callLater(3, query_devices)
+    reactor.callLater(4, query_devices2)
+    reactor.callLater(5, ctrl.add_query, DeviceQuery('friendly_name', 'Coherence Test Content', the_result, timeout=10, oneshot=False))
+
 
 
     reactor.run()

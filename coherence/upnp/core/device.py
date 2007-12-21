@@ -25,18 +25,23 @@ class Device(log.Loggable):
         self.st = infos['ST']
         self.location = infos['LOCATION']
         self.manifestation = infos['MANIFESTATION']
+        self.host = infos['HOST']
         self.services = []
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
         self.device_type = ""
         self.detection_completed = False
         self.client = None
+        self.icons = []
 
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
         louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
         self.parse_description()
-        self.info("device %s %s initialized, manifestation %s" % (self.friendly_name,self.st,self.manifestation))
+        self.info("device %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation))
+
+    def __repr__(self):
+        return "device %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation)
 
     #def __del__(self):
     #    #print "Device removal completed"
@@ -78,6 +83,9 @@ class Device(log.Loggable):
 
     def get_id(self):
         return self.udn
+
+    def get_host(self):
+        return self.host
 
     def get_usn(self):
         return self.usn
@@ -121,7 +129,7 @@ class Device(log.Loggable):
             self.info("check service %r %r " % (service.id, service.get_sid()), service.get_timeout(), now)
             if service.get_sid() != None:
                 if service.get_timeout() < now:
-                    self.warning("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
+                    self.debug("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
                           "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
@@ -138,6 +146,7 @@ class Device(log.Loggable):
     def parse_description(self):
 
         def gotPage(x):
+            self.debug("got device description from %r" % self.location)
             data, headers = x
             tree = utils.parse_xml(data, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:device-1-0"
@@ -149,6 +158,27 @@ class Device(log.Loggable):
             self.device_type = unicode(d.findtext('.//{%s}deviceType' % ns))
             self.friendly_name = unicode(d.findtext('.//{%s}friendlyName' % ns))
             self.udn = d.findtext('.//{%s}UDN' % ns)
+
+            icon_list = d.find('.//{%s}iconList' % ns)
+            if icon_list is not None:
+                import urllib2
+                url_base = "%s://%s" % urllib2.urlparse.urlparse(self.location)[:2]
+                for icon in icon_list.findall('.//{%s}icon' % ns):
+                    try:
+                        i = {}
+                        i['mimetype'] = icon.find('.//{%s}mimetype' % ns).text
+                        i['width'] = icon.find('.//{%s}width' % ns).text
+                        i['height'] = icon.find('.//{%s}height' % ns).text
+                        i['depth'] = icon.find('.//{%s}depth' % ns).text
+                        i['url'] = icon.find('.//{%s}url' % ns).text
+                        if i['url'].startswith('/'):
+                            i['url'] = ''.join((url_base,i['url']))
+                        self.icons.append(i)
+                        self.debug("adding icon %r for %r" % (i,self.friendly_name))
+                    except:
+                        import traceback
+                        self.debug(traceback.format_exc())
+                        self.warning("device %r seems to have an invalid icon description, ignoring that icon" % self.friendly_name)
 
             s = d.find('.//{%s}serviceList' % ns)
             for service in s.findall('.//{%s}service' % ns):

@@ -7,38 +7,37 @@
 
 import os, sys
 
-from twisted.internet import reactor
 from twisted.python import usage
 
-from coherence.base import Coherence
+from coherence import __version__
 
-from configobj import ConfigObj
+from coherence.extern.config import Config
+
+
+def setConfigFile():
+    def findConfigDir():
+        try:
+            configDir = os.path.expanduser('~')
+        except:
+            configDir = os.getcwd()
+        return configDir
+
+    return os.path.join( findConfigDir(), '.coherence')
+
 
 class Options(usage.Options):
-    optParameters = [['configfile', 'c', '', 'path to configfile'],
+    optParameters = [['configfile', 'c', setConfigFile(), 'path to configfile']
                     ]
 
-def main(options):
+def main(config):
 
-    # get settings or options
-    def setConfigFile(filename):
-        def findConfigDir():
-            try: 
-                configDir = os.path.expanduser('~')
-            except:
-                configDir = os.getcwd()
-            return configDir
+    from coherence.base import Coherence
 
-        if filename is '':
-            filename = os.path.join( findConfigDir(), '.coherence')
-        return filename
-
-    config = ConfigObj( setConfigFile( options['configfile']))
     c = Coherence(config)
     #c = Coherence(plugins={'FSStore': {'content_directory':'tests/content'},
     #                       'Player': {})
     #c.add_plugin('FSStore', content_directory='tests/content', version=1)
-    
+
 if __name__ == '__main__':
 
     options = Options()
@@ -49,5 +48,34 @@ if __name__ == '__main__':
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(1)
 
-    reactor.callWhenRunning(main, options)
+    config = {}
+
+    try:
+        config = Config(options['configfile'])
+    except SyntaxError:
+        import traceback
+        #print traceback.format_exc()
+        try:
+            from configobj import ConfigObj
+            config = ConfigObj(options['configfile'])
+        except:
+            print "hmm, seems we are in trouble reading in any sort of config file"
+            print traceback.format_exc()
+
+    except IOError:
+        print "no config file %r found" % options['configfile']
+        pass
+
+    #print config
+
+    if config.get('use_dbus', 'no') == 'yes':
+        try:
+            from twisted.internet import glib2reactor
+            glib2reactor.install()
+        except AssertionError:
+            print "error installing glib2reactor"
+
+    from twisted.internet import reactor
+
+    reactor.callWhenRunning(main, config)
     reactor.run()

@@ -9,11 +9,10 @@ from datetime import datetime
 from email.Utils import parsedate_tz
 
 from twisted.python import failure
-from twisted.web import proxy
 from twisted.web.xmlrpc import Proxy
 from twisted.internet import task
 
-from coherence.upnp.core.utils import parse_xml
+from coherence.upnp.core.utils import parse_xml, ReverseProxyResource
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 from coherence.upnp.core.soap_proxy import SOAPProxy
@@ -21,17 +20,13 @@ from coherence.upnp.core.soap_service import errorCode
 
 import louie
 
+from coherence.extern.simple_plugin import Plugin
+
 from coherence import log
 
 from urlparse import urlsplit
 
-def myGetPage(url, contextFactory=None, *args, **kwargs):
-    scheme, host, port, path = _parse(url)
-    factory = HTTPClientFactory(url, *args, **kwargs)
-    reactor.connectTCP(host, port, factory)
-    return factory
-
-class ProxyImage(proxy.ReverseProxyResource):
+class ProxyImage(ReverseProxyResource):
 
     def __init__(self, uri):
         self.uri = uri
@@ -43,7 +38,7 @@ class ProxyImage(proxy.ReverseProxyResource):
             host = host_port
             port = 80
 
-        proxy.ReverseProxyResource.__init__(self, host, port, path)
+        ReverseProxyResource.__init__(self, host, port, path)
 
 class FlickrItem(log.Loggable):
     logCategory = 'flickr_storage'
@@ -94,6 +89,8 @@ class FlickrItem(log.Loggable):
             parent_id = parent.get_id()
 
         self.item = UPnPClass(id, parent_id, self.get_name())
+        if isinstance(self.item, Container):
+            self.item.childCount = 0
         self.child_count = 0
         self.children = []
 
@@ -127,7 +124,7 @@ class FlickrItem(log.Loggable):
             self.warning("error requesting", failure, url)
             self.info(failure)
 
-        getPage(self.real_url,method='HEAD').addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
+        getPage(self.real_url,method='HEAD',timeout=60).addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
 
     def remove(self):
         #print "FSItem remove", self.id, self.get_name(), self.parent
@@ -201,7 +198,7 @@ class FlickrItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url
 
-class FlickrStore(log.Loggable):
+class FlickrStore(log.Loggable, Plugin):
     logCategory = 'flickr_storage'
 
     implements = ['MediaServer']
@@ -308,7 +305,11 @@ class FlickrStore(log.Loggable):
         return len(self.store)
 
     def get_by_id(self,id):
-        id = int(id)
+        try:
+            id = int(id)
+        except ValueError:
+            id = 1000
+
         if id == 0:
             id = 1000
         try:
@@ -353,8 +354,13 @@ class FlickrStore(log.Loggable):
             if len(new_ones) > 0:
                 self.info("updated photo set %s with %d new images" % (parent.get_name(), len(new_ones)))
 
+        def got_error(error):
+            self.warning("trouble refreshing Flickr data %r", error)
+            self.debug("%r", error.getTraceback())
+
         d = self.flickr_interestingness()
         d.addCallback(update_flickr_result, self.most_wanted)
+        d.addErrback(got_error)
 
     def flickr_call(self, method, **kwargs):
         def got_result(result):
@@ -363,8 +369,8 @@ class FlickrStore(log.Loggable):
             return result
 
         def got_error(error):
-            self.warning(error)
-            self.error("connection to Flickr service failed!")
+            self.warning("connection to Flickr service failed! %r", error)
+            self.debug("%r", error.getTraceback())
             return error
 
         args = {}

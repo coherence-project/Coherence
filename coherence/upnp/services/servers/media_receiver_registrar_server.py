@@ -43,6 +43,7 @@ class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
         resource.Resource.__init__(self)
         self.version = 1
         self.namespace = 'microsoft.com'
+        self.id_namespace = 'microsoft.com'
         service.ServiceServer.__init__(self, 'X_MS_MediaReceiverRegistrar', self.version, backend)
 
         self.control = MediaReceiverRegistrarControl(self)

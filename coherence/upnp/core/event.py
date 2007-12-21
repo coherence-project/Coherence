@@ -21,6 +21,7 @@ global hostname, web_server_port
 hostname = None
 web_server_port = None
 
+
 class EventServer(resource.Resource, log.Loggable):
     """
     This class represents the server part that listens to event messages sent
@@ -41,8 +42,10 @@ class EventServer(resource.Resource, log.Loggable):
 
     def render_NOTIFY(self, request):
         self.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
-        command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
+        request.setResponseCode(200)
+
+        command = {'method': request.method, 'path': request.path}
         headers = request.received_headers
         louie.send('UPnT.event.server_message_received', None, command, headers, data)
 
@@ -67,9 +70,9 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
     """
     This class ist the server part on the device side. It listens to subscribe
     requests and registers the subscriber to send event messages to this device.
-    If an unsubscribe request is received, the subscription is cancelled and no 
+    If an unsubscribe request is received, the subscription is cancelled and no
     more event messages will be sent.
-    
+
     we receive a subscription request
     {'callback': '<http://192.168.213.130:9083/BYvZMzfTSQkjHwzOThaP/ConnectionManager>',
      'host': '192.168.213.107:30020',
@@ -104,8 +107,10 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                             self.service.id,
                             self.backend_name,
                             request.client, request.code))
-        command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
+        request.setResponseCode(200)
+
+        command = {'method': request.method, 'path': request.path}
         headers = request.received_headers
         louie.send('UPnT.event.client_message_received', None, command, headers, data)
 
@@ -146,8 +151,10 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                             self.service.id,
                             self.backend_name,
                             request.client, request.code))
-        command = {'method': request.method, 'path': request.path}
         data = request.content.getvalue()
+        request.setResponseCode(200)
+
+        command = {'method': request.method, 'path': request.path}
         headers = request.received_headers
         louie.send('UPnT.event.client_message_received', None, command, headers, data)
 
@@ -163,6 +170,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             self.debug(self.subscribers)
         return ""
 
+
 class Event(dict):
     def __init__(self, sid):
         dict.__init__(self)
@@ -171,39 +179,47 @@ class Event(dict):
     def get_sid(self):
         return self._sid
 
+
 class EventProtocol(Protocol, log.Loggable):
+
     logCategory = 'event_protocol'
 
     def __init__(self, service, action):
         self.service = service
         self.action = action
 
-    #def __del__(self):
-    #    pass
-    #    #print "EventProtocol deleted"
+    def connectionMade(self):
+        self.timeout_checker = reactor.callLater(30, lambda : self.transport.loseConnection())
 
     def dataReceived(self, data):
         self.info("response received from the Service Events HTTP server ")
         self.debug(data)
         cmd, headers = utils.parse_http_response(data)
         self.debug("%r %r", cmd, headers)
-        try:
-            self.service.set_sid(headers['sid'])
-            timeout = headers['timeout']
-            self.debug("%r %r", headers['sid'], headers['timeout'])
-            if timeout.startswith('Second-'):
-                timeout = int(timeout[len('Second-'):])
-                self.service.set_timeout(time.time() + timeout)
-        except:
-            self.debug(headers)
-            pass
+        if int(cmd[1]) != 200:
+            self.warning("response with error code %r received upon our %r request", cmd[1], self.action)
+        else:
+            try:
+                self.service.set_sid(headers['sid'])
+                timeout = headers['timeout']
+                self.debug("%r %r", headers['sid'], headers['timeout'])
+                if timeout == 'infinite':
+                    self.service.set_timeout(time.time() + 4294967296) # FIXME: that's lame
+                elif timeout.startswith('Second-'):
+                    timeout = int(timeout[len('Second-'):])
+                    self.service.set_timeout(time.time() + timeout)
+            except:
+                #print headers
+                pass
+        self.transport.loseConnection()
 
-        #del self.service
-        #del self
 
     def connectionLost( self, reason):
-        self.debug("connection closed from the Service Events HTTP server")
-        pass
+        try:
+            self.timeout_checker.cancel()
+        except:
+            pass
+        self.debug( "connection closed %r from the Service Events HTTP server", reason)
 
 def unsubscribe(service, action='unsubscribe'):
     return subscribe(service, action)
@@ -230,7 +246,7 @@ def subscribe(service, action='subscribe'):
         if action == 'subscribe':
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
-                        "TIMEOUT: Second-300",
+                        "TIMEOUT: Second-1800",
                         ]
             service.event_connection = p
         else:
@@ -299,21 +315,25 @@ def subscribe(service, action='subscribe'):
     print 'DEBUG event_protocol\t' + "event.subscribe finished" + '\t(coherence/upnp/core/event.py:222)'
 
 class NotificationProtocol(Protocol, log.Loggable):
-    logCategory = 'event_notification_protocol'
 
-    def __init__(self):
-        pass
+    logCategory = "notification_protocol"
+
+    def connectionMade(self):
+        self.timeout_checker = reactor.callLater(30, lambda : self.transport.loseConnection())
 
     def dataReceived(self, data):
-        self.debug("Notification response received (%r)", data)
-        #louie.send('UPnT.event.notification_response', None, data)
-        #cmd, headers = utils.parse_http_response(data)
-        #self.debug(cmd, headers)
-        pass
+        cmd, headers = utils.parse_http_response(data)
+        self.debug( "notification response received %r %r", cmd, headers)
+        if int(cmd[1]) != 200:
+            self.warning("response with error code %r received upon our notification", cmd[1])
+        self.transport.loseConnection()
 
     def connectionLost( self, reason):
-        self.debug("connection closed from the Service Events HTTP server")
-        pass
+        try:
+            self.timeout_checker.cancel()
+        except:
+            pass
+        self.debug("connection closed %r", reason)
 
 
 def send_notification(s, xml):
@@ -321,9 +341,11 @@ def send_notification(s, xml):
     send a notification a subscriber
     return its response
     """
-    log_category = "event_protocol"
+    log_category = "notification_protocol"
 
     _,host_port,path,_,_ = urlsplit(s['callback'])
+    if path == '':
+        path = '/'
     if host_port.find(':') != -1:
         host,port = tuple(host_port.split(':'))
         port = int(port)
@@ -350,7 +372,8 @@ def send_notification(s, xml):
         s['seq'] += 1
         if s['seq'] > 0xffffffff:
             s['seq'] = 1
-        return p.transport.write(request)
+        p.transport.write(request)
+        #return p.transport.write(request)
 
     def got_error(failure):
         log.info(log_category, "error sending notification to %r %r",
