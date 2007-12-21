@@ -157,7 +157,7 @@ class Coherence(log.Loggable):
             _debug = ','.join(_debug)
         else:
             _debug = '*:%d' % log.human2level(logmode)
-        log.init(config.get('logfile', None),_debug)
+        log.init(config.get('logfile', None), _debug)
 
         plugin = louie.TwistedDispatchPlugin()
         louie.install_plugin(plugin)

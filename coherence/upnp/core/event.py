@@ -37,6 +37,11 @@ class EventServer(resource.Resource, log.Loggable):
         self.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
         data = request.content.getvalue()
         request.setResponseCode(200)
+
+        command = {'method': request.method, 'path': request.path}
+        headers = request.received_headers
+        louie.send('UPnP.event.server_message_received', None, command, headers, data)
+
         if request.code != 200:
             self.info("data:", data)
         else:
@@ -57,6 +62,11 @@ class EventServer(resource.Resource, log.Loggable):
 
 class EventSubscriptionServer(resource.Resource, log.Loggable):
     """
+    This class ist the server part on the device side. It listens to subscribe
+    requests and registers the subscriber to send event messages to this device.
+    If an unsubscribe request is received, the subscription is cancelled and no
+    more event messages will be sent.
+
     we receive a subscription request
     {'callback': '<http://192.168.213.130:9083/BYvZMzfTSQkjHwzOThaP/ConnectionManager>',
      'host': '192.168.213.107:30020',
@@ -93,6 +103,11 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                             request.client, request.code))
         data = request.content.getvalue()
         request.setResponseCode(200)
+
+        command = {'method': request.method, 'path': request.path}
+        headers = request.received_headers
+        louie.send('UPnP.event.client_message_received', None, command, headers, data)
+
         if request.code != 200:
             self.debug("data:", data)
         else:
@@ -132,6 +147,11 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                             request.client, request.code))
         data = request.content.getvalue()
         request.setResponseCode(200)
+
+        command = {'method': request.method, 'path': request.path}
+        headers = request.received_headers
+        louie.send('UPnP.event.client_message_received', None, command, headers, data)
+
         if request.code != 200:
             self.debug("data:", data)
         else:
