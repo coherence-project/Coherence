@@ -65,6 +65,6 @@ class Reception(object):
                         self.log("can't import %r - %r" % (os.path.splitext(plugin)[0], msg))
 
 
-    def guestlist(self):
+    def guestlist(self, plugin_class=Plugin):
         """ returns a list of all Plugin subclasses """
-        return Plugin.__subclasses__()
+        return plugin_class.__subclasses__()
