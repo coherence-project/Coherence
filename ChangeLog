@@ -1,3 +1,481 @@
+2007-12-31 10:52  dev
+
+	* coherence/backends/iradio_storage.py,
+	  coherence/upnp/core/utils.py: close proxy connection when clients
+	  are finished or quit, closes #111
+
+2007-12-31 10:50  dev
+
+	* coherence/extern/inotify.py: minor fix to not break tracebacks on
+	  displaying a utf-8 encoded string
+
+2007-12-30 16:54  dev
+
+	* coherence/upnp/core/ssdp.py: move the
+	  'UPnP.SSDP.datagram_received' signal to a place __after__ we had
+	  a change to register the device with the SSDP server
+
+2007-12-29 20:34  dev
+
+	* coherence/extern/simple_plugin.py: add a little bit more
+	  flexibility to the SimplePlugin Reception class, enable it to
+	  return only selected plugin classes
+
+2007-12-29 15:32  micxer
+
+	* coherence/upnp/core/event.py, coherence/upnp/core/ssdp.py: Fixed
+	  missing SSDP signal
+	  Changed signalnames to more generic names
+
+2007-12-24 09:10  dev
+
+	* coherence/upnp/core/event.py: missing import, fixes #114
+
+2007-12-21 14:38  micxer
+
+	* coherence/base.py, coherence/upnp/core/event.py,
+	  coherence/upnp/core/soap_proxy.py: Merge changes made in the
+	  upnp-test branch back to Coherence trunk
+
+2007-12-18 11:56  dev
+
+	* coherence/__init__.py, coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/core/soap_service.py: some adjustments for the
+	  divx support in the PS3
+
+2007-12-15 14:45  dev
+
+	* coherence/upnp/core/event.py: Adding some more specs compliance
+	  to the eventing implementation.
+	  
+	  Closes #113
+
+2007-12-13 16:05  dev
+
+	* coherence/upnp/core/xml-service-descriptions/ContentDirectory1.xml:
+	  removal of white-space that shouldn't have been in that xml-file
+
+2007-12-12 19:06  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/services/servers/media_receiver_registrar_server.py:
+	  fixing an embarrassing bug regarding the namespace of the UPnP
+	  serviceID in our device description xml-files.
+	  
+	  Thanks morty for spotting this!
+
+2007-12-12 19:02  dev
+
+	* coherence/upnp/core/event.py: handle URLs send from other devices
+	  with not trailing root '''/''' more gracefully
+
+2007-12-08 22:05  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py: be a
+	  bit more lenient toward the XBox
+
+2007-12-08 21:41  dev
+
+	* coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/iradio_storage.py,
+	  coherence/backends/mediadb_storage.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/services/servers/content_directory_server.py:
+	  cleaning up some of the XBox related stuff
+
+2007-12-08 14:00  dev
+
+	* coherence/base.py: handle fallback from XMLConfig to old config
+	  file the ''right'' way
+
+2007-12-08 12:33  dev
+
+	* bin/coherence: correct a missing import
+
+2007-12-08 12:10  dev
+
+	* bin/coherence, coherence/backends/fs_storage.py,
+	  coherence/base.py, coherence/extern/config.py,
+	  coherence/upnp/core/DIDLLite.py, coherence/upnp/core/device.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/services/servers/content_directory_server.py: *
+	  some more preparations for the XMLConfig
+	  * convert icon attributes to strings
+	  * some experiments to create device client specific DIDLElements
+
+2007-12-01 13:16  dev
+
+	* coherence/extern/config.py: correct the last checkin, now with
+	  all needed methods
+
+2007-12-01 12:47  dev
+
+	* bin/coherence, coherence/base.py, coherence/extern/config.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: support for the new
+	  [wiki:XMLConfig XML based config file format]
+
+2007-11-28 21:49  dev
+
+	* Coherence.egg-info/PKG-INFO, Coherence.egg-info/entry_points.txt,
+	  coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/iradio_storage.py,
+	  coherence/upnp/core/utils.py,
+	  coherence/upnp/services/servers/content_directory_server.py,
+	  docs/coherence.conf.example, setup.py: a new backend that maps
+	  shoutcast radio stations to 'normal' UPnP media data, far from
+	  perfect, and with some bugs to fix
+	  
+	  some changes to the ContentDirectoryClient Browse method, to
+	  enable store objects to return deferreds when queried for their
+	  items and children
+
+2007-11-27 13:57  dev
+
+	* coherence/__init__.py, coherence/base.py,
+	  coherence/upnp/core/ssdp.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: added the option to
+	  remove a backend from Coherence:
+	  
+	  * requirement: backend must be added via `backend
+	  =coherence.add_plugin(...)`
+	  * removal is done by `coherence.remove_plugin(backend)`
+	  
+	  This closes #99
+
+2007-11-23 16:34  dev
+
+	* coherence/upnp/core/device.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server_client.py: enable access to
+	  device icons from within the device clients, they have now a list
+	  attribute named 'icons'.
+	  
+	  This is a followup to [455].
+
+2007-11-22 15:09  dev
+
+	* coherence/extern/inotify.py: new versions of libc have wrapper
+	  calls for the kernel inotify methods, let's use them if they are
+	  available and maybe some day in the future we can get rid of that
+	  _inotify_syscalls list.
+
+2007-11-21 10:10  dev
+
+	* Coherence.egg-info/PKG-INFO, coherence/__init__.py,
+	  coherence/base.py, coherence/upnp/core/device.py,
+	  coherence/upnp/core/msearch.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: flexibilized the way the
+	  ControlPoint reacts on new device detections and added a method
+	  to query for a particular device and get informed if it shows up
+	  later
+
+2007-11-21 10:01  dev
+
+	* coherence/extern/covers_by_amazon.py: a bit of cleanup and a way
+	  to specify the file to store the downloaded cover
+
+2007-11-21 09:59  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py: added support to serve mp4 files
+	  to the filesystem store
+
+2007-11-13 19:13  dev
+
+	* coherence/extern/inotify.py: set the unpack string to use native
+	  byte order, but follow the Python standard size and alignment
+	  definitions instead of using the native ones there too.
+	  
+	  http://docs.python.org/lib/module-struct.html
+	  
+	  Closes #104, thx for spotting this.
+
+2007-11-13 09:25  dev
+
+	* coherence/upnp/core/utils.py: support for IP detection on BSD
+	  systems. Thx for the patch, kraft!
+	  
+	  Closes #103
+
+2007-10-17 10:39  dev
+
+	* coherence/upnp/core/ssdp.py: a bit more of the helpful debug
+	  output
+
+2007-10-14 19:42  dev
+
+	* coherence/__init__.py, coherence/base.py,
+	  coherence/upnp/core/device.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/devices/media_renderer.py: first steps towards the
+	  removal off an once activated local device
+
+2007-10-14 15:25  dev
+
+	* coherence/upnp/core/DIDLLite.py, coherence/upnp/core/service.py,
+	  coherence/upnp/core/variable.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/services/clients/av_transport_client.py,
+	  coherence/upnp/services/clients/connection_manager_client.py,
+	  coherence/upnp/services/clients/content_directory_client.py,
+	  coherence/upnp/services/clients/rendering_control_client.py: * a
+	  DIDLLite fragment transformed from string into objects uses now
+	  the proper UPnP classes
+	  * variable subscriptions can now be callback and signal based
+	  * variables send out signals on modification
+	  * 'Coherence.UPnP.StateVariable.changed' - for notification on
+	  changes of every variable
+	  * 'Coherence.UPnP.StateVariable.<VariableName>.changed' - a
+	  dedicated signal per variable
+	  * removed usn from the callback/signal arguments
+
+2007-10-14 15:10  dev
+
+	* coherence/upnp/core/ssdp.py: catch Attribute exceptions too, in
+	  the case we are trying to send out something during shutdown
+
+2007-10-14 15:07  dev
+
+	* coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/mediadb_storage.py: added childCount
+	  attributes at the proper level again and some minor
+	  rearrangements
+
+2007-10-14 15:05  dev
+
+	* coherence/extern/covers_by_amazon.py: added a way to use the
+	  cover getter it as a simple command-line tool and removed some
+	  debugging output
+
+2007-10-14 15:02  dev
+
+	* coherence/base.py: no "warning" log message if there are no
+	  plugins to activate
+
+2007-10-03 18:45  dev
+
+	* coherence/upnp/services/clients/content_directory_client.py,
+	  coherence/upnp/services/servers/content_directory_server.py: *
+	  handle migration to the new browse call more gracefully
+	  * and be a bit more forgiving with uncompleted backends
+
+2007-10-03 08:04  philn
+
+	* coherence/base.py: s/error/warning
+
+2007-10-02 11:35  dev
+
+	* coherence/backends/mediadb_storage.py,
+	  coherence/upnp/devices/media_server.py,
+	  docs/coherence.conf.example: some updates to sort out the
+	  Rhythmbox vs. PS3 issues
+
+2007-09-30 21:23  dev
+
+	* bin/coherence, coherence/__init__.py, coherence/dbus_service.py,
+	  docs/coherence.conf.example: * moved import of Coherence - is it
+	  the logging framework that installs the reactor early?
+	  * some cleanup in the DBusPontoon and a bit more logging output
+	  * increase version number
+
+2007-09-30 18:41  dev
+
+	* coherence/dbus_service.py, coherence/upnp/core/service.py,
+	  coherence/upnp/core/variable.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server_client.py: updates on the
+	  D-Bus integration, now we have a D-Bus method per service named
+	  'subscribe' to get an initial set of StateVariable values and
+	  D-Bus signals are now created when a StateVariable gets updated
+
+2007-09-28 21:38  philn
+
+	* Coherence.egg-info/SOURCES.txt: remove unuseful file
+
+2007-09-28 21:36  philn
+
+	* ., Coherence.egg-info, Coherence.egg-info/PKG-INFO,
+	  Coherence.egg-info/SOURCES.txt,
+	  Coherence.egg-info/dependency_links.txt,
+	  Coherence.egg-info/entry_points.txt,
+	  Coherence.egg-info/top_level.txt: put Coherence.egg-info under
+	  source control, for a safer world
+
+2007-09-26 21:52  dev
+
+	* coherence/base.py, coherence/dbus_service.py: more work on the
+	  D-Bus interface, now split into UPnP device and UPnP service
+	  D-Bus objects
+
+2007-09-26 21:51  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/services/clients/av_transport_client.py,
+	  coherence/upnp/services/clients/connection_manager_client.py,
+	  coherence/upnp/services/clients/content_directory_client.py,
+	  coherence/upnp/services/clients/rendering_control_client.py: have
+	  a reference in the service class to the client class, to make
+	  things in the D-Bus (and others) gateway easier, but maybe
+	  refactoring and subclassing the client from the service class is
+	  a much better idea
+
+2007-09-23 19:05  dev
+
+	* bin/coherence, coherence/__init__.py, coherence/base.py,
+	  coherence/dbus_service.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/services/clients/content_directory_client.py:
+	  first experiment of some Coherence/DBus coupling
+
+2007-09-23 13:12  dev
+
+	* coherence/backends/mediadb_storage.py: better default path for
+	  media db
+
+2007-09-23 13:10  dev
+
+	* coherence/backends/gstreamer_audio_player.py: minor log output
+	  change
+
+2007-09-23 13:08  dev
+
+	* coherence/backends/flickr_storage.py: added a timeout of 60
+	  seconds to the flickr request method
+
+2007-09-22 22:14  dev
+
+	* coherence/extern/inotify.py: added syscall ids for x86_64, closes
+	  #98.
+	  
+	  Thx!
+
+2007-09-19 12:50  dev
+
+	* coherence/upnp/core/msearch.py, coherence/upnp/core/ssdp.py: add
+	  the missing ''import''
+
+2007-09-19 12:49  dev
+
+	* coherence/base.py: * change a message from loglevel ''error'' to
+	  ''warning'', as an ''error'' message leads to the raise off a
+	  SystemExit exception in the logging framework
+	  * replace ''installed_plugins'' with ''available_plugins'', as we
+	  are talking about the usable backends, not the ones we have
+	  activated
+	  * return in add_plugin the class of the activated device, to
+	  support local accessing of local activated devices in some near
+	  future
+
+2007-09-13 10:49  dev
+
+	* coherence/upnp/core/msearch.py, coherence/upnp/core/ssdp.py:
+	  wrapped multicast and unicast messages in try/except to catch and
+	  log socket errors caused by gone network connections
+
+2007-09-06 13:23  dev
+
+	* coherence/extern/et.py: change from a sys.exit and therefore a
+	  program abort to a more application friendly ImportError
+	  exception when no suitable ElementTree implementation can be
+	  found
+
+2007-09-03 11:40  philn
+
+	* coherence/log.py, docs/coherence.conf.example: redirect only
+	  stderr, refs #95 ... Depends on patch at
+	  https://core.fluendo.com/flumotion/trac/ticket/748
+
+2007-08-16 17:17  dev
+
+	* coherence/base.py, coherence/upnp/core/service.py: * use
+	  os.path.join to get the system specific path-separator
+	  * minor log output fixes
+
+2007-08-16 17:08  dev
+
+	* coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: * fix for a potential
+	  race condition where the backend signals to be ready and the
+	  signal collector not yet being in place
+
+2007-08-14 15:01  dev
+
+	* coherence/backends/gstreamer_audio_player.py: revert wrong
+	  checkin
+
+2007-08-14 14:54  dev
+
+	* coherence/backends/gstreamer_audio_player.py, coherence/base.py,
+	  coherence/log.py, coherence/upnp/core/service.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/services/servers/connection_manager_server.py,
+	  docs/coherence.conf.example: * move to lowercase log category
+	  names
+	  * categories in the config(-file) will be converted to lower
+
+2007-08-14 13:01  dev
+
+	* coherence/base.py, coherence/extern/simple_plugin.py,
+	  coherence/upnp/devices/media_server.py: add a callable for log
+	  output to the simple-plugin, so errors there fit nicely into the
+	  overall look
+
+2007-08-14 09:22  dev
+
+	* coherence/backends/gstreamer_audio_player.py, setup.py: use the
+	  same name for class _and_ entrypoint, if not the fallback plugin
+	  handling will fail
+
+2007-08-14 09:07  dev
+
+	* coherence/base.py, coherence/log.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: more adjustments to work
+	  with the new logging framework
+
+2007-08-13 16:32  dev
+
+	* coherence/__init__.py, coherence/backends/axiscam_storage.py,
+	  coherence/backends/buzztard_control.py,
+	  coherence/backends/elisa_renderer.py,
+	  coherence/backends/elisa_storage.py,
+	  coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/mediadb_storage.py, coherence/base.py: added
+	  our little simple_plugin as a fallback if we can't use
+	  pkg_resources from setuptools
+
+2007-08-13 16:25  dev
+
+	* coherence/upnp/core/soap_proxy.py: added some log output
+
+2007-08-13 16:23  dev
+
+	* coherence/extern/simple_plugin.py: little helper module
+	  implementing a real simple plugin system, just enough to fulfill
+	  our needs when we are on a system with no
+	  setuptools/pkg_resources available
+
+2007-07-31 16:15  dev
+
+	* ChangeLog: ChangeLog update
+
 2007-07-31 16:08  dev
 
 	* ChangeLog, coherence/__init__.py,

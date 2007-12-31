@@ -13,24 +13,16 @@ primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-This 0.4 release brings
+This 0.5 release brings
 
-* integration of a new logging module
-  logging can now be configured via the config file or through an
-  environment variable COHERENCE_DEBUG, which overrides the config values.
-
-  Usage is like
-      COHERENCE_DEBUG=*:3           emit INFO level messages from all modules
-      COHERENCE_DEBUG=*:2,ssdp:4    WARNING level messages from all modules,
-                                    plus debug level for the ssdp module
-
-* removed the dependency for SOAPpy, now using own methods and ElementTree only
-* start reworking the client API, to make things there easier too,
-  see as an example https://coherence.beebits.net/wiki/CoherenceMediaRenderer
-* serving cover art now to DLNA MediaRenderers
-* refinements on the object creation and the import into the MediaServers
-* an installable package for the Nokia Maemo platform on the N800,
-  complete with all dependecies, thanks to Rob Tylor of http://codethink.co.uk
+* better DLNA support, in particular for the Sony Playstation 3
+* a MediaServer backend for Shoutcast internet radio streams
+* an experimental last.fm MediaServer backend for the last.fm service
+* provide methods to remove local devices from a Coherence instance
+* slow move to an XML based configuration file
+* support for BSD systems - thx kraft!
+* more platform independency for our Twisted inotify module,
+  using libc when possible
 * and a lot more of the usual bugfixes and enhancements
 
 """,
