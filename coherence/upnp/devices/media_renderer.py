@@ -141,8 +141,13 @@ class MediaRenderer(log.Loggable):
         self.device_type = 'MediaRenderer'
         self.version = int(kwargs.get('version',2))
         #log.Loggable.__init__(self)
-        from coherence.upnp.core.uuid import UUID
-        self.uuid = UUID()
+        
+        try:
+            self.uuid = kwargs['uuid']
+        except KeyError:
+            from coherence.upnp.core.uuid import UUID
+            self.uuid = UUID()
+
         self.backend = None
 
         self.icons = kwargs.get('iconlist', kwargs.get('icons', []))

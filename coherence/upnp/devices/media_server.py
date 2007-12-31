@@ -331,8 +331,13 @@ class MediaServer(log.Loggable):
         self.coherence = coherence
         self.device_type = 'MediaServer'
         self.version = int(kwargs.get('version',2))
-        from coherence.upnp.core.uuid import UUID
-        self.uuid = UUID()
+
+        try:
+            self.uuid = kwargs['uuid']
+        except KeyError:
+            from coherence.upnp.core.uuid import UUID
+            self.uuid = UUID()
+            
         self.backend = None
         urlbase = self.coherence.urlbase
         if urlbase[-1] != '/':

@@ -307,10 +307,10 @@ if __name__ == '__main__':
     def show_devices():
         print "show_devices"
         for d in ctrl.get_devices():
-            print d
+            print d, d.get_id()
 
     def the_result(r):
-        print "result", r
+        print "result", r, r.get_id()
 
     def query_devices():
         print "query_devices"
