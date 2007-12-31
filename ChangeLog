@@ -1,3 +1,35 @@
+2007-12-31 16:02  dev
+
+	* ChangeLog, setup.py: This 0.5 release brings
+	  
+	  * better DLNA support, in particular for the Sony Playstation 3
+	  * a MediaServer backend for Shoutcast internet radio streams
+	  * an experimental last.fm MediaServer backend for the last.fm
+	  service
+	  * provide methods to remove local devices from a Coherence
+	  instance
+	  * slow move to an XML based configuration file
+	  * support for BSD systems - thx kraft!
+	  * an emerging D-Bus interface
+	  * more platform independency for our Twisted inotify module,
+	  using libc when possible
+	  * and a lot more of the usual bugfixes and enhancements
+
+2007-12-31 11:05  dev
+
+	* coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: a step towards persistent
+	  device UUIDs
+
+2007-12-31 11:03  dev
+
+	* Coherence.egg-info/PKG-INFO, Coherence.egg-info/entry_points.txt,
+	  coherence/__init__.py, coherence/backends/lastfm_storage.py,
+	  setup.py: last.fm backend (not functional due to the current
+	  unsatisfactory UPnP stack implementation of quite a lot available
+	  UPnP clients)
+
 2007-12-31 10:52  dev
 
 	* coherence/backends/iradio_storage.py,
