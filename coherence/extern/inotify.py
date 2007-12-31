@@ -267,7 +267,7 @@ class INotify(FileDescriptor, object):
             #print "add watch for", path, ', '.join(self.flag_to_human(mask))
             wd = self.inotify_add_watch(path, mask)
             if wd < 0:
-                raise IOError, "Failed to add watch on '%s'" % path
+                raise IOError, "Failed to add watch on '%s' - (%r)" % (path.encode('ascii', 'ignore'),wd)
 
             iwp = IWatchPoint(path, mask, auto_add, callbacks)
             self._watchpoints[wd] = iwp
