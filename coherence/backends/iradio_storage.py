@@ -35,6 +35,17 @@ class ProxyStream(utils.ReverseProxyResource):
         #print "ProxyStream init", host, port, path
         utils.ReverseProxyResource.__init__(self, host, port, path)
 
+    def requestFinished(self, result):
+        """ self.connection is set in utils.ReverseProxyResource.render """
+        self.connection.transport.loseConnection()
+
+    def render(self, request):
+        print "this is our render method",request.method, request.uri, request.client
+        print request.getAllHeaders()
+        d = request.notifyFinish()
+        d.addBoth(self.requestFinished)
+        return utils.ReverseProxyResource.render(self, request)
+
 class IRadioItem(log.Loggable):
     logCategory = 'iradio_item'
 

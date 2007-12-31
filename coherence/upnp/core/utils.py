@@ -169,7 +169,9 @@ class ProxyClientFactory(protocol.ClientFactory):
     """ http://twistedmatrix.com/trac/ticket/1089            """
     """ until that's in the mainstream                       """
 
-    protocol = proxy.ProxyClient
+    #protocol = proxy.ProxyClient
+    protocol = ProxyClient
+
 
     def __init__(self, command, rest, version, headers, data, father):
         self.father = father
@@ -205,6 +207,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.host = host
         self.port = port
         self.path = path
+        self.connection = None
 
     def getChild(self, path, request):
         return ReverseProxyResource(self.host, self.port, self.path+'/'+path)
@@ -222,7 +225,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
                                      request.getAllHeaders(),
                                      request.content.read(),
                                      request)
-        reactor.connectTCP(self.host, self.port, clientFactory)
+        self.connection = reactor.connectTCP(self.host, self.port, clientFactory)
         return server.NOT_DONE_YET
 
 class myHTTPPageGetter(client.HTTPPageGetter):
