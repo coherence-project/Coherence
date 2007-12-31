@@ -59,6 +59,7 @@ This 0.4 release brings
         AxisCamStore = coherence.backends.axiscam_storage:AxisCamStore
         BuzztardStore = coherence.backends.buzztard_control:BuzztardStore
         IRadioStore = coherence.backends.iradio_storage:IRadioStore
+        LastFMStore = coherence.backends.lastfm_storage:LastFMStore
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
