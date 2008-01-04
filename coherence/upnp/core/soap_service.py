@@ -3,7 +3,7 @@
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
-from twisted.web import server, resource
+from twisted.web2 import server, resource
 from twisted.python import log, failure
 from twisted.internet import defer
 
@@ -35,25 +35,28 @@ class UPnPPublisher(resource.Resource, log.Loggable):
 
     def _sendResponse(self, request, response, status=200):
         self.info('_sendResponse', status, response)
-        if status == 200:
-            request.setResponseCode(200)
-        else:
-            request.setResponseCode(500)
 
+        if status == 200:
+            response_code = 200
+        else:
+            response_code = 500
+
+        response_headers = http_headers.Headers()
         if self.encoding is not None:
             mimeType = 'text/xml; charset="%s"' % self.encoding
         else:
             mimeType = "text/xml"
-        request.setHeader("Content-type", mimeType)
-        request.setHeader("Content-length", str(len(response)))
-        request.setHeader("EXT", '')
-        request.setHeader("SERVER", SERVER_ID)
-        request.write(response)
-        request.finish()
+        response_headers.setRawHeaders('Content-type', [mimeType])
+        response_headers.setRawHeaders('Content-length', [str(len(response))])
+        response_headers.setRawHeaders('EXT', [''])
+        response_headers.setRawHeaders('SERVER', [SERVER_ID])
+        return http.Response(response_code,
+                             response_headers,
+                             response)
 
     def _methodNotFound(self, request, methodName):
         response = soap_lite.build_soap_error(401)
-        self._sendResponse(request, response, status=401)
+        return self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName, ns):
         self.info('_gotResult', result, request, methodName, ns)
@@ -62,7 +65,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
                                                 is_response=True,
                                                 encoding=None)
         #print "SOAP-lite response", response
-        self._sendResponse(request, response)
+        return self._sendResponse(request, response)
 
     def _gotError(self, failure, request, methodName, ns):
         self.info('_gotError', failure, failure.value)
@@ -75,7 +78,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             failure.printTraceback()
 
         response = soap_lite.build_soap_error(status)
-        self._sendResponse(request, response, status=status)
+        return self._sendResponse(request, response, status=status)
 
     def lookupFunction(self, functionName):
         function = getattr(self, "soap_%s" % functionName, None)
@@ -88,70 +91,73 @@ class UPnPPublisher(resource.Resource, log.Loggable):
 
     def render(self, request):
         """Handle a SOAP command."""
-        data = request.content.read()
-        headers = request.getAllHeaders()
-        self.info('soap_request:', headers)
+        
+        def got_data(data):
+            headers = request.headers
+            self.info('soap_request:', headers)
 
-        def print_c(e):
-            for c in e.getchildren():
-                print c, c.tag
-                print_c(c)
+            def print_c(e):
+                for c in e.getchildren():
+                    print c, c.tag
+                    print_c(c)
 
-        tree = parse_xml(data)
-        #root = tree.getroot()
-        #print_c(root)
+            tree = parse_xml(data)
+            #root = tree.getroot()
+            #print_c(root)
 
-        body = tree.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
-        method = body.getchildren()[0]
-        methodName = method.tag
-        ns = None
+            body = tree.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
+            method = body.getchildren()[0]
+            methodName = method.tag
+            ns = None
 
-        if methodName.startswith('{') and methodName.rfind('}') > 1:
-            ns, methodName = methodName[1:].split('}')
+            if methodName.startswith('{') and methodName.rfind('}') > 1:
+                ns, methodName = methodName[1:].split('}')
 
-        args = []
-        kwargs = {}
-        for child in method.getchildren():
-            kwargs[child.tag] = self.decode_result(child)
-            args.append(kwargs[child.tag])
+            args = []
+            kwargs = {}
+            for child in method.getchildren():
+                kwargs[child.tag] = self.decode_result(child)
+                args.append(kwargs[child.tag])
 
-        #p, header, body, attrs = SOAPpy.parseSOAPRPC(data, 1, 1, 1)
-        #methodName, args, kwargs, ns = p._name, p._aslist, p._asdict, p._ns
+            #p, header, body, attrs = SOAPpy.parseSOAPRPC(data, 1, 1, 1)
+            #methodName, args, kwargs, ns = p._name, p._aslist, p._asdict, p._ns
 
-        try:
-            headers['content-type'].index('text/xml')
-        except:
-            self._gotError(failure.Failure(errorCode(415)), request, methodName)
-            return server.NOT_DONE_YET
+            try:
+                headers['content-type'].index('text/xml')
+            except:
+                return self._gotError(failure.Failure(errorCode(415)), request, methodName)
 
-        self.debug('headers: %r' % headers)
+            self.debug('headers: %r' % headers)
 
-        function, useKeywords = self.lookupFunction(methodName)
-        #print 'function', function, 'keywords', useKeywords, 'args', args, 'kwargs', kwargs
+            function, useKeywords = self.lookupFunction(methodName)
+            #print 'function', function, 'keywords', useKeywords, 'args', args, 'kwargs', kwargs
 
-        if not function:
-            self._methodNotFound(request, methodName)
-            return server.NOT_DONE_YET
-        else:
-            keywords = {'soap_methodName':methodName}
-            if(headers.has_key('user-agent') and
-                    headers['user-agent'].find('Xbox/') == 0):
-                keywords['X_UPnPClient'] = 'XBox'
-            if(headers.has_key('x-av-client-info') and
-                    headers['x-av-client-info'].find('"PLAYSTATION3') > 0):
-                keywords['X_UPnPClient'] = 'PLAYSTATION3'
-
-            for k, v in kwargs.items():
-                keywords[str(k)] = v
-            self.info('call', methodName, keywords)
-            if hasattr(function, "useKeywords"):
-                d = defer.maybeDeferred(function, **keywords)
+            if not function:
+                return self._methodNotFound(request, methodName)
             else:
-                d = defer.maybeDeferred(function, *args, **keywords)
+                keywords = {'soap_methodName':methodName}
+                if(headers.has_key('user-agent') and
+                        headers['user-agent'].find('Xbox/') == 0):
+                    keywords['X_UPnPClient'] = 'XBox'
+                if(headers.has_key('x-av-client-info') and
+                        headers['x-av-client-info'].find('"PLAYSTATION3') > 0):
+                    keywords['X_UPnPClient'] = 'PLAYSTATION3'
 
-        d.addCallback(self._gotResult, request, methodName, ns)
-        d.addErrback(self._gotError, request, methodName, ns)
-        return server.NOT_DONE_YET
+                for k, v in kwargs.items():
+                    keywords[str(k)] = v
+                self.info('call', methodName, keywords)
+                if hasattr(function, "useKeywords"):
+                    d = defer.maybeDeferred(function, **keywords)
+                else:
+                    d = defer.maybeDeferred(function, *args, **keywords)
+
+                d.addCallback(self._gotResult, request, methodName, ns)
+                d.addErrback(self._gotError, request, methodName, ns)
+                return d
+
+        d = request.content.read()
+        d.addCallback(got_data)
+        return d
 
     def decode_result(self, element):
         type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')

@@ -8,7 +8,8 @@ import time
 from urlparse import urlsplit
 
 from twisted.internet import reactor, defer
-from twisted.web import resource, server
+from twisted.web2 import resource, http, http_headers
+from twisted.web import server
 from twisted.internet.protocol import Protocol, ClientCreator
 from twisted.python import failure
 
@@ -35,31 +36,34 @@ class EventServer(resource.Resource, log.Loggable):
         web_server_port = self.coherence.web_server_port
         self.info("EventServer ready...")
 
-    def render_NOTIFY(self, request):
-        self.info("EventServer received notify from %s, code: %d" % (request.client, request.code))
-        data = request.content.getvalue()
-        request.setResponseCode(200)
+    def http_NOTIFY(self, request):
+        self.info("EventServer received notify from %s" % (request.remoteAddr))
 
-        command = {'method': request.method, 'path': request.path}
-        headers = request.received_headers
-        louie.send('UPnP.Event.Server.message_received', None, command, headers, data)
+        def got_data(data):
+            command = {'method': request.method, 'path': request.path}
+            headers = request.headers
+            louie.send('UPnP.Event.Server.message_received', None, command, headers, data)
 
-        if request.code != 200:
-            self.info("data:", data)
-        else:
             self.debug("data:", data)
-            headers = request.getAllHeaders()
-            sid = headers['sid']
-            tree = utils.parse_xml(data).getroot()
-            ns = "urn:schemas-upnp-org:event-1-0"
-            event = Event(sid)
-            for prop in tree.findall('{%s}property' % ns):
-                for var in prop.getchildren():
-                    tag = var.tag
-                    idx = tag.find('}') + 1
-                    event.update({tag[idx:]: var.text})
-            self.control_point.propagate(event)
-        return ""
+            headers = request.headers
+            sid = headers.getRawHeaders('sid')
+            if sid is not None:
+                tree = utils.parse_xml(data).getroot()
+                ns = "urn:schemas-upnp-org:event-1-0"
+                event = Event(sid)
+                for prop in tree.findall('{%s}property' % ns):
+                    for var in prop.getchildren():
+                        tag = var.tag
+                        idx = tag.find('}') + 1
+                        event.update({tag[idx:]: var.text})
+                self.control_point.propagate(event)
+            return http.Response(200, stream="")
+
+        d = request.stream.read()
+        d.addCallback(got_data)
+
+        return d
+
 
 
 class EventSubscriptionServer(resource.Resource, log.Loggable):
@@ -98,73 +102,76 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         except AttributeError:
             self.backend_name = self.service.backend
 
-    def render_SUBSCRIBE(self, request):
-        self.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d" % (
+    def http_SUBSCRIBE(self, request):
+        self.info( "EventSubscriptionServer %s (%s) received subscribe request from %s" % (
                             self.service.id,
                             self.backend_name,
-                            request.client, request.code))
-        data = request.content.getvalue()
-        request.setResponseCode(200)
+                            request.remoteAddr))
+        data = "" #request.content.getvalue()
 
         command = {'method': request.method, 'path': request.path}
-        headers = request.received_headers
+        headers = request.headers
         louie.send('UPnP.Event.Client.message_received', None, command, headers, data)
 
-        if request.code != 200:
-            self.debug("data:", data)
+        sid = headers.getRawHeaders('sid')
+        callback = headers.getRawHeaders('callback')
+        if callback is not None:
+            callback = callback[0]
+        if sid is not None:
+            sid = sid[0]
+            if self.subscribers.has_key(sid):
+                s = self.subscribers[sid]
+            elif callback == None:
+                response_headers = http_headers.Headers()
+                response_headers.setRawHeaders('SERVER', [SERVER_ID])
+                response_headers.setRawHeaders('CONTENT-LENGTH', ['0'])
+                return http.Response(404,
+                                     response_headers,
+                                     "")
         else:
-            headers = request.getAllHeaders()
-            try:
-                #print self.subscribers
-                #print headers['sid']
-                if self.subscribers.has_key(headers['sid']):
-                    s = self.subscribers[headers['sid']]
-                elif not headers.has_key('callback'):
-                    request.setResponseCode(404)
-                    request.setHeader('SERVER', SERVER_ID)
-                    request.setHeader('CONTENT-LENGTH', 0)
-                    return ""
-            except:
-                from uuid import UUID
-                sid = UUID()
-                s = { 'sid' : str(sid),
-                      'callback' : headers['callback'][1:len(headers['callback'])-1],
-                      'seq' : 0}
-                reactor.callLater(0.8, self.service.new_subscriber, s)
+            from uuid import UUID
+            sid = UUID()
+            s = { 'sid' : str(sid),
+                  'callback' : callback[1:len(callback)-1],
+                  'seq' : 0}
+            reactor.callLater(0.8, self.service.new_subscriber, s)
 
-            s['timeout'] = headers['timeout']
-            s['created'] = time.time()
+        timeout = headers.getRawHeaders('timeout')
+        if timeout is not None:
+            timeout = timeout[0]
+        s['timeout'] = timeout
+        s['created'] = time.time()
 
-            request.setHeader('SID', s['sid'])
-            #request.setHeader('Subscription-ID', sid)  wrong example in the UPnP UUID spec?
-            request.setHeader('TIMEOUT', s['timeout'])
-            request.setHeader('SERVER', SERVER_ID)
-            request.setHeader('CONTENT-LENGTH', 0)
-        return ""
+        response_headers = http_headers.Headers()
+        response_headers.setRawHeaders('SID', [s['sid']])
+        response_headers.setRawHeaders('TIMEOUT', [s['timeout']])
+        response_headers.setRawHeaders('SERVER', [SERVER_ID])
+        response_headers.setRawHeaders('CONTENT-LENGTH', ['0'])
+        return http.Response(200,
+                             response_headers,
+                             "")
 
-    def render_UNSUBSCRIBE(self, request):
-        self.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d" % (
+    def http_UNSUBSCRIBE(self, request):
+        self.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s" % (
                             self.service.id,
                             self.backend_name,
-                            request.client, request.code))
-        data = request.content.getvalue()
-        request.setResponseCode(200)
+                            request.remoteAddr))
+        data = "" #request.content.getvalue()
 
         command = {'method': request.method, 'path': request.path}
-        headers = request.received_headers
+        headers = request.headers
         louie.send('UPnP.Event.Client.message_received', None, command, headers, data)
 
-        if request.code != 200:
-            self.debug("data:", data)
-        else:
-            headers = request.getAllHeaders()
-            try:
-                del self.subscribers[headers['sid']]
-            except:
-                """ XXX if not found set right error code """
-                pass
-            #print self.subscribers
-        return ""
+
+        sid = headers.getRawHeaders('sid')
+        if sid is not None:
+            sid = sid[0]
+        try:
+            del self.subscribers[sid]
+        except:
+            """ XXX if not found set right error code """
+            pass
+        return http.Response("")
 
 
 class Event(dict):

@@ -8,7 +8,7 @@
 # Content Directory service
 
 from twisted.python import failure
-from twisted.web import resource
+from twisted.web2 import resource
 from twisted.internet import defer
 
 

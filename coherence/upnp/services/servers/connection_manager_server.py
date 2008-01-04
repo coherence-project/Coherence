@@ -6,7 +6,7 @@
 # Connection Manager service
 import time
 
-from twisted.web import resource
+from twisted.web2 import resource
 from twisted.python import failure
 from twisted.internet import task
 

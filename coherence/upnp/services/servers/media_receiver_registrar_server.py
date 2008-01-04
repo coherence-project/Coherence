@@ -5,7 +5,7 @@
 
 # Content Directory service
 
-from twisted.web import resource
+from twisted.web2 import resource
 
 from coherence.upnp.core.soap_service import UPnPPublisher
 

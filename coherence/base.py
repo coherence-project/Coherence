@@ -11,7 +11,7 @@ import traceback
 from twisted.python import filepath, util
 from twisted.internet import task, address, defer
 from twisted.internet import reactor
-from twisted.web import resource
+from twisted.web2 import resource, server, channel, http
 
 import louie
 
@@ -22,7 +22,7 @@ from coherence.upnp.core.msearch import MSearch
 from coherence.upnp.core.device import Device, RootDevice
 from coherence.upnp.core.utils import parse_xml, get_ip_address, get_host_address
 
-from coherence.upnp.core.utils import Site
+#from coherence.upnp.core.utils import Site
 
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
@@ -37,6 +37,11 @@ class SimpleRoot(resource.Resource, log.Loggable):
     def __init__(self, coherence):
         resource.Resource.__init__(self)
         self.coherence = coherence
+        self.children = {}
+
+    def childFactory(self, request, name):
+        self.info('SimpleRoot childFactory %s, %s' % (name, request))
+        return self.getChild(name,request)
 
     def getChild(self, name, request):
         self.info('SimpleRoot getChild %s, %s' % (name, request))
@@ -64,8 +69,8 @@ class SimpleRoot(resource.Resource, log.Loggable):
         return cl
 
     def render(self,request):
-        return """<html><head><title>Coherence</title></head><body>
-<a href="http://coherence.beebits.net">Coherence</a> - a Python UPnP A/V framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
+        return http.Response(stream="""<html><head><title>Coherence</title></head><body>
+<a href="http://coherence.beebits.net">Coherence</a> - a Python UPnP A/V framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri))
 
 
 class WebServer(log.Loggable):
@@ -95,9 +100,9 @@ class WebServer(log.Loggable):
             self.web_root_resource = Web(coherence)
             self.site = appserver.NevowSite( self.web_root_resource)
         except ImportError:
-            self.site = Site(SimpleRoot(coherence))
+            self.site = server.Site(SimpleRoot(coherence))
 
-        port = reactor.listenTCP( port, self.site)
+        port = reactor.listenTCP( port, channel.HTTPFactory(self.site))
         coherence.web_server_port = port._realPortNumber
         # XXX: is this the right way to do it?
         self.warning( "WebServer on port %d ready" % coherence.web_server_port)

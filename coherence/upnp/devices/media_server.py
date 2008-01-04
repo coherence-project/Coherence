@@ -13,8 +13,8 @@ import urllib
 
 from twisted.internet import task
 from twisted.internet import reactor
-from twisted.web import static
-from twisted.web import resource, server
+from twisted.web2 import static
+from twisted.web2 import resource, server, http
 from twisted.web import proxy
 from twisted.python import util
 from twisted.python.filepath import FilePath
@@ -24,7 +24,7 @@ from coherence.extern.et import ET, indent
 from coherence import __version__
 
 from coherence.upnp.core.service import ServiceServer
-from coherence.upnp.core.utils import StaticFile
+#from coherence.upnp.core.utils import StaticFile
 #from coherence.upnp.core.utils import ReverseProxyResource
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
@@ -46,12 +46,21 @@ class MSRoot(resource.Resource, log.Loggable):
         log.Loggable.__init__(self)
         self.server = server
         self.store = store
+        self.children = {}
+
+    def putChild(self, path, child):
+        self.children[path] = child
+        #resource.Resource.putChild(self, path, child)
+
+    def childFactory(self, request, name):
+        self.info('MSRoot childFactory %s, %s' % (name, request))
+        return self.getChildWithDefault(name,request)
 
     def getChildWithDefault(self, path, request):
         self.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
-                                request.method, path, request.uri, request.client))
-        headers = request.getAllHeaders()
-        self.msg( request.getAllHeaders())
+                                request.method, path, request.uri, request.remoteAddr))
+        #headers = request.headers.getAllRawHeaders()
+        self.msg( request.headers)
 
         if(request.method == 'GET' and
            COVER_REQUEST_INDICATOR.match(request.uri)):
@@ -62,7 +71,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 file = ch.get_cover()
                 if os.path.exists(file):
                     self.info("got cover %s" % file)
-                    return StaticFile(file)
+                    return static.File(file)
             request.setResponseCode(404)
             return static.Data('<html><p>cover requested not found</p></html>','text/html')
 
@@ -71,15 +80,18 @@ class MSRoot(resource.Resource, log.Loggable):
             self.import_file(path,request)
             return self.import_response(path)
 
-        if(headers.has_key('user-agent') and
-           headers['user-agent'].find('Xbox/') == 0 and
-           path in ['description-1.xml','description-2.xml']):
-            self.info('XBox alert, we need to simulate a Windows Media Connect server')
-            if self.children.has_key('xbox-description-1.xml'):
-                self.msg( 'returning xbox-description-1.xml')
-                return self.children['xbox-description-1.xml']
+
+        user_agent = request.headers.getHeader('user-agent')
+        if user_agent is not None:
+           if( user_agent.find('Xbox/') == 0 and
+              path in ['description-1.xml','description-2.xml']):
+                self.info('XBox alert, we need to simulate a Windows Media Connect server')
+                if self.children.has_key('xbox-description-1.xml'):
+                    self.msg( 'returning xbox-description-1.xml')
+                    return self.children['xbox-description-1.xml']
 
         if self.children.has_key(path):
+            self.info("%r - %r", path, self.children[path])
             return self.children[path]
         if request.uri == '/':
             return self
@@ -111,21 +123,21 @@ class MSRoot(resource.Resource, log.Loggable):
             self.info('Child found', ch)
             if(request.method == 'GET' or
                request.method == 'HEAD'):
-                headers = request.getAllHeaders()
-                if headers.has_key('content-length'):
+                #headers = request.getAllHeaders()
+                content_length = request.headers.getHeader('content-length')
+                if content_length is not None:
                     self.warning('%s request with content-length %s header - sanitizing' % (
                                     request.method,
-                                    headers['content-length']))
-                    del request.received_headers['content-length']
-                self.debug('data', )
-                if len(request.content.getvalue()) > 0:
-                    """ shall we remove that?
-                        can we remove that?
-                    """
-                    self.warning('%s request with %d bytes of message-body - sanitizing' % (
-                                    request.method,
-                                    len(request.content.getvalue())))
-                    request.content = StringIO()
+                                    content_length))
+                    request.headers.removeHeader('content-length')
+                #if len(request.content.getvalue()) > 0:
+                #    """ shall we remove that?
+                #        can we remove that?
+                #    """
+                #    self.warning('%s request with %d bytes of message-body - sanitizing' % (
+                #                    request.method,
+                #                    len(request.content.getvalue())))
+                #    request.content = StringIO()
 
             if hasattr(ch, "location"):
                 if isinstance(ch.location, proxy.ReverseProxyResource):
@@ -152,10 +164,10 @@ class MSRoot(resource.Resource, log.Loggable):
                                                                             -1,
                                                                             '')
                 self.info("startup, add %d to connection table" % new_id)
-                d = request.notifyFinish()
-                d.addCallback(self.requestFinished, new_id)
-                d.addErrback(self.requestFinished, new_id)
-                ch = StaticFile(p.encode('utf-8'))
+                #d = request.notifyFinish()
+                #d.addCallback(self.requestFinished, new_id)
+                #d.addErrback(self.requestFinished, new_id)
+                ch = static.File(p.encode('utf-8'))
             else:
                 self.debug("accessing path %r failed" % p)
                 return self.list_content(name, ch, request)
@@ -163,7 +175,7 @@ class MSRoot(resource.Resource, log.Loggable):
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = StaticFile(p.encode('utf-8'))
+                ch = static.File(p.encode('utf-8'))
         self.info('MSRoot ch', ch)
         return ch
 
@@ -229,9 +241,9 @@ class MSRoot(resource.Resource, log.Loggable):
 
     def render(self,request):
         #print "render", request
-        return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>'% \
+        return http.Response(stream="""<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>"""% \
                                         (self.server.backend,
-                                         self.listchilds(request.uri))
+                                         self.listchilds(request.uri)))
 
 
 class RootDeviceXML(static.Data):
@@ -337,7 +349,7 @@ class MediaServer(log.Loggable):
         except KeyError:
             from coherence.upnp.core.uuid import UUID
             self.uuid = UUID()
-            
+
         self.backend = None
         urlbase = self.coherence.urlbase
         if urlbase[-1] != '/':
@@ -443,7 +455,7 @@ class MediaServer(log.Loggable):
             if icon.has_key('url'):
                 if icon['url'].startswith('file://'):
                     self.web_resource.putChild(os.path.basename(icon['url']),
-                                               StaticFile(icon['url'][7:]))
+                                               static.File(icon['url'][7:]))
 
         self.register()
         self.info("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
