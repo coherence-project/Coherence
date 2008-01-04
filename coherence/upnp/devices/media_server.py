@@ -67,13 +67,12 @@ class MSRoot(resource.Resource, log.Loggable):
             self.info("request cover for id %s" % path)
             ch = self.store.get_by_id(path)
             if ch is not None:
-                request.setResponseCode(200)
                 file = ch.get_cover()
                 if os.path.exists(file):
                     self.info("got cover %s" % file)
                     return static.File(file)
             request.setResponseCode(404)
-            return static.Data('<html><p>cover requested not found</p></html>','text/html')
+            return http.Response(404, stream='<html><p>cover requested not found</p></html>')
 
         if(request.method == 'POST' and
            request.uri.endswith('?import')):

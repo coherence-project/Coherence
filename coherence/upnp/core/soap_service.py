@@ -3,7 +3,7 @@
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
-from twisted.web2 import server, resource
+from twisted.web2 import http, http_headers, resource
 from twisted.python import log, failure
 from twisted.internet import defer
 
@@ -89,9 +89,9 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         else:
             return None, None
 
-    def render(self, request):
+    def http_POST(self, request):
         """Handle a SOAP command."""
-        
+
         def got_data(data):
             headers = request.headers
             self.info('soap_request:', headers)
@@ -123,9 +123,10 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             #methodName, args, kwargs, ns = p._name, p._aslist, p._asdict, p._ns
 
             try:
-                headers['content-type'].index('text/xml')
+                content_type = headers.getRawHeaders('content-type')
+                content_type[0].index('text/xml')
             except:
-                return self._gotError(failure.Failure(errorCode(415)), request, methodName)
+                return self._gotError(failure.Failure(errorCode(415)), request, methodName, ns)
 
             self.debug('headers: %r' % headers)
 
@@ -136,11 +137,13 @@ class UPnPPublisher(resource.Resource, log.Loggable):
                 return self._methodNotFound(request, methodName)
             else:
                 keywords = {'soap_methodName':methodName}
-                if(headers.has_key('user-agent') and
-                        headers['user-agent'].find('Xbox/') == 0):
+                client = headers.getRawHeaders('user-agent')
+                if(client is not None and
+                        client[0].find('Xbox/') == 0):
                     keywords['X_UPnPClient'] = 'XBox'
-                if(headers.has_key('x-av-client-info') and
-                        headers['x-av-client-info'].find('"PLAYSTATION3') > 0):
+                client = headers.getRawHeaders('x-av-client-info')
+                if(client is not None and
+                        client[0].find('"PLAYSTATION3') > 0):
                     keywords['X_UPnPClient'] = 'PLAYSTATION3'
 
                 for k, v in kwargs.items():
@@ -155,7 +158,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
                 d.addErrback(self._gotError, request, methodName, ns)
                 return d
 
-        d = request.content.read()
+        d = request.stream.read()
         d.addCallback(got_data)
         return d
 
