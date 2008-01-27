@@ -484,10 +484,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         print "loading:", uri, mimetype
         _,state,_ = self.player.get_state()
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-        if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
-            self.stop()
-        else:
-            self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'STOPPED')
+        self.stop(silent=True) # the check whether a stop is really needed is done inside stop
 
         if mimetype is None:
             _,ext =  os.path.splitext(uri)
@@ -511,10 +508,11 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
         self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
-        self.update()
         if state == gst.STATE_PLAYING:
             print "was playing..."
             self.play()
+        self.update()
+
 
     def status( self, position):
         uri = self.player.get_uri()
@@ -550,13 +548,14 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.load( uri)
         self.play()
 
-    def stop(self):
+    def stop(self,silent=False):
         print 'Stopping:', self.player.get_uri()
         if self.player.get_uri() == None:
             return
         if self.player.get_state()[1] in [gst.STATE_PLAYING,gst.STATE_PAUSED]:
             self.player.stop()
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
+            if silent is True:
+                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
 
     def play( self):
         print "Playing:", self.player.get_uri()

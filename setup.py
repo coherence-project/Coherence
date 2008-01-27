@@ -19,8 +19,9 @@ This 0.5 release brings
 * a MediaServer backend for Shoutcast internet radio streams
 * an experimental last.fm MediaServer backend for the last.fm service
 * provide methods to remove local devices from a Coherence instance
-* slow move to an XML based configuration file
 * support for BSD systems - thx kraft!
+* slow move to an XML based configuration file
+* emerging D-Bus interface
 * more platform independency for our Twisted inotify module,
   using libc when possible
 * and a lot more of the usual bugfixes and enhancements
