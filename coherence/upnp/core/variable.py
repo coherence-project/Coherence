@@ -118,7 +118,7 @@ class StateVariable(log.Loggable):
                             elif v.upper() in [x.upper() for x in self.allowed_values]:
                                 new_value.append(v)
                             else:
-                                self.warning("Variable %s update, value %s doesn't fit" % (self.name, v))
+                                self.warning("Variable %s update, %r value %s doesn't fit in %r" % (self.name, self.has_vendor_values, v, self.allowed_values))
                                 new_value = 'Coherence_Value_Error'
                         else:
                             new_value.append(v)
