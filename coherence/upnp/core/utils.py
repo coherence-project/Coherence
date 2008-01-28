@@ -118,13 +118,11 @@ class ProxyClient(http.HTTPClient):
         self.rest = rest
         if headers.has_key("proxy-connection"):
             del headers["proxy-connection"]
-        #headers["connection"] = "close"
+        headers["connection"] = "close"
         self.headers = headers
-        #if not headers.has_key("keep-alive"):
-        #    headers["keep-alive"] = ''
-        #print "command", command
-        #print "rest", rest
-        #print "headers", headers
+        print "command", command
+        print "rest", rest
+        print "headers", headers
         self.data = data
         self.send_data = 0
 
@@ -136,15 +134,20 @@ class ProxyClient(http.HTTPClient):
         self.transport.write(self.data)
 
     def handleStatus(self, version, code, message):
+        if message:
+            # Add a whitespace to message, this allows empty messages
+            # transparently
+            message = " %s" % (message,)
+
         if version == 'ICY':
             version = 'HTTP/1.1'
-        #print "ProxyClient handleStatus", version, code, message
+        print "ProxyClient handleStatus", version, code, message
         self.father.transport.write("%s %s %s\r\n" % (version, code, message))
 
     def handleHeader(self, key, value):
         #print "ProxyClient handleHeader", key, value
         if not key.startswith('icy-'):
-            #print "ProxyClient handleHeader", key, value
+            print "ProxyClient handleHeader", key, value
             self.father.transport.write("%s: %s\r\n" % (key, value))
 
     def handleEndHeaders(self):
@@ -168,13 +171,11 @@ class ProxyClient(http.HTTPClient):
 
 
 class ProxyClientFactory(protocol.ClientFactory):
-    """ Used by ProxyRequest to implement a simple web proxy."""
-    """ Taken from twisted.web.proxy, to get around          """
-    """ http://twistedmatrix.com/trac/ticket/1089            """
-    """ until that's in the mainstream                       """
+    """
+    Used by ProxyRequest to implement a simple web proxy.
+    """
 
-    #protocol = proxy.ProxyClient
-    protocol = ProxyClient
+    protocol = proxy.ProxyClient
 
 
     def __init__(self, command, rest, version, headers, data, father):
@@ -184,7 +185,6 @@ class ProxyClientFactory(protocol.ClientFactory):
         self.headers = headers
         self.data = data
         self.version = version
-        #print "ProxyClientFactory __init__", command
 
 
     def buildProtocol(self, addr):
@@ -193,52 +193,77 @@ class ProxyClientFactory(protocol.ClientFactory):
 
 
     def clientConnectionFailed(self, connector, reason):
-        self.father.write("HTTP/1.0 501 Gateway error\r\nContent-Type: text/html\r\n\r\n<H1>Could not connect</H1>")
+        self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
+        self.father.transport.write("Content-Type: text/html\r\n")
+        self.father.transport.write("\r\n")
+        self.father.transport.write('''<H1>Could not connect</H1>''')
         self.father.transport.loseConnection()
 
 
 class ReverseProxyResource(proxy.ReverseProxyResource):
-    """Resource that renders the results gotten from another server
+    """
+    Resource that renders the results gotten from another server
 
     Put this resource in the tree to cause everything below it to be relayed
     to a different server.
+
+    @ivar proxyClientFactoryClass: a proxy client factory class, used to create
+        new connections.
+    @type proxyClientFactoryClass: L{ClientFactory}
+
+    @ivar reactor: the reactor used to create connections.
+    @type reactor: object providing L{twisted.internet.interfaces.IReactorTCP}
     """
 
-    def __init__(self, host, port, path):
+    proxyClientFactoryClass = ProxyClientFactory
+
+
+    def __init__(self, host, port, path, reactor=reactor):
+        """
+        @param host: the host of the web server to proxy.
+        @type host: C{str}
+
+        @param port: the port of the web server to proxy.
+        @type port: C{port}
+
+        @param path: the base path to fetch data from. Note that you shouldn't
+            put any trailing slashes in it, it will be added automatically in
+            request. For example, if you put B{/foo}, a request on B{/bar} will
+            be proxied to B{/foo/bar}.
+        @type path: C{str}
+        """
         resource.Resource.__init__(self)
         self.host = host
         self.port = port
         self.path = path
-        self.connection = None
+        self.reactor = reactor
+
 
     def getChild(self, path, request):
-        return ReverseProxyResource(self.host, self.port, self.path+'/'+path)
+        return ReverseProxyResource(
+            self.host, self.port, self.path + '/' + path)
+
 
     def render(self, request):
-        #print "ReverseProxyResource"
-        request.received_headers['host'] = self.host
-        range = request.received_headers.get('range', None)
-        if range is not None:
-            #print "This is a request for partial data...", range
-            bytesrange = string.split(range, '=')
-            assert bytesrange[0] == 'bytes',\
-                   "Syntactically invalid http range header!"
-            start, end = string.split(bytesrange[1],'-', 1)
-            del request.received_headers['range']
-
+        """
+        Render a request by forwarding it to the proxied server.
+        """
+        # RFC 2616 tells us that we can omit the port if it's the default port,
+        # but we have to provide it otherwise
+        if self.port == 80:
+            request.received_headers['host'] = self.host
+        else:
+            request.received_headers['host'] = "%s:%d" % (self.host, self.port)
         request.content.seek(0, 0)
         qs = urlparse.urlparse(request.uri)[4]
         if qs:
             rest = self.path + '?' + qs
         else:
             rest = self.path
-        #print "ReverseProxyResource render, transport", request.transport
-        clientFactory = ProxyClientFactory(request.method, rest,
-                                     request.clientproto,
-                                     request.getAllHeaders(),
-                                     request.content.read(),
-                                     request)
-        self.connection = reactor.connectTCP(self.host, self.port, clientFactory)
+        clientFactory = self.proxyClientFactoryClass(
+            request.method, rest, request.clientproto,
+            request.getAllHeaders(), request.content.read(), request)
+        self.reactor.connectTCP(self.host, self.port, clientFactory)
         return server.NOT_DONE_YET
 
 class myHTTPPageGetter(client.HTTPPageGetter):
