@@ -24,7 +24,8 @@ def parse_xml(data, encoding="utf-8"):
 
 def parse_http_response(data):
 
-    header, payload = data.split('\r\n\r\n')
+    """ don't try to get the body, there are reponses without """
+    header = data.split('\r\n\r\n')[0]
 
     lines = header.split('\r\n')
     cmd = lines[0].split(' ')
@@ -121,10 +122,11 @@ class ProxyClient(http.HTTPClient):
         self.headers = headers
         #if not headers.has_key("keep-alive"):
         #    headers["keep-alive"] = ''
-        print "command", command
-        print "rest", rest
-        print "headers", headers
+        #print "command", command
+        #print "rest", rest
+        #print "headers", headers
         self.data = data
+        self.send_data = 0
 
     def connectionMade(self):
         self.sendCommand(self.command, self.rest)
@@ -136,13 +138,13 @@ class ProxyClient(http.HTTPClient):
     def handleStatus(self, version, code, message):
         if version == 'ICY':
             version = 'HTTP/1.1'
-        print "ProxyClient handleStatus", version, code, message
+        #print "ProxyClient handleStatus", version, code, message
         self.father.transport.write("%s %s %s\r\n" % (version, code, message))
 
     def handleHeader(self, key, value):
         #print "ProxyClient handleHeader", key, value
         if not key.startswith('icy-'):
-            print "ProxyClient handleHeader", key, value
+            #print "ProxyClient handleHeader", key, value
             self.father.transport.write("%s: %s\r\n" % (key, value))
 
     def handleEndHeaders(self):
@@ -155,10 +157,12 @@ class ProxyClient(http.HTTPClient):
         self.father.transport.write("\r\n")
 
     def handleResponsePart(self, buffer):
-        #print "ProxyClient hanhttp://twistedmatrix.com/trac/ticket/1089dleResponsePart", len(buffer)
-        self.father.transport.write(buffer)
+        #print "ProxyClient handleResponsePart", len(buffer), self.father.chunked
+        self.send_data += len(buffer)
+        self.father.write(buffer)
 
     def handleResponseEnd(self):
+        #print "handleResponseEnd", self.send_data
         self.transport.loseConnection()
         self.father.channel.transport.loseConnection()
 
@@ -180,6 +184,7 @@ class ProxyClientFactory(protocol.ClientFactory):
         self.headers = headers
         self.data = data
         self.version = version
+        #print "ProxyClientFactory __init__", command
 
 
     def buildProtocol(self, addr):
@@ -188,10 +193,7 @@ class ProxyClientFactory(protocol.ClientFactory):
 
 
     def clientConnectionFailed(self, connector, reason):
-        self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
-        self.father.transport.write("Content-Type: text/html\r\n")
-        self.father.transport.write("\r\n")
-        self.father.transport.write('''<H1>Could not connect</H1>''')
+        self.father.write("HTTP/1.0 501 Gateway error\r\nContent-Type: text/html\r\n\r\n<H1>Could not connect</H1>")
         self.father.transport.loseConnection()
 
 
@@ -213,13 +215,24 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         return ReverseProxyResource(self.host, self.port, self.path+'/'+path)
 
     def render(self, request):
+        #print "ReverseProxyResource"
         request.received_headers['host'] = self.host
+        range = request.received_headers.get('range', None)
+        if range is not None:
+            #print "This is a request for partial data...", range
+            bytesrange = string.split(range, '=')
+            assert bytesrange[0] == 'bytes',\
+                   "Syntactically invalid http range header!"
+            start, end = string.split(bytesrange[1],'-', 1)
+            del request.received_headers['range']
+
         request.content.seek(0, 0)
         qs = urlparse.urlparse(request.uri)[4]
         if qs:
             rest = self.path + '?' + qs
         else:
             rest = self.path
+        #print "ReverseProxyResource render, transport", request.transport
         clientFactory = ProxyClientFactory(request.method, rest,
                                      request.clientproto,
                                      request.getAllHeaders(),
@@ -319,7 +332,9 @@ class StaticFile(static.File):
     """
 
     def render(self, request):
+        #print ""
         #print "StaticFile", request
+        #print "StaticFile in", request.received_headers
 
         """You know what you doing."""
         self.restat()
@@ -401,11 +416,14 @@ class StaticFile(static.File):
                 #print "StaticFile", start, end, tsize
 
         request.setHeader('content-length', str(fsize))
+
         if request.method == 'HEAD' or trans == False:
             # pretend we're a HEAD request, so content-length
             # won't be overwritten.
             request.method = 'HEAD'
             return ''
+
+        #print "StaticFile out", request.headers, request.code
 
         # return data
         # size is the byte position to stop sending, not how many bytes to send

@@ -322,8 +322,11 @@ class NotificationProtocol(Protocol, log.Loggable):
     def dataReceived(self, data):
         cmd, headers = utils.parse_http_response(data)
         self.debug( "notification response received %r %r", cmd, headers)
-        if int(cmd[1]) != 200:
-            self.warning("response with error code %r received upon our notification", cmd[1])
+        try:
+            if int(cmd[1]) != 200:
+                self.warning("response with error code %r received upon our notification", cmd[1])
+        except:
+            self.debug("response without error code received upon our notification")
         self.transport.loseConnection()
 
     def connectionLost( self, reason):
