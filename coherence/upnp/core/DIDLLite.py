@@ -133,7 +133,10 @@ class Object:
     date = None
     albumArtURI = None
     artist = None
+    album = None
     originalTrackNumber=None
+
+    server_uuid = None
 
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
@@ -199,6 +202,9 @@ class Object:
         if self.originalTrackNumber is not None:
             ET.SubElement(root, 'upnp:originalTrackNumber').text = str(self.originalTrackNumber)
 
+        if self.server_uuid is not None:
+            ET.SubElement(root, 'upnp:server_uuid').text = self.server_uuid
+
         return root
 
     def toString(self,**kwargs):
@@ -224,11 +230,15 @@ class Object:
             if child.tag.endswith('albumArtURI'):
                 self.albumArtURI = child.text
             if child.tag.endswith('originalTrackNumber'):
-                self.originalTrackNumber = child.text
+                self.originalTrackNumber = int(child.text)
             if child.tag.endswith('artist'):
                 self.artist = child.text
+            if child.tag.endswith('album'):
+                self.album = child.text
             elif child.tag.endswith('class'):
                 self.upnp_class = child.text
+            if child.tag.endswith('server_uuid'):
+                self.server_uuid = child.text
             elif child.tag.endswith('res'):
                 res = Resource.fromString(ET.tostring(child))
                 self.res.append(res)
@@ -384,7 +394,7 @@ class MusicTrack(AudioItem):
 
         if self.originalTrackNumber is not None:
             ET.SubElement(root, 'upnp:originalTrackNumber').text = \
-                             self.originalTrackNumber
+                             str(self.originalTrackNumber)
 
         if self.playlist is not None:
             ET.SubElement(root, 'upnp:playlist').text = self.playlist
