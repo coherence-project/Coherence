@@ -37,13 +37,23 @@ class ProxyStream(utils.ReverseProxyResource):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
+        print "ProxyStream requestFinished"
         self.connection.transport.loseConnection()
 
     def render(self, request):
-        print "this is our render method",request.method, request.uri, request.client
-        print request.getAllHeaders()
-        d = request.notifyFinish()
-        d.addBoth(self.requestFinished)
+        print ""
+        print "this is our render method",request.method, request.uri, request.client, request.clientproto
+        print "render", request.getAllHeaders()
+        if request.clientproto == 'HTTP/1.1':
+            connection = request.getHeader('connection')
+            if connection:
+                tokens = map(str.lower, connection.split(' '))
+                if 'close' in tokens:
+                    d = request.notifyFinish()
+                    d.addBoth(self.requestFinished)
+        else:
+            d = request.notifyFinish()
+            d.addBoth(self.requestFinished)
         return utils.ReverseProxyResource.render(self, request)
 
 class IRadioItem(log.Loggable):
@@ -83,13 +93,13 @@ class IRadioItem(log.Loggable):
         if self.mimetype == 'directory':
             self.update_id = 0
         else:
-            self.item.res = Resource(self.url, 'http-get:*:%s:%s' % (obj.get('mimetype'),
+            res = Resource(self.url, 'http-get:*:%s:%s' % (obj.get('mimetype'),
                                                                      ';'.join(('DLNA.ORG_PN=MP3',
                                                                                'DLNA.ORG_CI=0',
                                                                                'DLNA.ORG_OP=01',
                                                                                'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
-            self.item.res.size = -1 #None
-            self.item.res = [ self.item.res ]
+            res.size = 0 #None
+            self.item.res.append(res)
 
 
     def remove(self):

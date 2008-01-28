@@ -52,7 +52,7 @@ class LastFMUser(log.Loggable):
     parent = None
     getting_tracks = False
     tracks = []
-    
+
     def __init__(self, user, passwd):
         if user is None:
             self.warn("No User",)
@@ -60,13 +60,13 @@ class LastFMUser(log.Loggable):
             self.warn("No Passwd",)
         self.user = user
         self.passwd = passwd
-    
+
     def login(self):
-                
+
         if self.sessionid != None:
             self.warning("Session seems to be valid",)
             return
-        
+
         def got_page(result):
             lines = result[0].split("\n")
             for line in lines:
@@ -84,17 +84,17 @@ class LastFMUser(log.Loggable):
                             self.basepath = tuple[1]
                             self.info("Got new path: %s",self.basepath)
             self.get_tracks()
-            
- 
+
+
         def got_error(error):
             self.warning("Login to LastFM Failed! %r", error)
             self.debug("%r", error.getTraceback())
-            
+
         def hexify(s): # This function might be GPL! Found this code in some other Projects, too.
             result = ""
             for c in s:
                 result = result + ("%02x" % ord(c))
-            return result   
+            return result
         password = hexify(md5.md5(self.passwd).digest())
         req = self.basepath + "/handshake.php/?version=1&platform=win&username=" + self.user + "&passwordmd5=" + password + "&language=en&player=coherence"
         utils.getPage("http://" + self.host + req).addCallbacks(got_page, got_error, None, None, None, None)
@@ -102,7 +102,7 @@ class LastFMUser(log.Loggable):
     def get_tracks(self):
         if self.getting_tracks == True:
             return
-        
+
         def got_page(result):
             result = utils.parse_xml(result, encoding='utf-8')
             self.getting_tracks = False
@@ -127,17 +127,17 @@ class LastFMUser(log.Loggable):
                 data['url'] = track.find('location').text.encode('utf-8')
                 item = self.parent.store.append(data, self.parent)
                 self.tracks.append(item)
-            
-            
+
+
         def got_error(error):
             self.warning("Problem getting Tracks! %r", error)
             self.debug("%r", error.getTraceback())
             self.getting_tracks = False
-            
+
         self.getting_tracks = True
         req = self.basepath + "/xspf.php?sk=" + self.sessionid + "&discovery=0&desktop=1.3.1.1"
-        utils.getPage("http://" + self.host + req).addCallbacks(got_page, got_error, None, None, None, None)   
-    
+        utils.getPage("http://" + self.host + req).addCallbacks(got_page, got_error, None, None, None, None)
+
     def update(self, item):
         if 0 < self.tracks.count(item):
             while True:
@@ -149,11 +149,11 @@ class LastFMUser(log.Loggable):
                 # request correctly.
                 #track.store.remove(track)
                 #del track
-            
+
         #if len(self.tracks) < 5:
         self.get_tracks()
-                
-            
+
+
 class LFMProxyStream(utils.ReverseProxyResource,log.Loggable):
     logCategory = 'lastFM_stream'
 
@@ -173,18 +173,18 @@ class LFMProxyStream(utils.ReverseProxyResource,log.Loggable):
 
         #print "ProxyStream init", host, port, path
         utils.ReverseProxyResource.__init__(self, host, port, path)
-    
+
     def render(self, request):
         self.debug("render %r", request)
         self.parent.store.LFM.update(self.parent)
         self.parent.played = True
         return utils.ReverseProxyResource.render(self, request)
-         
-    
+
+
 
 class LastFMItem(log.Loggable):
     logCategory = 'LastFM_item'
-    
+
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
 
@@ -193,7 +193,7 @@ class LastFMItem(log.Loggable):
         self.artist = obj.get('artist')
         self.creator = obj.get('creator')
         self.album = obj.get('album')
-        self.duration  = obj.get('duration')    
+        self.duration  = obj.get('duration')
         self.mimetype = mimetype
 
         self.parent = parent
@@ -224,13 +224,13 @@ class LastFMItem(log.Loggable):
         if self.mimetype == 'directory':
             self.update_id = 0
         else:
-            self.item.res = Resource(self.url, 'http-get:*:%s:%s' % (obj.get('mimetype'),
+            res = Resource(self.url, 'http-get:*:%s:%s' % (obj.get('mimetype'),
                                                                      ';'.join(('DLNA.ORG_PN=MP3',
                                                                                'DLNA.ORG_CI=0',
                                                                                'DLNA.ORG_OP=01',
                                                                                'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
-            self.item.res.size = -1 #None
-            self.item.res = [ self.item.res ]
+            res.size = -1 #None
+            self.item.res.append(res)
 
 
     def remove(self):
@@ -341,7 +341,7 @@ class LastFMStore(log.Loggable,Plugin):
                                         UPnPClass, update=update)
         self.store[id].store = self
 
-        
+
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
@@ -353,7 +353,7 @@ class LastFMStore(log.Loggable,Plugin):
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         return self.store[id]
-    
+
     def remove(self, item):
         try:
             parent = item.get_parent()
@@ -368,7 +368,7 @@ class LastFMStore(log.Loggable,Plugin):
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
         except:
-            pass   
+            pass
 
     def len(self):
         return len(self.store)
@@ -397,7 +397,7 @@ class LastFMStore(log.Loggable,Plugin):
         self.LFM = LastFMUser(self.config.get("login"), self.config.get("password"))
         self.LFM.parent = parent
         self.LFM.login()
-        
+
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:audio/mpeg:*'],

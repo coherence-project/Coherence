@@ -271,7 +271,6 @@ class Track(item.Item):
             item.albumArtURI = ''.join((self.store.urlbase,str(self.storeID+1000),'?cover',ext))
         item.originalTrackNumber = self.track_nr
         item.server_uuid = str(self.store.server.uuid)[5:]
-        item.res = []
 
         _,host_port,_,_,_ = urlsplit(self.store.urlbase)
         if host_port.find(':') != -1:

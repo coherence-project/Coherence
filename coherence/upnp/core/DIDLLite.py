@@ -24,6 +24,46 @@ from coherence.upnp.core import utils
 
 from coherence.upnp.core import dlna
 
+
+class Resources(list):
+
+    """ a list of resources, always sorted after an append """
+
+    def __init__(self, *args, **kwargs):
+        list.__init__(self, *args, **kwargs)
+        self.sort(cmp=self.p_sort)
+
+    def append(self, value):
+        list.append(self,value)
+        self.sort(cmp=self.p_sort)
+
+    def p_sort(self,x,y):
+        """ we want the following order
+            http-get is always at the beginning
+            rtsp-rtp-udp the second
+            anything else after that
+        """
+        if x.protocolInfo == None:
+            return 1
+        if y.protocolInfo == None:
+            return -1
+
+        x_protocol = x.protocolInfo.split(':')[0]
+        y_protocol = y.protocolInfo.split(':')[0]
+
+        x_protocol = x_protocol.lower()
+        y_protocol = y_protocol.lower()
+        if( x_protocol == y_protocol):
+            return 0
+        if(x_protocol == 'http-get'):
+            return -1
+        if(x_protocol == 'rtsp-rtp-udp' and y_protocol == 'http-get'):
+            return 1
+        if(x_protocol == 'rtsp-rtp-udp' and y_protocol != 'http-get'):
+            return -1
+        return 1
+
+
 def classChooser(mimetype, sub=None):
 
     if mimetype == 'root':
@@ -49,6 +89,11 @@ def classChooser(mimetype, sub=None):
             return AudioItem
     return None
 
+simple_dlna_tags = ('DLNA.ORG.PS=1',       # play speed parameter
+                    'DLNA.ORG_CI=0',       # transcoded parameter
+                    'DLNA.ORG_OP=01',      # operations parameter
+                    'DLNA.ORG_FLAGS=01700000000000000000000000000000')
+
 
 class Resource:
     """An object representing a resource."""
@@ -66,15 +111,15 @@ class Resource:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if additional_info == '*':
                 if content_format == 'audio/mpeg':
-                    additional_info = ';'.join(('DLNA.ORG_PN=MP3','DLNA.ORG_OP=01'))
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MP3',))
                 if content_format == 'image/jpeg':
-                    additional_info = ';'.join(('DLNA.ORG_PN=JPEG_SM','DLNA.ORG_OP=01'))
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_SM',))
                 if content_format == 'video/mpeg':
-                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG_PS_PAL','DLNA.ORG_OP=01'))
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG_PS_PAL',))
                 if content_format == 'video/mp4':
-                    additional_info = ';'.join(('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC','DLNA.ORG_OP=01'))
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC',))
                 if content_format == 'video/x-msvideo':
-                    additional_info = ';'.join(('DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC','DLNA.ORG_OP=01'))
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC',))
 
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
@@ -140,7 +185,7 @@ class Object:
 
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
-        self.res = []
+        self.res = Resources()
         self.id = id
         self.parentID = parentID
         self.title = title
@@ -599,3 +644,18 @@ upnp_classes = {'object': Object,
                 'object.container.storageVolume': StorageVolume,
                 'object.container.storageFolder': StorageFolder,
 }
+
+
+if __name__ == '__main__':
+
+    res = Resources()
+    res.append(Resource('1','file:*:*:*'))
+    res.append(Resource('2','rtsp-rtp-udp:*:*:*'))
+    res.append(Resource('3',None))
+    res.append(Resource('4','internal:*:*:*'))
+    res.append(Resource('5','http-get:*:*:*'))
+    res.append(Resource('6','something:*:*:*'))
+    res.append(Resource('7','http-get:*:*:*'))
+
+    for r in res:
+        print r.data, r.protocolInfo

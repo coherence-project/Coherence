@@ -135,9 +135,9 @@ class BuzztardItem(log.Loggable):
         if self.mimetype == 'directory':
             self.update_id = 0
         else:
-            self.item.res = Resource(self.url, 'internal:%s:%s:*' % (host,self.mimetype))
-            self.item.res.size = None
-            self.item.res = [ self.item.res ]
+            res = Resource(self.url, 'internal:%s:%s:*' % (host,self.mimetype))
+            res.size = None
+            self.item.res.append(res)
             self.item.artist = self.parent.name
 
 

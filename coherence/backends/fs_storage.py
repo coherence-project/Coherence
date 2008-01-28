@@ -84,8 +84,6 @@ class FSItem(log.Loggable):
                     the mimetype """
                 self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
 
-            self.item.res = []
-
             _,host_port,_,_,_ = urlsplit(urlbase)
             if host_port.find(':') != -1:
                 host,port = tuple(host_port.split(':'))

@@ -124,7 +124,7 @@ class ElisaMediaStore(Plugin):
                             upnp_item.albumArtURI = cover
                     except:
                         pass
-                    upnp_item.res = []
+
                     res = Resource(internal_url,
                                    'internal:%s:*:*' %self.host)
                     res.size = size

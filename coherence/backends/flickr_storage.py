@@ -97,9 +97,9 @@ class FlickrItem(log.Loggable):
         if self.mimetype == 'directory':
             self.update_id = 0
         else:
-            self.item.res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
-            self.item.res.size = None
-            self.item.res = [ self.item.res ]
+            res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            res.size = None
+            self.item.res.append(res)
             self.set_item_size_and_date()
 
     def __del__(self):
