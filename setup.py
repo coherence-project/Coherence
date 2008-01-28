@@ -64,5 +64,9 @@ This 0.5 release brings
     package_data = {
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
                       'web/static/*.css','web/static/*.js'],
-    }
+    },
+    install_requires=[
+    'Louie >= 1.1',
+    'ConfigObj >= 4.3',
+    ],
 )
