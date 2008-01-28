@@ -269,6 +269,8 @@ class Track(item.Item):
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
             item.albumArtURI = ''.join((self.store.urlbase,str(self.storeID+1000),'?cover',ext))
+        item.originalTrackNumber = self.track_nr
+        item.server_uuid = str(self.store.server.uuid)[5:]
         item.res = []
 
         _,host_port,_,_,_ = urlsplit(self.store.urlbase)
@@ -555,6 +557,7 @@ class MediaStore(log.Loggable, Plugin):
                           children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
+        self.db.server = self.server
         self.db.urlbase = self.urlbase
         self.db.containers = self.containers
 

@@ -526,7 +526,11 @@ class FSStore(log.Loggable,Plugin):
         return {'TransferID': transfer_id}
 
     def upnp_CreateObject(self, *args, **kwargs):
-        ContainerID = int(kwargs['ContainerID'])
+        if kwargs['ContainerID'] == 'DLNA.ORG_AnyContainer':
+            """ for the moment """
+            return failure.Failure(errorCode(712))
+        else:
+            ContainerID = kwargs['ContainerID']
         Elements = kwargs['Elements']
 
         parent_item = self.get_by_id(ContainerID)
