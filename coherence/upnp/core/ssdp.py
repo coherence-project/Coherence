@@ -158,7 +158,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.info('Discovery request for %s' % headers['st'])
 
         def send_it(response, destination, delay, usn):
-            self.info('send discovery response delayed by %ds for %s' % (delay, usn))
+            self.info('send discovery response delayed by %ds for %s to %r' % (delay, usn, destination))
             try:
                 self.transport.write(response, destination)
             except (AttributeError,socket.error), msg:
@@ -181,7 +181,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                         usn = v
                     if k not in ('MANIFESTATION','SILENT','HOST'):
                         response.append('%s: %s' % (k, v))
-                response.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
+                response.append('DATE: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
