@@ -85,8 +85,10 @@ class MSRoot(resource.Resource, log.Loggable):
             return self
         return self.getChild(path, request)
 
-    def requestFinished(self, result, id):
+    def requestFinished(self, result, id, request):
         self.info("finished, remove %d from connection table" % id)
+        self.info("finished, sentLength: %d chunked: %d code: %d" % (request.sentLength, request.chunked, request.code))
+        self.info("finished %r" % request.headers)
         self.server.connection_manager_server.remove_connection(id)
 
     def import_file(self,name,request):
@@ -136,8 +138,13 @@ class MSRoot(resource.Resource, log.Loggable):
                                                                                 '')
                     self.info("startup, add %d to connection table" % new_id)
                     d = request.notifyFinish()
-                    d.addCallback(self.requestFinished, new_id)
-                    d.addErrback(self.requestFinished, new_id)
+                    d.addBoth(self.requestFinished, new_id, request)
+                    request.setHeader('transferMode.dlna.org', 'Streaming')
+                    if hasattr(ch.item, 'res'):
+                        if ch.item.res[0].protocolInfo is not None:
+                            _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
+                            if additional_info != '*':
+                                request.setHeader('contentFeatures.dlna.org', additional_info)
                     return ch.location
             try:
                 p = ch.get_path()
@@ -153,8 +160,13 @@ class MSRoot(resource.Resource, log.Loggable):
                                                                             '')
                 self.info("startup, add %d to connection table" % new_id)
                 d = request.notifyFinish()
-                d.addCallback(self.requestFinished, new_id)
-                d.addErrback(self.requestFinished, new_id)
+                d.addBoth(self.requestFinished, new_id, request)
+                request.setHeader('transferMode.dlna.org', 'Streaming')
+                if hasattr(ch, 'item') and hasattr(ch.item, 'res'):
+                    if ch.item.res[0].protocolInfo is not None:
+                        _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
+                        if additional_info != '*':
+                            request.setHeader('contentFeatures.dlna.org', additional_info)
                 ch = StaticFile(p.encode('utf-8'))
             else:
                 self.debug("accessing path %r failed" % p)
@@ -330,14 +342,14 @@ class MediaServer(log.Loggable):
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaServer'
-        self.version = int(kwargs.get('version',2))
+        self.version = int(kwargs.get('version',self.coherence.config.get('version',2)))
 
         try:
             self.uuid = kwargs['uuid']
         except KeyError:
             from coherence.upnp.core.uuid import UUID
             self.uuid = UUID()
-            
+
         self.backend = None
         urlbase = self.coherence.urlbase
         if urlbase[-1] != '/':

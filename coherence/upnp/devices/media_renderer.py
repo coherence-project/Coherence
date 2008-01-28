@@ -139,9 +139,9 @@ class MediaRenderer(log.Loggable):
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
         self.device_type = 'MediaRenderer'
-        self.version = int(kwargs.get('version',2))
+        self.version = int(kwargs.get('version',self.coherence.config.get('version',2)))
         #log.Loggable.__init__(self)
-        
+
         try:
             self.uuid = kwargs['uuid']
         except KeyError:
