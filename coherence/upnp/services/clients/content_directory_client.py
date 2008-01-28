@@ -60,9 +60,17 @@ class ContentDirectoryClient:
     def browse(self, object_id=0, browse_flag='BrowseDirectChildren',
                filter='*', sort_criteria='',
                starting_index=0, requested_count=0,
+               process_result=True,
                backward_compatibility=False):
 
-        def process_result(result):
+        def got_result(results):
+            items = []
+            if results is not None:
+                elt = DIDLLite.DIDLElement.fromString(results['Result'])
+                items = elt.getItems()
+            return items
+
+        def got_process_result(result):
             #print result
             r = {}
             r['number_returned'] = result['NumberReturned']
@@ -81,6 +89,10 @@ class ContentDirectoryClient:
                     i['child_count'] =  str(item.childCount)
                 if hasattr(item,'date') and item.date:
                     i['date'] =  item.date
+                if hasattr(item,'album') and item.album:
+                    i['album'] =  item.album
+                if hasattr(item,'artist') and item.artist:
+                    i['artist'] =  item.artist
                 if hasattr(item,'albumArtURI') and item.albumArtURI:
                     i['album_art_uri'] = item.albumArtURI
                 if hasattr(item,'res'):
@@ -99,7 +111,10 @@ class ContentDirectoryClient:
                             Filter=filter,SortCriteria=sort_criteria,
                             StartingIndex=str(starting_index),
                             RequestedCount=str(requested_count))
-        d.addCallback( process_result)
+        if process_result == True:
+            d.addCallback(got_process_result)
+        else:
+            d.addCallback(got_result)
         return d
 
     def search(self, container_id, criteria, starting_index=0,

@@ -80,7 +80,7 @@ class AVTransportClient:
         return action.call( InstanceID=instance_id)
 
     def seek(self, instance_id=0, unit='', target=0):
-        action = self.service.get_action('Stop')
+        action = self.service.get_action('Seek')
         return action.call( InstanceID=instance_id,
                             Unit=unit,
                             Target=target)
