@@ -262,7 +262,7 @@ class Player(log.Loggable):
         if self.player.get_name() != 'player':
             self.create_pipeline(mimetype)
 
-        self.source.set_property(self.player_uri, uri)
+        self.source.set_property(self.player_uri, uri.encode('utf-8'))
         self.player_clean = True
         self.duration = None
         self.mimetype = mimetype
@@ -647,46 +647,14 @@ class GStreamerPlayer(log.Loggable,Plugin):
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
-                for res in item.res:
-                    print res.protocolInfo, res.data
-                    # check for internal ones first
+                res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
+                if len(res) == 0:
+                    res = item.res.get_matching(local_protocol_infos)
+                if len(res) > 0:
+                    res = res[0]
                     remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
-                    print '1', remote_protocol,remote_network,remote_content_format
-                    if remote_protocol.lower() != 'internal':
-                        continue
-                    for protocol_info in local_protocol_infos:
-                        local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
-                        print local_protocol,local_network,local_content_format
-                        if((remote_protocol == local_protocol or
-                            remote_protocol == '*' or
-                            local_protocol == '*') and
-                           (remote_network == local_network or
-                            remote_network == '*' or
-                            local_network == '*') and
-                           (remote_content_format == local_content_format or
-                            remote_content_format == '*' or
-                            local_content_format == '*')):
-                            self.load(res.data,CurrentURIMetaData,mimetype=remote_content_format)
-                            return {}
-                for res in item.res:
-                    print res.protocolInfo, res.data
-                    # no fitting internal ones, take the first one we can handle
-                    remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
-                    print '2', remote_protocol,remote_network,remote_content_format
-                    for protocol_info in local_protocol_infos:
-                        local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
-                        print local_protocol,local_network,local_content_format
-                        if((remote_protocol == local_protocol or
-                            remote_protocol == '*' or
-                            local_protocol == '*') and
-                           (remote_network == local_network or
-                            remote_network == '*' or
-                            local_network == '*') and
-                           (remote_content_format == local_content_format or
-                            remote_content_format == '*' or
-                            local_content_format == '*')):
-                            self.load(res.data,CurrentURIMetaData,mimetype=remote_content_format)
-                            return {}
+                    self.load(res.data,CurrentURIMetaData,mimetype=remote_content_format)
+                    return {}
         return failure.Failure(errorCode(714))
 
     def upnp_SetMute(self, *args, **kwargs):
