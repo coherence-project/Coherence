@@ -68,15 +68,15 @@ class Resources(list):
         if not isinstance(local_protocol_infos, list):
             local_protocol_infos = [local_protocol_infos]
         for res in self:
-            print "res", res.protocolInfo, res.data
+            #print "res", res.protocolInfo, res.data
             remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
-            print "remote", remote_protocol,remote_network,remote_content_format
+            #print "remote", remote_protocol,remote_network,remote_content_format
             if(protocol_type is not None and
                remote_protocol.lower() != protocol_type.lower()):
                 continue
             for protocol_info in local_protocol_infos:
                 local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
-                print "local", local_protocol,local_network,local_content_format
+                #print "local", local_protocol,local_network,local_content_format
                 if((remote_protocol == local_protocol or
                     remote_protocol == '*' or
                     local_protocol == '*') and
@@ -86,7 +86,7 @@ class Resources(list):
                    (remote_content_format == local_content_format or
                     remote_content_format == '*' or
                     local_content_format == '*')):
-                        print result, res
+                        #print result, res
                         result.append(res)
         return result
 
