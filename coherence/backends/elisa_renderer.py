@@ -298,28 +298,16 @@ class ElisaPlayer(log.Loggable, Plugin):
             self.load(CurrentURI,CurrentURIMetaData)
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
-            #import pdb; pdb.set_trace()
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
-                for res in item.res:
-                    #print '>>>', res.protocolInfo
-                    for protocol_info in local_protocol_infos:
-                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
-                        #print '>>>', remote_protocol,remote_network,remote_content_format
-                        local_protocol,local_network,local_content_format,_ = protocol_info.split(':')
-                        #print '>>>', local_protocol,local_network,local_content_format
-                        if((remote_protocol == local_protocol or
-                            remote_protocol == '*' or
-                            local_protocol == '*') and
-                           (remote_network == local_network or
-                            remote_network == '*' or
-                            local_network == '*') and
-                           (remote_content_format == local_content_format or
-                            remote_content_format == '*' or
-                            local_content_format == '*')):
-                            uri = res.data
-                            self.load(uri,CurrentURIMetaData)
-                            return {}
+                res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
+                if len(res) == 0:
+                    res = item.res.get_matching(local_protocol_infos)
+                if len(res) > 0:
+                    res = res[0]
+                    remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                    self.load(res.data,CurrentURIMetaData)
+                    return {}
         return failure.Failure(errorCode(714))
 
     def upnp_SetMute(self, *args, **kwargs):
