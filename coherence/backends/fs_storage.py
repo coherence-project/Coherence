@@ -21,6 +21,7 @@ from twisted.python import failure
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource
 from coherence.upnp.core.DIDLLite import DIDLElement
+from coherence.upnp.core.DIDLLite import simple_dlna_tags
 from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core import utils
@@ -38,8 +39,8 @@ from coherence import log
 class FSItem(log.Loggable):
     logCategory = 'fs_item'
 
-    def __init__(self, id, parent, path, mimetype, urlbase, UPnPClass,update=False):
-        self.id = id
+    def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass,update=False):
+        self.id = object_id
         self.parent = parent
         if parent:
             parent.add_child(self,update=update)
@@ -60,7 +61,7 @@ class FSItem(log.Loggable):
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(id, parent_id, self.get_name())
+        self.item = UPnPClass(object_id, parent_id, self.get_name())
         if isinstance(self.item, Container):
             self.item.childCount = 0
         self.child_count = 0
@@ -78,11 +79,12 @@ class FSItem(log.Loggable):
                     the mimetype """
                 self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
         else:
-            if hasattr(parent, 'cover'):
-                _,ext =  os.path.splitext(parent.cover)
-                """ add the cover image extension to help clients not reacting on
-                    the mimetype """
-                self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+            if self.mimetype.startswith('audio/'):
+                if hasattr(parent, 'cover'):
+                    _,ext =  os.path.splitext(parent.cover)
+                    """ add the cover image extension to help clients not reacting on
+                        the mimetype """
+                    self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
 
             _,host_port,_,_,_ = urlsplit(urlbase)
             if host_port.find(':') != -1:
@@ -108,6 +110,51 @@ class FSItem(log.Loggable):
             res.size = size
             self.item.res.append(res)
 
+
+            """ if this item is an image and we want to add a thumbnail for it
+                we have to follow these rules:
+
+                create a new Resource object, at least a 'http-get'
+                and maybe an 'internal' one too
+
+                for an JPG this looks like that
+
+                res = Resource(url_for_thumbnail,
+                        'http-get:*:image/jpg:%s'% ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_TN',)))
+                res.size = size_of_thumbnail
+                self.item.res.append(res)
+
+                and for a PNG the Resource creation is like that
+
+                res = Resource(url_for_thumbnail,
+                        'http-get:*:image/png:%s'% ';'.join(simple_dlna_tags+('DLNA.ORG_PN=PNG_TN',)))
+
+                if not hasattr(self.item, 'attachments'):
+                    self.item.attachments = {}
+                self.item.attachments[key] = utils.StaticFile(filename_of_thumbnail)
+            """
+
+            if self.mimetype in ('image/jpeg', 'image/png'):
+                path = self.get_path()
+                thumbnail = os.path.join(os.path.dirname(path),'.thumbs',os.path.basename(path))
+                if os.path.exists(thumbnail):
+                    mimetype,_ = mimetypes.guess_type(thumbnail, strict=False)
+                    if mimetype in ('image/jpeg','image/png'):
+                        if mimetype == 'image/jpeg':
+                            dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
+                        else:
+                            dlna_pn = 'DLNA.ORG_PN=PNG_TN'
+
+                        hash_from_path = str(id(thumbnail))
+                        new_res = Resource(self.url+'?attachment='+hash_from_path,
+                            'http-get:*:%s:%s' % (mimetype, ';'.join(simple_dlna_tags+(dlna_pn,))))
+                        new_res.size = os.path.getsize(thumbnail)
+                        self.item.res.append(new_res)
+                        if not hasattr(self.item, 'attachments'):
+                            self.item.attachments = {}
+                        self.item.attachments[hash_from_path] = utils.StaticFile(thumbnail)
+
+
             try:
                 # FIXME: getmtime is deprecated in Twisted 2.6
                 self.item.date = datetime.fromtimestamp(self.location.getmtime())
@@ -131,8 +178,6 @@ class FSItem(log.Loggable):
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
             self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
-
-        self.item.res = []
 
         _,host_port,_,_,_ = urlsplit(urlbase)
         if host_port.find(':') != -1:
@@ -171,15 +216,18 @@ class FSItem(log.Loggable):
             or png if the jpg search fails, and take the first one
             that comes around
         """
-        jpgs = [i.path for i in self.location.children() if i.splitext()[1] in ('.jpg', '.JPG')]
         try:
-            self.cover = jpgs[0]
-        except IndexError:
-            pngs = [i.path for i in self.location.children() if i.splitext()[1] in ('.png', '.PNG')]
+            jpgs = [i.path for i in self.location.children() if i.splitext()[1] in ('.jpg', '.JPG')]
             try:
-                self.cover = pngs[0]
+                self.cover = jpgs[0]
             except IndexError:
-                return
+                pngs = [i.path for i in self.location.children() if i.splitext()[1] in ('.png', '.PNG')]
+                try:
+                    self.cover = pngs[0]
+                except IndexError:
+                    return
+        except UnicodeDecodeError:
+            self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", self.location.path)
 
     def remove(self):
         #print "FSItem remove", self.id, self.get_name(), self.parent
@@ -349,12 +397,15 @@ class FSStore(log.Loggable,Plugin):
             containers.append(parent)
         while len(containers)>0:
             container = containers.pop()
-            for child in container.location.children():
-                if ignore_file_pattern.match(child.basename()) != None:
-                    continue
-                new_container = self.append(child.path,container)
-                if new_container != None:
-                    containers.append(new_container)
+            try:
+                for child in container.location.children():
+                    if ignore_file_pattern.match(child.basename()) != None:
+                        continue
+                    new_container = self.append(child.path,container)
+                    if new_container != None:
+                        containers.append(new_container)
+            except UnicodeDecodeError:
+                self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.path)
 
     def create(self, mimetype, path, parent):
         UPnPClass = classChooser(mimetype)

@@ -36,7 +36,9 @@ import louie
 
 from coherence import log
 
-COVER_REQUEST_INDICATOR = re.compile(".*cover\.[A-Z|a-z]{3,4}$")
+COVER_REQUEST_INDICATOR = re.compile(".*?cover\.[A-Z|a-z]{3,4}$")
+
+ATTACHMENT_REQUEST_INDICATOR = re.compile(".*?attachment=.*$")
 
 class MSRoot(resource.Resource, log.Loggable):
     logCategory = 'mediaserver'
@@ -53,18 +55,27 @@ class MSRoot(resource.Resource, log.Loggable):
         headers = request.getAllHeaders()
         self.msg( request.getAllHeaders())
 
-        if(request.method == 'GET' and
-           COVER_REQUEST_INDICATOR.match(request.uri)):
-            self.info("request cover for id %s" % path)
-            ch = self.store.get_by_id(path)
-            if ch is not None:
-                request.setResponseCode(200)
-                file = ch.get_cover()
-                if os.path.exists(file):
-                    self.info("got cover %s" % file)
-                    return StaticFile(file)
-            request.setResponseCode(404)
-            return static.Data('<html><p>cover requested not found</p></html>','text/html')
+        if request.method == 'GET':
+            if COVER_REQUEST_INDICATOR.match(request.uri):
+                self.info("request cover for id %s" % path)
+                ch = self.store.get_by_id(path)
+                if ch is not None:
+                    request.setResponseCode(200)
+                    file = ch.get_cover()
+                    if os.path.exists(file):
+                        self.info("got cover %s" % file)
+                        return StaticFile(file)
+                request.setResponseCode(404)
+                return static.Data('<html><p>cover requested not found</p></html>','text/html')
+
+            if ATTACHMENT_REQUEST_INDICATOR.match(request.uri):
+                self.info("request attachment %r for id %s" % (request.args,path))
+                ch = self.store.get_by_id(path)
+                try:
+                    return ch.item.attachments[request.args['attachment'][0]]
+                except:
+                    request.setResponseCode(404)
+                    return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
 
         if(request.method == 'POST' and
            request.uri.endswith('?import')):
