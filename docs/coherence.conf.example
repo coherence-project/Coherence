@@ -42,7 +42,7 @@ web-ui = no                               # set this to yes to enable some inter
 
 [plugins]
     [[FSStore]]
-        content = tests/content           # append more directories seperated by commas
+        content = tests/content           # append more directories separated by commas
     #    #content = /data/audio/music
         name = Coherence Test Content
     #    [[[icon]]]
