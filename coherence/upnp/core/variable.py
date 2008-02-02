@@ -128,6 +128,8 @@ class StateVariable(log.Loggable):
                         new_value = '1'
                     else:
                         new_value = '0'
+                elif self.data_type == 'bin.base64':
+                    new_value = value
                 else:
                     new_value = int(value)
         else:
@@ -151,6 +153,8 @@ class StateVariable(log.Loggable):
                     new_value = '1'
                 else:
                     new_value = '0'
+            elif self.data_type == 'bin.base64':
+                new_value = value
             else:
                 new_value = int(value)
 
