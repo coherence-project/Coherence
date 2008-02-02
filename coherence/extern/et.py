@@ -117,7 +117,10 @@ def indent(elem, level=0):
             elem.tail = i
 
 def parse_xml(data, encoding="utf-8"):
-    p = ET.XMLParser(encoding=encoding)
+    try:
+        p = ET.XMLParser(encoding=encoding)
+    except exceptions.TypeError:
+        p = ET.XMLParser()
 
     # my version of twisted.web returns page_infos as a dictionary in
     # the second item of the data list
