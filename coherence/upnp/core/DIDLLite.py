@@ -139,7 +139,9 @@ class Resource:
                 if content_format == 'audio/mpeg':
                     additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MP3',))
                 if content_format == 'image/jpeg':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_SM',))
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_LRG',))
+                if content_format == 'image/png':
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=PNG_LRG',))
                 if content_format == 'video/mpeg':
                     additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG_PS_PAL',))
                 if content_format == 'video/mp4':
@@ -211,7 +213,6 @@ class Object:
 
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
-        self.res = Resources()
         self.id = id
         self.parentID = parentID
         self.title = title
@@ -246,9 +247,6 @@ class Object:
 
         if self.creator is not None:
             ET.SubElement(root, 'dc:creator').text = self.creator
-
-        for res in self.res:
-            root.append(res.toElement(**kwargs))
 
         if self.writeStatus is not None:
             ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
@@ -298,21 +296,18 @@ class Object:
         for child in elt.getchildren():
             if child.tag.endswith('title'):
                 self.title = child.text
-            if child.tag.endswith('albumArtURI'):
+            elif child.tag.endswith('albumArtURI'):
                 self.albumArtURI = child.text
-            if child.tag.endswith('originalTrackNumber'):
+            elif child.tag.endswith('originalTrackNumber'):
                 self.originalTrackNumber = int(child.text)
-            if child.tag.endswith('artist'):
+            elif child.tag.endswith('artist'):
                 self.artist = child.text
-            if child.tag.endswith('album'):
+            elif child.tag.endswith('album'):
                 self.album = child.text
             elif child.tag.endswith('class'):
                 self.upnp_class = child.text
-            if child.tag.endswith('server_uuid'):
+            elif child.tag.endswith('server_uuid'):
                 self.server_uuid = child.text
-            elif child.tag.endswith('res'):
-                res = Resource.fromString(ET.tostring(child))
-                self.res.append(res)
 
 
     @classmethod
@@ -332,12 +327,19 @@ class Item(Object):
     elementName = 'item'
     refID = None
 
+    def __init__(self, *args, **kwargs):
+        Object.__init__(self, *args, **kwargs)
+        self.res = Resources()
+
     def toElement(self,**kwargs):
 
         root = Object.toElement(self,**kwargs)
 
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
+
+        for res in self.res:
+            root.append(res.toElement(**kwargs))
 
         return root
 
@@ -346,8 +348,9 @@ class Item(Object):
         for child in elt.getchildren():
             if child.tag.endswith('refID'):
                 self.refID = child.text
-                break
-
+            elif child.tag.endswith('res'):
+                res = Resource.fromString(ET.tostring(child))
+                self.res.append(res)
 
 class ImageItem(Item):
     upnp_class = Item.upnp_class + '.imageItem'
