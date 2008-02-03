@@ -72,12 +72,14 @@ class FSItem(log.Loggable):
             self.update_id = 0
             #self.item.searchable = True
             #self.item.searchClass = 'object'
-            self.check_for_cover_art()
-            if hasattr(self, 'cover'):
-                _,ext =  os.path.splitext(self.cover)
-                """ add the cover image extension to help clients not reacting on
-                    the mimetype """
-                self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+            if(isinstance(self.location,FilePath) and
+               self.location.isdir() == True):
+                self.check_for_cover_art()
+                if hasattr(self, 'cover'):
+                    _,ext =  os.path.splitext(self.cover)
+                    """ add the cover image extension to help clients not reacting on
+                        the mimetype """
+                    self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
         else:
             if self.mimetype.startswith('audio/'):
                 if hasattr(parent, 'cover'):
@@ -344,6 +346,11 @@ class FSStore(log.Loggable,Plugin):
         except:
             self.inotify = None
 
+        l = []
+        for a in self.content:
+            l += a.split(',')
+        self.content = l
+
         self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
@@ -405,7 +412,7 @@ class FSStore(log.Loggable,Plugin):
                     if new_container != None:
                         containers.append(new_container)
             except UnicodeDecodeError:
-                self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.path)
+                self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.get_path())
 
     def create(self, mimetype, path, parent):
         UPnPClass = classChooser(mimetype)
