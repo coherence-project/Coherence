@@ -17,6 +17,8 @@ from coherence.upnp.services.servers.connection_manager_server import Connection
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
 from coherence.upnp.services.servers.av_transport_server import AVTransportServer
 
+from coherence.upnp.devices.basics import BasicAVMixin
+
 import louie
 
 from coherence import log
@@ -81,7 +83,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement( d, 'manufacturer').text = 'beebits.net'
         ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
         ET.SubElement( d, 'modelDescription').text = 'Coherence UPnP A/V MediaRenderer'
-        ET.SubElement( d, 'modelName').text = 'Coherence  UPnP A/V MediaRenderer'
+        ET.SubElement( d, 'modelName').text = 'Coherence UPnP A/V MediaRenderer'
         ET.SubElement(d, 'modelNumber').text = __version__
         ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
         ET.SubElement( d, 'serialNumber').text = '0000001'
@@ -133,7 +135,7 @@ class RootDeviceXML(static.Data):
         self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
-class MediaRenderer(log.Loggable):
+class MediaRenderer(log.Loggable,BasicAVMixin):
     logCategory = 'mediarenderer'
 
     def __init__(self, coherence, backend, **kwargs):
@@ -243,77 +245,3 @@ class MediaRenderer(log.Loggable):
 
         self.register()
         self.info("%s MediaRenderer (%s) activated" % (self.backend.name, self.backend))
-
-    def register(self):
-        s = self.coherence.ssdp_server
-        uuid = str(self.uuid)
-        host = self.coherence.hostname
-        #print '%s register' % self.device_type
-        # we need to do this after the children are there, since we send notifies
-        s.register('local',
-                    '%s::upnp:rootdevice' % uuid,
-                    'upnp:rootdevice',
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
-                    host=host)
-
-        s.register('local',
-                    uuid,
-                    uuid,
-                    self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
-                    host=host)
-
-        version = self.version
-        while version > 0:
-            if version == self.version:
-                silent = False
-            else:
-                silent = True
-            s.register('local',
-                        '%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version),
-                        'urn:schemas-upnp-org:device:%s:%d' % (self.device_type, version),
-                        self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                        silent=silent,
-                        host=host)
-
-            for service in self._services:
-                silencio = silent
-                if hasattr(service,'version'):
-                    if service.version < version:
-                        continue
-                    elif service.version == version:
-                        silencio = False
-                try:
-                    namespace = service.namespace
-                except AttributeError:
-                    namespace = 'schemas-upnp-org'
-
-                s.register('local',
-                            '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version),
-                            'urn:%s:service:%s:%d' % (namespace,service.id, version),
-                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % version,
-                            silent=silencio,
-                            host=host)
-
-            version -= 1
-
-    def unregister(self):
-        s = self.coherence.ssdp_server
-        uuid = str(self.uuid)
-        self.coherence.remove_web_resource(uuid[5:])
-
-        version = self.version
-        while version > 0:
-            s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
-            for service in self._services:
-                if hasattr(service,'version') and service.version < version:
-                    continue
-                try:
-                    namespace = service.namespace
-                except AttributeError:
-                    namespace = 'schemas-upnp-org'
-                s.doByebye('%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version))
-
-            version -= 1
-
-        s.doByebye(uuid)
-        s.doByebye('%s::upnp:rootdevice' % uuid)
