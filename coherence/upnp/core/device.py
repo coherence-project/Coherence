@@ -127,7 +127,7 @@ class Device(log.Loggable):
         now = time.time()
         for service in self.get_services():
             self.info("check service %r %r " % (service.id, service.get_sid()), service.get_timeout(), now)
-            if service.get_sid() != None:
+            if service.get_sid() is not None:
                 if service.get_timeout() < now:
                     self.debug("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
                           "maybe we need to rethink the loop time and timeout calculation?")
@@ -138,7 +138,7 @@ class Device(log.Loggable):
         """ iterate over device's services and unsubscribe subscriptions """
         l = []
         for service in self.get_services():
-            if service.get_sid() != None:
+            if service.get_sid() is not None:
                 l.append(service.unsubscribe())
         dl = defer.DeferredList(l)
         return dl
