@@ -32,11 +32,9 @@ from coherence.extern.inotify import IN_CHANGED
 
 import louie
 
-from coherence.extern.simple_plugin import Plugin
+from coherence.backend import BackendItem, BackendStore
 
-from coherence import log
-
-class FSItem(log.Loggable):
+class FSItem(BackendItem):
     logCategory = 'fs_item'
 
     def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass,update=False):
@@ -320,7 +318,7 @@ class FSItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.location.basename()
 
-class FSStore(log.Loggable,Plugin):
+class FSStore(BackendStore):
     logCategory = 'fs_store'
 
     implements = ['MediaServer']

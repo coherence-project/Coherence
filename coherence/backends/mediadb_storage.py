@@ -3,7 +3,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2007, Frank Scholz <coherence@beebits.net>
+# Copyright 2007,2008, Frank Scholz <coherence@beebits.net>
 
 """
 
@@ -52,9 +52,7 @@ from coherence.upnp.core import DIDLLite
 
 from coherence.extern.covers_by_amazon import CoverGetter
 
-from coherence import log
-
-from coherence.extern.simple_plugin import Plugin
+from coherence.backend import BackendItem, BackendStore
 
 try:
     import libmtag
@@ -105,7 +103,7 @@ def sanitize(filename):
     f = f.replace(badchars, '_')
     return f
 
-class Container(object):
+class Container(BackendItem):
 
     def __init__(self, id, parent_id, name, children_callback=None):
         self.id = id
@@ -149,7 +147,7 @@ class Container(object):
     def get_id(self):
         return self.id
 
-class Artist(item.Item):
+class Artist(item.Item,BackendItem):
     """ definition for an artist """
 
     schemaVersion = 1
@@ -192,7 +190,7 @@ class Artist(item.Item):
         return '<Artist %d name="%s" musicbrainz="%s">' \
                % (self.storeID, self.name.encode('ascii', 'ignore'), self.musicbrainz_id)
 
-class Album(item.Item):
+class Album(item.Item,BackendItem):
     """ definition for an album """
 
     schemaVersion = 1
@@ -239,7 +237,7 @@ class Album(item.Item):
                   self.cover.encode('ascii', 'ignore'),
                   self.musicbrainz_id)
 
-class Track(item.Item):
+class Track(item.Item,BackendItem):
     """ definition for a track """
 
     schemaVersion = 1
@@ -333,7 +331,7 @@ class Track(item.Item):
                   self.album.artist.name.encode('ascii', 'ignore'),
                   self.location.encode('ascii', 'ignore'))
 
-class Playlist(item.Item):
+class Playlist(item.Item,BackendItem):
     """ definition for a playlist
 
         - has a name
@@ -349,9 +347,13 @@ class Playlist(item.Item):
     name = attributes.text(allowNone=False, indexed=True)
     # references to tracks
 
-class MediaStore(log.Loggable, Plugin):
+class MediaStore(BackendStore):
     logCategory = 'media_store'
     implements = ['MediaServer']
+
+    wmc_mapping = {'4': lambda : self.get_by_id(11),    # all tracks
+                   '7': lambda : self.get_by_id(13),    # all albums
+                   '6': lambda : self.get_by_id(12)}    # all artists
 
     def __init__(self, server, **kwargs):
         self.info("MediaStore __init__")
