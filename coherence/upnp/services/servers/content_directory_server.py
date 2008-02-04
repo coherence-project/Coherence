@@ -83,31 +83,39 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
             return r
 
-        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
-        """ fake a Windows Media Connect Server
-            and return for the moment an error
-            for the things we can't support now
-        """
-        if( kwargs.get('X_UPnPClient', '') == 'XBox' and
-            wmc_mapping != None and
-            wmc_mapping.has_key(ContainerID)):
-            root_id = wmc_mapping[ContainerID]
-            if ContainerID in ['4','8','13','B']: # _all_ items
-                item = self.backend.get_by_id(root_id)
-                if item  == None:
-                    return failure.Failure(errorCode(701))
+        if kwargs.get('X_UPnPClient', '') == 'XBox':
+            """ fake a Windows Media Connect Server
+                and return for the moment an error
+                for the things we can't support now
+            """
+            wmc_mapping = getattr(self.backend, "wmc_mapping", None)
+            if(wmc_mapping != None and
+               wmc_mapping.has_key(ContainerID)):
+                root_id = wmc_mapping[ContainerID]
+                if callable(root_id):
+                    item = root_id()
+                    if item  == None:
+                        return failure.Failure(errorCode(701))
+                elif ContainerID in ['4','8','13','B']: # fallback to _all_ items
+                    item = self.backend.get_by_id(root_id)
+                    if item  == None:
+                        return failure.Failure(errorCode(701))
 
-                containers = [item]
-                while len(containers)>0:
-                    container = containers.pop()
-                    if container.mimetype != 'directory':
-                        continue
-                    for child in container.get_children(0,0):
-                        if child.mimetype == 'directory':
-                            containers.append(child)
-                        else:
-                            items.append(child)
-                            total += 1
+                    containers = [item]
+                    while len(containers)>0:
+                        container = containers.pop()
+                        if container.mimetype not in ['root', 'directory']:
+                            continue
+                        for child in container.get_children(0,0):
+                            if child.mimetype in ['root', 'directory']:
+                                containers.append(child)
+                            else:
+                                items.append(child)
+                                total += 1
+                else:
+                    return failure.Failure(errorCode(701))
+            else:
+                return failure.Failure(errorCode(701))
         else:
             try:
                 root_id = ContainerID

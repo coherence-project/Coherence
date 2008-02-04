@@ -158,6 +158,11 @@ class Resource:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format == 'video/x-msvideo':
                 content_format = 'video/avi'
+            if kwargs.get('upnp_client','') == 'XBox':
+                """ we don't need the DLNA tags there,
+                    and maybe it irritates that poor thing anyway
+                """
+                additional_info = '*'
             root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
         else:
             root.attrib['protocolInfo'] = self.protocolInfo
