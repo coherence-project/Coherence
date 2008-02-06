@@ -194,13 +194,13 @@ class Coherence(log.Loggable):
                 self.warning("hostname can't be resolved, maybe a system misconfiguration?")
                 self.hostname = '127.0.0.1'
 
-        if self.hostname == '127.0.0.1':
+        if self.hostname.startswith('127.'):
             """ use interface detection via routing table as last resort """
             self.hostname = get_host_address()
 
         self.info('running on host: %s' % self.hostname)
-        if self.hostname == '127.0.0.1':
-            self.warning('detection of own ip failed, using 127.0.0.1 as own address, functionality will be limited')
+        if self.hostname.startswith('127.'):
+            self.warning('detection of own ip failed, using %s as own address, functionality will be limited', self.hostname)
         self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
