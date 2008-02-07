@@ -90,10 +90,10 @@ except ImportError:
 MEDIA_DB = 'tests/media.db'
 
 ROOT_CONTAINER_ID = 0
-AUDIO_CONTAINER = 10
-AUDIO_ALL_CONTAINER_ID = 11
-AUDIO_ARTIST_CONTAINER_ID = 12
-AUDIO_ALBUM_CONTAINER_ID = 13
+AUDIO_CONTAINER = 100
+AUDIO_ALL_CONTAINER_ID = 101
+AUDIO_ARTIST_CONTAINER_ID = 102
+AUDIO_ALBUM_CONTAINER_ID = 103
 
 def sanitize(filename):
     badchars = ''.join(set(string.punctuation) - set('-_+.~'))
@@ -351,10 +351,6 @@ class MediaStore(BackendStore):
     logCategory = 'media_store'
     implements = ['MediaServer']
 
-    wmc_mapping = {'4': lambda : self.get_by_id(11),    # all tracks
-                   '7': lambda : self.get_by_id(13),    # all albums
-                   '6': lambda : self.get_by_id(12)}    # all artists
-
     def __init__(self, server, **kwargs):
         self.info("MediaStore __init__")
         self.server = server
@@ -376,6 +372,12 @@ class MediaStore(BackendStore):
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                 Container( ROOT_CONTAINER_ID,-1, self.name)
+
+        self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
+                                 '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
+                                 '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+                                })
+
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
@@ -519,7 +521,7 @@ class MediaStore(BackendStore):
 
     def get_by_id(self,id):
         self.info("get_by_id %s" % id)
-        if id.startswith('artist_all_tracks_'):
+        if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
             try:
                 return self.containers[id]
             except:

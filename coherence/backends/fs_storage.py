@@ -323,9 +323,8 @@ class FSStore(BackendStore):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4':1000, '8':1000}
-
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self)
         self.next_id = 1000
         self.name = kwargs.get('name','my media')
         self.content = kwargs.get('content','tests/content')

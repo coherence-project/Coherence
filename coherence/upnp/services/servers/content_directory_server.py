@@ -83,121 +83,89 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
             return r
 
-        if kwargs.get('X_UPnPClient', '') == 'XBox':
-            """ fake a Windows Media Connect Server
-                and return for the moment an error
-                for the things we can't support now
-            """
-            wmc_mapping = getattr(self.backend, "wmc_mapping", None)
-            if(wmc_mapping != None and
-               wmc_mapping.has_key(ContainerID)):
-                root_id = wmc_mapping[ContainerID]
-                if callable(root_id):
-                    item = root_id()
-                    if item  == None:
-                        return failure.Failure(errorCode(701))
-                elif ContainerID in ['4','8','13','B']: # fallback to _all_ items
-                    item = self.backend.get_by_id(root_id)
-                    if item  == None:
-                        return failure.Failure(errorCode(701))
+        def got_error(r):
+            return r
 
-                    containers = [item]
-                    while len(containers)>0:
-                        container = containers.pop()
-                        if container.mimetype not in ['root', 'directory']:
-                            continue
-                        for child in container.get_children(0,0):
-                            if child.mimetype in ['root', 'directory']:
-                                containers.append(child)
-                            else:
-                                items.append(child)
-                                total += 1
-                else:
-                    return failure.Failure(errorCode(701))
-            else:
-                return failure.Failure(errorCode(701))
-        else:
-            try:
-                root_id = ContainerID
-            except:
-                pass
+        def process_result(result):
+            if result == None:
+                result = []
+            l = []
 
-            item = self.backend.get_by_id(root_id)
-            if item == None:
-                return failure.Failure(errorCode(701))
-
-            def got_error(r):
-                return r
-
-            def process_result(result):
+            def process_items(result, tm):
                 if result == None:
                     result = []
-                l = []
-
-                def process_items(result, tm):
-                    if result == None:
-                        result = []
-                    for i in result:
-                        if i[0] == True:
-                            didl.addItem(i[1])
-
-                    return build_response(tm)
-
                 for i in result:
-                    d = defer.maybeDeferred( i.get_item)
-                    l.append(d)
-                total = item.get_child_count()
-                dl = defer.DeferredList(l)
-                dl.addCallback(process_items, total)
-                return dl
+                    if i[0] == True:
+                        didl.addItem(i[1])
 
-            #items = item.get_children(StartingIndex, StartingIndex + RequestedCount)
-            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
-            d.addCallback( process_result)
-            d.addErrback(got_error)
+                return build_response(tm)
 
-            return d
+            for i in result:
+                d = defer.maybeDeferred( i.get_item)
+                l.append(d)
+            total = item.get_child_count()
+            dl = defer.DeferredList(l)
+            dl.addCallback(process_items, total)
+            return dl
 
-        for i in items:
-            didl.addItem(i.get_item())
+        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
+        if(kwargs.get('X_UPnPClient', '') == 'XBox' and
+            wmc_mapping != None and
+            wmc_mapping.has_key(ContainerID)):
+            """ fake a Windows Media Connect Server
+            """
+            root_id = wmc_mapping[ContainerID]
+            if callable(root_id):
+                item = root_id()
+                if item  is not None:
+                    if isinstance(item, list):
+                        total = len(item)
+                        if int(RequestedCount) == 0:
+                            items = item[StartingIndex:]
+                        else:
+                            items = item[StartingIndex:StartingIndex+RequestedCount]
+                    else:
+                        d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+                        d.addCallback( process_result)
+                        d.addErrback(got_error)
+                        return d
 
-        return build_response(total)
+            for i in items:
+                didl.addItem(i.get_item())
+
+            return build_response(total)
+
+        try:
+            root_id = ContainerID
+        except:
+            pass
+
+        item = self.backend.get_by_id(root_id)
+        if item == None:
+            return failure.Failure(errorCode(701))
+
+        d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+        d.addCallback( process_result)
+        d.addErrback(got_error)
+
+        return d
 
     def upnp_Browse(self, *args, **kwargs):
         try:
             ObjectID = kwargs['ObjectID']
         except:
             self.debug("hmm, a Browse action and no ObjectID argument? An XBox maybe?")
-            ObjectID = 0
+            try:
+                ObjectID = kwargs['ContainerID']
+            except:
+                ObjectID = 0
         BrowseFlag = kwargs['BrowseFlag']
         Filter = kwargs['Filter']
         StartingIndex = int(kwargs['StartingIndex'])
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
 
-        root_id = ObjectID
-        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
-        """ fake a Windows Media Connect Server
-            and return for the moment an error
-            for the things we can't support now
-        """
-        if( kwargs.get('X_UPnPClient', '') == 'XBox' and
-                wmc_mapping != None):
-            try:
-                ObjectID = kwargs['ContainerID']
-            except:
-                pass
-            if wmc_mapping.has_key(ObjectID):
-                root_id = wmc_mapping[ObjectID]
-
-        item = self.backend.get_by_id(root_id)
-        if item == None:
-            return failure.Failure(errorCode(701))
-
         didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
-
-        def got_error(r):
-            return r
 
         def build_response(tm):
             r = { 'Result': didl.toString(), 'TotalMatches': tm,
@@ -210,6 +178,45 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             else:
                 r['UpdateID'] = 0
 
+            return r
+
+        total = 0
+        items = []
+
+        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
+        if(kwargs.get('X_UPnPClient', '') == 'XBox' and
+            wmc_mapping != None and
+            wmc_mapping.has_key(ObjectID)):
+            """ fake a Windows Media Connect Server
+            """
+            root_id = wmc_mapping[ObjectID]
+            if callable(root_id):
+                item = root_id()
+                if item  is not None:
+                    if isinstance(item, list):
+                        total = len(item)
+                        if int(RequestedCount) == 0:
+                            items = item[StartingIndex:]
+                        else:
+                            items = item[StartingIndex:StartingIndex+RequestedCount]
+                    else:
+                        d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+                        d.addCallback( process_result)
+                        d.addErrback(got_error)
+                        return d
+
+            for i in items:
+                didl.addItem(i.get_item())
+
+            return build_response(total)
+
+        root_id = ObjectID
+
+        item = self.backend.get_by_id(root_id)
+        if item == None:
+            return failure.Failure(errorCode(701))
+
+        def got_error(r):
             return r
 
         def process_result(result):
