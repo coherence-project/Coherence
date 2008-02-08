@@ -54,36 +54,53 @@ from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence.backend import BackendItem, BackendStore
 
+def _dict_from_tags(tag):
+    tags = {}
+    tags['artist'] = tag.artist.strip()
+    tags['album'] = tag.album.strip()
+    tags['title'] = tag.title.strip()
+    if type(tag.track) == int:
+        tags['track'] = tag.track
+    elif type(tag.track) in (str, unicode):
+        tags['track'] = int(tag.track.strip())
+    else:
+        tags['track'] = tag.track[0]
+
+    # axiom lacks support for unicode, dude
+    for key in ('artist', 'album', 'title'):
+        value = tags.get(key, u'')
+        tags[key] = value.encode()
+
+    return tags
+
 try:
     import libmtag
 
     def get_tags(filename):
         audio_file = libmtag.File(filename)
-        tags = {}
-        tags['artist'] = audio_file.tag().get('artist').strip()
-        tags['album'] = audio_file.tag().get('album').strip()
-        tags['title'] = audio_file.tag().get('title').strip()
-        tags['track'] = audio_file.tag().get('track').strip()
-        return tags
+        return _dict_from_tags(audio_file.tag())
 
-except ImportError:
+except ImportError:    
     try:
         import pyid3lib
 
         def get_tags(filename):
             audio_file = pyid3lib.tag(filename)
-            tags = {}
-            try:
-                tags['artist'] = audio_file.artist.strip()
-                tags['album'] = audio_file.album.strip()
-                tags['title'] = audio_file.title.strip()
-                tags['track'] = audio_file.track[0]
-                return tags
-            except AttributeError,msg:
-                raise AttributeError
-
+            return _dict_from_tags(audio_file)
+        
     except ImportError:
-        raise ImportError, "we need some installed id3 tag library for this backend"
+        try:
+            import tagpy
+            
+            def get_tags(filename):
+                filename = filename.encode('utf-8')
+                audio_file = tagpy.FileRef(filename)
+                return _dict_from_tags(audio_file.tag())
+        except ImportError:
+            get_tags = None
+            
+if not get_tags:
+    raise ImportError, "we need some installed id3 tag library for this backend: python-tagpy, pyid3lib or libmtag"
 
 
 
