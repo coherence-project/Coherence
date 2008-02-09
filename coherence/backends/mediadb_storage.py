@@ -33,6 +33,11 @@ depends on:
 
                 pyid3lib - http://pyid3lib.sourceforge.net/doc.html
 
+                or
+
+                tagpy - http://news.tiker.net/software/tagpy
+                taglib - http://developer.kde.org/~wheeler/taglib.html
+
             CoversByAmazon - https://coherence.beebits.net/browser/trunk/coherence/extern/covers_by_amazon.py
 """
 
@@ -66,10 +71,10 @@ def _dict_from_tags(tag):
     else:
         tags['track'] = tag.track[0]
 
-    # axiom lacks support for unicode, dude
     for key in ('artist', 'album', 'title'):
         value = tags.get(key, u'')
-        tags[key] = value.encode()
+        if isinstance(value, unicode):
+            tags[key] = value.encode('utf-8')
 
     return tags
 
@@ -78,27 +83,31 @@ try:
 
     def get_tags(filename):
         audio_file = libmtag.File(filename)
-        return _dict_from_tags(audio_file.tag())
+        tags = {}
+        tags['artist'] = audio_file.tag().get('artist').strip()
+        tags['album'] = audio_file.tag().get('album').strip()
+        tags['title'] = audio_file.tag().get('title').strip()
+        tags['track'] = audio_file.tag().get('track').strip()
+        return tags
 
-except ImportError:    
+except ImportError:
     try:
         import pyid3lib
 
         def get_tags(filename):
             audio_file = pyid3lib.tag(filename)
             return _dict_from_tags(audio_file)
-        
+
     except ImportError:
         try:
             import tagpy
-            
+
             def get_tags(filename):
-                filename = filename.encode('utf-8')
                 audio_file = tagpy.FileRef(filename)
                 return _dict_from_tags(audio_file.tag())
         except ImportError:
             get_tags = None
-            
+
 if not get_tags:
     raise ImportError, "we need some installed id3 tag library for this backend: python-tagpy, pyid3lib or libmtag"
 
