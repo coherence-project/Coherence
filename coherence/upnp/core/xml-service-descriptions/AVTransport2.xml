@@ -9,7 +9,7 @@ Note:
 This file uses tabs (not spaces) for block indentation.
 Any updates to this file should maintain this convention.
 This includes disabling any automatic tab-to-space conversion
-feature provided by your editor. 
+feature provided by your editor.
 ================================================================-->
 <scpd>
 	<serviceStateTable xmlns:coherence="urn:schemas-beebits-net:service-1-0">
@@ -147,7 +147,7 @@ feature provided by your editor.
 			</allowedValueList>
 			<defaultValue>NOT_IMPLEMENTED</defaultValue>
 		</stateVariable>
-		
+
 		<stateVariable>
 			<name>PossiblePlaybackStorageMedia</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
@@ -197,7 +197,7 @@ feature provided by your editor.
 
 		<stateVariable>
 			<name>CurrentRecordQualityMode</name>
-			<sendEventsAttribute>no</sendEventsAttribute>	
+			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
 			<allowedValueList>
 				<allowedValue>WRITABLE</allowedValue>
@@ -390,7 +390,7 @@ feature provided by your editor.
 			<sendEventsAttribute>no</sendEventsAttribute>
 			<dataType>string</dataType>
 			<allowedValueList>
-				<allowedValue> TIME</allowedValue>
+				<allowedValue>ABS_TIME</allowedValue>
 				<allowedValue>REL_TIME</allowedValue>
 				<allowedValue>ABS_COUNT</allowedValue>
 				<allowedValue>REL_COUNT</allowedValue>
@@ -956,4 +956,3 @@ feature provided by your editor.
 		</action>
 	</actionList>
 </scpd>
-
