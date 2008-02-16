@@ -54,7 +54,7 @@ class StateVariable(log.Loggable):
         self.default_value = self.value
 
     def set_allowed_values(self, values):
-        if not isinstance(values,list):
+        if not isinstance(values,(list,tuple)):
             values = [values]
         self.allowed_values = values
 
