@@ -505,7 +505,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
         #self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'TRANSITIONING')
         #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek')
         self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
         if state == gst.STATE_PLAYING:
