@@ -50,7 +50,12 @@ class EventServer(resource.Resource, log.Loggable):
             self.debug("data:", data)
             headers = request.getAllHeaders()
             sid = headers['sid']
-            tree = utils.parse_xml(data).getroot()
+            try:
+                tree = utils.parse_xml(data).getroot()
+            except SyntaxError:
+                self.warning("malformed notify from %r", request.client)
+                return ""
+
             ns = "urn:schemas-upnp-org:event-1-0"
             event = Event(sid)
             for prop in tree.findall('{%s}property' % ns):
