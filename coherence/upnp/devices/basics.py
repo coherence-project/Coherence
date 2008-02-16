@@ -6,7 +6,7 @@
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
 class BasicAVMixin(object):
-    
+
     def register(self):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
@@ -41,6 +41,7 @@ class BasicAVMixin(object):
 
 
         for service in self._services:
+            device_version = self.version
             service_version = self.version
             if hasattr(service,'version'):
                 service_version = service.version
@@ -55,12 +56,13 @@ class BasicAVMixin(object):
                 s.register('local',
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, service_version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, service_version),
-                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % self.version,
+                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % device_version,
                             silent=silent,
                             host=host)
 
                 silent = True
                 service_version -= 1
+                device_version -= 1
 
     def unregister(self):
         s = self.coherence.ssdp_server
