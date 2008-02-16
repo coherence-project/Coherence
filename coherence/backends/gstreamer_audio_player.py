@@ -570,8 +570,9 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.player.pause()
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
 
-    def seek(self, location):
+    def seek(self, location, old_state):
         self.player.seek(location)
+        self.server.av_transport_server.set_variable(0, 'TransportState', old_state)
 
     def mute(self):
         self.player.mute()
@@ -631,6 +632,18 @@ class GStreamerPlayer(log.Loggable,Plugin):
     def upnp_Stop(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         self.stop()
+        return {}
+
+    def upnp_Seek(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        Unit = kwargs['Unit']
+        Target = kwargs['Target']
+        if Unit in ['ABS_TIME','REL_TIME']:
+            old_state = self.server.av_transport_server.get_variable(0, 'TransportState')
+            self.server.av_transport_server.set_variable(0, 'TransportState', 'TRANSITIONING')
+            h,m,s = Target.split(':')
+            seconds = int(h)*3600 + int(m)*60 + int(s)
+            self.seek(str(seconds), old_state)
         return {}
 
     def upnp_SetAVTransportURI(self, *args, **kwargs):
