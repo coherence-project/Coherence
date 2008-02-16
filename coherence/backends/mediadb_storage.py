@@ -52,12 +52,15 @@ from epsilon.extime import Time
 
 import louie
 
+from twisted.internet import reactor, defer
+
 from twisted.python.filepath import FilePath
 from coherence.upnp.core import DIDLLite
 
 from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence.backend import BackendItem, BackendStore
+
 
 def _dict_from_tags(tag):
     tags = {}
@@ -441,21 +444,22 @@ class MediaStore(BackendStore):
                 except IndexError:
                     return u''
 
-        for file in self.filelist:
-            tags = get_tags(file)
+        def got_tags(tags, file):
+            #print "got_tags", tags
+
             album=tags.get('album', '')
             artist=tags.get('artist', '')
             title=tags.get('title', '')
             track=tags.get('track', 0)
 
             if len(artist) == 0:
-                continue;
+                return;
                 artist = u'UNKNOWN_ARTIST'
             if len(album) == 0:
-                continue;
+                return;
                 album = u'UNKNOWN_ALBUM'
             if len(title) == 0:
-                continue;
+                return;
                 title = u'UNKNOWN_TITLE'
 
             #print "Tags:", file, album, artist, title, track
@@ -479,6 +483,11 @@ class MediaStore(BackendStore):
                                             track_nr=int(track),
                                             album=album_ds,
                                             location=unicode(file,'utf8'))
+
+        for file in self.filelist:
+            d = defer.maybeDeferred(get_tags,file)
+            d.addBoth(got_tags, file)
+
 
     def show_db(self):
         for album in list(self.db.query(Album,sort=Album.title.ascending)):
@@ -547,6 +556,8 @@ class MediaStore(BackendStore):
 
     def get_by_id(self,id):
         self.info("get_by_id %s" % id)
+        id = id.split('@',1)
+        id = id[0]
         if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
             try:
                 return self.containers[id]

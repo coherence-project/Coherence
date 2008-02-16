@@ -68,7 +68,10 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         item = None
         items = []
 
-        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
+        parent_container = str(ContainerID)
+
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
+                           parent_container=parent_container)
 
         def build_response(tm):
             r = { 'Result': didl.toString(), 'TotalMatches': tm,
@@ -164,8 +167,17 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         StartingIndex = int(kwargs['StartingIndex'])
         RequestedCount = int(kwargs['RequestedCount'])
         SortCriteria = kwargs['SortCriteria']
+        parent_container = None
+        requested_id = None
 
-        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''))
+        if BrowseFlag == 'BrowseDirectChildren':
+            parent_container = str(ObjectID)
+        else:
+            requested_id = str(ObjectID)
+
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
+                           requested_id=requested_id,
+                           parent_container=parent_container)
 
         def build_response(tm):
             r = { 'Result': didl.toString(), 'TotalMatches': tm,

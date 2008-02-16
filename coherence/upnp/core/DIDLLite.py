@@ -24,6 +24,7 @@ from coherence.upnp.core import utils
 
 from coherence.upnp.core import dlna
 
+from coherence import log
 
 class Resources(list):
 
@@ -201,8 +202,10 @@ class Resource:
         instance.fromElement(elt.getroot())
         return instance
 
-class Object:
+class Object(log.Loggable):
     """The root class of the entire content directory class heirachy."""
+
+    logCategory = 'didllite'
 
     upnp_class = 'object'
     creator = None
@@ -214,6 +217,7 @@ class Object:
     album = None
     originalTrackNumber=None
 
+    refID = None
     server_uuid = None
 
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
@@ -239,6 +243,29 @@ class Object:
             ET.SubElement(root, 'dc:title').text = self.title
 
         root.attrib['parentID'] = str(self.parentID)
+
+        if self.refID:
+            root.attrib['refID'] = str(self.refID)
+
+        if kwargs.get('requested_id',None):
+            if kwargs.get('requested_id') != root.attrib['id']:
+                root.attrib['refID'] = root.attrib['id']
+                r_id = kwargs.get('requested_id')
+                root.attrib['id'] = r_id
+                r_id = r_id.split('@',1)
+                try:
+                    root.attrib['parentID'] = r_id[1]
+                except IndexError:
+                    pass
+                self.info("Changing ID from %r to %r, with parentID %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'])
+        elif kwargs.get('parent_container',None):
+            if(kwargs.get('parent_container') != '0' and
+               kwargs.get('parent_container') != root.attrib['parentID']):
+                root.attrib['refID'] = root.attrib['id']
+                root.attrib['id'] = '@'.join((root.attrib['id'],kwargs.get('parent_container')))
+                root.attrib['parentID'] = kwargs.get('parent_container')
+                self.info("Changing ID from %r to %r, with parentID from %r to %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'],kwargs.get('parent_container'))
+
 
         if(isinstance(self, Container) and kwargs.get('upnp_client','') == 'XBox'):
             ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
@@ -293,6 +320,9 @@ class Object:
         self.elementName = elt.tag
         self.id = elt.attrib['id']
         self.parentID = elt.attrib['parentID']
+
+        self.refID = elt.attrib.get('refID',None)
+
         if elt.attrib['restricted'] in [1,'true','True','1','yes','Yes']:
             self.restricted = True
         else:
@@ -603,7 +633,7 @@ class StorageFolder(Container):
 
 class DIDLElement(ElementInterface):
 
-    def __init__(self, upnp_client=''):
+    def __init__(self, upnp_client='', parent_container=None, requested_id=None):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
         self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
@@ -612,13 +642,18 @@ class DIDLElement(ElementInterface):
         self.attrib['xmlns:pv'] = 'http://www.pv.com/pvns/'
         self._items = []
         self.upnp_client = upnp_client
+        self.parent_container = parent_container
+        self.requested_id = requested_id
+
 
     def addContainer(self, id, parentID, title, restricted = False):
         e = Container(id, parentID, title, restricted, creator = '')
         self.append(e.toElement())
 
     def addItem(self, item):
-        self.append(item.toElement(upnp_client=self.upnp_client))
+        self.append(item.toElement(upnp_client=self.upnp_client,
+                                   parent_container=self.parent_container,
+                                   requested_id=self.requested_id))
         self._items.append(item)
 
     def numItems(self):
