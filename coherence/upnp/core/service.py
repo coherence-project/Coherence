@@ -736,7 +736,7 @@ class ServiceControl:
                             if no:  get StateVariable values and
                                     add them to result dict
         """
-        self.info('get_action_results', result)
+        self.debug('get_action_results', result)
         #print 'get_action_results', action, instance
         r = result
         notify = []

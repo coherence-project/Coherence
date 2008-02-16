@@ -34,7 +34,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
     envelope_attrib = None
 
     def _sendResponse(self, request, response, status=200):
-        self.info('_sendResponse', status, response)
+        self.debug('_sendResponse', status, response)
         if status == 200:
             request.setResponseCode(200)
         else:
@@ -56,7 +56,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName, ns):
-        self.info('_gotResult', result, request, methodName, ns)
+        self.debug('_gotResult', result, request, methodName, ns)
 
         response = soap_lite.build_soap_call("{%s}%s" % (ns, methodName), result,
                                                 is_response=True,
