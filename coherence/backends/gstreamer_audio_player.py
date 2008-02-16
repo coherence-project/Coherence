@@ -386,7 +386,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
     logCategory = 'gstreamer_player'
     implements = ['MediaRenderer']
-    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
+    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'},
+                             'AVTransport': {'A_ARG_TYPE_SeekMode':('ABS_TIME','REL_TIME')}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, device, **kwargs):
