@@ -30,6 +30,8 @@ from coherence.extern.inotify import INotify
 from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
 from coherence.extern.inotify import IN_CHANGED
 
+from coherence.extern.xdg import xdg_content
+
 import louie
 
 from coherence.backend import BackendItem, BackendStore
@@ -327,7 +329,16 @@ class FSStore(BackendStore):
         BackendStore.__init__(self)
         self.next_id = 1000
         self.name = kwargs.get('name','my media')
-        self.content = kwargs.get('content','tests/content')
+        self.content = kwargs.get('content',None)
+        if self.content != None:
+            l = []
+            for a in self.content:
+                l += a.split(',')
+            self.content = l
+        else:
+            self.content = xdg_content()
+        if self.content == None:
+            self.content = 'tests/content'
         if not isinstance( self.content, list):
             self.content = [self.content]
         self.urlbase = kwargs.get('urlbase','')
@@ -343,11 +354,6 @@ class FSStore(BackendStore):
         except:
             self.inotify = None
 
-        l = []
-        for a in self.content:
-            l += a.split(',')
-        self.content = l
-
         self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
@@ -357,6 +363,8 @@ class FSStore(BackendStore):
             parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True)
 
         for path in self.content:
+            if isinstance(path,(list,tuple)):
+                path = path[0]
             if self.ignore_file_pattern.match(path):
                 continue
             self.walk(path, parent, self.ignore_file_pattern)
