@@ -26,7 +26,8 @@ def setConfigFile():
 
 
 class Options(usage.Options):
-    optParameters = [['configfile', 'c', setConfigFile(), 'path to configfile']
+    optParameters = [['configfile', 'c', setConfigFile(), 'path to configfile'],
+                     ['plugin', 'p', None, 'activate plugin']
                     ]
 
 def main(config):
@@ -74,6 +75,24 @@ if __name__ == '__main__':
             glib2reactor.install()
         except AssertionError:
             print "error installing glib2reactor"
+
+    if options['plugin'] != None:
+        plugins = config.get('pluginlist')
+        if plugins is None:
+            plugins = config.get('plugins',None)
+        if plugins == None:
+            config['pluginlist'] = []
+            plugins = config['pluginlist']
+
+        plugin = {}
+        plugin_conf = options['plugin'].split(',')
+        for pair in plugin_conf:
+            pair = pair.split(':')
+            if len(pair) > 1:
+                plugin[pair[0]] = pair[1]
+        plugins.append(plugin)
+
+
 
     from twisted.internet import reactor
 
