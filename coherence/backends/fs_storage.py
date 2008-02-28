@@ -331,16 +331,12 @@ class FSStore(BackendStore):
         self.name = kwargs.get('name','my media')
         self.content = kwargs.get('content',None)
         if self.content != None:
-                print self.content
                 if isinstance(self.content,basestring):
                     self.content = [self.content]
                 l = []
                 for a in self.content:
-                    print a
                     l += a.split(',')
-                    print l
                 self.content = l
-                print self.content
         else:
             self.content = xdg_content()
         if self.content == None:
@@ -451,20 +447,24 @@ class FSStore(BackendStore):
 
     def append(self,path,parent):
         #print "append", path
-        mimetype,_ = mimetypes.guess_type(path, strict=False)
-        if mimetype == None:
-            if os.path.isdir(path) or os.path.islink(path):
-                mimetype = 'directory'
-        if mimetype == None:
-            return None
+        try:
+            mimetype,_ = mimetypes.guess_type(path, strict=False)
+            if mimetype == None:
+                if os.path.isdir(path) or os.path.islink(path):
+                    mimetype = 'directory'
+            if mimetype == None:
+                return None
 
-        id = self.create(mimetype,path,parent)
+            id = self.create(mimetype,path,parent)
 
-        if mimetype == 'directory':
-            if self.inotify is not None:
-                mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
-                self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
-            return self.store[id]
+            if mimetype == 'directory':
+                if self.inotify is not None:
+                    mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
+                    self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
+                return self.store[id]
+        except OSError, msg:
+            """ seems we have some permissions issues along the content path """
+            self.warning("path %r isn't accessible, error %r", path, msg)
 
         return None
 
