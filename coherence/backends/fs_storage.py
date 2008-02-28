@@ -48,7 +48,7 @@ class FSItem(BackendItem):
             self.location = unicode(path)
         else:
             if mimetype == 'item' and path is None:
-                path = os.path.join(parent.get_path(),str(self.id))
+                path = os.path.join(parent.get_path(),unicode(self.id))
             self.location = FilePath(unicode(path))
         self.mimetype = mimetype
         if urlbase[-1] != '/':
