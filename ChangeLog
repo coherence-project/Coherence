@@ -1,3 +1,309 @@
+2008-02-29 21:02  dev
+
+	* setup.py: New in this 0.5.2 release
+	  
+	  * rework of the XBox 360 support
+	  * refinements and improvements on the client side API,
+	  incorporating things we learned on extending the Rhythmbox UPnP
+	  plugin
+	  * some efforts on smoothing the "just use it as
+	  a MediaServer/-Renderer" user experience
+	  * rearrangement in the way multiple res elements are ordered,
+	  fixes issues which we had with some UPnP stacks
+	  and their 'wayward' interpretation of the specs
+	  * and a lot more of the usual bugfixes and enhancements
+
+2008-02-28 13:13  dev
+
+	* coherence/backends/fs_storage.py, coherence/extern/xdg.py: some
+	  adjustments re utf-8 file/directory names, addresses #121
+
+2008-02-28 11:59  dev
+
+	* coherence/backends/fs_storage.py: on the walk of the content
+	  directories, catch any OSErrors and report them, so that a not
+	  accessible file or directory doesn't prevent the whole device
+	  from starting - fixes #120
+
+2008-02-25 19:47  dev
+
+	* bin/coherence: adding quick 'n dirty support for activating a
+	  backend via the commandline
+	  
+	  * syntax is bin/coherence
+	  --plugin=backend:FSStore,name=Coherence,content=/home/media
+	  
+	  name and content can be omitted
+
+2008-02-25 19:45  dev
+
+	* coherence/backends/fs_storage.py: a fix regarding a bug
+	  introduced in [777]
+
+2008-02-21 17:50  dev
+
+	* coherence/backends/fs_storage.py, coherence/extern/xdg.py: adding
+	  support for XDG audio, pictures and video directories to the
+	  FSStore, addresses #119
+	  
+	  * to enable it, remove the content keyword for that backend in
+	  the configuration file
+	  * needs probably some testing with path names in different
+	  languages
+
+2008-02-16 16:40  dev
+
+	* coherence/backends/mediadb_storage.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/services/servers/content_directory_server.py: add
+	  ''auto'' RefID and ParentID support for MediaServer backends with
+	  virtual containers like 'artists' and 'albums'
+
+2008-02-16 16:39  dev
+
+	* coherence/upnp/core/variable.py: being a little more flexible
+
+2008-02-16 16:28  dev
+
+	* coherence/backends/gstreamer_audio_player.py: declare 'ABS_TIME'
+	  and 'REL_TIME' as only valid values for the Seek action Unit
+	  parameter
+
+2008-02-16 10:22  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/core/soap_service.py: rearrange the logging levels
+	  to reduce the output a bit
+
+2008-02-16 10:20  dev
+
+	* coherence/backends/gstreamer_audio_player.py: announce the
+	  ability to Seek to the ControlPoint (in the hope it honours it)
+
+2008-02-16 10:16  dev
+
+	* coherence/backends/gstreamer_audio_player.py: added the long
+	  missing Seek action to the GStreamer MediaRenderer, only ABS_TIME
+	  and REL_TIME seeks are supported so far
+
+2008-02-16 10:11  dev
+
+	* coherence/upnp/core/event.py: catch malformed notify messages
+
+2008-02-16 10:09  dev
+
+	* coherence/upnp/devices/basics.py: set the proper description file
+	  version for the downward compatibility services which have a
+	  therefore reduced version number
+
+2008-02-11 12:58  dev
+
+	* coherence/upnp/core/xml-service-descriptions/AVTransport2.xml:
+	  typo fix in the AVTransport service description file, thx zeenix!
+
+2008-02-09 19:50  dev
+
+	* coherence/backends/mediadb_storage.py: reworked tag support again
+
+2008-02-08 10:58  philn
+
+	* coherence/backends/mediadb_storage.py: support for python-tagpy
+
+2008-02-07 11:30  dev
+
+	* coherence/backend.py, coherence/backends/fs_storage.py,
+	  coherence/backends/mediadb_storage.py,
+	  coherence/upnp/services/servers/content_directory_server.py: move
+	  the Xbox specific parts out of the ContentDirectoryService and
+	  into the generic backend base class
+
+2008-02-06 10:58  dev
+
+	* coherence/base.py: use only '127.' as the pattern to detect a
+	  loopback address, to circumvent these '127.0.1.1' entries in
+	  /etc/hosts on Ubuntu >= edgy.
+	  
+	  See this thread: http://ubuntuforums.org/showthread.php?t=388765
+
+2008-02-04 18:55  dev
+
+	* coherence/backend.py, coherence/backends/fs_storage.py,
+	  coherence/backends/mediadb_storage.py: move towards factoring out
+	  basic BackendStore and BackendItem classes
+
+2008-02-04 18:53  dev
+
+	* coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/services/servers/content_directory_server.py: some
+	  steps towards supporting the XBox again
+
+2008-02-04 16:22  dev
+
+	* coherence/upnp/core/device.py: check faulty subscription the
+	  right way
+
+2008-02-03 20:04  dev
+
+	* coherence/upnp/devices/basics.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: * move redundant parts of
+	  the device classes into a BasicAVMixin
+	  * rework once more the initial registration and notification
+	  method
+
+2008-02-03 20:03  dev
+
+	* coherence/backends/fs_storage.py: * don't try to find cover art
+	  in other things than FilePath/directory objects
+	  * fix content directory list
+
+2008-02-03 19:57  dev
+
+	* Coherence.egg-info/requires.txt, docs/coherence.conf.example: a
+	  new egg-info file and fixing a typo in the example configuration
+	  file
+
+2008-02-02 19:35  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/devices/media_server.py: build the foundations to
+	  send out thumbnails for images in multiple <res> elements
+
+2008-02-02 19:34  dev
+
+	* coherence/upnp/core/variable.py,
+	  coherence/upnp/services/servers/media_receiver_registrar_server.py:
+	  solve an issue when a client actually sends a RegisterDevice
+	  action to our fake MediaReceiverRegistrar service
+
+2008-02-02 19:31  dev
+
+	* docs/coherence.conf.example: fix type
+
+2008-02-02 14:20  dev
+
+	* coherence/upnp/core/DIDLLite.py: have Resources only in Items and
+	  below
+
+2008-02-02 14:17  dev
+
+	* coherence/extern/et.py: one more fix to handle differences in the
+	  various ElementTree APIs
+
+2008-02-02 14:16  dev
+
+	* Coherence.egg-info/PKG-INFO: following the version increase
+
+2008-01-29 17:43  dev
+
+	* coherence/__init__.py: increase the version number in preparation
+	  for a intermediate release
+
+2008-01-29 13:18  dev
+
+	* coherence/upnp/core/DIDLLite.py: get rid of these prints
+
+2008-01-29 11:56  dev
+
+	* coherence/backends/elisa_renderer.py: applying changes from [742]
+	  to the Elisa MediaRenderer too
+
+2008-01-29 11:23  dev
+
+	* coherence/backends/gstreamer_audio_player.py,
+	  coherence/upnp/core/DIDLLite.py: move the
+	  "find-the-matching-pair" for the local and remote protocolInfo
+	  into the Resources class and adjust the GStreamer MediaRenderer
+	  accordingly
+
+2008-01-28 22:40  dev
+
+	* coherence/backends/axiscam_storage.py,
+	  coherence/backends/buzztard_control.py,
+	  coherence/backends/elisa_storage.py,
+	  coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/iradio_storage.py,
+	  coherence/backends/lastfm_storage.py,
+	  coherence/backends/mediadb_storage.py,
+	  coherence/upnp/core/DIDLLite.py: * use a "sorted" list for an
+	  items resources, to assure the 'http-get' resources are aways the
+	  first ones, followed by the 'rtsp-rtp-udp' ones
+	  
+	  * adapt the GStreamer MediaRenderer to that, it looks now for any
+	  fitting 'internal' resources first
+
+2008-01-28 22:37  dev
+
+	* coherence/upnp/core/utils.py: remove for the moment our test
+	  classes for the RadioStreams
+
+2008-01-28 11:29  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/backends/mediadb_storage.py: * starting work on
+	  CreateObject again
+	  * export more details in the MediaStore
+
+2008-01-28 11:15  dev
+
+	* coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: * allow a global
+	  'version' parameter in the configuration
+	  * set the ''transferMode.dlna.org'' and
+	  ''contentFeatures.dlna.org'' headers in the MediaServer responses
+
+2008-01-28 11:13  philn
+
+	* .: updated svn:externals to point to new Flumotion SVN
+
+2008-01-28 11:06  dev
+
+	* coherence/upnp/core/DIDLLite.py: added more Object details
+
+2008-01-28 11:05  dev
+
+	* coherence/upnp/core/event.py, coherence/upnp/core/utils.py:
+	  handle HTTP responses without body and a missing success/error
+	  code
+
+2008-01-28 11:03  dev
+
+	* coherence/upnp/core/ssdp.py: CAPS consistency
+
+2008-01-28 10:56  dev
+
+	* coherence/upnp/core/variable.py: an additional detail in the log
+	  output
+
+2008-01-28 10:55  dev
+
+	* coherence/upnp/services/clients/av_transport_client.py,
+	  coherence/upnp/services/clients/content_directory_client.py:
+	  fixes and adjustments to the client api
+	  
+	  * we'll return DIDLLite objects from a 'Browse' in the future
+	  too, the client need to have a bit more knowledge about the UPnP
+	  stuff with that, but it is much more flexible than trying to
+	  convert the whole object into a dict
+
+2008-01-28 10:51  dev
+
+	* setup.py: include Louie and ConfigObj as dependencies in the
+	  python/easy_install setup configuration
+
+2008-01-27 12:39  dev
+
+	* Coherence.egg-info/PKG-INFO, coherence/__init__.py,
+	  coherence/backends/gstreamer_audio_player.py, setup.py: let the
+	  GStreamer MediaRenderer behave a bit more spec compliant on a
+	  SetAVTransportURI action, addresses #116
+
+2007-12-31 16:04  dev
+
+	* ChangeLog: checking in modified ChangeLog
+
 2007-12-31 16:02  dev
 
 	* ChangeLog, setup.py: This 0.5 release brings
