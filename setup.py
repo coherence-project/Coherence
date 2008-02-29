@@ -6,24 +6,24 @@ setup(
     name="Coherence",
     version=__version__,
     description="""Coherence - DLNA/UPnP framework for the digital living""",
-    long_description="""Coherence is a framework written in Python enabling
-your application to participate in digital living networks, at the moment
-primarily the DLNA/UPnP universe.
+    long_description="""Coherence is a framework written in Python,
+providing a variety of UPnP MediaServer and UPnP MediaRenderer implementations
+for instant use. Furthermore it enables your application to participate in
+digital living networks, at the moment primarily the DLNA/UPnP universe.
 
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-This 0.5 release brings
+New in this 0.5.2 release
 
-* better DLNA support, in particular for the Sony Playstation 3
-* a MediaServer backend for Shoutcast internet radio streams
-* an experimental last.fm MediaServer backend for the last.fm service
-* provide methods to remove local devices from a Coherence instance
-* support for BSD systems - thx kraft!
-* slow move to an XML based configuration file
-* emerging D-Bus interface
-* more platform independency for our Twisted inotify module,
-  using libc when possible
+* rework of the XBox 360 support
+* refinements and improvements on the client side API,
+  incorporating things we learned on extending the Rhythmbox UPnP plugin
+* some efforts on smoothing the "just use it as
+  a MediaServer/-Renderer" user experience
+* rearrangement in the way multiple res elements are ordered,
+  fixes issues which we had with some UPnP stacks
+  and their 'wayward' interpretation of the specs
 * and a lot more of the usual bugfixes and enhancements
 
 """,
