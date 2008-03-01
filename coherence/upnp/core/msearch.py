@@ -12,6 +12,8 @@ from twisted.internet import task
 
 from coherence.upnp.core import utils
 
+import louie
+
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
 
@@ -40,6 +42,10 @@ class MSearch(DatagramProtocol, log.Loggable):
                                             headers['server'],
                                             headers['cache-control'],
                                             host=host)
+
+        # make raw data available
+        # send out the signal after we had a chance to register the device
+        louie.send('UPnP.SSDP.datagram_received', None, data, host, port)
 
     def double_discover(self):
         " Because it's worth it (with UDP's reliability) "

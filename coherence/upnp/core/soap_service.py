@@ -15,6 +15,8 @@ from coherence.upnp.core.utils import parse_xml
 
 from coherence.upnp.core import soap_lite
 
+import louie
+
 class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
@@ -91,6 +93,9 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         data = request.content.read()
         headers = request.getAllHeaders()
         self.info('soap_request:', headers)
+
+        # allow external check of data
+        louie.send('UPnPTest.Control.Client.CommandReceived', None, headers, data)
 
         def print_c(e):
             for c in e.getchildren():
