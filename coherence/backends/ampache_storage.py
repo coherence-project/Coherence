@@ -94,9 +94,9 @@ class Album(BackendItem):
 
     def __init__(self, element):
         self.id = int(element.get('id'))
-        self.title = element.get('name')
-        self.artist = element.get('artist')
-        self.tracks = int(element.get('tracks'))
+        self.title = element.find('name').text
+        self.artist = element.find('artist').text
+        self.tracks = int(element.find('tracks').text)
         try:
             self.cover = element.find('art').text
         except:
@@ -135,7 +135,7 @@ class Artist(BackendItem):
 
     def __init__(self, element):
         self.id = int(element.get('id'))
-        self.name = element.get('name')
+        self.name = element.find('name').text
 
     def get_children(self,start=0,request_count=0):
         children = []
@@ -167,7 +167,7 @@ class Track(BackendItem):
         self.id = int(element.get('id'))
         self.parent_id = int(element.find('album').get('id'))
 
-        self.path = element.find('url').text
+        self.url = element.find('url').text
 
         seconds = int(element.find('time').text)
         hours = seconds / 3600
@@ -175,6 +175,8 @@ class Track(BackendItem):
         minutes = seconds / 60
         seconds = seconds - minutes * 60
         self.duration = ("%02d:%02d:%02d") % (hours, minutes, seconds)
+
+        self.bitrate = 0
 
         self.title = element.find('title').text
         self.artist = element.find('artist').text
@@ -222,7 +224,7 @@ class Track(BackendItem):
         if self.size > 0:
             res.size = size
         if self.duration > 0:
-            res.duration = str(duration)
+            res.duration = str(self.duration)
         if self.bitrate > 0:
             res.bitrate = str(bitrate)
         item.res.append(res)
@@ -340,10 +342,16 @@ class AmpacheStore(BackendStore):
         except AttributeError:
             for q in response.findall(query_item):
                 if query_item == 'song':
-                    print q.find('title').text, q.find('artist').text
+                    #print q.find('title').text, q.find('artist').text
                     item = Track(q)
                     items.append(item)
-        print "got_response", items
+                if query_item == 'artist':
+                    item = Artist(q)
+                    items.append(item)
+                if query_item == 'album':
+                    item = Album(q)
+                    items.append(item)
+        #print "got_response", items
         return items
 
     def ampache_query(self, item, start=0, request_count=0):
@@ -402,6 +410,12 @@ if __name__ == '__main__':
             r.addCallback(got_result)
             r.addErrback(got_result)
 
+        def call_test(start,count):
+            r = f.backend.ampache_query_artists(start,count)
+            r.addCallback(got_result)
+            r.addErrback(got_result)
+
+
         #f = AmpacheStore(None,
         #                      url='http://localhost/ampache/server/xml.server.php',
         #                      key='testkey',
@@ -415,7 +429,10 @@ if __name__ == '__main__':
                         url='http://localhost/ampache/server/xml.server.php',
                         key='testkey',
                         user=None)
-        reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 10)
+        #reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 10)
+        #reactor.callLater(3, call_browse, AUDIO_ARTIST_CONTAINER_ID, 0, 10)
+        #reactor.callLater(3, call_browse, AUDIO_ALBUM_CONTAINER_ID, 0, 10)
+        #reactor.callLater(3, call_test, 0, 10)
 
     reactor.callWhenRunning(main)
     reactor.run()
