@@ -92,7 +92,8 @@ class Album(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self, element):
+    def __init__(self, store, element):
+        self.store = store
         self.id = int(element.get('id'))
         self.title = element.find('name').text
         self.artist = element.find('artist').text
@@ -103,18 +104,14 @@ class Album(BackendItem):
             self.cover = None
 
     def get_children(self,start=0,request_count=0):
-        children = []
-
-        if request_count == 0:
-            return children[start:]
-        else:
-            return children[start:request_count]
+        return self.store.ampache_query('album_songs', start, request_count, filter=str(self.id))
 
     def get_child_count(self):
-        return len(self.get_children())
+        return self.tracks
 
     def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
         item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
+        item.childCount = self.get_child_count()
         item.artist = self.artist
         item.albumArtURI = self.cover
         return item
@@ -133,17 +130,13 @@ class Artist(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self, element):
+    def __init__(self, store, element):
+        self.store = store
         self.id = int(element.get('id'))
         self.name = element.find('name').text
 
     def get_children(self,start=0,request_count=0):
-        children = []
-
-        if request_count == 0:
-            return children[start:]
-        else:
-            return children[start:request_count]
+        return self.store.ampache_query('artist_albums', start, request_count, filter=str(self.id))
 
     def get_child_count(self):
         return len(self.get_children())
@@ -341,23 +334,25 @@ class AmpacheStore(BackendStore):
             raise ValueError, response.find('error').text
         except AttributeError:
             for q in response.findall(query_item):
-                if query_item == 'song':
+                if query_item in ['song','album_songs']:
                     #print q.find('title').text, q.find('artist').text
                     item = Track(q)
                     items.append(item)
                 if query_item == 'artist':
-                    item = Artist(q)
+                    item = Artist(self,q)
                     items.append(item)
-                if query_item == 'album':
-                    item = Album(q)
+                if query_item in ['album','artist_albums']:
+                    item = Album(self,q)
                     items.append(item)
         #print "got_response", items
         return items
 
-    def ampache_query(self, item, start=0, request_count=0):
+    def ampache_query(self, item, start=0, request_count=0, filter=None):
         request = ''.join((self.url, '?action=%ss&auth=%s&offset=%d' % (item,self.token, start)))
         if request_count > 0:
             request = ''.join((request, '&limit=%d' % request_count))
+        if filter != None:
+            request = ''.join((request, '&filter=%s' % filter))
         d = utils.getPage(request)
         d.addCallback(self.got_response, item)
         d.addErrback(self.got_error)
