@@ -36,8 +36,13 @@ AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
 
+CONTAINER_COUNT = 10000
+
+TRACK_COUNT = 1000000
 
 class Container(BackendItem):
+
+    logCategory = 'ampache_store'
 
     def __init__(self, id, parent_id, name, children_callback=None):
         self.id = id
@@ -54,7 +59,8 @@ class Container(BackendItem):
 
     def add_child(self, child):
         self.children.append(child)
-        self.item.childCount += 1
+        if self.item.childCount != None:
+            self.item.childCount += 1
 
     def get_children(self,start=0,request_count=0):
         if callable(self.children):
@@ -80,6 +86,160 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
+
+
+class Album(BackendItem):
+
+    logCategory = 'ampache_store'
+
+    def __init__(self, element):
+        self.id = int(element.get('id'))
+        self.title = element.get('name')
+        self.artist = element.get('artist')
+        self.tracks = int(element.get('tracks'))
+        try:
+            self.cover = element.find('art').text
+        except:
+            self.cover = None
+
+    def get_children(self,start=0,request_count=0):
+        children = []
+
+        if request_count == 0:
+            return children[start:]
+        else:
+            return children[start:request_count]
+
+    def get_child_count(self):
+        return len(self.get_children())
+
+    def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
+        item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
+        item.artist = self.artist
+        item.albumArtURI = self.cover
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.title
+
+    def get_cover(self):
+        return self.cover
+
+
+class Artist(BackendItem):
+
+    logCategory = 'ampache_store'
+
+    def __init__(self, element):
+        self.id = int(element.get('id'))
+        self.name = element.get('name')
+
+    def get_children(self,start=0,request_count=0):
+        children = []
+
+        if request_count == 0:
+            return children[start:]
+        else:
+            return children[start:request_count]
+
+    def get_child_count(self):
+        return len(self.get_children())
+
+    def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
+        item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.name
+
+
+class Track(BackendItem):
+
+    logCategory = 'ampache_store'
+
+    def __init__(self, element):
+        self.id = int(element.get('id'))
+        self.parent_id = int(element.find('album').get('id'))
+
+        self.path = element.find('url').text
+
+        seconds = int(element.find('time').text)
+        hours = seconds / 3600
+        seconds = seconds - hours * 3600
+        minutes = seconds / 60
+        seconds = seconds - minutes * 60
+        self.duration = ("%02d:%02d:%02d") % (hours, minutes, seconds)
+
+        self.title = element.find('title').text
+        self.artist = element.find('artist').text
+        self.album = element.find('album').text
+        self.genre = element.find('genre').text
+        self.track_nr = element.find('track').text
+
+        try:
+            self.cover = element.find('art').text
+        except:
+            self.cover = None
+        try:
+            self.mimetype = element.find('mimetype').text
+        except:
+            self.mimetype = "audio/mpeg"
+        try:
+            self.size = int(element.find('size').text)
+        except:
+            self.size = 0
+
+    def get_children(self, start=0, request_count=0):
+        return []
+
+    def get_child_count(self):
+        return 0
+
+    def get_item(self, parent_id=None):
+
+        self.info("Track get_item %r @ %r" %(self.id,self.parent_id))
+
+        # create item
+        item = DIDLLite.MusicTrack(self.id + TRACK_COUNT,self.parent_id)
+        item.album = self.album
+
+        item.artist = self.artist
+        #item.date =
+        item.genre = self.genre
+        item.originalTrackNumber = self.track_nr
+        item.title = self.title
+
+        item.albumArtURI = self.cover
+
+        # add http resource
+        res = DIDLLite.Resource(self.get_url(), 'http-get:*:%s:*' % self.mimetype)
+        if self.size > 0:
+            res.size = size
+        if self.duration > 0:
+            res.duration = str(duration)
+        if self.bitrate > 0:
+            res.bitrate = str(bitrate)
+        item.res.append(res)
+
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.title
+
+    def get_url(self):
+        return self.url
+
+    def get_path(self):
+        return None
 
 
 class AmpacheStore(BackendStore):
@@ -110,7 +270,25 @@ class AmpacheStore(BackendStore):
 
     def get_by_id(self,id):
         self.info("looking for id %r", id)
-        item = None
+        if isinstance(id, basestring):
+            id = id.split('@',1)
+            id = id[0]
+        if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
+            try:
+                return self.containers[id]
+            except:
+                return None
+        try:
+            id = int(id)
+        except ValueError:
+            id = 1000
+        try:
+            item = self.containers[id]
+        except:
+            try:
+                item = None
+            except:
+                item = None
         return item
 
     def got_auth_response( self, response):
@@ -136,6 +314,10 @@ class AmpacheStore(BackendStore):
             except AttributeError:
                 raise ValueError, 'no authorization token returned'
 
+    def got_auth_error(self, e):
+        self.warning('error calling ampache %r', e)
+        louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
+
     def get_token( self, media_type='audio'):
         """ ask Ampache for the authorization token """
         timestamp = int(time.time())
@@ -145,11 +327,10 @@ class AmpacheStore(BackendStore):
             request = ''.join((request, '&user=%s' % self.user))
         d = utils.getPage(request)
         d.addCallback(self.got_auth_response)
-        d.addErrback(self.got_error)
+        d.addErrback(self.got_auth_error)
 
     def got_error(self, e):
         self.warning('error calling ampache %r', e)
-        louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
     def got_response(self, response, query_item):
         response = utils.parse_xml(response, encoding='utf-8')
@@ -157,36 +338,49 @@ class AmpacheStore(BackendStore):
             self.warning('error on token request %r', response.find('error').text)
             raise ValueError, response.find('error').text
         except AttributeError:
-            for item in response.findall(query_item):
-                print item.find('title').text, item.find('artist').text
+            for q in response.findall(query_item):
+                if query_item == 'song':
+                    print q.find('title').text, q.find('artist').text
+                    item = Track(q)
+                    items.append(item)
+        print "got_response", items
+        return items
 
-
-    def ampache_query_songs(self, start=0, request_count=0):
-        request = ''.join((self.url, '?action=songs&auth=%s&offset=%d' % (self.token, start)))
+    def ampache_query(self, item, start=0, request_count=0):
+        request = ''.join((self.url, '?action=%ss&auth=%s&offset=%d' % (item,self.token, start)))
         if request_count > 0:
             request = ''.join((request, '&limit=%d' % request_count))
         d = utils.getPage(request)
-        d.addCallback(self.got_response, 'song')
+        d.addCallback(self.got_response, item)
         d.addErrback(self.got_error)
+        return d
 
+    def ampache_query_songs(self, start=0, request_count=0):
+        return self.ampache_query('song', start, request_count)
+
+    def ampache_query_albums(self, start=0, request_count=0):
+        return self.ampache_query('album', start, request_count)
+
+    def ampache_query_artists(self, start=0, request_count=0):
+        return self.ampache_query('artist', start, request_count)
 
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                            ['http-get:*:audio/mpeg:*'])
+                            ['http-get:*:audio/mpeg:*',
+                             'http-get:*:application/ogg:*',])
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda :self.ampache_query_songs())
+                          children_callback=self.ampache_query_songs)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
-                          children_callback=lambda :self.ampache_query(Album,sort=Album.title.ascending))
+                          children_callback=self.ampache_query_albums)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
-                          children_callback=lambda :self.ampache_query(Artist,sort=Artist.name.ascending))
+                          children_callback=self.ampache_query_artists)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
-
 
 
 if __name__ == '__main__':
@@ -204,7 +398,9 @@ if __name__ == '__main__':
                             ObjectID=ObjectID,
                             SortCriteria='*',
                             Filter='')
-            print r
+            print "call_browse", r
+            r.addCallback(got_result)
+            r.addErrback(got_result)
 
         #f = AmpacheStore(None,
         #                      url='http://localhost/ampache/server/xml.server.php',
