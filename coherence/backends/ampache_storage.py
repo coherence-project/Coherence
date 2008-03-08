@@ -21,7 +21,7 @@ except ImportError:
 from twisted.internet import reactor
 from twisted.python import failure
 
-from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
+from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import utils
 
@@ -44,7 +44,7 @@ class Container(BackendItem):
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = DIDLLite.Container(id, parent_id,self.name)
+        self.item = Container(id, parent_id,self.name)
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
@@ -109,10 +109,9 @@ class AmpacheStore(BackendStore):
 
 
     def get_by_id(self,id):
-        try:
-            return self.store[int(id)]
-        except:
-            return None
+        self.info("looking for id %r", id)
+        item = None
+        return item
 
     def got_auth_response( self, response):
         response = utils.parse_xml(response, encoding='utf-8')
@@ -152,15 +151,22 @@ class AmpacheStore(BackendStore):
         self.warning('error calling ampache %r', e)
         louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
-    def got_response(self, response):
-        print response
+    def got_response(self, response, query_item):
+        response = utils.parse_xml(response, encoding='utf-8')
+        try:
+            self.warning('error on token request %r', response.find('error').text)
+            raise ValueError, response.find('error').text
+        except AttributeError:
+            for item in response.findall(query_item):
+                print item.find('title').text, item.find('artist').text
+
 
     def ampache_query_songs(self, start=0, request_count=0):
         request = ''.join((self.url, '?action=songs&auth=%s&offset=%d' % (self.token, start)))
         if request_count > 0:
             request = ''.join((request, '&limit=%d' % request_count))
         d = utils.getPage(request)
-        d.addCallback(self.got_response)
+        d.addCallback(self.got_response, 'song')
         d.addErrback(self.got_error)
 
 
