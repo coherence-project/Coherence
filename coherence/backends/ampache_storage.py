@@ -44,13 +44,13 @@ class Container(BackendItem):
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = Container(id, parent_id,self.name)
+        self.item = DIDLLite.Container(id, parent_id,self.name)
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
         else:
             self.children = []
-        self.item.childCount = self.get_child_count()
+        self.item.childCount = None #self.get_child_count()
 
     def add_child(self, child):
         self.children.append(child)
@@ -191,18 +191,35 @@ class AmpacheStore(BackendStore):
 
 if __name__ == '__main__':
 
+    from coherence.base import Coherence
+
     def main():
         def got_result(result):
             print result
 
-        f = AmpacheStore(None,
-                              url='http://localhost/ampache/server/xml.server.php',
-                              key='testkey',
-                              user=None)
-        reactor.callLater(3,f.ampache_query_songs, 0, 100)
+        def call_browse(ObjectID=0,StartingIndex=0,RequestedCount=0):
+            r = f.content_directory_server.Browse(BrowseFlag='BrowseDirectChildren',
+                            RequestedCount=RequestedCount,
+                            StartingIndex=StartingIndex,
+                            ObjectID=ObjectID,
+                            SortCriteria='*',
+                            Filter='')
+            print r
 
-    from coherence import log
-    log.init(None, '*:5')
+        #f = AmpacheStore(None,
+        #                      url='http://localhost/ampache/server/xml.server.php',
+        #                      key='testkey',
+        #                      user=None)
+        #reactor.callLater(3, f.ampache_query_songs, 65, 1)
+
+        config = {}
+        config['logmode'] = 'warning'
+        c = Coherence(config)
+        f = c.add_plugin('AmpacheStore',
+                        url='http://localhost/ampache/server/xml.server.php',
+                        key='testkey',
+                        user=None)
+        reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 10)
 
     reactor.callWhenRunning(main)
     reactor.run()
