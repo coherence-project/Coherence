@@ -58,7 +58,7 @@ class Container(BackendItem):
 
     def get_children(self,start=0,request_count=0):
         if callable(self.children):
-            children = self.children()
+            children = self.children(start,request_count)
         else:
             children = self.children
         if request_count == 0:
@@ -96,6 +96,7 @@ class AmpacheStore(BackendStore):
         self.name = kwargs.get('name','Ampache')
         self.key = kwargs.get('key','')
         self.user = kwargs.get('user',None)
+        self.url = kwargs.get('url','http://localhost/ampache/server/xml.server.php')
 
         self.server = server
         self.update_id = 0
@@ -138,19 +139,27 @@ class AmpacheStore(BackendStore):
 
     def get_token( self, media_type='audio'):
         """ ask Ampache for the authorization token """
-        passphrase = md5('%d.%s' % (int(time.time()), self.key))
-        request = self.config.get('url','http://localhost/ampache/server/xml.server.php')
-        request = ''.join((request, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, int(time.time()))))
+        timestamp = int(time.time())
+        passphrase = md5('%d%s' % (timestamp, self.key))
+        request = ''.join((self.url, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, timestamp)))
         if self.user != None:
             request = ''.join((request, '&user=%s' % self.user))
         d = utils.getPage(request)
-        d.addCallbacks(self.got_auth_response, self.got_error)
+        d.addCallback(self.got_auth_response)
+        d.addErrback(self.got_error)
 
     def got_error(self, e):
         self.warning('error calling ampache %r', e)
+        louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
-    def ampache_query(self):
-        pass
+    def ampache_query_songs(self, start=0, request_count=0):
+        request = ''.join((self.url, '?action=songs&auth=%s&offset=%d' % (self.token, start)))
+        if request_count > 0:
+            request = ''.join((request, '&limit=%d' % request_count))
+
+        d.addCallback(self.got_response)
+        d.addErrback(self.got_error)
+
 
     def upnp_init(self):
         if self.server:
@@ -158,15 +167,15 @@ class AmpacheStore(BackendStore):
                             ['http-get:*:audio/mpeg:*'])
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda :list(self.ampache_query(Track,sort=Track.title.ascending)))
+                          children_callback=lambda :self.ampache_query_songs())
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
-                          children_callback=lambda :list(self.ampache_query(Album,sort=Album.title.ascending)))
+                          children_callback=lambda :self.ampache_query(Album,sort=Album.title.ascending))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
-                          children_callback=lambda :list(self.ampache_query(Artist,sort=Artist.name.ascending)))
+                          children_callback=lambda :self.ampache_query(Artist,sort=Artist.name.ascending))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
 
@@ -181,6 +190,7 @@ if __name__ == '__main__':
                               url='http://localhost/ampache/server/xml.server.php',
                               key='testkey',
                               user=None)
+        reactor.callLater(3,f.ampache_query_songs, 0, 100)
 
     from coherence import log
     log.init(None, '*:5')

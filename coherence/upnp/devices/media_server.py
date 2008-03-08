@@ -378,6 +378,7 @@ class MediaServer(log.Loggable,BasicAVMixin):
                 self.icons.append(kwargs['icon'])
 
         louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+        louie.connect( self.init_failed, 'Coherence.UPnP.Backend.init_failed', louie.Any)
         reactor.callLater(0.2, self.fire, backend, **kwargs)
 
     def fire(self,backend,**kwargs):
@@ -402,6 +403,12 @@ class MediaServer(log.Loggable,BasicAVMixin):
             #        can close down this device
         else:
             self.backend = backend(self, **kwargs)
+
+    def init_failed(self, backend, msg):
+        if self.backend != backend:
+            return
+        self.warning('backend not installed, MediaServer activation aborted')
+        self.debug(msg)
 
     def init_complete(self, backend):
         if self.backend != backend:
