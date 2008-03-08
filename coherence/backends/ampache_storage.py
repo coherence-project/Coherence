@@ -152,11 +152,14 @@ class AmpacheStore(BackendStore):
         self.warning('error calling ampache %r', e)
         louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
+    def got_response(self, response):
+        print response
+
     def ampache_query_songs(self, start=0, request_count=0):
         request = ''.join((self.url, '?action=songs&auth=%s&offset=%d' % (self.token, start)))
         if request_count > 0:
             request = ''.join((request, '&limit=%d' % request_count))
-
+        d = utils.getPage(request)
         d.addCallback(self.got_response)
         d.addErrback(self.got_error)
 
