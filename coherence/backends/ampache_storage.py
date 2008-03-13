@@ -61,6 +61,8 @@ class Container(BackendItem):
             self.item.childCount += 1
 
     def get_children(self,start=0,request_count=0):
+        if request_count > 100:
+            request_count = 100
         if callable(self.children):
             children = self.children(start,request_count)
         else:
@@ -111,7 +113,7 @@ class Album(BackendItem):
         return self.tracks
 
     def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
-        item = DIDLLite.MusicAlbum('album.%d' % self.id, parent_id, self.title)
+        item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
         item.childCount = self.get_child_count()
         item.artist = self.artist
         item.albumArtURI = self.cover
@@ -143,7 +145,7 @@ class Artist(BackendItem):
         return len(self.get_children())
 
     def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
-        item = DIDLLite.MusicArtist('artist.%d' % self.id, parent_id, self.name)
+        item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
         return item
 
     def get_id(self):
@@ -404,6 +406,125 @@ class AmpacheStore(BackendStore):
                           children_callback=self.ampache_query_artists)
         self.containers[AUDIO_ARTIST_CONTAINER_ID].item.childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+
+    def upnp_Browse(self, *args, **kwargs):
+        try:
+            ObjectID = kwargs['ObjectID']
+        except:
+            self.debug("hmm, a Browse action and no ObjectID argument? An XBox maybe?")
+            try:
+                ObjectID = kwargs['ContainerID']
+            except:
+                ObjectID = 0
+        BrowseFlag = kwargs['BrowseFlag']
+        Filter = kwargs['Filter']
+        StartingIndex = int(kwargs['StartingIndex'])
+        RequestedCount = int(kwargs['RequestedCount'])
+        SortCriteria = kwargs['SortCriteria']
+        parent_container = None
+        requested_id = None
+
+        if BrowseFlag == 'BrowseDirectChildren':
+            parent_container = str(ObjectID)
+        else:
+            requested_id = str(ObjectID)
+
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
+                           requested_id=requested_id,
+                           parent_container=parent_container)
+
+        def build_response(tm):
+            num_ret = didl.numItems()
+            if num_ret != int(kwargs['RequestedCount']):
+                num_ret = 0
+            r = {'Result': didl.toString(), 'TotalMatches': tm,
+                 'NumberReturned': num_ret}
+
+            if hasattr(item, 'update_id'):
+                r['UpdateID'] = item.update_id
+            elif hasattr(self.backend, 'update_id'):
+                r['UpdateID'] = self.backend.update_id # FIXME
+            else:
+                r['UpdateID'] = 0
+
+            return r
+
+        total = 0
+        items = []
+
+        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
+        if(kwargs.get('X_UPnPClient', '') == 'XBox' and
+            wmc_mapping != None and
+            wmc_mapping.has_key(ObjectID)):
+            """ fake a Windows Media Connect Server
+            """
+            root_id = wmc_mapping[ObjectID]
+            if callable(root_id):
+                item = root_id()
+                if item  is not None:
+                    if isinstance(item, list):
+                        total = len(item)
+                        if int(RequestedCount) == 0:
+                            items = item[StartingIndex:]
+                        else:
+                            items = item[StartingIndex:StartingIndex+RequestedCount]
+                    else:
+                        d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+                        d.addCallback( process_result)
+                        d.addErrback(got_error)
+                        return d
+
+            for i in items:
+                didl.addItem(i.get_item())
+
+            return build_response(total)
+
+        root_id = ObjectID
+
+        item = self.backend.get_by_id(root_id)
+        if item == None:
+            return failure.Failure(errorCode(701))
+
+        def got_error(r):
+            return r
+
+        def process_result(result):
+            if result == None:
+                result = []
+            if BrowseFlag == 'BrowseDirectChildren':
+                l = []
+
+                def process_items(result, tm):
+                    if result == None:
+                        result = []
+                    for i in result:
+                        if i[0] == True:
+                            didl.addItem(i[1])
+
+                    return build_response(tm)
+
+                for i in result:
+                    d = defer.maybeDeferred( i.get_item)
+                    l.append(d)
+                total = item.get_child_count()
+                dl = defer.DeferredList(l)
+                dl.addCallback(process_items, total)
+                return dl
+            else:
+                didl.addItem(result)
+                total = 1
+
+            return build_response(total)
+
+        if BrowseFlag == 'BrowseDirectChildren':
+            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+        else:
+            d = defer.maybeDeferred( item.get_item)
+
+        d.addCallback( process_result)
+        d.addErrback(got_error)
+
+        return d
 
 
 if __name__ == '__main__':
