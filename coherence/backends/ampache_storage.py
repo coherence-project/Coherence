@@ -36,9 +36,7 @@ AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
 
-CONTAINER_COUNT = 10000
-
-TRACK_COUNT = 1000000
+CONTAINER_COUNT = 1000
 
 class Container(BackendItem):
 
@@ -73,6 +71,9 @@ class Container(BackendItem):
             return children[start:request_count]
 
     def get_child_count(self):
+        if self.item.childCount != None:
+            return self.item.childCount
+
         if callable(self.children):
             return len(self.children())
         else:
@@ -94,7 +95,7 @@ class Album(BackendItem):
 
     def __init__(self, store, element):
         self.store = store
-        self.id = int(element.get('id'))
+        self.id = 'album.%d' % int(element.get('id'))
         self.title = element.find('name').text
         self.artist = element.find('artist').text
         self.tracks = int(element.find('tracks').text)
@@ -110,7 +111,7 @@ class Album(BackendItem):
         return self.tracks
 
     def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
-        item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
+        item = DIDLLite.MusicAlbum('album.%d' % self.id, parent_id, self.title)
         item.childCount = self.get_child_count()
         item.artist = self.artist
         item.albumArtURI = self.cover
@@ -132,7 +133,7 @@ class Artist(BackendItem):
 
     def __init__(self, store, element):
         self.store = store
-        self.id = int(element.get('id'))
+        self.id = 'artist.%d' % int(element.get('id'))
         self.name = element.find('name').text
 
     def get_children(self,start=0,request_count=0):
@@ -142,7 +143,7 @@ class Artist(BackendItem):
         return len(self.get_children())
 
     def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
-        item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
+        item = DIDLLite.MusicArtist('artist.%d' % self.id, parent_id, self.name)
         return item
 
     def get_id(self):
@@ -157,8 +158,8 @@ class Track(BackendItem):
     logCategory = 'ampache_store'
 
     def __init__(self, element):
-        self.id = int(element.get('id'))
-        self.parent_id = int(element.find('album').get('id'))
+        self.id = 'song.%d' % int(element.get('id'))
+        self.parent_id = 'album.%d' % int(element.find('album').get('id'))
 
         self.url = element.find('url').text
 
@@ -201,7 +202,7 @@ class Track(BackendItem):
         self.info("Track get_item %r @ %r" %(self.id,self.parent_id))
 
         # create item
-        item = DIDLLite.MusicTrack(self.id + TRACK_COUNT,self.parent_id)
+        item = DIDLLite.MusicTrack(self.id,self.parent_id)
         item.album = self.album
 
         item.artist = self.artist
@@ -257,6 +258,10 @@ class AmpacheStore(BackendStore):
         self.update_id = 0
         self.token = None
 
+        self.songs = 0
+        self.albums = 0
+        self.artists = 0
+
         self.get_token()
 
     def __repr__(self):
@@ -275,26 +280,33 @@ class AmpacheStore(BackendStore):
                 return None
         try:
             id = int(id)
-        except ValueError:
-            id = 1000
-        try:
             item = self.containers[id]
-        except:
+        except ValueError:
             try:
-                item = None
-            except:
-                item = None
+                type,id = id.split('.')
+                if type == 'song':
+                    item = self.store.ampache_query('song', filter=str(id))
+            except ValueError:
+                return None
         return item
 
     def got_auth_response( self, response):
-        response = utils.parse_xml(response, encoding='utf-8')
+        try:
+            response = utils.parse_xml(response, encoding='utf-8')
+        except SyntaxError, msg:
+            self.warning('error parsing ampache answer %r', msg)
+            raise SyntaxError, 'error parsing ampache answer %r' % msg
         try:
             self.warning('error on token request %r', response.find('error').text)
             raise ValueError, response.find('error').text
         except AttributeError:
             try:
                 self.token = response.find('auth').text
+                self.songs = int(response.find('songs').text)
+                self.albums = int(response.find('albums').text)
+                self.artists = int(response.find('artists').text)
                 self.info('ampache returned auth token %r', self.token)
+                self.info('Songs: %d, Artists: %d, Albums: %d' % (self.songs, self.artists,self.albums))
 
                 self.containers = {}
                 self.containers[ROOT_CONTAINER_ID] = \
@@ -329,22 +341,27 @@ class AmpacheStore(BackendStore):
 
     def got_response(self, response, query_item):
         response = utils.parse_xml(response, encoding='utf-8')
+        items = []
         try:
             self.warning('error on token request %r', response.find('error').text)
             raise ValueError, response.find('error').text
         except AttributeError:
-            for q in response.findall(query_item):
-                if query_item in ['song','album_songs']:
-                    #print q.find('title').text, q.find('artist').text
-                    item = Track(q)
-                    items.append(item)
-                if query_item == 'artist':
-                    item = Artist(self,q)
-                    items.append(item)
-                if query_item in ['album','artist_albums']:
-                    item = Album(self,q)
-                    items.append(item)
-        #print "got_response", items
+            if query_item == 'id':
+                for q in response:
+                    if q.tag in ['song']:
+                        items.append(Track(q))
+                    if q.tag == 'artist':
+                        items.append(Artist(self,q))
+                    if q.tag in ['album','artist_albums']:
+                        items.append(Album(self,q))
+            else:
+                for q in response.findall(query_item):
+                    if query_item in ['song','album_songs']:
+                        items.append(Track(q))
+                    if query_item == 'artist':
+                        items.append(Artist(self,q))
+                    if query_item in ['album','artist_albums']:
+                        items.append(Album(self,q))
         return items
 
     def ampache_query(self, item, start=0, request_count=0, filter=None):
@@ -375,14 +392,17 @@ class AmpacheStore(BackendStore):
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
                           children_callback=self.ampache_query_songs)
+        self.containers[AUDIO_ALL_CONTAINER_ID].item.childCount = self.songs
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
                           children_callback=self.ampache_query_albums)
+        self.containers[AUDIO_ALBUM_CONTAINER_ID].item.childCount = self.albums
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
                           children_callback=self.ampache_query_artists)
+        self.containers[AUDIO_ARTIST_CONTAINER_ID].item.childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
 
