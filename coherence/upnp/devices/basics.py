@@ -5,7 +5,131 @@
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
-class BasicAVMixin(object):
+from twisted.web import resource, static
+
+from coherence import __version__
+
+from coherence.extern.et import ET, indent
+
+from coherence import log
+
+
+class DeviceHttpRoot(resource.Resource, log.Loggable):
+    logCategory = 'basicdevice'
+
+    def __init__(self, server):
+        resource.Resource.__init__(self)
+        self.server = server
+
+    def getChildWithDefault(self, path, request):
+        self.info('DeviceHttpRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
+        self.info( request.getAllHeaders())
+        if self.children.has_key(path):
+            return self.children[path]
+        if request.uri == '/':
+            return self
+        return self.getChild(path, request)
+
+    def getChild(self, name, request):
+        self.info('DeviceHttpRoot %s getChild %s' % (name, request))
+        if ch is None:
+            p = util.sibpath(__file__, name)
+            if os.path.exists(p):
+                ch = static.File(p)
+        self.info('DeviceHttpRoot ch', ch)
+        return ch
+
+    def listchilds(self, uri):
+        cl = ''
+        for c in self.children:
+                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+        return cl
+
+    def render(self,request):
+        return '<html><p>root of the %s %s</p><p><ul>%s</ul></p></html>'% (self.server.backend.name,
+                                                                           self.server.device_type,
+                                                                           self.listchilds(request.uri))
+
+class RootDeviceXML(static.Data):
+
+    def __init__(self, hostname, uuid, urlbase,
+                        device_type='BasicDevice',
+                        version=2,
+                        friendly_name='Coherence UPnP BasicDevice',
+                        model_description='Coherence UPnP BasicDevice',
+                        model_name='Coherence UPnP BasicDevice',
+                        services=[],
+                        devices=[],
+                        icons=[]):
+        uuid = str(uuid)
+        root = ET.Element('root')
+        root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
+        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
+        e = ET.SubElement(root, 'specVersion')
+        ET.SubElement( e, 'major').text = '1'
+        ET.SubElement( e, 'minor').text = '0'
+
+        ET.SubElement(root, 'URLBase').text = urlbase
+
+        d = ET.SubElement(root, 'device')
+        ET.SubElement( d, 'deviceType').text = device_type
+        ET.SubElement( d, 'friendlyName').text = friendly_name
+        ET.SubElement( d, 'manufacturer').text = 'beebits.net'
+        ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'modelDescription').text = model_description
+        ET.SubElement( d, 'modelName').text = model_name
+        ET.SubElement(d, 'modelNumber').text = __version__
+        ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'serialNumber').text = '0000001'
+        ET.SubElement( d, 'UDN').text = uuid
+        ET.SubElement( d, 'UPC').text = ''
+        ET.SubElement( d, 'presentationURL').text = ''
+
+        if len(services):
+            e = ET.SubElement( d, 'serviceList')
+            for service in services:
+                id = service.get_id()
+                s = ET.SubElement( e, 'service')
+                try:
+                    namespace = service.namespace
+                except:
+                    namespace = 'schemas-upnp-org'
+                if( hasattr(service,'version') and
+                    service.version < version):
+                    v = service.version
+                else:
+                    v = version
+                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(v))
+                try:
+                    namespace = service.id_namespace
+                except:
+                    namespace = 'upnp-org'
+                ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement( s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                ET.SubElement( s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                ET.SubElement( s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+
+        if len(devices):
+            e = ET.SubElement( d, 'deviceList')
+
+        if len(icons):
+            e = ET.SubElement(d, 'iconList')
+            for icon in icons:
+                i = ET.SubElement(e, 'icon')
+                for k,v in icon.items():
+                    if k == 'url':
+                        if v.startswith('file://'):
+                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                            continue
+                    ET.SubElement(i, k).text = str(v)
+
+        #if self.has_level(LOG_DEBUG):
+        #    indent( root)
+
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
+        static.Data.__init__(self, self.xml, 'text/xml')
+
+class BasicDeviceMixin(object):
 
     def register(self):
         s = self.coherence.ssdp_server

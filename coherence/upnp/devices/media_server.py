@@ -32,7 +32,7 @@ from coherence.upnp.services.servers.content_directory_server import ContentDire
 from coherence.upnp.services.servers.media_receiver_registrar_server import MediaReceiverRegistrarServer
 from coherence.upnp.services.servers.media_receiver_registrar_server import FakeMediaReceiverRegistrarBackend
 
-from coherence.upnp.devices.basics import BasicAVMixin
+from coherence.upnp.devices.basics import BasicDeviceMixin
 
 import louie
 
@@ -349,7 +349,7 @@ class RootDeviceXML(static.Data):
         self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
-class MediaServer(log.Loggable,BasicAVMixin):
+class MediaServer(log.Loggable,BasicDeviceMixin):
     logCategory = 'mediaserver'
 
     def __init__(self, coherence, backend, **kwargs):

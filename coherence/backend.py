@@ -9,18 +9,25 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
+class Backend(log.Loggable,Plugin):
+
+    """ the base class for all backends
+    """
+
+    logCategory = 'backend'
+
 
 class BackendItem(log.Loggable):
 
-    """ the base class for all backend store items
+    """ the base class for all MediaServer backend items
     """
 
     logCategory = 'backend_item'
 
 
-class BackendStore(log.Loggable,Plugin):
+class BackendStore(Backend):
 
-    """ the base class for all backend store items
+    """ the base class for all MediaServer backend stores
     """
 
     logCategory = 'backend_store'

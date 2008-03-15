@@ -3,7 +3,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
+# Copyright 2008, Frank Scholz <coherence@beebits.net>
 
 from twisted.internet import task
 from twisted.internet import reactor
@@ -13,9 +13,9 @@ from coherence import __version__
 
 from coherence.extern.et import ET, indent
 
-from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
-from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
-from coherence.upnp.services.servers.av_transport_server import AVTransportServer
+from coherence.upnp.services.servers.switch_power_server import SwitchPowerServer
+from coherence.upnp.services.servers.dimming_server import DimmingServer
+
 
 from coherence.upnp.devices.basics import RootDeviceXML, DeviceHttpRoot, BasicDeviceMixin
 
@@ -24,16 +24,16 @@ import louie
 from coherence import log
 
 class HttpRoot(DeviceHttpRoot):
-    logCategory = 'mediarenderer'
+    logCategory = 'dimmablelight'
 
 
-class MediaRenderer(log.Loggable,BasicDeviceMixin):
-    logCategory = 'mediarenderer'
+class DimmableLight(log.Loggable,BasicDeviceMixin):
+    logCategory = 'dimmablelight'
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
-        self.device_type = 'MediaRenderer'
-        self.version = int(kwargs.get('version',self.coherence.config.get('version',2)))
+        self.device_type = 'DimmableLight'
+        self.version = 1
         #log.Loggable.__init__(self)
 
         try:
@@ -82,24 +82,17 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         self._devices = []
 
         try:
-            self.connection_manager_server = ConnectionManagerServer(self)
-            self._services.append(self.connection_manager_server)
+            self.switch_power_server = SwitchPowerServer(self)
+            self._services.append(self.switch_power_server)
         except LookupError,msg:
-            self.warning( 'ConnectionManagerServer', msg)
+            self.warning( 'SwitchPowerServer', msg)
             raise LookupError,msg
 
         try:
-            self.rendering_control_server = RenderingControlServer(self)
-            self._services.append(self.rendering_control_server)
+            self.dimming_server = DimmingServer(self)
+            self._services.append(self.dimming_server)
         except LookupError,msg:
-            self.warning( 'RenderingControlServer', msg)
-            raise LookupError,msg
-
-        try:
-            self.av_transport_server = AVTransportServer(self)
-            self._services.append(self.av_transport_server)
-        except LookupError,msg:
-            self.warning( 'AVTransportServer', msg)
+            self.warning( 'SwitchPowerServer', msg)
             raise LookupError,msg
 
         upnp_init = getattr(self.backend, "upnp_init", None)
@@ -119,17 +112,16 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                                     self.coherence.urlbase,
                                     self.device_type, version,
                                     friendly_name=self.backend.name,
-                                    model_description='Coherence UPnP A/V %s' % self.device_type,
-                                    model_name='Coherence UPnP A/V %s' % self.device_type,
+                                    model_description='Coherence UPnP %s' % self.device_type,
+                                    model_name='Coherence UPnP %s' % self.device_type,
                                     services=self._services,
                                     devices=self._devices,
                                     icons=self.icons))
             version -= 1
 
 
-        self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
-        self.web_resource.putChild('RenderingControl', self.rendering_control_server)
-        self.web_resource.putChild('AVTransport', self.av_transport_server)
+        self.web_resource.putChild('SwitchPower', self.switch_power_server)
+        self.web_resource.putChild('Dimming', self.dimming_server)
 
         for icon in self.icons:
             if icon.has_key('url'):

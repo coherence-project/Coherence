@@ -1,7 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007,2008 Frank Scholz <coherence@beebits.net>
 
 import string
 import socket
@@ -27,6 +27,9 @@ from coherence.upnp.core.utils import Site
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.devices.media_server import MediaServer
 from coherence.upnp.devices.media_renderer import MediaRenderer
+from coherence.upnp.devices.binary_light import BinaryLight
+from coherence.upnp.devices.dimmable_light import DimmableLight
+
 
 from coherence import log
 
@@ -65,7 +68,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
     def render(self,request):
         return """<html><head><title>Coherence</title></head><body>
-<a href="http://coherence.beebits.net">Coherence</a> - a Python UPnP A/V framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
+<a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
 
 
 class WebServer(log.Loggable):
@@ -260,13 +263,17 @@ class Coherence(log.Loggable):
                     """ no pkg_resources/setuptools installed """
                     self.info("plugin reception activated, no pkg_resources")
                     from coherence.extern.simple_plugin import Reception
+                    from coherence.backend import Backend
                     reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
+                    print reception.guestlist() #Backend)
                     for cls in reception.guestlist():
                         self.available_plugins[cls.__name__.split('.')[-1]] = cls
 
 
         get_available_plugins(("coherence.plugins.backend.media_server",
-                               "coherence.plugins.backend.media_renderer"))
+                               "coherence.plugins.backend.media_renderer",
+                               "coherence.plugins.backend.binary_light",
+                               "coherence.plugins.backend.dimmable_light"))
         try:
             plugin_class = self.available_plugins.get(plugin,None)
             if plugin_class == None:

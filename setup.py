@@ -60,6 +60,12 @@ New in this 0.5.2 release
         GStreamerPlayer = coherence.backends.gstreamer_audio_player:GStreamerPlayer
         BuzztardPlayer = coherence.backends.buzztard_control:BuzztardPlayer
 
+        [coherence.plugins.backend.binary_light]
+        SimpleLight = coherence.backends.light:SimpleLight
+
+        [coherence.plugins.backend.dimmable_light]
+        BetterLight = coherence.backends.light:BetterLight
+
     """,
 
     package_data = {

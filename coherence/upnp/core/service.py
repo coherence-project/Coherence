@@ -624,11 +624,12 @@ class ServiceServer(log.Loggable):
             default_value = var_node.findtext('defaultValue')
             if default_value:
                 self._variables.get(instance)[name].set_default_value(default_value)
-            never_evented = var_node.find('sendEventsAttribute').attrib.get(
-                                    '{urn:schemas-beebits-net:service-1-0}X_no_means_never',
-                                    None)
-            if never_evented is not None:
-                self._variables.get(instance)[name].set_never_evented(never_evented)
+            if var_node.find('sendEventsAttribute') != None:
+                never_evented = var_node.find('sendEventsAttribute').attrib.get(
+                                        '{urn:schemas-beebits-net:service-1-0}X_no_means_never',
+                                        None)
+                if never_evented is not None:
+                    self._variables.get(instance)[name].set_never_evented(never_evented)
             dependant_variable = var_node.findtext('{urn:schemas-beebits-net:service-1-0}X_dependantVariable')
             if dependant_variable:
                 self._variables.get(instance)[name].dependant_variable = dependant_variable
@@ -703,8 +704,8 @@ class scpdXML(static.Data):
                 s.attrib['sendEvents'] = 'no'
             ET.SubElement( s, 'name').text = var.name
             ET.SubElement( s, 'dataType').text = var.data_type
-            #if(not var.has_vendor_values and len(var.allowed_values)):
-            if len(var.allowed_values):
+            if(not var.has_vendor_values and len(var.allowed_values)):
+            #if len(var.allowed_values):
                 v = ET.SubElement( s, 'allowedValueList')
                 for value in var.allowed_values:
                     ET.SubElement( v, 'allowedValue').text = value

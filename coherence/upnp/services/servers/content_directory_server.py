@@ -74,8 +74,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                            parent_container=parent_container)
 
         def build_response(tm):
-            r = { 'Result': didl.toString(), 'TotalMatches': tm,
-                'NumberReturned': didl.numItems()}
+            r = {'Result': didl.toString(), 'TotalMatches': tm,
+                 'NumberReturned': didl.numItems()}
 
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id
@@ -180,8 +180,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                            parent_container=parent_container)
 
         def build_response(tm):
-            r = { 'Result': didl.toString(), 'TotalMatches': tm,
-                'NumberReturned': didl.numItems()}
+            r = {'Result': didl.toString(), 'TotalMatches': tm,
+                 'NumberReturned': didl.numItems()}
 
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id

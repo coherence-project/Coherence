@@ -103,6 +103,8 @@ def build_soap_call(method, arguments, is_response=False,
                 e.set(NS_XSI + "type", arg_type)
             e.text = arg_val
     else:
+        if arguments == None:
+            arguments = {}
         re.append(arguments)
 
 
