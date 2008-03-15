@@ -67,4 +67,15 @@ class Reception(object):
 
     def guestlist(self, plugin_class=Plugin):
         """ returns a list of all Plugin subclasses """
-        return plugin_class.__subclasses__()
+        found = []
+
+        def get_subclass(klass, subclasses):
+            if len(subclasses) == 0:
+                found.append(klass)
+            else:
+                for k in subclasses:
+                    get_subclass(k,k.__subclasses__())
+
+        get_subclass(plugin_class, plugin_class.__subclasses__())
+
+        return found
