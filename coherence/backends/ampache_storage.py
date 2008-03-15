@@ -18,7 +18,7 @@ except ImportError:
         m.update(s)
         return m.hexdigest()
 
-from twisted.internet import reactor
+from twisted.internet import reactor,defer
 from twisted.python import failure
 
 from coherence.upnp.core import DIDLLite
@@ -61,10 +61,10 @@ class Container(BackendItem):
             self.item.childCount += 1
 
     def get_children(self,start=0,request_count=0):
-        if request_count > 100:
+        if request_count == 0 or request_count > 100:
             request_count = 100
         if callable(self.children):
-            children = self.children(start,request_count)
+            return self.children(start,request_count)
         else:
             children = self.children
         if request_count == 0:
@@ -97,6 +97,7 @@ class Album(BackendItem):
 
     def __init__(self, store, element):
         self.store = store
+        self.ampache_id = element.get('id')
         self.id = 'album.%d' % int(element.get('id'))
         self.title = element.find('name').text
         self.artist = element.find('artist').text
@@ -107,7 +108,7 @@ class Album(BackendItem):
             self.cover = None
 
     def get_children(self,start=0,request_count=0):
-        return self.store.ampache_query('album_songs', start, request_count, filter=str(self.id))
+        return self.store.ampache_query('album_songs', start, request_count, filter=self.ampache_id)
 
     def get_child_count(self):
         return self.tracks
@@ -135,14 +136,19 @@ class Artist(BackendItem):
 
     def __init__(self, store, element):
         self.store = store
+        self.ampache_id = element.get('id')
         self.id = 'artist.%d' % int(element.get('id'))
         self.name = element.find('name').text
 
     def get_children(self,start=0,request_count=0):
-        return self.store.ampache_query('artist_albums', start, request_count, filter=str(self.id))
+        return self.store.ampache_query('artist_albums', start, request_count, filter=self.ampache_id)
 
     def get_child_count(self):
-        return len(self.get_children())
+        def got_childs(result):
+            return(len(result))
+        d = self.get_children()
+        d.addCallback(got_childs)
+        return d
 
     def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
         item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
@@ -218,7 +224,7 @@ class Track(BackendItem):
         # add http resource
         res = DIDLLite.Resource(self.get_url(), 'http-get:*:%s:*' % self.mimetype)
         if self.size > 0:
-            res.size = size
+            res.size = self.size
         if self.duration > 0:
             res.duration = str(self.duration)
         if self.bitrate > 0:
@@ -287,12 +293,17 @@ class AmpacheStore(BackendStore):
             try:
                 type,id = id.split('.')
                 if type == 'song':
-                    item = self.store.ampache_query('song', filter=str(id))
+                    item = self.ampache_query('song', filter=str(id))
+                if type == 'artist':
+                    item = self.ampache_query('artist', filter=str(id))
+                if type == 'album':
+                    item = self.ampache_query('album', filter=str(id))
             except ValueError:
                 return None
         return item
 
     def got_auth_response( self, response):
+        print "got_auth_response", response
         try:
             response = utils.parse_xml(response, encoding='utf-8')
         except SyntaxError, msg:
@@ -327,13 +338,14 @@ class AmpacheStore(BackendStore):
         self.warning('error calling ampache %r', e)
         louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
-    def get_token( self, media_type='audio'):
+    def get_token( self):
         """ ask Ampache for the authorization token """
         timestamp = int(time.time())
         passphrase = md5('%d%s' % (timestamp, self.key))
         request = ''.join((self.url, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, timestamp)))
         if self.user != None:
             request = ''.join((request, '&user=%s' % self.user))
+        print "auth_request", request
         d = utils.getPage(request)
         d.addCallback(self.got_auth_response)
         d.addErrback(self.got_auth_error)
@@ -342,49 +354,62 @@ class AmpacheStore(BackendStore):
         self.warning('error calling ampache %r', e)
 
     def got_response(self, response, query_item):
+        #print "got_response", response, query_item
         response = utils.parse_xml(response, encoding='utf-8')
         items = []
         try:
             self.warning('error on token request %r', response.find('error').text)
             raise ValueError, response.find('error').text
         except AttributeError:
-            if query_item == 'id':
-                for q in response:
+            if query_item in ('song','artist','album'):
+                q = response.find(query_item)
+                if q == None:
+                    return None
+                else:
                     if q.tag in ['song']:
-                        items.append(Track(q))
+                        return Track(q)
                     if q.tag == 'artist':
-                        items.append(Artist(self,q))
-                    if q.tag in ['album','artist_albums']:
-                        items.append(Album(self,q))
+                        return Artist(self,q)
+                    if q.tag in ['album']:
+                        return Album(self,q)
             else:
+                print "query_item 1", query_item
+                if query_item in ('songs','artists','albums'):
+                    query_item = query_item[:-1]
+                if query_item in ('album_songs',):
+                    query_item = 'song'
+                if query_item in ('artist_albums',):
+                    query_item = 'album'
+                print "query_item 1", query_item
                 for q in response.findall(query_item):
-                    if query_item in ['song','album_songs']:
+                    if query_item in ('song',):
                         items.append(Track(q))
-                    if query_item == 'artist':
+                    if query_item in ('artist',):
                         items.append(Artist(self,q))
-                    if query_item in ['album','artist_albums']:
+                    if query_item in ('album',):
                         items.append(Album(self,q))
         return items
 
     def ampache_query(self, item, start=0, request_count=0, filter=None):
-        request = ''.join((self.url, '?action=%ss&auth=%s&offset=%d' % (item,self.token, start)))
+        request = ''.join((self.url, '?action=%s&auth=%s&offset=%d' % (item,self.token, start)))
         if request_count > 0:
             request = ''.join((request, '&limit=%d' % request_count))
         if filter != None:
             request = ''.join((request, '&filter=%s' % filter))
+        print "ampache_query", request
         d = utils.getPage(request)
         d.addCallback(self.got_response, item)
         d.addErrback(self.got_error)
         return d
 
     def ampache_query_songs(self, start=0, request_count=0):
-        return self.ampache_query('song', start, request_count)
+        return self.ampache_query('songs', start, request_count)
 
     def ampache_query_albums(self, start=0, request_count=0):
-        return self.ampache_query('album', start, request_count)
+        return self.ampache_query('albums', start, request_count)
 
     def ampache_query_artists(self, start=0, request_count=0):
-        return self.ampache_query('artist', start, request_count)
+        return self.ampache_query('artists', start, request_count)
 
     def upnp_init(self):
         if self.server:
@@ -429,21 +454,23 @@ class AmpacheStore(BackendStore):
         else:
             requested_id = str(ObjectID)
 
-        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
+        didl = DIDLLite.DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
                            requested_id=requested_id,
                            parent_container=parent_container)
 
         def build_response(tm):
             num_ret = didl.numItems()
-            if num_ret != int(kwargs['RequestedCount']):
+            if int(kwargs['RequestedCount']) != 0 and num_ret != int(kwargs['RequestedCount']):
+                num_ret = 0
+            elif int(kwargs['RequestedCount']) == 0 and tm != num_ret:
                 num_ret = 0
             r = {'Result': didl.toString(), 'TotalMatches': tm,
                  'NumberReturned': num_ret}
 
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id
-            elif hasattr(self.backend, 'update_id'):
-                r['UpdateID'] = self.backend.update_id # FIXME
+            elif hasattr(self, 'update_id'):
+                r['UpdateID'] = self.update_id # FIXME
             else:
                 r['UpdateID'] = 0
 
@@ -452,7 +479,7 @@ class AmpacheStore(BackendStore):
         total = 0
         items = []
 
-        wmc_mapping = getattr(self.backend, "wmc_mapping", None)
+        wmc_mapping = getattr(self, "wmc_mapping", None)
         if(kwargs.get('X_UPnPClient', '') == 'XBox' and
             wmc_mapping != None and
             wmc_mapping.has_key(ObjectID)):
@@ -481,14 +508,15 @@ class AmpacheStore(BackendStore):
 
         root_id = ObjectID
 
-        item = self.backend.get_by_id(root_id)
+        item = self.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
-
+        print "upnp_Browse", item
         def got_error(r):
             return r
 
-        def process_result(result):
+        def process_result(result, found_item):
+            print "process_result", result
             if result == None:
                 result = []
             if BrowseFlag == 'BrowseDirectChildren':
@@ -504,27 +532,43 @@ class AmpacheStore(BackendStore):
                     return build_response(tm)
 
                 for i in result:
-                    d = defer.maybeDeferred( i.get_item)
+                    d = defer.maybeDeferred(i.get_item)
                     l.append(d)
-                total = item.get_child_count()
-                dl = defer.DeferredList(l)
-                dl.addCallback(process_items, total)
-                return dl
+
+                def got_child_count(count):
+                    dl = defer.DeferredList(l)
+                    dl.addCallback(process_items, count)
+                    return dl
+
+                d = defer.maybeDeferred(found_item.get_child_count)
+                d.addCallback(got_child_count)
+
+                return d
+
             else:
                 didl.addItem(result)
                 total = 1
 
             return build_response(total)
 
-        if BrowseFlag == 'BrowseDirectChildren':
-            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+        def proceed(result):
+            print "proceed", result
+            if BrowseFlag == 'BrowseDirectChildren':
+                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+            else:
+                d = defer.maybeDeferred( result.get_item)
+
+            d.addCallback( process_result, result)
+            d.addErrback(got_error)
+            return d
+
+        if isinstance(item,defer.Deferred):
+            print "found a deferred"
+            item.addCallback(proceed)
+            return item
         else:
-            d = defer.maybeDeferred( item.get_item)
-
-        d.addCallback( process_result)
-        d.addErrback(got_error)
-
-        return d
+            print "normal item"
+            return proceed(item)
 
 
 if __name__ == '__main__':
@@ -536,7 +580,7 @@ if __name__ == '__main__':
             print result
 
         def call_browse(ObjectID=0,StartingIndex=0,RequestedCount=0):
-            r = f.content_directory_server.Browse(BrowseFlag='BrowseDirectChildren',
+            r = f.backend.upnp_Browse(BrowseFlag='BrowseDirectChildren',
                             RequestedCount=RequestedCount,
                             StartingIndex=StartingIndex,
                             ObjectID=ObjectID,
@@ -554,7 +598,7 @@ if __name__ == '__main__':
 
         #f = AmpacheStore(None,
         #                      url='http://localhost/ampache/server/xml.server.php',
-        #                      key='testkey',
+        #                      key='password',
         #                      user=None)
         #reactor.callLater(3, f.ampache_query_songs, 65, 1)
 
@@ -563,8 +607,10 @@ if __name__ == '__main__':
         c = Coherence(config)
         f = c.add_plugin('AmpacheStore',
                         url='http://localhost/ampache/server/xml.server.php',
-                        key='testkey',
+                        key='password',
                         user=None)
+        #reactor.callLater(3, call_browse, 0, 0, 0)
+
         #reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 10)
         #reactor.callLater(3, call_browse, AUDIO_ARTIST_CONTAINER_ID, 0, 10)
         #reactor.callLater(3, call_browse, AUDIO_ALBUM_CONTAINER_ID, 0, 10)
