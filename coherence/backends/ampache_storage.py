@@ -60,17 +60,20 @@ class Container(BackendItem):
         if self.item.childCount != None:
             self.item.childCount += 1
 
-    def get_children(self,start=0,request_count=0):
-        if request_count == 0 or request_count > 100:
-            request_count = 100
+    def get_children(self,start=0,end=0):
+        self.info("container.get_children %r %r", start, end)
+        if(end - start > 250 or
+           end - start == 0):
+            end = start+250
+
         if callable(self.children):
-            return self.children(start,request_count)
+            return self.children(start,end-start)
         else:
             children = self.children
-        if request_count == 0:
+        if end == 0:
             return children[start:]
         else:
-            return children[start:request_count]
+            return children[start:end]
 
     def get_child_count(self):
         if self.item.childCount != None:
@@ -107,8 +110,8 @@ class Album(BackendItem):
         except:
             self.cover = None
 
-    def get_children(self,start=0,request_count=0):
-        return self.store.ampache_query('album_songs', start, request_count, filter=self.ampache_id)
+    def get_children(self,start=0,end=0):
+        return self.store.ampache_query('album_songs', start, end-start, filter=self.ampache_id)
 
     def get_child_count(self):
         return self.tracks
@@ -140,8 +143,8 @@ class Artist(BackendItem):
         self.id = 'artist.%d' % int(element.get('id'))
         self.name = element.find('name').text
 
-    def get_children(self,start=0,request_count=0):
-        return self.store.ampache_query('artist_albums', start, request_count, filter=self.ampache_id)
+    def get_children(self,start=0,end=0):
+        return self.store.ampache_query('artist_albums', start, end-start, filter=self.ampache_id)
 
     def get_child_count(self):
         def got_childs(result):
@@ -176,7 +179,7 @@ class Track(BackendItem):
         seconds = seconds - hours * 3600
         minutes = seconds / 60
         seconds = seconds - minutes * 60
-        self.duration = ("%02d:%02d:%02d") % (hours, minutes, seconds)
+        self.duration = ("%d:%02d:%02d") % (hours, minutes, seconds)
 
         self.bitrate = 0
 
@@ -207,7 +210,7 @@ class Track(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.info("Track get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Track get_item %r @ %r" %(self.id,self.parent_id))
 
         # create item
         item = DIDLLite.MusicTrack(self.id,self.parent_id)
@@ -303,7 +306,7 @@ class AmpacheStore(BackendStore):
         return item
 
     def got_auth_response( self, response):
-        print "got_auth_response", response
+        self.info( "got_auth_response %r", response)
         try:
             response = utils.parse_xml(response, encoding='utf-8')
         except SyntaxError, msg:
@@ -345,7 +348,7 @@ class AmpacheStore(BackendStore):
         request = ''.join((self.url, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, timestamp)))
         if self.user != None:
             request = ''.join((request, '&user=%s' % self.user))
-        print "auth_request", request
+        self.info("auth_request %r", request)
         d = utils.getPage(request)
         d.addCallback(self.got_auth_response)
         d.addErrback(self.got_auth_error)
@@ -354,7 +357,7 @@ class AmpacheStore(BackendStore):
         self.warning('error calling ampache %r', e)
 
     def got_response(self, response, query_item):
-        #print "got_response", response, query_item
+        self.info("got a response for %r", query_item)
         response = utils.parse_xml(response, encoding='utf-8')
         items = []
         try:
@@ -373,14 +376,12 @@ class AmpacheStore(BackendStore):
                     if q.tag in ['album']:
                         return Album(self,q)
             else:
-                print "query_item 1", query_item
                 if query_item in ('songs','artists','albums'):
                     query_item = query_item[:-1]
                 if query_item in ('album_songs',):
                     query_item = 'song'
                 if query_item in ('artist_albums',):
                     query_item = 'album'
-                print "query_item 1", query_item
                 for q in response.findall(query_item):
                     if query_item in ('song',):
                         items.append(Track(q))
@@ -396,7 +397,7 @@ class AmpacheStore(BackendStore):
             request = ''.join((request, '&limit=%d' % request_count))
         if filter != None:
             request = ''.join((request, '&filter=%s' % filter))
-        print "ampache_query", request
+        self.info("ampache_query %r", request)
         d = utils.getPage(request)
         d.addCallback(self.got_response, item)
         d.addErrback(self.got_error)
@@ -454,18 +455,22 @@ class AmpacheStore(BackendStore):
         else:
             requested_id = str(ObjectID)
 
+        self.info("upnp_Browse request %r %r %r %r", ObjectID, BrowseFlag, StartingIndex, RequestedCount)
+
         didl = DIDLLite.DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
                            requested_id=requested_id,
                            parent_container=parent_container)
 
         def build_response(tm):
             num_ret = didl.numItems()
-            if int(kwargs['RequestedCount']) != 0 and num_ret != int(kwargs['RequestedCount']):
-                num_ret = 0
-            elif int(kwargs['RequestedCount']) == 0 and tm != num_ret:
-                num_ret = 0
+            #if int(kwargs['RequestedCount']) != 0 and num_ret != int(kwargs['RequestedCount']):
+            #    num_ret = 0
+            #if RequestedCount == 0 and tm-StartingIndex != num_ret:
+            #    num_ret = 0
             r = {'Result': didl.toString(), 'TotalMatches': tm,
                  'NumberReturned': num_ret}
+
+            self.info("upnp_Browse response %r %r", num_ret, tm)
 
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id
@@ -511,12 +516,10 @@ class AmpacheStore(BackendStore):
         item = self.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
-        print "upnp_Browse", item
         def got_error(r):
             return r
 
         def process_result(result, found_item):
-            print "process_result", result
             if result == None:
                 result = []
             if BrowseFlag == 'BrowseDirectChildren':
@@ -552,7 +555,6 @@ class AmpacheStore(BackendStore):
             return build_response(total)
 
         def proceed(result):
-            print "proceed", result
             if BrowseFlag == 'BrowseDirectChildren':
                 d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
             else:
@@ -563,11 +565,9 @@ class AmpacheStore(BackendStore):
             return d
 
         if isinstance(item,defer.Deferred):
-            print "found a deferred"
             item.addCallback(proceed)
             return item
         else:
-            print "normal item"
             return proceed(item)
 
 
@@ -577,7 +577,7 @@ if __name__ == '__main__':
 
     def main():
         def got_result(result):
-            print result
+            print "got_result"
 
         def call_browse(ObjectID=0,StartingIndex=0,RequestedCount=0):
             r = f.backend.upnp_Browse(BrowseFlag='BrowseDirectChildren',
@@ -586,7 +586,6 @@ if __name__ == '__main__':
                             ObjectID=ObjectID,
                             SortCriteria='*',
                             Filter='')
-            print "call_browse", r
             r.addCallback(got_result)
             r.addErrback(got_result)
 
@@ -611,7 +610,7 @@ if __name__ == '__main__':
                         user=None)
         #reactor.callLater(3, call_browse, 0, 0, 0)
 
-        #reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 10)
+        #reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 0)
         #reactor.callLater(3, call_browse, AUDIO_ARTIST_CONTAINER_ID, 0, 10)
         #reactor.callLater(3, call_browse, AUDIO_ALBUM_CONTAINER_ID, 0, 10)
         #reactor.callLater(3, call_test, 0, 10)
