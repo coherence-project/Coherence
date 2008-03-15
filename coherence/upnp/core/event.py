@@ -52,8 +52,9 @@ class EventServer(resource.Resource, log.Loggable):
             sid = headers['sid']
             try:
                 tree = utils.parse_xml(data).getroot()
-            except SyntaxError:
-                self.warning("malformed notify from %r", request.client)
+            except (SyntaxError,AttributeError):
+                self.warning("malformed event notification from %r", request.client)
+                self.debug("data: %r", data)
                 return ""
 
             ns = "urn:schemas-upnp-org:event-1-0"
