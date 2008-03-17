@@ -35,7 +35,7 @@ AUDIO_CONTAINER = 100
 AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
-AUDIO_PLAYLIST_CONTAINER_ID = 103
+AUDIO_PLAYLIST_CONTAINER_ID = 104
 
 CONTAINER_COUNT = 1000
 
@@ -487,21 +487,25 @@ class AmpacheStore(BackendStore):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                             ['http-get:*:audio/mpeg:*',
                              'http-get:*:application/ogg:*',])
+
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
                           children_callback=self.ampache_query_songs)
         self.containers[AUDIO_ALL_CONTAINER_ID].item.childCount = self.songs
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
+
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
                           children_callback=self.ampache_query_albums)
         self.containers[AUDIO_ALBUM_CONTAINER_ID].item.childCount = self.albums
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
+
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
                           children_callback=self.ampache_query_artists)
         self.containers[AUDIO_ARTIST_CONTAINER_ID].item.childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
                 Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
                           children_callback=self.ampache_query_playlists,
