@@ -35,6 +35,7 @@ AUDIO_CONTAINER = 100
 AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
+AUDIO_PLAYLIST_CONTAINER_ID = 103
 
 CONTAINER_COUNT = 1000
 
@@ -42,12 +43,12 @@ class Container(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self, id, parent_id, name, children_callback=None):
+    def __init__(self, id, parent_id, name, children_callback=None, container_class=DIDLLite.Container):
         self.id = id
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = DIDLLite.Container(id, parent_id,self.name)
+        self.item = container_class(id, parent_id,self.name)
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
@@ -92,6 +93,45 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
+
+
+class Playlist(BackendItem):
+
+    logCategory = 'ampache_store'
+
+    def __init__(self, store, element):
+        self.store = store
+        self.ampache_id = element.get('id')
+        self.id = 'playlist.%d' % int(element.get('id'))
+        self.title = element.find('name').text
+        self.creator = element.find('owner').text
+        self.tracks = int(element.find('items').text)
+        try:
+            self.cover = element.find('art').text
+        except:
+            self.cover = None
+
+    def get_children(self,start=0,end=0):
+        return self.store.ampache_query('playlist_songs', start, end-start, filter=self.ampache_id)
+
+    def get_child_count(self):
+        return self.tracks
+
+    def get_item(self, parent_id = AUDIO_PLAYLIST_CONTAINER_ID):
+        item = DIDLLite.PlaylistItem(self.id, parent_id, self.title)
+        item.childCount = self.get_child_count()
+        item.artist = self.artist
+        item.albumArtURI = self.cover
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.title
+
+    def get_cover(self):
+        return self.cover
 
 
 class Album(BackendItem):
@@ -141,14 +181,28 @@ class Artist(BackendItem):
         self.store = store
         self.ampache_id = element.get('id')
         self.id = 'artist.%d' % int(element.get('id'))
+
+        try:
+            self.count_albums = int(element.find('albums').text)
+        except:
+            self.count_albums = None
+        try:
+            self.count_songs = int(element.find('songs').text)
+        except:
+            self.count_songs = None
         self.name = element.find('name').text
 
     def get_children(self,start=0,end=0):
         return self.store.ampache_query('artist_albums', start, end-start, filter=self.ampache_id)
 
     def get_child_count(self):
+        if self.count_albums != None:
+            return self.count_albums
+
         def got_childs(result):
-            return(len(result))
+            self.count_albums = len(result)
+            return self.count_albums
+
         d = self.get_children()
         d.addCallback(got_childs)
         return d
@@ -301,6 +355,8 @@ class AmpacheStore(BackendStore):
                     item = self.ampache_query('artist', filter=str(id))
                 if type == 'album':
                     item = self.ampache_query('album', filter=str(id))
+                if type == 'playlist':
+                    item = self.ampache_query('playlist', filter=str(id))
             except ValueError:
                 return None
         return item
@@ -321,8 +377,12 @@ class AmpacheStore(BackendStore):
                 self.songs = int(response.find('songs').text)
                 self.albums = int(response.find('albums').text)
                 self.artists = int(response.find('artists').text)
+                try:
+                    self.playlists = int(response.find('playlists').text)
+                except:
+                    self.playlists = 0
                 self.info('ampache returned auth token %r', self.token)
-                self.info('Songs: %d, Artists: %d, Albums: %d' % (self.songs, self.artists,self.albums))
+                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d' % (self.songs, self.artists,self.albums,self.playlists))
 
                 self.containers = {}
                 self.containers[ROOT_CONTAINER_ID] = \
@@ -331,6 +391,7 @@ class AmpacheStore(BackendStore):
                 self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
                                          '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
                                          '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+                                         '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),    # all playlists
                                         })
 
                 louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -375,9 +436,13 @@ class AmpacheStore(BackendStore):
                         return Artist(self,q)
                     if q.tag in ['album']:
                         return Album(self,q)
+                    if q.tag in ['playlist']:
+                        return Playlist(self,q)
             else:
-                if query_item in ('songs','artists','albums'):
+                if query_item in ('songs','artists','albums','playlists'):
                     query_item = query_item[:-1]
+                if query_item in ('playlist_songs',):
+                    query_item = 'song'
                 if query_item in ('album_songs',):
                     query_item = 'song'
                 if query_item in ('artist_albums',):
@@ -389,6 +454,8 @@ class AmpacheStore(BackendStore):
                         items.append(Artist(self,q))
                     if query_item in ('album',):
                         items.append(Album(self,q))
+                    if query_item in ('playlist',):
+                        items.append(Playlist(self,q))
         return items
 
     def ampache_query(self, item, start=0, request_count=0, filter=None):
@@ -412,6 +479,9 @@ class AmpacheStore(BackendStore):
     def ampache_query_artists(self, start=0, request_count=0):
         return self.ampache_query('artists', start, request_count)
 
+    def ampache_query_playlists(self, start=0, request_count=0):
+        return self.ampache_query('playlists', start, request_count)
+
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
@@ -432,6 +502,12 @@ class AmpacheStore(BackendStore):
                           children_callback=self.ampache_query_artists)
         self.containers[AUDIO_ARTIST_CONTAINER_ID].item.childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
+                Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                          children_callback=self.ampache_query_playlists,
+                          container_class=DIDLLite.PlaylistContainer)
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID].item.childCount = self.playlists
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
     def upnp_Browse(self, *args, **kwargs):
         try:
