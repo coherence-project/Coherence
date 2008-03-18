@@ -52,6 +52,7 @@ class Options(usage.Options):
                 ['version','v', 'print out version']
                 ]
     optParameters = [['configfile', 'c', setConfigFile(), 'path to configfile'],
+                     ['logfile', 'l', None, 'path to logfile'],
                      ['plugin', 'p', None, 'activate plugin']
                     ]
 
@@ -100,6 +101,12 @@ if __name__ == '__main__':
         pass
 
     #print config
+
+    config['logfile'] = options['logfile']
+
+    if options['daemon'] == 1:
+        if options['logfile'] == None:
+            config['logmode'] = 'none'
 
     if config.get('use_dbus', 'no') == 'yes':
         try:
