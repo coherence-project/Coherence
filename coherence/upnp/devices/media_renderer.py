@@ -5,6 +5,8 @@
 
 # Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
 
+import os.path
+
 from twisted.internet import task
 from twisted.internet import reactor
 from twisted.web import resource, static
