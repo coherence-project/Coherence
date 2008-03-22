@@ -15,10 +15,6 @@ from coherence.upnp.core import DIDLLite
 
 import string
 
-import pygst
-pygst.require('0.10')
-import gst
-
 import louie
 
 from coherence.extern.simple_plugin import Plugin
