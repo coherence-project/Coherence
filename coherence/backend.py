@@ -78,6 +78,15 @@ class BackendStore(Backend):
         """ do whatever is necessary with the stuff we can
             extract from the config dict
         """
+
+        """ in case we want so serve something via
+            the MediaServer web backend
+
+            the BackendItem should pass an URI assembled
+            of urlbase + '/' + id to the DIDLLite.Resource
+        """
+        self.urlbase = kwargs.get('urlbase','')
+
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
         self.wmc_mapping.update({'4':lambda: self._get_all_items(0),
@@ -150,7 +159,20 @@ class BackendItem(log.Loggable):
             an UPnP ContentDirectoryService Container or Object
             and instantiate it here
 
-            self.item = DIDLLite.Container(...)
+            self.item = DIDLLite.Container(id,parent_id,name,...)
+              or
+            self.item = DIDLLite.MusicTrack(id,parent_id,name,...)
+
+            To make that a valid UPnP CDS Object it needs one or
+            more DIDLLite.Resource(uri,protocolInfo)
+
+            self.item.res = []
+            res = DIDLLite.Resource(url, 'http-get:*:%s:*' % mimetype)
+
+                url : the urlbase of our backend + '/' + our id
+
+            res.size = size
+            self.item.res.append(res)
         """
         self.item = None
         self.update_id = 0 # the update id of that item,
