@@ -174,6 +174,8 @@ class BackendItem(log.Loggable):
             res.size = size
             self.item.res.append(res)
         """
+        self.name = 'my_name' # the basename of a file, the album title,
+                              # the artists name,...
         self.item = None
         self.update_id = 0 # the update id of that item,
                            # when an UPnP ContentDirectoryService Container
@@ -213,6 +215,14 @@ class BackendItem(log.Loggable):
             - an UPnP ContentDirectoryServer DIDLLite object
         """
         return self.item
+
+    def get_name(self):
+        """ called the MediaServer web
+            should return
+
+            - the name of the item
+        """
+        return self.name
 
     def get_path(self):
         """ called the MediaServer web
