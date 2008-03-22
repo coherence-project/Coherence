@@ -106,6 +106,37 @@ class BackendStore(Backend):
                         items.append(child)
         return items
 
+    def get_by_id(self,id):
+        """ called by the CDS or the MediaServer web
+
+            id is the id property of our DIDLLite item
+
+            if this MediaServer implements containers, that can
+            have share their content, like 'all tracks', 'album' and
+            album_of_artist' - they all have the same track item as content,
+            then the id may be passed by the CDS like this:
+
+            'id@container' or 'id@container@container@container...'
+
+            therefore a
+
+            if isinstance(id, basestring):
+                id = id.split('@',1)
+                id = id[0]
+
+            may be appropriate as the first thing to do
+            when entering this method
+
+            should return
+
+            - None when no matching item for that id is found,
+            - a BackendItem,
+            - or a Deferred
+
+        """
+
+        return None
+
 
 class BackendItem(log.Loggable):
 
@@ -122,6 +153,13 @@ class BackendItem(log.Loggable):
             self.item = DIDLLite.Container(...)
         """
         self.item = None
+        self.update_id = 0 # the update id of that item,
+                           # when an UPnP ContentDirectoryService Container
+                           # this should be incremented on every modification
+
+        self.location = None # the filepath of our media file, or alternatively
+                             # a FilePath or a ReverseProxyResource object
+
         self.cover = None # if we have some album art image, let's put
                           # the filepath or link into here
 
@@ -154,10 +192,22 @@ class BackendItem(log.Loggable):
         """
         return self.item
 
+    def get_path(self):
+        """ called the MediaServer web
+            should return
+
+            - the filepath where to find the media file
+              that this item does refer to
+        """
+        return self.location
+
     def get_cover(self):
         """ called the MediaServer web
             should return
 
             - the filepath where to find the album art file
+
+            only needed when we have created for that item
+            an albumArtURI property that does point back to us
         """
         return self.cover
