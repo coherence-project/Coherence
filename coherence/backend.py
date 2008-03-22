@@ -112,8 +112,8 @@ class BackendStore(Backend):
             id is the id property of our DIDLLite item
 
             if this MediaServer implements containers, that can
-            have share their content, like 'all tracks', 'album' and
-            album_of_artist' - they all have the same track item as content,
+            share their content, like 'all tracks', 'album' and
+            'album_of_artist' - they all have the same track item as content -
             then the id may be passed by the CDS like this:
 
             'id@container' or 'id@container@container@container...'
