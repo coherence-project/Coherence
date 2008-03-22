@@ -155,7 +155,7 @@ class Plugins(log.Loggable):
         if not isinstance(ids, (list,tuple)):
             ids = (ids)
         try:
-            import xxx_pkg_resources
+            import pkg_resources
             for id in ids:
                 for entrypoint in pkg_resources.iter_entry_points(id):
                     try:
