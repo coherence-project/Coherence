@@ -174,8 +174,9 @@ class BackendItem(log.Loggable):
             res.size = size
             self.item.res.append(res)
         """
-        self.name = 'my_name' # the basename of a file, the album title,
-                              # the artists name,...
+        self.name = u'my_name' # the basename of a file, the album title,
+                               # the artists name,...
+                               # is expected to be unicode
         self.item = None
         self.update_id = 0 # the update id of that item,
                            # when an UPnP ContentDirectoryService Container
@@ -220,7 +221,8 @@ class BackendItem(log.Loggable):
         """ called the MediaServer web
             should return
 
-            - the name of the item
+            - the name of the item,
+              it is always expected to be in unicode
         """
         return self.name
 
