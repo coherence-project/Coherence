@@ -87,12 +87,14 @@ class BackendStore(Backend):
         """
         self.urlbase = kwargs.get('urlbase','')
 
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-
         self.wmc_mapping.update({'4':lambda: self._get_all_items(0),
                                  '8':lambda: self._get_all_items(0),
                                  'B':lambda: self._get_all_items(0),
                                 })
+
+        #louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+
+
 
     def _get_all_items(self,id):
         """ a helper method for to get all items as a response

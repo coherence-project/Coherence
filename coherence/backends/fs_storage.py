@@ -326,7 +326,7 @@ class FSStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self)
+        BackendStore.__init__(self,server)
         self.next_id = 1000
         self.name = kwargs.get('name','my media')
         self.content = kwargs.get('content',None)
