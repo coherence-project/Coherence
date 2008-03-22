@@ -5,9 +5,17 @@
 
 # Copyright 2006,2007,2008 Frank Scholz <coherence@beebits.net>
 
+""" Coherence is a framework to host DLNA/UPnP devices
+
+    For more information about it and its available backends
+    point your browser to: http://coherence.beebits.net
+"""
+
 import os, sys
 
-from twisted.python import usage
+import string
+
+from twisted.python import usage, text
 
 
 from coherence import __version__
@@ -34,6 +42,153 @@ def daemonize():
                 raise
     os.close(null)
 
+"""
+ taken with minor adjustments from twisted.python.text.py
+"""
+def greedyWrap(inString, width=80):
+    """Given a string and a column width, return a list of lines.
+
+    Caveat: I'm use a stupid greedy word-wrapping
+    algorythm.  I won't put two spaces at the end
+    of a sentence.  I don't do full justification.
+    And no, I've never even *heard* of hypenation.
+    """
+
+    outLines = []
+
+    #eww, evil hacks to allow paragraphs delimited by two \ns :(
+    if inString.find('\n\n') >= 0:
+        paragraphs = inString.split('\n\n')
+        for para in paragraphs:
+            outLines.extend(greedyWrap(para, width) + [''])
+        return outLines
+    inWords = inString.split()
+
+    column = 0
+    ptr_line = 0
+    while inWords:
+        column = column + len(inWords[ptr_line])
+        ptr_line = ptr_line + 1
+
+        if (column > width):
+            if ptr_line == 1:
+                # This single word is too long, it will be the whole line.
+                pass
+            else:
+                # We've gone too far, stop the line one word back.
+                ptr_line = ptr_line - 1
+            (l, inWords) = (inWords[0:ptr_line], inWords[ptr_line:])
+            outLines.append(string.join(l,' '))
+
+            ptr_line = 0
+            column = 0
+        elif not (len(inWords) > ptr_line):
+            # Clean up the last bit.
+            outLines.append(' '.join(inWords))
+            del inWords[:]
+        else:
+            # Space
+            column = column + 1
+    # next word
+
+    return outLines
+
+"""
+ taken with minor adjustments from twisted.python.usage.py
+"""
+def docMakeChunks(optList, width=80):
+    """
+    Makes doc chunks for option declarations.
+
+    Takes a list of dictionaries, each of which may have one or more
+    of the keys 'long', 'short', 'doc', 'default', 'optType'.
+
+    Returns a list of strings.
+    The strings may be multiple lines,
+    all of them end with a newline.
+    """
+
+    # XXX: sanity check to make sure we have a sane combination of keys.
+
+    maxOptLen = 0
+    for opt in optList:
+        optLen = len(opt.get('long', ''))
+        if optLen:
+            if opt.get('optType', None) == "parameter":
+                # these take up an extra character
+                optLen = optLen + 1
+            maxOptLen = max(optLen, maxOptLen)
+
+    colWidth1 = maxOptLen + len("  -s, --  ")
+    colWidth2 = width - colWidth1
+    # XXX - impose some sane minimum limit.
+    # Then if we don't have enough room for the option and the doc
+    # to share one line, they can take turns on alternating lines.
+
+    colFiller1 = " " * colWidth1
+
+    optChunks = []
+    seen = {}
+    for opt in optList:
+        if opt.get('short', None) in seen or opt.get('long', None) in seen:
+            continue
+        for x in opt.get('short', None), opt.get('long', None):
+            if x is not None:
+                seen[x] = 1
+
+        optLines = []
+        comma = " "
+        if opt.get('short', None):
+            short = "-%c" % (opt['short'],)
+        else:
+            short = ''
+
+        if opt.get('long', None):
+            long = opt['long']
+            if opt.get("optType", None) == "parameter":
+                long = long + '='
+
+            long = "%-*s" % (maxOptLen, long)
+            if short:
+                comma = ","
+        else:
+            long = " " * (maxOptLen + len('--'))
+
+        if opt.get('optType', None) == 'command':
+            column1 = '    %s      ' % long
+        else:
+            column1 = "  %2s%c --%s  " % (short, comma, long)
+
+        if opt.get('doc', ''):
+            doc = opt['doc'].strip()
+        else:
+            doc = ''
+
+        if (opt.get("optType", None) == "parameter") \
+           and not (opt.get('default', None) is None):
+            doc = "%s [default: %s]" % (doc, opt['default'])
+
+        if (opt.get("optType", None) == "parameter") \
+           and opt.get('dispatch', None) is not None:
+            d = opt['dispatch']
+            if isinstance(d, usage.CoerceParameter) and d.doc:
+                doc = "%s. %s" % (doc, d.doc)
+
+        if doc:
+            column2_l = greedyWrap(doc, colWidth2)
+        else:
+            column2_l = ['']
+
+        optLines.append("%s%s\n" % (column1, column2_l.pop(0)))
+
+        for line in column2_l:
+            optLines.append("%s%s\n" % (colFiller1, line))
+
+        optChunks.append(''.join(optLines))
+
+    return optChunks
+
+usage.docMakeChunks = docMakeChunks
 
 def setConfigFile():
     def findConfigDir():
@@ -51,8 +206,8 @@ class Options(usage.Options):
     optFlags = [['daemon','d', 'daemonize'],
                 ['version','v', 'print out version']
                 ]
-    optParameters = [['configfile', 'c', setConfigFile(), 'path to configfile'],
-                     ['logfile', 'l', None, 'path to logfile'],
+    optParameters = [['configfile', 'c', setConfigFile(), 'configfile'],
+                     ['logfile', 'l', None, 'logfile'],
                      ['plugin', 'p', None, 'activate plugin']
                     ]
 
@@ -60,10 +215,21 @@ class Options(usage.Options):
         print "Coherence version:", __version__
         sys.exit(0)
 
+    def opt_help(self):
+        sys.argv.remove('--help')
+        from coherence.base import Plugins
+        p = Plugins()
+        for opt,doc in self.docs.items():
+            if opt == 'plugin':
+                self.docs[opt] = doc + '\n\nExample: --plugin=backend:FSStore,name:MyCoherence\n\nAvailable backends are:\n\n'
+                self.docs[opt] += ', '.join(p.keys())
+
+        print self.__str__()
+        sys.exit(0)
+
 def main(config):
 
     from coherence.base import Coherence
-
     c = Coherence(config)
     #c = Coherence(plugins={'FSStore': {'content_directory':'tests/content'},
     #                       'Player': {})

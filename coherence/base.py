@@ -106,6 +106,75 @@ class WebServer(log.Loggable):
         self.warning( "WebServer on port %d ready" % coherence.web_server_port)
 
 
+class Plugins(log.Loggable):
+    logCategory = 'plugins'
+    _instance_ = None  # Singleton
+
+    _valids = ("coherence.plugins.backend.media_server",
+               "coherence.plugins.backend.media_renderer",
+               "coherence.plugins.backend.binary_light",
+               "coherence.plugins.backend.dimmable_light")
+
+    _plugins = {}
+
+    def __new__(cls, *args, **kwargs):
+        obj = getattr(cls, '_instance_', None)
+        if obj is not None:
+            return obj
+        else:
+            obj = super(Plugins, cls).__new__(cls, *args, **kwargs)
+            cls._instance_ = obj
+            obj._collect(*args, **kwargs)
+            return obj
+
+    def __repr__(self):
+        return str(self._plugins)
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __getitem__(self, key):
+        return self._plugins.__getitem__(key)
+
+    def get(self, key,default=None):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return default
+
+    def __setitem__(self, key, value):
+        self._plugins.__setitem__(key,value)
+
+    def set(self, key,value):
+        return self.__getitem__(key,value)
+
+    def keys(self):
+        return self._plugins.keys()
+
+    def _collect(self, ids=_valids):
+        if not isinstance(ids, (list,tuple)):
+            ids = (ids)
+        try:
+            import xxx_pkg_resources
+            for id in ids:
+                for entrypoint in pkg_resources.iter_entry_points(id):
+                    try:
+                        self._plugins[entrypoint.name] = entrypoint.load()
+                    except ImportError, msg:
+                        self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
+                        self.info(traceback.format_exc())
+        except ImportError:
+            self.info("plugin reception activated, no pkg_resources")
+            from coherence.extern.simple_plugin import Reception
+            from coherence.backend import Backend
+            reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
+            self.info(reception.guestlist()) #Backend)
+            for cls in reception.guestlist():
+                self._plugins[cls.__name__.split('.')[-1]] = cls
+        except Exception, msg:
+            self.warning(msg)
+
+
 class Coherence(log.Loggable):
     logCategory = 'coherence'
     _instance_ = None  # Singleton
@@ -245,35 +314,8 @@ class Coherence(log.Loggable):
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin %r", plugin)
 
-        def get_available_plugins(ids):
-            if self.available_plugins is None:
-                self.available_plugins = {}
-                if not isinstance(ids, (list,tuple)):
-                    ids = (ids)
-                try:
-                    import pkg_resources
-                    for id in ids:
-                        for entrypoint in pkg_resources.iter_entry_points(id):
-                            try:
-                                self.available_plugins[entrypoint.name] = entrypoint.load()
-                            except ImportError, msg:
-                                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
-                                self.info(traceback.format_exc())
-                except ImportError:
-                    """ no pkg_resources/setuptools installed """
-                    self.info("plugin reception activated, no pkg_resources")
-                    from coherence.extern.simple_plugin import Reception
-                    from coherence.backend import Backend
-                    reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
-                    print reception.guestlist() #Backend)
-                    for cls in reception.guestlist():
-                        self.available_plugins[cls.__name__.split('.')[-1]] = cls
+        self.available_plugins = Plugins()
 
-
-        get_available_plugins(("coherence.plugins.backend.media_server",
-                               "coherence.plugins.backend.media_renderer",
-                               "coherence.plugins.backend.binary_light",
-                               "coherence.plugins.backend.dimmable_light"))
         try:
             plugin_class = self.available_plugins.get(plugin,None)
             if plugin_class == None:
