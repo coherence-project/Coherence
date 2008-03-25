@@ -5,6 +5,9 @@
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
+import os.path
+
+from twisted.python import util
 from twisted.web import resource, static
 
 from coherence import __version__
@@ -58,6 +61,7 @@ class RootDeviceXML(static.Data):
                         friendly_name='Coherence UPnP BasicDevice',
                         model_description='Coherence UPnP BasicDevice',
                         model_name='Coherence UPnP BasicDevice',
+                        presentation_url='',
                         services=[],
                         devices=[],
                         icons=[]):
@@ -83,7 +87,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement( d, 'serialNumber').text = '0000001'
         ET.SubElement( d, 'UDN').text = uuid
         ET.SubElement( d, 'UPC').text = ''
-        ET.SubElement( d, 'presentationURL').text = ''
+        ET.SubElement( d, 'presentationURL').text = presentation_url
 
         if len(services):
             e = ET.SubElement( d, 'serviceList')
