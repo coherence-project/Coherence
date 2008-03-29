@@ -71,9 +71,7 @@ New in this 0.5.2 release
     package_data = {
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
                       'web/static/*.css','web/static/*.js'],
-        'misc': ['Desktop Applet/*.py',
-                 'Desktop Applet/*.png'
-                 '*.py']
+        'misc': ['Desktop Applet/*.png'],
     },
     install_requires=[
     'Louie >= 1.1',
