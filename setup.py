@@ -30,7 +30,7 @@ New in this 0.5.2 release
     author="Frank Scholz",
     author_email='coherence@beebits.net',
     license = "MIT",
-    packages=find_packages(),
+    packages=['coherence','misc'],
     scripts = ['bin/coherence'],
     url = "http://coherence.beebits.net",
     download_url = 'https://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
@@ -71,6 +71,9 @@ New in this 0.5.2 release
     package_data = {
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
                       'web/static/*.css','web/static/*.js'],
+        'misc': ['Desktop Applet/*.py',
+                 'Desktop Applet/*.png'
+                 '*.py']
     },
     install_requires=[
     'Louie >= 1.1',
