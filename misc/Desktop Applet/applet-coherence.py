@@ -31,9 +31,7 @@ import sys
 import socket
 
 from pkg_resources import resource_filename
-print "name", __name__
 icon = resource_filename(__name__, 'tango-system-file-manager.png')
-print "icon:", icon
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
