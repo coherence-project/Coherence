@@ -31,7 +31,9 @@ import sys
 import socket
 
 from pkg_resources import resource_filename
-icon = resource_filename(__name__, 'tango-system-file-manager.png')
+icon = resource_filename(__name__, '../../misc/Desktop Applet/tango-system-file-manager.png')
+# this ../.. is evil, I know :-(
+# there must be a better way
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
