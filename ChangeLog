@@ -1,3 +1,46 @@
+2008-04-01 21:43  dev
+
+	* ChangeLog, Coherence.egg-info/PKG-INFO, coherence/__init__.py,
+	  coherence/backend.py, coherence/backends/ampache_storage.py,
+	  coherence/backends/fs_storage.py, coherence/dbus_service.py,
+	  coherence/upnp/core/action.py, coherence/upnp/core/soap_proxy.py,
+	  setup.py: New in this 0.5.4 - Fools Garden - release
+	  
+	  * a DesktopApplet to easily start a Coherence instance from your
+	  desktops panel
+	  Thx to Erwan Velu, Helio Chissini de Castro and Nicolas
+	  Lecureuil!
+	  * more efforts to simplify the ordinary user experience
+	  * allow now the backend definition via commandline, to just start
+	  up
+	  a MediaServer or anything else, without bothering oneself with
+	  the config file
+	  * specify logfile location and daemonization on the commandline
+	  too
+	  * a bit more usable --help output
+	  Thx again Erwan Velu!
+	  * a MediaServer backend for Ampache - a Web-based Audio file
+	  manager (http://ampache.org)
+	  Thx to the awesome help of Karl Vollmer!
+	  * device implementations for BinaryLight and DimmableLight
+	  * a little helper to extract device and service xml files and
+	  send them to us - a beginning of our UPnP device fingerprint
+	  program
+	  * and the usual bugfixes and enhancements
+
+2008-04-01 21:17  dev
+
+	* misc/Desktop Applet/applet-coherence, misc/Desktop
+	  Applet/applet-coherence.py: * rename the DesktopApplet for its
+	  move to /usr/bin
+	  * add a probably terrible kludge to still have access to its icon
+
+2008-03-31 17:45  dev
+
+	* misc/coherence-initscript.sh: a shell script, should be copy into
+	  init.d and linked from the desired runlevel to start coherence on
+	  system boot - thx erwan!
+
 2008-03-29 13:17  dev
 
 	* misc/Desktop Applet/applet-coherence.py: remove noise
