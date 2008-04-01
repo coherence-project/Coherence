@@ -371,7 +371,6 @@ class FSStore(BackendStore):
                 continue
             self.walk(path, parent, self.ignore_file_pattern)
 
-        #self.update_id = 0
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):

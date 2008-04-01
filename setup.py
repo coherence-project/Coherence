@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from setuptools import setup, find_packages
 
 from coherence import __version__
@@ -14,24 +16,29 @@ digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this 0.5.2 release
+New in this 0.5.4 - Fools Garden - release
 
-* rework of the XBox 360 support
-* refinements and improvements on the client side API,
-  incorporating things we learned on extending the Rhythmbox UPnP plugin
-* some efforts on smoothing the "just use it as
-  a MediaServer/-Renderer" user experience
-* rearrangement in the way multiple res elements are ordered,
-  fixes issues which we had with some UPnP stacks
-  and their 'wayward' interpretation of the specs
-* and a lot more of the usual bugfixes and enhancements
+* a DesktopApplet to easily start a Coherence instance from your desktops panel
+  Thx to Erwan Velu, Helio Chissini de Castro and Nicolas Lécureuil!
+* more efforts to simplify the ordinary user experience
+  * allow now the backend definition via commandline, to just start up
+    a MediaServer or anything else, without bothering oneself with the config file
+  * specify logfile location and daemonization on the commandline too
+  * a bit more usable --help output
+  Thx again Erwan Velu!
+* a MediaServer backend for Ampache - a Web-based Audio file manager (http://ampache.org)
+  Thx to the awesome help of Karl Vollmer!
+* device implementations for BinaryLight and DimmableLight
+* a little helper to extract device and service xml files and
+  send them to us - a beginning of our UPnP device fingerprint program
+* and the usual bugfixes and enhancements
 
 """,
     author="Frank Scholz",
     author_email='coherence@beebits.net',
     license = "MIT",
     packages=['coherence','misc'],
-    scripts = ['bin/coherence'],
+    scripts = ['bin/coherence','misc/Desktop Applet/applet-coherence'],
     url = "http://coherence.beebits.net",
     download_url = 'https://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
     keywords=['UPnP', 'DLNA', 'multimedia', 'gstreamer'],

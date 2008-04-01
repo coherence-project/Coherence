@@ -29,6 +29,13 @@ import louie
 
 from coherence import log
 
+class DBusProxy(log.Loggable):
+    logCategory = 'dbus'
+
+    def __init__(self, bus):
+        self.bus = bus
+
+
 class DBusService(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
 
@@ -52,7 +59,7 @@ class DBusService(dbus.service.Object,log.Loggable):
     @dbus.service.signal(BUS_NAME+'.service',
                          signature='sv')
     def StateVariableChanged(self, variable, value):
-        self.info("%s service %s signals StateVariable %s changed" % (self.dbus_device.device.get_friendly_name(), self.type, variable))
+        self.info("%s service %s signals StateVariable %s changed to >%s<" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
 
     @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
@@ -170,11 +177,11 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def version(self):
         return __version__
 
-    @dbus.service.method(BUS_NAME,in_signature='',out_signature='ao')
+    @dbus.service.method(BUS_NAME,in_signature='',out_signature='as')
     def get_devices(self):
         r = []
         for device in self.devices:
-            r.append(device)
+            r.append(device.get_id())
         return r
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
@@ -188,7 +195,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         return r
 
     @dbus.service.method(BUS_NAME,in_signature='sso',out_signature='s')
-    def register(self, device_type, name, dbus_object):
+    def register(self, device_type, name, dbus_object,action_mapping,container_mapping):
         id = "n/a"
         return id
 

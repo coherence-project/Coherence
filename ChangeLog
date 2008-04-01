@@ -1,3 +1,224 @@
+2008-03-29 13:17  dev
+
+	* misc/Desktop Applet/applet-coherence.py: remove noise
+
+2008-03-29 13:12  dev
+
+	* setup.py: proper package data definition
+
+2008-03-29 13:10  dev
+
+	* Coherence.egg-info/top_level.txt, MANIFEST.in, misc/Desktop
+	  Applet, misc/Desktop Applet/applet-coherence.py, misc/Desktop
+	  Applet/tango-system-file-manager.png, setup.py: include the new
+	  DesktopApplet into the setup process
+
+2008-03-28 13:06  dev
+
+	* misc, misc/upnp-tester.py: little helper program, will be our
+	  future upnp-fingerprinter
+
+2008-03-28 09:11  dev
+
+	* bin/coherence: print an error message when having a plugin
+	  defined on the commandline and having a configfile in the old
+	  format
+
+2008-03-25 22:10  dev
+
+	* coherence/upnp/devices/basics.py: adds missing imports, thx again
+	  yukaro for spotting this! Fixes #124
+
+2008-03-22 22:50  dev
+
+	* coherence/backend.py, coherence/backends/fs_storage.py: quick
+	  fix, but let's rethink some of the changes today
+
+2008-03-22 19:11  dev
+
+	* coherence/base.py: fix the accidentally disabled pkg_resources
+	  plugin support
+
+2008-03-22 19:04  dev
+
+	* bin/coherence, coherence/base.py: * rework the way the Coherence
+	  plugins are collected, this allows us to print the available ones
+	  in the usage message
+	  * changed the usage message too
+
+2008-03-22 19:02  dev
+
+	* coherence/backends/elisa_renderer.py: remove obsolete imports
+
+2008-03-22 18:00  dev
+
+	* coherence/backend.py: one adjustment re the BackendItem name
+	  property to be in unicode
+
+2008-03-22 17:29  dev
+
+	* coherence/backend.py: added the lost info for an Items name
+
+2008-03-22 16:55  dev
+
+	* coherence/backend.py: more details
+
+2008-03-22 16:34  dev
+
+	* coherence/backend.py: typo fixes
+
+2008-03-22 16:32  dev
+
+	* coherence/backend.py: some documentation updates
+
+2008-03-22 15:58  dev
+
+	* coherence/backend.py: a bit more documantation regarding the
+	  Backend/BackendStore and BackendItem classes
+
+2008-03-20 21:49  dev
+
+	* coherence/upnp/devices/media_renderer.py: missing import, causing
+	  the MediaRenderer device to fail when an icon for it was passed
+	  as an argument.
+	  
+	  Thx yukaro for spotting this!
+
+2008-03-18 16:41  dev
+
+	* bin/coherence: added logfile path as a commandline option, closes
+	  #122
+
+2008-03-17 20:50  dev
+
+	* coherence/backends/ampache_storage.py: stupid bug
+
+2008-03-17 19:48  dev
+
+	* coherence/backends/ampache_storage.py: approaching playlists
+
+2008-03-16 14:52  dev
+
+	* bin/coherence: fixing a small bug causing plugin options with an
+	  ':' within to fail
+
+2008-03-16 11:25  dev
+
+	* coherence/upnp/services/servers/dimming_server.py,
+	  coherence/upnp/services/servers/switch_power_server.py: and now
+	  the missing files :-(
+
+2008-03-15 16:30  dev
+
+	* Coherence.egg-info/entry_points.txt, coherence/backend.py,
+	  coherence/backends/light.py, coherence/base.py,
+	  coherence/upnp/core/service.py, coherence/upnp/core/soap_lite.py,
+	  coherence/upnp/core/xml-service-descriptions/Dimming1.xml,
+	  coherence/upnp/core/xml-service-descriptions/SwitchPower1.xml,
+	  coherence/upnp/devices/basics.py,
+	  coherence/upnp/devices/binary_light.py,
+	  coherence/upnp/devices/dimmable_light.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/services/servers/content_directory_server.py,
+	  setup.py: * a Binary- and DimmableLight server implementation and
+	  a corresponding backend to test
+	  * moving some of the basic device methods into a class of its own
+	  * moving some of the basic backend methods into a class of its
+	  own
+	  * ignore generously upnp_ACTIONS without return values, that do
+	  not return an empty dict
+
+2008-03-15 16:09  dev
+
+	* coherence/extern/simple_plugin.py: quick fix to let the
+	  SimplePlugin handle non-immediate subclasses
+
+2008-03-15 16:04  dev
+
+	* coherence/upnp/core/event.py: one more fix to catch malformed
+	  event notifications - this time caused by a Noxon MR, sending
+	  back an unescaped url in the CurrentTrackURI
+
+2008-03-15 15:31  dev
+
+	* coherence/backends/ampache_storage.py: correcting the way to
+	  limit the load upon ampache, and moved the prints into proper log
+	  messages
+
+2008-03-15 10:30  dev
+
+	* coherence/backends/ampache_storage.py: Ampache backend
+	  MediaServer - nearly complete
+	  
+	  * album art not yet available in the track information returned
+	  from the XML-API
+	  * album art ulr needs the extension at the end to make Nokias
+	  Media Streamer happy
+	  * number of albums per artist currently every time, will be
+	  returned in the artist xml data
+
+2008-03-13 21:52  dev
+
+	* coherence/backends/ampache_storage.py: try to play save
+
+2008-03-13 20:57  dev
+
+	* coherence/backends/ampache_storage.py: rapprochement
+
+2008-03-08 21:01  dev
+
+	* coherence/backends/ampache_storage.py: ready for the skin
+
+2008-03-08 20:40  dev
+
+	* coherence/backends/ampache_storage.py: some blood
+
+2008-03-08 20:09  dev
+
+	* coherence/backends/ampache_storage.py: some flesh to the bones
+
+2008-03-08 15:12  dev
+
+	* coherence/backends/ampache_storage.py: getting closer, more
+	  testing
+
+2008-03-08 12:54  dev
+
+	* coherence/backends/ampache_storage.py: next step
+
+2008-03-08 12:35  dev
+
+	* coherence/backends/ampache_storage.py: more of them
+
+2008-03-08 12:13  dev
+
+	* coherence/backends/ampache_storage.py,
+	  coherence/upnp/devices/media_server.py,
+	  docs/coherence.conf.example: first adjustments
+
+2008-03-08 10:32  dev
+
+	* Coherence.egg-info/PKG-INFO, Coherence.egg-info/entry_points.txt,
+	  coherence/__init__.py, coherence/backends/ampache_storage.py,
+	  setup.py: first version of an ampache backend, just the basic
+	  functionality for testing
+
+2008-03-06 20:27  dev
+
+	* bin/coherence: add support to daemonize Coherence and print out
+	  our version upon request, closes #122
+
+2008-03-01 16:02  micxer
+
+	* coherence/upnp/core/msearch.py,
+	  coherence/upnp/core/soap_service.py: MAke M-SEARCH and event
+	  mesages available through a signal
+
+2008-02-29 21:03  dev
+
+	* ChangeLog: updating ChangeLog
+
 2008-02-29 21:02  dev
 
 	* setup.py: New in this 0.5.2 release

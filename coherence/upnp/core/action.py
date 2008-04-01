@@ -85,6 +85,14 @@ class Action(log.Loggable):
             self.error("argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],self.name))
             return
 
+        action_name = self.name
+
+        if(hasattr(self.service.device.client, 'overlay_actions') and
+           self.service.device.client.overlay_actions.has_key(self.name)):
+            self.info("we have an overlay method %r for action %r", self.service.device.client.overlay_actions[self.name], self.name)
+            action_name, kwargs = self.service.device.client.overlay_actions[self.name](**kwargs)
+            self.info("changing action to %r %r", action_name, kwargs)
+
         def got_error(failure):
             self.warning("error on %s request with %s %s" % (self.name,self.
                                                             service.service_type,
@@ -92,15 +100,23 @@ class Action(log.Loggable):
             self.info(failure)
             return failure
 
+        if hasattr(self.service.device.client, 'overlay_headers'):
+            self.info("action call has headers %r", kwargs.has_key('headers'))
+            if kwargs.has_key('headers'):
+                kwargs['headers'].update(self.service.device.client.overlay_headers)
+            else:
+                kwargs['headers'] = self.service.device.client.overlay_headers
+            self.info("action call with new/updated headers %r", kwargs['headers'])
+
         client = self._get_client()
-        d = client.callRemote(self.name, **kwargs)
-        d.addCallback(self.got_results, instance_id=instance_id)
+        d = client.callRemote(action_name, **kwargs)
+        d.addCallback(self.got_results, instance_id=instance_id, name=action_name)
         d.addErrback(got_error)
         return d
 
-    def got_results( self, results, instance_id):
+    def got_results( self, results, instance_id, name):
         out_arguments = self.get_out_arguments()
-        self.info( "call %s (instance %d) returns %d arguments: %r" % (self.name,
+        self.info( "call %s (instance %d) returns %d arguments: %r" % (name,
                                                                     instance_id,
                                                                     len(out_arguments),
                                                                     results))

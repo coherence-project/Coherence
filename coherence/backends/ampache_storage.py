@@ -36,8 +36,7 @@ AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
 AUDIO_PLAYLIST_CONTAINER_ID = 104
-
-CONTAINER_COUNT = 1000
+AUDIO_GENRE_CONTAINER_ID = 105
 
 class Container(BackendItem):
 
@@ -217,6 +216,53 @@ class Artist(BackendItem):
     def get_name(self):
         return self.name
 
+class Genre(BackendItem):
+
+    logCategory = 'ampache_store'
+
+    def __init__(self, store, element):
+        self.store = store
+        self.ampache_id = element.get('id')
+        self.id = 'genre.%d' % int(element.get('id'))
+
+        try:
+            self.count_albums = int(element.find('albums').text)
+        except:
+            self.count_albums = None
+        try:
+            self.count_artists = int(element.find('artists').text)
+        except:
+            self.count_artists = None
+        try:
+            self.count_songs = int(element.find('songs').text)
+        except:
+            self.count_songs = None
+        self.name = element.find('name').text
+
+    def get_children(self,start=0,end=0):
+        return self.store.ampache_query('genre_songs', start, end-start, filter=self.ampache_id)
+
+    def get_child_count(self):
+        if self.count_songs != None:
+            return self.count_songs
+
+        def got_childs(result):
+            self.count_songs = len(result)
+            return self.count_songs
+
+        d = self.get_children()
+        d.addCallback(got_childs)
+        return d
+
+    def get_item(self, parent_id = AUDIO_GENRE_CONTAINER_ID):
+        item = DIDLLite.Genre(self.id, parent_id, self.name)
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.name
 
 class Track(BackendItem):
 
@@ -343,20 +389,15 @@ class AmpacheStore(BackendStore):
                 return self.containers[id]
             except:
                 return None
+        item = None
         try:
             id = int(id)
             item = self.containers[id]
         except ValueError:
             try:
                 type,id = id.split('.')
-                if type == 'song':
-                    item = self.ampache_query('song', filter=str(id))
-                if type == 'artist':
-                    item = self.ampache_query('artist', filter=str(id))
-                if type == 'album':
-                    item = self.ampache_query('album', filter=str(id))
-                if type == 'playlist':
-                    item = self.ampache_query('playlist', filter=str(id))
+                if type in ['song','artist','album','playlist','genre']:
+                    item = self.ampache_query(type, filter=str(id))
             except ValueError:
                 return None
         return item
@@ -381,17 +422,22 @@ class AmpacheStore(BackendStore):
                     self.playlists = int(response.find('playlists').text)
                 except:
                     self.playlists = 0
+                try:
+                    self.genres = int(response.find('genres').text)
+                except:
+                    self.genres = 0
                 self.info('ampache returned auth token %r', self.token)
-                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d' % (self.songs, self.artists,self.albums,self.playlists))
+                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d' % (self.songs, self.artists,self.albums,self.playlists,self.genres))
 
                 self.containers = {}
                 self.containers[ROOT_CONTAINER_ID] = \
                             Container( ROOT_CONTAINER_ID,-1, self.name)
 
-                self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
-                                         '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
+                self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
+                                         '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
                                          '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
-                                         '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),    # all playlists
+                                         '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
+                                         '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
                                         })
 
                 louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -425,7 +471,7 @@ class AmpacheStore(BackendStore):
             self.warning('error on token request %r', response.find('error').text)
             raise ValueError, response.find('error').text
         except AttributeError:
-            if query_item in ('song','artist','album'):
+            if query_item in ('song','artist','album','playlist','genre'):
                 q = response.find(query_item)
                 if q == None:
                     return None
@@ -438,12 +484,12 @@ class AmpacheStore(BackendStore):
                         return Album(self,q)
                     if q.tag in ['playlist']:
                         return Playlist(self,q)
+                    if q.tag in ['genre']:
+                        return Genre(self,q)
             else:
-                if query_item in ('songs','artists','albums','playlists'):
+                if query_item in ('songs','artists','albums','playlists','genres'):
                     query_item = query_item[:-1]
-                if query_item in ('playlist_songs',):
-                    query_item = 'song'
-                if query_item in ('album_songs',):
+                if query_item in ('playlist_songs','album_songs','genre_songs'):
                     query_item = 'song'
                 if query_item in ('artist_albums',):
                     query_item = 'album'
@@ -456,6 +502,8 @@ class AmpacheStore(BackendStore):
                         items.append(Album(self,q))
                     if query_item in ('playlist',):
                         items.append(Playlist(self,q))
+                    if query_item in ('genre',):
+                        items.append(Genre(self,q))
         return items
 
     def ampache_query(self, item, start=0, request_count=0, filter=None):
@@ -481,6 +529,9 @@ class AmpacheStore(BackendStore):
 
     def ampache_query_playlists(self, start=0, request_count=0):
         return self.ampache_query('playlists', start, request_count)
+
+    def ampache_query_genres(self, start=0, request_count=0):
+        return self.ampache_query('genres', start, request_count)
 
     def upnp_init(self):
         if self.server:
@@ -512,6 +563,12 @@ class AmpacheStore(BackendStore):
                           container_class=DIDLLite.PlaylistContainer)
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID].item.childCount = self.playlists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
+
+        self.containers[AUDIO_GENRE_CONTAINER_ID] = \
+                Container( AUDIO_GENRE_CONTAINER_ID,ROOT_CONTAINER_ID, 'Genres',
+                          children_callback=self.ampache_query_genres)
+        self.containers[AUDIO_GENRE_CONTAINER_ID].item.childCount = self.genres
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
 
     def upnp_Browse(self, *args, **kwargs):
         try:
@@ -675,12 +732,6 @@ if __name__ == '__main__':
             r.addErrback(got_result)
 
 
-        #f = AmpacheStore(None,
-        #                      url='http://localhost/ampache/server/xml.server.php',
-        #                      key='password',
-        #                      user=None)
-        #reactor.callLater(3, f.ampache_query_songs, 65, 1)
-
         config = {}
         config['logmode'] = 'warning'
         c = Coherence(config)
@@ -688,7 +739,7 @@ if __name__ == '__main__':
                         url='http://localhost/ampache/server/xml.server.php',
                         key='password',
                         user=None)
-        #reactor.callLater(3, call_browse, 0, 0, 0)
+        reactor.callLater(3, call_browse, 0, 0, 0)
 
         #reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 0)
         #reactor.callLater(3, call_browse, AUDIO_ARTIST_CONTAINER_ID, 0, 10)

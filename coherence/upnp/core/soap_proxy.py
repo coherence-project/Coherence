@@ -35,14 +35,23 @@ class SOAPProxy(log.Loggable):
         self.envelope_attrib = envelope_attrib
 
     def callRemote(self, soapmethod, *args, **kwargs):
-        soapaction = self.soapaction or soapmethod
-        self.action = soapmethod
+        soapaction = soapmethod or self.soapaction
+        if '#' not in soapaction:
+            soapaction = '#'.join((self.namespace[1],soapaction))
+        self.action = soapaction.split('#')[1]
 
-        ns = self.namespace
-        payload = soap_lite.build_soap_call("{%s}%s" % (ns[1], soapmethod), kwargs,
+        self.info("callRemote %r %r %r %r", self.soapaction, soapmethod, self.namespace, self.action)
+
+        headers = { 'content-type': 'text/xml ;charset="utf-8"',
+                    'SOAPACTION': '"%s"' % soapaction,}
+        if kwargs.has_key('headers'):
+            headers.update(kwargs['headers'])
+            del kwargs['headers']
+
+        payload = soap_lite.build_soap_call("{%s}%s" % (self.namespace[1], self.action), kwargs,
                                             encoding=None)
 
-        self.info("callRemote soapaction: ", soapaction,self.url)
+        self.info("callRemote soapaction: ", self.action,self.url)
         self.debug("callRemote payload: ", payload)
 
         def gotError(failure, url):
@@ -51,9 +60,7 @@ class SOAPProxy(log.Loggable):
             return failure
 
         return getPage(self.url, postdata=payload, method="POST",
-                        headers={'content-type': 'text/xml ;charset="utf-8"',
-                                 'SOAPACTION': '"%s"' % soapaction,
-                                }
+                        headers=headers
                       ).addCallbacks(self._cbGotResult, gotError, None, None, [self.url], None)
 
     def _cbGotResult(self, result):

@@ -41,8 +41,9 @@ class Backend(log.Loggable,Plugin):
 
         """ do whatever is necessary with the stuff we can
             extract from the config dict
+            and send out the signal when ready
         """
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        #louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def upnp_init(self):
         """ this method gets called after the device is fired,
@@ -92,6 +93,8 @@ class BackendStore(Backend):
                                  'B':lambda: self._get_all_items(0),
                                 })
 
+        """ and send out the signal when ready
+        """
         #louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
 
