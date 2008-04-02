@@ -1,0 +1,51 @@
+#coherence_header { position:relative;float:left;
+                    background-color:#000000;
+                    color:#FFFFFF;
+                    font-weight:bold;
+                    width:100%;margin:auto;
+                    border:0}
+#coherence_body     { position:relative;float:left;display:block;
+                    width:100%;margin:0px;
+                    padding:0px;
+                    color:#000000;
+                    font-weight:bold;
+                    border:0}
+
+.coherence_title        { position:relative;float:left;
+                        margin-top:0.30em;margin-bottom:0px;
+                        padding-left:0.2em;padding-right:1em;
+                        padding-bottom:0em;
+                        color:#FFFFFF;
+                        font-size:110%;
+                        border:0}
+.coherence_menu_box     { position:relative;float:left;
+                        margin:0px;padding:0px;
+                        border:0}
+.coherence_menu_item    { position:relative;float:left;
+                        margin-top:0.4em;margin-bottom:0px;
+                        margin-left:0px;margin-right:2px;
+                        padding-left:0.6em;padding-right:1em;
+                        padding-bottom:0em;
+                        color:#FFFFFF;
+                        background-color:#404040;
+                        border:0;
+                      }
+                      
+.coherence_menu_link    { color:#FFFFFF;}
+
+.coherence_container    { clear:both;
+                        position:absolute;
+                        top:0px;
+                        left:0px;
+                        color:#000000;
+                        background-color:#C0C0C0;
+                        width:96%;height:96%;
+                        margin:0px;
+                        padding:1%;
+                        visibility:hidden;
+                      }
+
+body                            {background-color:#C0C0C0;}
+body a                          {color:#000000;}
+a:link { text-decoration:none; font-weight:bold;}
+a:visited { text-decoration:none; font-weight:bold;}

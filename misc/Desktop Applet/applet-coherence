@@ -1,0 +1,102 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# Applet for Coherence
+# Copyright (C) 2008 Nicolas Lécureuil <neoclust@mandriva.org>
+# Copyright (C) 2008 Helio Chissini de Castro <helio@mandriva.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+# TODO : Add a configuration windows to allow to change name or plugins before launching
+#        the server and save a configuration file in ~/.coherence
+#        Use the name and the plugin   given as commandline arguments
+#
+
+import time
+import os
+import subprocess
+import signal
+import sys
+import socket
+
+from pkg_resources import resource_filename
+icon = resource_filename(__name__, '../../misc/Desktop Applet/tango-system-file-manager.png')
+# this ../.. is evil, I know :-(
+# there must be a better way
+if not os.path.exists(icon):
+    icon = "/usr/share/icons/coherence/tango-system-file-manager.png"
+
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
+from PyQt4 import QtCore
+
+
+proc = None
+host = None
+user = None
+confFile = None
+bool = False
+
+def startCoherence():
+    global proc
+    global host
+    global user
+    global confFile
+    global bool
+    host = socket.gethostname()
+    user = os.environ["USER"]
+    if ( confFile ):
+        if os.path.isfile( confFile ):
+            proc = subprocess.Popen(["/usr/bin/coherence"])
+    else:
+        proc = subprocess.Popen(["/usr/bin/coherence","--plugin=backend:FSStore,name:%s@%s" % ( user, host )])
+    startAction.setDisabled(1)
+    stopAction.setDisabled(0)
+    bool = True
+
+def stopCoherence():
+    global bool
+    os.kill( proc.pid, signal.SIGTERM )
+    stopAction.setDisabled(1)
+    startAction.setDisabled(0)
+    bool = False
+
+def quitApplet():
+    if bool == True:
+        stopCoherence()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+
+    menu = QMenu()
+    startAction = menu.addAction('Start Coherence Server')
+    stopAction = menu.addAction('Stop Coherence Server')
+    quitAction = menu.addAction('Quit')
+
+    systrayIcon = QString(icon)
+    icon = QIcon(systrayIcon)
+    quitAction.connect( quitAction, SIGNAL("triggered()"), quitApplet)
+    quitAction.connect( quitAction, SIGNAL("triggered()"), app, QtCore.SLOT("quit()"))
+    startAction.connect( startAction, SIGNAL("triggered()"), startCoherence)
+    stopAction.connect( stopAction, SIGNAL("triggered()"), stopCoherence)
+    stopAction.setDisabled(1)
+
+    tray = QSystemTrayIcon(icon)
+    if (tray.isSystemTrayAvailable()):
+        tray.setContextMenu(menu)
+        tray.show()
+        tray.setToolTip("Coherence control Applet")
+
+    sys.exit(app.exec_())
