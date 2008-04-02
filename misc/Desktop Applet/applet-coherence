@@ -31,7 +31,7 @@ import sys
 import socket
 
 from pkg_resources import resource_filename
-icon = resource_filename(__name__, '../../misc/Desktop Applet/tango-system-file-manager.pngX')
+icon = resource_filename(__name__, '../../misc/Desktop Applet/tango-system-file-manager.png')
 # this ../.. is evil, I know :-(
 # there must be a better way
 if not os.path.exists(icon):
