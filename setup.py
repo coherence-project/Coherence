@@ -4,6 +4,9 @@ from setuptools import setup, find_packages
 
 from coherence import __version__
 
+packages = find_packages()
+packages.append('misc')
+
 setup(
     name="Coherence",
     version=__version__,
@@ -37,7 +40,7 @@ New in this 0.5.4 - Fools Garden - release
     author="Frank Scholz",
     author_email='coherence@beebits.net',
     license = "MIT",
-    packages=['coherence','misc'],
+    packages=packages,
     scripts = ['bin/coherence','misc/Desktop Applet/applet-coherence'],
     url = "http://coherence.beebits.net",
     download_url = 'https://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
