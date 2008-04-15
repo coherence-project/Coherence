@@ -42,7 +42,7 @@ class Container(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self, id, parent_id, name, children_callback=None, container_class=DIDLLite.Container):
+    def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container):
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -54,6 +54,9 @@ class Container(BackendItem):
         else:
             self.children = []
         self.item.childCount = None #self.get_child_count()
+
+        if store!=None:
+            self.get_url = lambda: store.urlbase + str(self.id)
 
     def add_child(self, child):
         self.children.append(child)
@@ -365,6 +368,11 @@ class AmpacheStore(BackendStore):
         self.user = kwargs.get('user',None)
         self.url = kwargs.get('url','http://localhost/ampache/server/xml.server.php')
 
+        self.urlbase = kwargs.get('urlbase','')
+        if self.urlbase[len(self.urlbase)-1] != '/':
+            self.urlbase += '/'
+
+
         self.server = server
         self.update_id = 0
         self.token = None
@@ -431,7 +439,7 @@ class AmpacheStore(BackendStore):
 
                 self.containers = {}
                 self.containers[ROOT_CONTAINER_ID] = \
-                            Container( ROOT_CONTAINER_ID,-1, self.name)
+                            Container( ROOT_CONTAINER_ID,-1, self.name, store=self)
 
                 self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
                                          '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
@@ -541,24 +549,28 @@ class AmpacheStore(BackendStore):
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                          store=self,
                           children_callback=self.ampache_query_songs)
         self.containers[AUDIO_ALL_CONTAINER_ID].item.childCount = self.songs
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
 
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                          store=self,
                           children_callback=self.ampache_query_albums)
         self.containers[AUDIO_ALBUM_CONTAINER_ID].item.childCount = self.albums
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                          store=self,
                           children_callback=self.ampache_query_artists)
         self.containers[AUDIO_ARTIST_CONTAINER_ID].item.childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
                 Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                          store=self,
                           children_callback=self.ampache_query_playlists,
                           container_class=DIDLLite.PlaylistContainer)
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID].item.childCount = self.playlists
@@ -566,6 +578,7 @@ class AmpacheStore(BackendStore):
 
         self.containers[AUDIO_GENRE_CONTAINER_ID] = \
                 Container( AUDIO_GENRE_CONTAINER_ID,ROOT_CONTAINER_ID, 'Genres',
+                          store=self,
                           children_callback=self.ampache_query_genres)
         self.containers[AUDIO_GENRE_CONTAINER_ID].item.childCount = self.genres
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])

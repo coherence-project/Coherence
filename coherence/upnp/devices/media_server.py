@@ -165,7 +165,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 self.debug("error accessing items path %r" % msg)
                 self.debug(traceback.format_exc())
                 return self.list_content(name, ch, request)
-            if os.path.exists(p):
+            if p != None and os.path.exists(p):
                 self.info("accessing path %r" % p)
                 new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                             'Output',
@@ -180,7 +180,7 @@ class MSRoot(resource.Resource, log.Loggable):
                         _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
                         if additional_info != '*':
                             request.setHeader('contentFeatures.dlna.org', additional_info)
-                ch = StaticFile(p.encode('utf-8'))
+                ch = StaticFile(p)
             else:
                 self.debug("accessing path %r failed" % p)
                 return self.list_content(name, ch, request)
@@ -188,7 +188,7 @@ class MSRoot(resource.Resource, log.Loggable):
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
-                ch = StaticFile(p.encode('utf-8'))
+                ch = StaticFile(p)
         self.info('MSRoot ch', ch)
         return ch
 
@@ -211,6 +211,10 @@ class MSRoot(resource.Resource, log.Loggable):
                 elif hasattr(c,'get_path'):
                     #path = c.get_path().encode('utf-8').encode('string_escape')
                     path = c.get_path()
+                    if isinstance(path,unicode):
+                        path = path.encode('ascii','xmlcharrefreplace')
+                    else:
+                        path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
                     self.debug('has get_path', path)
                 else:
                     path = request.uri.split('/')
