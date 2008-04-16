@@ -8,9 +8,9 @@
 from os import getenv
 import os.path
 
-hot_dirs = {'XDG_MUSIC_DIR':(u'audio',u'audio'),
-            'XDG_PICTURES_DIR':(u'image',u'images'),
-            'XDG_VIDEOS_DIR':(u'video',u'videos')}
+hot_dirs = {'XDG_MUSIC_DIR':('audio','audio'),
+            'XDG_PICTURES_DIR':('image','images'),
+            'XDG_VIDEOS_DIR':('video','videos')}
 
 def xdg_content():
 
@@ -27,7 +27,8 @@ def xdg_content():
                     info = hot_dirs[key]
                     value = value.strip('"')
                     value = os.path.expandvars(value)
-                    content.append((value.decode('utf8'),info[0],info[1]))
+                    #content.append((value.decode('utf8'),info[0],info[1]))
+                    content.append((value,info[0],info[1]))
                 except KeyError:
                     pass
 

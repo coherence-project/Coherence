@@ -11,6 +11,7 @@ import shutil
 import time
 import re
 from datetime import datetime
+import urllib2
 
 import mimetypes
 mimetypes.init()
@@ -107,7 +108,7 @@ class FSItem(BackendItem):
                 size = 0
 
             if mimetype != 'item':
-                res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+                res = Resource('file://'+ urllib2.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
                 res.size = size
                 self.item.res.append(res)
 
@@ -161,7 +162,7 @@ class FSItem(BackendItem):
                         self.item.res.append(new_res)
                         if not hasattr(self.item, 'attachments'):
                             self.item.attachments = {}
-                        self.item.attachments[hash_from_path] = utils.StaticFile(thumbnail)
+                        self.item.attachments[hash_from_path] = utils.StaticFile(urllib2.quote(thumbnail))
 
 
             try:
@@ -194,7 +195,7 @@ class FSItem(BackendItem):
         else:
             host = host_port
 
-        res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+        res = Resource('file://'+urllib2.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
         try:
             res.size = self.location.getsize()
         except:
@@ -298,9 +299,9 @@ class FSItem(BackendItem):
 
     def get_name(self):
         if isinstance( self.location,FilePath):
-            name = self.location.basename()
+            name = self.location.basename().decode("utf-8", "replace")
         else:
-            name = self.location
+            name = self.location.decode("utf-8", "replace")
         return name
 
     def get_cover(self):
@@ -401,7 +402,7 @@ class FSStore(BackendStore):
             parent = self.store[int(parent)]
             for child in parent.children:
                 if not isinstance(name, unicode):
-                    name = unicode(name)
+                    name = name.decode("utf8")
                 if name == child.get_name():
                     return child.id
         except:
