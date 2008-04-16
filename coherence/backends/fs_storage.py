@@ -457,7 +457,7 @@ class FSStore(BackendStore):
         try:
             mimetype,_ = mimetypes.guess_type(path, strict=False)
             if mimetype == None:
-                if os.path.isdir(path) or os.path.islink(path):
+                if os.path.isdir(path):
                     mimetype = 'directory'
             if mimetype == None:
                 return None
