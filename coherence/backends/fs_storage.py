@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -9,6 +11,7 @@ import shutil
 import time
 import re
 from datetime import datetime
+import urllib2
 
 import mimetypes
 mimetypes.init()
@@ -49,7 +52,8 @@ class FSItem(BackendItem):
         else:
             if mimetype == 'item' and path is None:
                 path = os.path.join(parent.get_path(),unicode(self.id))
-            self.location = FilePath(unicode(path))
+            #self.location = FilePath(unicode(path))
+            self.location = FilePath(path)
         self.mimetype = mimetype
         if urlbase[-1] != '/':
             urlbase += '/'
@@ -70,6 +74,8 @@ class FSItem(BackendItem):
 
         if mimetype in ['directory','root']:
             self.update_id = 0
+            self.get_url = lambda : self.url
+            self.get_path = lambda : None
             #self.item.searchable = True
             #self.item.searchClass = 'object'
             if(isinstance(self.location,FilePath) and
@@ -81,6 +87,8 @@ class FSItem(BackendItem):
                         the mimetype """
                     self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
         else:
+            self.get_url = lambda : self.url
+
             if self.mimetype.startswith('audio/'):
                 if hasattr(parent, 'cover'):
                     _,ext =  os.path.splitext(parent.cover)
@@ -100,7 +108,7 @@ class FSItem(BackendItem):
                 size = 0
 
             if mimetype != 'item':
-                res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+                res = Resource('file://'+ urllib2.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
                 res.size = size
                 self.item.res.append(res)
 
@@ -154,7 +162,7 @@ class FSItem(BackendItem):
                         self.item.res.append(new_res)
                         if not hasattr(self.item, 'attachments'):
                             self.item.attachments = {}
-                        self.item.attachments[hash_from_path] = utils.StaticFile(thumbnail)
+                        self.item.attachments[hash_from_path] = utils.StaticFile(urllib2.quote(thumbnail))
 
 
             try:
@@ -187,7 +195,7 @@ class FSItem(BackendItem):
         else:
             host = host_port
 
-        res = Resource('file://'+self.get_path(), 'internal:%s:%s:*' % (host,self.mimetype))
+        res = Resource('file://'+urllib2.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
         try:
             res.size = self.location.getsize()
         except:
@@ -266,9 +274,6 @@ class FSItem(BackendItem):
     def get_id(self):
         return self.id
 
-    def get_location(self):
-        return self.location
-
     def get_update_id(self):
         if hasattr(self, 'update_id'):
             return self.update_id
@@ -288,15 +293,15 @@ class FSItem(BackendItem):
             path,old_ext = os.path.splitext(path)
             path = ''.join((path,extension))
         if isinstance( self.location,FilePath):
-            self.location = FilePath(unicode(path))
+            self.location = FilePath(path)
         else:
             self.location = path
 
     def get_name(self):
         if isinstance( self.location,FilePath):
-            name = self.location.basename()
+            name = self.location.basename().decode("utf-8", "replace")
         else:
-            name = self.location
+            name = self.location.decode("utf-8", "replace")
         return name
 
     def get_cover(self):
@@ -318,7 +323,7 @@ class FSItem(BackendItem):
         return self.item.toString()
 
     def __repr__(self):
-        return 'id: ' + str(self.id) + ' @ ' + self.location.basename()
+        return 'id: ' + str(self.id) + ' @ ' + self.get_name().encode('ascii','xmlcharrefreplace')
 
 class FSStore(BackendStore):
     logCategory = 'fs_store'
@@ -396,6 +401,8 @@ class FSStore(BackendStore):
         try:
             parent = self.store[int(parent)]
             for child in parent.children:
+                if not isinstance(name, unicode):
+                    name = name.decode("utf8")
                 if name == child.get_name():
                     return child.id
         except:
@@ -421,6 +428,7 @@ class FSStore(BackendStore):
                 self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.get_path())
 
     def create(self, mimetype, path, parent):
+        #print "create", mimetype, path, type(path)
         UPnPClass = classChooser(mimetype)
         if UPnPClass == None:
             return None
@@ -445,11 +453,11 @@ class FSStore(BackendStore):
         return id
 
     def append(self,path,parent):
-        #print "append", path
+        #print "append", path, type(path)
         try:
             mimetype,_ = mimetypes.guess_type(path, strict=False)
             if mimetype == None:
-                if os.path.isdir(path) or os.path.islink(path):
+                if os.path.isdir(path):
                     mimetype = 'directory'
             if mimetype == None:
                 return None
@@ -510,7 +518,7 @@ class FSStore(BackendStore):
             #else:
             #    print 'file %s was created, parent %d (%s)' % (path, parameter, iwp.path)
             if self.get_id_by_name(parameter,filename) is None:
-                if mask & IN_ISDIR:
+                if os.path.isdir(path):
                     self.walk(path, self.get_by_id(parameter), self.ignore_file_pattern)
                 else:
                     self.append(path, self.get_by_id(parameter))

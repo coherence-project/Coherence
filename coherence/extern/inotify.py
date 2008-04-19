@@ -237,7 +237,7 @@ class INotify(FileDescriptor, object):
 
             path = iwp.path
             if name:
-                name = unicode(name, 'utf-8')
+                #name = unicode(name, 'utf-8')
                 path = os.path.join(path, name)
 
                 iwp.notify( name, mask)
@@ -257,6 +257,8 @@ class INotify(FileDescriptor, object):
         else:
             if isinstance(path, FilePath):
                 path = path.path
+            if type(path) is unicode:
+                path = path.encode('utf-8')
             path = os.path.realpath(path)
             for wd, iwp in self._watchpoints.items():
                 if iwp.path == path:
@@ -264,15 +266,19 @@ class INotify(FileDescriptor, object):
 
             mask = mask | IN_DELETE_SELF
 
-            #print "add watch for", path, ', '.join(self.flag_to_human(mask))
+            #print "add watch for", path, type(path), ', '.join(self.flag_to_human(mask))
             wd = self.inotify_add_watch(path, mask)
             if wd < 0:
-                raise IOError, "Failed to add watch on '%s' - (%r)" % (path.encode('ascii', 'ignore'),wd)
+                raise IOError, "Failed to add watch on '%r' - (%r)" % (path,wd)
 
             iwp = IWatchPoint(path, mask, auto_add, callbacks)
             self._watchpoints[wd] = iwp
 
     def ignore(self, path):
+        if isinstance(path, FilePath):
+            path = path.path
+        if type(path) is unicode:
+            path = path.encode('utf-8')
         path = os.path.realpath(path)
         found_wd = None
         for wd, iwp in self._watchpoints.items():
