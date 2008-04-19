@@ -15,17 +15,13 @@ from coherence import log
 
 import louie
 
+ns = "urn:schemas-upnp-org:device-1-0"
+
 class Device(log.Loggable):
     logCategory = 'device'
 
-    def __init__(self, infos, parent=None):
+    def __init__(self, parent=None):
         self.parent = parent
-        self.usn = infos['USN']
-        self.server = infos['SERVER']
-        self.st = infos['ST']
-        self.location = infos['LOCATION']
-        self.manifestation = infos['MANIFESTATION']
-        self.host = infos['HOST']
         self.services = []
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
@@ -58,16 +54,6 @@ class Device(log.Loggable):
             self.client = None
         #del self
 
-    def is_local(self):
-        if self.manifestation == 'local':
-            return True
-        return False
-
-    def is_remote(self):
-        if self.manifestation != 'local':
-            return True
-        return False
-
     def receiver( self, signal, *args, **kwargs):
         #print "Device receiver called with", signal
         if self.detection_completed == True:
@@ -83,18 +69,6 @@ class Device(log.Loggable):
 
     def get_id(self):
         return self.udn
-
-    def get_host(self):
-        return self.host
-
-    def get_usn(self):
-        return self.usn
-
-    def get_st(self):
-        return self.st
-
-    def get_location(self):
-        return self.location
 
     def get_services(self):
         return self.services
@@ -143,45 +117,35 @@ class Device(log.Loggable):
         dl = defer.DeferredList(l)
         return dl
 
-    def parse_description(self):
+    def parse_device(self, d):
+        self.device_type = unicode(d.findtext('.//{%s}deviceType' % ns))
+        self.friendly_name = unicode(d.findtext('.//{%s}friendlyName' % ns))
+        self.udn = d.findtext('.//{%s}UDN' % ns)
 
-        def gotPage(x):
-            self.debug("got device description from %r" % self.location)
-            data, headers = x
-            tree = utils.parse_xml(data, 'utf-8').getroot()
-            ns = "urn:schemas-upnp-org:device-1-0"
+        icon_list = d.find('.//{%s}iconList' % ns)
+        if icon_list is not None:
+            import urllib2
+            url_base = "%s://%s" % urllib2.urlparse.urlparse(self.get_location())[:2]
+            for icon in icon_list.findall('.//{%s}icon' % ns):
+                try:
+                    i = {}
+                    i['mimetype'] = icon.find('.//{%s}mimetype' % ns).text
+                    i['width'] = icon.find('.//{%s}width' % ns).text
+                    i['height'] = icon.find('.//{%s}height' % ns).text
+                    i['depth'] = icon.find('.//{%s}depth' % ns).text
+                    i['url'] = icon.find('.//{%s}url' % ns).text
+                    if i['url'].startswith('/'):
+                        i['url'] = ''.join((url_base,i['url']))
+                    self.icons.append(i)
+                    self.debug("adding icon %r for %r" % (i,self.friendly_name))
+                except:
+                    import traceback
+                    self.debug(traceback.format_exc())
+                    self.warning("device %r seems to have an invalid icon description, ignoring that icon" % self.friendly_name)
 
-            d = tree.find('.//{%s}device' % ns)
-            if d == None:
-                return
-
-            self.device_type = unicode(d.findtext('.//{%s}deviceType' % ns))
-            self.friendly_name = unicode(d.findtext('.//{%s}friendlyName' % ns))
-            self.udn = d.findtext('.//{%s}UDN' % ns)
-
-            icon_list = d.find('.//{%s}iconList' % ns)
-            if icon_list is not None:
-                import urllib2
-                url_base = "%s://%s" % urllib2.urlparse.urlparse(self.location)[:2]
-                for icon in icon_list.findall('.//{%s}icon' % ns):
-                    try:
-                        i = {}
-                        i['mimetype'] = icon.find('.//{%s}mimetype' % ns).text
-                        i['width'] = icon.find('.//{%s}width' % ns).text
-                        i['height'] = icon.find('.//{%s}height' % ns).text
-                        i['depth'] = icon.find('.//{%s}depth' % ns).text
-                        i['url'] = icon.find('.//{%s}url' % ns).text
-                        if i['url'].startswith('/'):
-                            i['url'] = ''.join((url_base,i['url']))
-                        self.icons.append(i)
-                        self.debug("adding icon %r for %r" % (i,self.friendly_name))
-                    except:
-                        import traceback
-                        self.debug(traceback.format_exc())
-                        self.warning("device %r seems to have an invalid icon description, ignoring that icon" % self.friendly_name)
-
-            s = d.find('.//{%s}serviceList' % ns)
-            for service in s.findall('.//{%s}service' % ns):
+        serviceList = d.find('.//{%s}serviceList' % ns)
+        if serviceList:
+            for service in serviceList.findall('.//{%s}service' % ns):
                 serviceType = service.findtext('{%s}serviceType' % ns)
                 serviceId = service.findtext('{%s}serviceId' % ns)
                 controlUrl = service.findtext('{%s}controlURL' % ns)
@@ -203,18 +167,65 @@ class Device(log.Loggable):
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
 
-        def gotError(failure, url):
-            self.warning("error requesting %r", url)
-            self.info(failure)
+    def get_location(self):
+        return self.parent.get_location()
 
-        utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
+    def get_usn(self):
+        return self.parent.get_usn()
 
 
 class RootDevice(Device):
 
     def __init__(self, infos):
-        Device.__init__(self, infos)
+        self.usn = infos['USN']
+        self.server = infos['SERVER']
+        self.st = infos['ST']
+        self.location = infos['LOCATION']
+        self.manifestation = infos['MANIFESTATION']
+        self.host = infos['HOST']
         self.devices = []
+        self.root_detection_completed = False
+        Device.__init__(self, None)
+        # we need to handle root device completion
+        # these events could be ourself or our children.
+        louie.connect( self.device_detect, 'Coherence.UPnP.Device.detection_completed', self)
+        self.parse_description()
+
+    def get_usn(self):
+        return self.usn
+
+    def get_st(self):
+        return self.st
+
+    def get_location(self):
+        return self.location
+
+    def get_host(self):
+        return self.host
+
+    def is_local(self):
+        if self.manifestation == 'local':
+            return True
+        return False
+
+    def is_remote(self):
+        if self.manifestation != 'local':
+            return True
+        return False
+
+    def device_detect( self, signal, *args, **kwargs):
+        if self.root_detection_completed == True:
+            return
+        # our self is not complete yet
+        if self.detection_completed == False:
+            return
+        # now check child devices.
+        for d in self.devices:
+            if d.detection_completed == False:
+                return
+        # now must be done, so notify root done
+        self.root_detection_completed = True
+        louie.send('Coherence.UPnP.RootDevice.detection_completed', None, device=self)
 
     def add_device(self, device):
         self.debug("RootDevice add_device", device)
@@ -223,3 +234,28 @@ class RootDevice(Device):
     def get_devices(self):
         self.debug("RootDevice get_devices:", self.devices)
         return self.devices
+
+    def parse_description(self):
+
+        def gotPage(x):
+            self.debug("got device description from %r" % self.location)
+            data, headers = x
+            tree = utils.parse_xml(data, 'utf-8').getroot()
+
+            d = tree.find('.//{%s}device' % ns)
+            if d is not None:
+                self.parse_device(d) # root device
+
+                # now look for all sub devices
+                embedded_devices = d.find('.//{%s}deviceList' % ns)
+                if embedded_devices:
+                    for d in embedded_devices.findall('.//{%s}device' % ns):
+                        embedded_device = Device(self)
+                        embedded_device.parse_device(d)
+                        self.add_device(embedded_device)
+
+        def gotError(failure, url):
+            self.warning("error requesting %r", url)
+            self.info(failure)
+
+        utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
