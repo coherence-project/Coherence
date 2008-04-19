@@ -318,12 +318,12 @@ class Object(log.Loggable):
          * writeStatus
         """
         self.elementName = elt.tag
-        self.id = elt.attrib['id']
-        self.parentID = elt.attrib['parentID']
+        self.id = elt.attrib.get('id',None)
+        self.parentID = elt.attrib.get('parentID',None)
 
         self.refID = elt.attrib.get('refID',None)
 
-        if elt.attrib['restricted'] in [1,'true','True','1','yes','Yes']:
+        if elt.attrib.get('restricted',None) in [1,'true','True','1','yes','Yes']:
             self.restricted = True
         else:
             self.restricted = False
