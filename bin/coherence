@@ -211,6 +211,10 @@ class Options(usage.Options):
                      ['plugin', 'p', None, 'activate plugin']
                     ]
 
+    def __init__(self):
+        usage.Options.__init__(self)
+        self['plugins'] = []
+
     def opt_version(self):
         print "Coherence version:", __version__
         sys.exit(0)
@@ -226,6 +230,9 @@ class Options(usage.Options):
 
         print self.__str__()
         sys.exit(0)
+
+    def opt_plugin(self,option):
+        self['plugins'].append(option)
 
 def main(config):
 
@@ -281,7 +288,7 @@ if __name__ == '__main__':
         except AssertionError:
             print "error installing glib2reactor"
 
-    if options['plugin'] != None:
+    if len(options['plugins']) > 0:
         plugins = config.get('pluginlist')
         if plugins is None:
             plugins = config.get('plugins',None)
@@ -289,16 +296,18 @@ if __name__ == '__main__':
             config['pluginlist'] = []
             plugins = config['pluginlist']
 
-        plugin = {}
-        plugin_conf = options['plugin'].split(',')
-        for pair in plugin_conf:
-            pair = pair.split(':',1)
-            if len(pair) == 2:
-                plugin[pair[0]] = pair[1]
-        try:
-            plugins.append(plugin)
-        except AttributeError:
-            print "mixing commandline plugins and configfile does not work with the old config file format"
+        while len(options['plugins']) > 0:
+            p = options['plugins'].pop()
+            plugin = {}
+            plugin_conf = p.split(',')
+            for pair in plugin_conf:
+                pair = pair.split(':',1)
+                if len(pair) == 2:
+                    plugin[pair[0]] = pair[1]
+            try:
+                plugins.append(plugin)
+            except AttributeError:
+                print "mixing commandline plugins and configfile does not work with the old config file format"
 
 
     from twisted.internet import reactor
