@@ -61,7 +61,8 @@ class Device(log.Loggable):
         self.detection_completed = True
         if self.parent != None:
             self.info("embedded device %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
-        louie.send('Coherence.UPnP.Device.detection_completed', self)
+        louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
+        louie.send('Coherence.UPnP.Device.detection_completed', self, device=self)
 
     def service_detection_failed( self, device):
         self.remove()
@@ -162,7 +163,7 @@ class Device(log.Loggable):
                 if len(controlUrl) == 0:
                     self.warning("service has no uri for controling")
                     continue
-                self.add_service(Service(serviceType, serviceId, self.location,
+                self.add_service(Service(serviceType, serviceId, self.get_location(),
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
 
