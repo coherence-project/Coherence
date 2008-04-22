@@ -26,9 +26,11 @@ class Device(log.Loggable):
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
         self.device_type = ""
+        self.udn = None
         self.detection_completed = False
         self.client = None
         self.icons = []
+        self.devices = []
 
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
         louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
@@ -41,18 +43,18 @@ class Device(log.Loggable):
     #    pass
 
     def remove(self,*args):
-        self.info("removal of ", self.friendly_name, self.usn)
+        self.info("removal of ", self.friendly_name, self.udn)
         while len(self.services)>0:
             service = self.services.pop()
             self.debug("try to remove", service)
             service.remove()
         if self.client != None:
-            louie.send('Coherence.UPnP.Device.remove_client', None, self.usn, self.client)
+            louie.send('Coherence.UPnP.Device.remove_client', None, self.udn, self.client)
             self.client = None
         #del self
 
     def receiver( self, signal, *args, **kwargs):
-        #print "Device receiver called with", signal
+        self.debug("device receiver called with %r %r", signal, kwargs)
         if self.detection_completed == True:
             return
         for s in self.services:
@@ -62,7 +64,10 @@ class Device(log.Loggable):
         if self.parent != None:
             self.info("embedded device %r %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
         louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
-        louie.send('Coherence.UPnP.Device.detection_completed', self, device=self)
+        if self.parent != None:
+            louie.send('Coherence.UPnP.Device.detection_completed', self.parent, device=self)
+        else:
+            louie.send('Coherence.UPnP.Device.detection_completed', self, device=self)
 
     def service_detection_failed( self, device):
         self.remove()
@@ -74,6 +79,7 @@ class Device(log.Loggable):
         return self.services
 
     def add_service(self, service):
+        self.debug("add_service %r", service)
         self.services.append(service)
 
     def remove_service_with_usn(self, service_usn):
@@ -82,6 +88,10 @@ class Device(log.Loggable):
                 self.services.remove(service)
                 service.remove()
                 break
+
+    def add_device(self, device):
+        self.debug("Device add_device %r", device)
+        self.devices.append(device)
 
     def get_friendly_name(self):
         return self.friendly_name
@@ -167,6 +177,15 @@ class Device(log.Loggable):
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
 
+
+            # now look for all sub devices
+            embedded_devices = d.find('.//{%s}deviceList' % ns)
+            if embedded_devices:
+                for d in embedded_devices.findall('.//{%s}device' % ns):
+                    embedded_device = Device(self)
+                    embedded_device.parse_device(d)
+                    self.add_device(embedded_device)
+
     def get_location(self):
         return self.parent.get_location()
 
@@ -183,7 +202,6 @@ class RootDevice(Device):
         self.location = infos['LOCATION']
         self.manifestation = infos['MANIFESTATION']
         self.host = infos['HOST']
-        self.devices = []
         self.root_detection_completed = False
         Device.__init__(self, None)
         louie.connect( self.device_detect, 'Coherence.UPnP.Device.detection_completed', self)
@@ -217,13 +235,18 @@ class RootDevice(Device):
         return False
 
     def device_detect( self, signal, *args, **kwargs):
+        self.debug("device_detect %r", kwargs)
         if self.root_detection_completed == True:
             return
+        self.debug("root_detection_completed %r", self.root_detection_completed)
         # our self is not complete yet
         if self.detection_completed == False:
             return
+        self.debug("detection_completed %r", self.detection_completed)
         # now check child devices.
+        self.debug("self.devices %r", self.devices)
         for d in self.devices:
+            self.debug("check device %r %r", d.detection_completed, d)
             if d.detection_completed == False:
                 return
         # now must be done, so notify root done
@@ -232,7 +255,7 @@ class RootDevice(Device):
         louie.send('Coherence.UPnP.RootDevice.detection_completed', None, device=self)
 
     def add_device(self, device):
-        self.debug("RootDevice add_device", device)
+        self.debug("RootDevice add_device %r", device)
         self.devices.append(device)
 
     def get_devices(self):

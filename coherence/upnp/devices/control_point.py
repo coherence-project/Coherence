@@ -119,8 +119,8 @@ class ControlPoint(log.Loggable):
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
                                client=client,usn=usn)
 
-    def remove_client(self, usn, client):
-        louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, usn=usn)
+    def remove_client(self, udn, client):
+        louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, udn=udn)
         self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         client.remove()
 
