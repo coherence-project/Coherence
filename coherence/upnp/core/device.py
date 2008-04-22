@@ -60,7 +60,7 @@ class Device(log.Loggable):
                 return
         self.detection_completed = True
         if self.parent != None:
-            self.info("embedded device %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
+            self.info("embedded device %r %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
         louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
         louie.send('Coherence.UPnP.Device.detection_completed', self, device=self)
 
