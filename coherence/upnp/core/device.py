@@ -33,11 +33,8 @@ class Device(log.Loggable):
         louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
         louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
-        self.parse_description()
-        self.info("device %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation))
-
     def __repr__(self):
-        return "device %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation)
+        return "embedded device %r %r, parent %r" % (self.friendly_name,self.device_type,self.parent)
 
     #def __del__(self):
     #    #print "Device removal completed"
@@ -62,7 +59,9 @@ class Device(log.Loggable):
             if s.detection_completed == False:
                 return
         self.detection_completed = True
-        louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
+        if self.parent != None:
+            self.info("embedded device %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
+        louie.send('Coherence.UPnP.Device.detection_completed', self)
 
     def service_detection_failed( self, device):
         self.remove()
@@ -186,10 +185,13 @@ class RootDevice(Device):
         self.devices = []
         self.root_detection_completed = False
         Device.__init__(self, None)
+        louie.connect( self.device_detect, 'Coherence.UPnP.Device.detection_completed', self)
         # we need to handle root device completion
         # these events could be ourself or our children.
-        louie.connect( self.device_detect, 'Coherence.UPnP.Device.detection_completed', self)
         self.parse_description()
+
+    def __repr__(self):
+        return "rootdevice %r %r %r, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation)
 
     def get_usn(self):
         return self.usn
@@ -225,6 +227,7 @@ class RootDevice(Device):
                 return
         # now must be done, so notify root done
         self.root_detection_completed = True
+        self.info("rootdevice %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation))
         louie.send('Coherence.UPnP.RootDevice.detection_completed', None, device=self)
 
     def add_device(self, device):

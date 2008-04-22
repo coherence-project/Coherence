@@ -247,7 +247,7 @@ class Coherence(log.Loggable):
         self.ssdp_server = SSDPServer()
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
-        louie.connect( self.add_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
         #louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', louie.Any)
 
         self.ssdp_server.subscribe("new_device", self.add_device)
