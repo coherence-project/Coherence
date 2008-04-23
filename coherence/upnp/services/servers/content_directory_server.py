@@ -111,6 +111,11 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             dl.addCallback(process_items, total)
             return dl
 
+        try:
+            root_id = ContainerID
+        except:
+            pass
+
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         if(kwargs.get('X_UPnPClient', '') == 'XBox' and
             wmc_mapping != None and
@@ -132,16 +137,6 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                         d.addCallback( process_result)
                         d.addErrback(got_error)
                         return d
-
-            for i in items:
-                didl.addItem(i.get_item())
-
-            return build_response(total)
-
-        try:
-            root_id = ContainerID
-        except:
-            pass
 
         item = self.backend.get_by_id(root_id)
         if item == None:
@@ -195,6 +190,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         total = 0
         items = []
 
+        root_id = ObjectID
+
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
         if(kwargs.get('X_UPnPClient', '') == 'XBox' and
             wmc_mapping != None and
@@ -216,13 +213,6 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                         d.addCallback( process_result)
                         d.addErrback(got_error)
                         return d
-
-            for i in items:
-                didl.addItem(i.get_item())
-
-            return build_response(total)
-
-        root_id = ObjectID
 
         item = self.backend.get_by_id(root_id)
         if item == None:
