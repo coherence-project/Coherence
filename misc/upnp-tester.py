@@ -132,18 +132,27 @@ class UI(basic.LineReceiver):
         else:
             self.transport.write(str("extracting from %s @ %s\n" % (device.friendly_name, device.host)))
             try:
-                os.mkdir(os.path.join('/tmp',args[0]))
                 l = []
-                d = client.downloadPage(device.location,os.path.join('/tmp',args[0],'device-description.xml'))
-                l.append(d)
 
-                for service in device.services:
-                    d = client.downloadPage(service.get_scpd_url(),os.path.join('/tmp',args[0],'%s-description.xml'%service.service_type.split(':',3)[3]))
+                def device_extract(workdevice, path):
+                    tmp_dir = os.path.join(path,workdevice.get_uuid())
+                    os.mkdir(tmp_dir)
+                    d = client.downloadPage(workdevice.get_location(),os.path.join(tmp_dir,'device-description.xml'))
                     l.append(d)
+
+                    for service in workdevice.services:
+                        d = client.downloadPage(service.get_scpd_url(),os.path.join(tmp_dir,'%s-description.xml'%service.service_type.split(':',3)[3]))
+                        l.append(d)
+
+
+                    for ed in workdevice.devices:
+                        device_extract(ed, tmp_dir)
 
                 def finished(result):
                     self.transport.write(str("\nextraction of device %s finished\nfiles have been saved to /tmp/%s\n" %(args[0],args[0])))
                     self.print_prompt()
+
+                device_extract(device,'/tmp')
 
                 dl = defer.DeferredList(l)
                 dl.addCallback(finished)

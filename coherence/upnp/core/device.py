@@ -75,6 +75,9 @@ class Device(log.Loggable):
     def get_id(self):
         return self.udn
 
+    def get_uuid(self):
+        return self.udn[5:]
+
     def get_services(self):
         return self.services
 
@@ -128,22 +131,22 @@ class Device(log.Loggable):
         return dl
 
     def parse_device(self, d):
-        self.device_type = unicode(d.findtext('.//{%s}deviceType' % ns))
-        self.friendly_name = unicode(d.findtext('.//{%s}friendlyName' % ns))
+        self.device_type = unicode(d.findtext('./{%s}deviceType' % ns))
+        self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
         self.udn = d.findtext('.//{%s}UDN' % ns)
 
-        icon_list = d.find('.//{%s}iconList' % ns)
+        icon_list = d.find('./{%s}iconList' % ns)
         if icon_list is not None:
             import urllib2
             url_base = "%s://%s" % urllib2.urlparse.urlparse(self.get_location())[:2]
-            for icon in icon_list.findall('.//{%s}icon' % ns):
+            for icon in icon_list.findall('./{%s}icon' % ns):
                 try:
                     i = {}
-                    i['mimetype'] = icon.find('.//{%s}mimetype' % ns).text
-                    i['width'] = icon.find('.//{%s}width' % ns).text
-                    i['height'] = icon.find('.//{%s}height' % ns).text
-                    i['depth'] = icon.find('.//{%s}depth' % ns).text
-                    i['url'] = icon.find('.//{%s}url' % ns).text
+                    i['mimetype'] = icon.find('./{%s}mimetype' % ns).text
+                    i['width'] = icon.find('./{%s}width' % ns).text
+                    i['height'] = icon.find('./{%s}height' % ns).text
+                    i['depth'] = icon.find('./{%s}depth' % ns).text
+                    i['url'] = icon.find('./{%s}url' % ns).text
                     if i['url'].startswith('/'):
                         i['url'] = ''.join((url_base,i['url']))
                     self.icons.append(i)
@@ -153,9 +156,9 @@ class Device(log.Loggable):
                     self.debug(traceback.format_exc())
                     self.warning("device %r seems to have an invalid icon description, ignoring that icon" % self.friendly_name)
 
-        serviceList = d.find('.//{%s}serviceList' % ns)
+        serviceList = d.find('./{%s}serviceList' % ns)
         if serviceList:
-            for service in serviceList.findall('.//{%s}service' % ns):
+            for service in serviceList.findall('./{%s}service' % ns):
                 serviceType = service.findtext('{%s}serviceType' % ns)
                 serviceId = service.findtext('{%s}serviceId' % ns)
                 controlUrl = service.findtext('{%s}controlURL' % ns)
@@ -179,12 +182,12 @@ class Device(log.Loggable):
 
 
             # now look for all sub devices
-            embedded_devices = d.find('.//{%s}deviceList' % ns)
+            embedded_devices = d.find('./{%s}deviceList' % ns)
             if embedded_devices:
-                for d in embedded_devices.findall('.//{%s}device' % ns):
+                for d in embedded_devices.findall('./{%s}device' % ns):
                     embedded_device = Device(self)
-                    embedded_device.parse_device(d)
                     self.add_device(embedded_device)
+                    embedded_device.parse_device(d)
 
     def get_location(self):
         return self.parent.get_location()
@@ -272,14 +275,6 @@ class RootDevice(Device):
             d = tree.find('.//{%s}device' % ns)
             if d is not None:
                 self.parse_device(d) # root device
-
-                # now look for all sub devices
-                embedded_devices = d.find('.//{%s}deviceList' % ns)
-                if embedded_devices:
-                    for d in embedded_devices.findall('.//{%s}device' % ns):
-                        embedded_device = Device(self)
-                        embedded_device.parse_device(d)
-                        self.add_device(embedded_device)
 
         def gotError(failure, url):
             self.warning("error requesting %r", url)
