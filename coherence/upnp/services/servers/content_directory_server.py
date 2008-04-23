@@ -132,6 +132,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
+                        process_result(items)
                     else:
                         d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
                         d.addCallback( process_result)
@@ -208,6 +209,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
+                        process_result(items)
                     else:
                         d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
                         d.addCallback( process_result)
