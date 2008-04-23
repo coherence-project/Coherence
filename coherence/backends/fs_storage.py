@@ -376,6 +376,12 @@ class FSStore(BackendStore):
                 continue
             self.walk(path, parent, self.ignore_file_pattern)
 
+        self.wmc_mapping.update({'14': 0,
+                                 '15': 0,
+                                 '16': 0,
+                                 '17': 0
+                                })
+
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):
