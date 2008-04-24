@@ -106,7 +106,10 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             for i in result:
                 d = defer.maybeDeferred( i.get_item)
                 l.append(d)
-            total = item.get_child_count()
+            if item == None:
+                total = 0
+            else:
+                total = item.get_child_count()
             dl = defer.DeferredList(l)
             dl.addCallback(process_items, total)
             return dl
@@ -132,12 +135,22 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
-                        process_result(items)
+                        return process_result(items)
                     else:
                         d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
                         d.addCallback( process_result)
                         d.addErrback(got_error)
                         return d
+
+            item = self.backend.get_by_id(root_id)
+            if item == None:
+                return process_result([])
+
+            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+            d.addCallback( process_result)
+            d.addErrback(got_error)
+
+            return d
 
         item = self.backend.get_by_id(root_id)
         if item == None:
@@ -209,12 +222,22 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
-                        process_result(items)
+                        return process_result(items)
                     else:
                         d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
                         d.addCallback( process_result)
                         d.addErrback(got_error)
                         return d
+
+            item = self.backend.get_by_id(root_id)
+            if item == None:
+                return process_result([])
+
+            d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
+            d.addCallback( process_result)
+            d.addErrback(got_error)
+
+            return d
 
         item = self.backend.get_by_id(root_id)
         if item == None:
