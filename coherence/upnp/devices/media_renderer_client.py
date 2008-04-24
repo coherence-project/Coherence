@@ -97,7 +97,7 @@ class MediaRendererClient(log.Loggable):
                 return
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
-                               client=self,usn=self.device.get_usn())
+                               client=self,udn=self.device.udn)
 
     def state_variable_change( self, variable):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)

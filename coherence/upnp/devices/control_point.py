@@ -114,10 +114,10 @@ class ControlPoint(log.Loggable):
 
         self.process_queries(device)
 
-    def completed(self, client, usn):
+    def completed(self, client, udn):
         self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected ' % client.device_type)
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
-                               client=client,usn=usn)
+                               client=client,udn=udn)
 
     def remove_client(self, udn, client):
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, udn=udn)
