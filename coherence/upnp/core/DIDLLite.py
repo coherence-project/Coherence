@@ -631,7 +631,9 @@ class StorageVolume(Container):
 class StorageFolder(Container):
     upnp_class = Container.upnp_class + '.storageFolder'
 
-class DIDLElement(ElementInterface):
+class DIDLElement(ElementInterface,log.Loggable):
+
+    logCategory = 'didllite'
 
     def __init__(self, upnp_client='', parent_container=None, requested_id=None):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
@@ -670,6 +672,22 @@ class DIDLElement(ElementInterface):
         #return preamble + ET.tostring(self,encoding='utf-8')
         return ET.tostring(self,encoding='utf-8')
 
+    def get_upnp_class(self,name):
+        try:
+            return upnp_classes[name]()
+        except KeyError:
+            self.warning("upnp_class %r not found, trying fallback", name)
+            parts = name.split('.')
+            parts.pop()
+            while len(parts) > 1:
+                try:
+                    return upnp_classes['.'.join(parts)]()
+                except KeyError:
+                    parts.pop()
+
+        self.warning("WTF - no fallback for upnp_class %r found ?!?", name)
+        return None
+
     @classmethod
     def fromString(cls, aString):
         instance = cls()
@@ -677,10 +695,7 @@ class DIDLElement(ElementInterface):
         elt = elt.getroot()
         for node in elt.getchildren():
             upnp_class_name =  node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
-            try:
-                upnp_class = upnp_classes[upnp_class_name]()
-            except Exception, msg:
-                print msg
+            upnp_class = instance.get_upnp_class(upnp_class_name)
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance
