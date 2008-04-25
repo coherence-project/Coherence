@@ -1,7 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006-2008, Frank Scholz <coherence@beebits.net>
 
 class ConnectionManagerClient:
 
@@ -9,13 +9,15 @@ class ConnectionManagerClient:
         self.service = service
         self.namespace = service.get_type()
         self.url = service.get_control_url()
-        self.service.subscribe()
         self.service.client = self
-        #print "ConnectionManagerClient __init__", self.url
+        self.service.subscribe()
 
     #def __del__(self):
     #    #print "ConnectionManagerClient deleted"
     #    pass
+
+    def connection_manager_id(self):
+        return "%s/%s" % (self.service.device.get_id(), self.service.get_id())
 
     def remove(self):
         self.service.remove()
@@ -33,14 +35,19 @@ class ConnectionManagerClient:
 
     def prepare_for_connection(self, remote_protocol_info, peer_connection_manager, peer_connection_id, direction):
         action = self.service.get_action('PrepareForConnection')
-        return action.call( RemoteProtocolInfo=remote_protocol_info,
+        if action:  # optional
+            return action.call( RemoteProtocolInfo=remote_protocol_info,
                             PeerConnectionManager=peer_connection_manager,
                             PeerConnectionID=peer_connection_id,
                             Direction=direction)
+        return None
 
     def connection_complete(self, connection_id):
         action = self.service.get_action('ConnectionComplete')
-        return action.call(ConnectionID=connection_id)
+        if action:  # optional
+            return action.call(ConnectionID=connection_id)
+        return None
+
 
     def get_current_connection_ids(self):
         action = self.service.get_action('GetCurrentConnectionIDs')

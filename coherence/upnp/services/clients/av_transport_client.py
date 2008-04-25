@@ -1,9 +1,12 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006-2008, Frank Scholz <coherence@beebits.net>
 
-class AVTransportClient:
+from coherence import log
+
+class AVTransportClient(log.Loggable):
+    logCategory = 'avtransportclient'
 
     def __init__(self, service):
         self.service = service
@@ -11,7 +14,6 @@ class AVTransportClient:
         self.url = service.get_control_url()
         self.service.subscribe()
         self.service.client = self
-        #print "AVTransportClient __init__", self.url
 
     #def __del__(self):
     #    #print "AVTransportClient deleted"
@@ -35,9 +37,11 @@ class AVTransportClient:
 
     def set_next_av_transport_uri(self, instance_id=0, next_uri='', next_uri_metadata=''):
         action = self.service.get_action('SetNextAVTransportURI')
-        return action.call( InstanceID=instance_id,
+        if action:  # optional
+            return action.call( InstanceID=instance_id,
                             NextURI=next_uri,
                             NextURIMetaData=next_uri_metadata)
+        return None
 
     def get_media_info(self, instance_id=0):
         action = self.service.get_action('GetMediaInfo')
@@ -65,7 +69,9 @@ class AVTransportClient:
 
     def pause(self, instance_id=0):
         action = self.service.get_action('Pause')
-        return action.call( InstanceID=instance_id)
+        if action:  # optional
+            return action.call( InstanceID=instance_id)
+        return None
 
     def play(self, instance_id=0, speed=1):
         action = self.service.get_action('Play')
@@ -77,7 +83,9 @@ class AVTransportClient:
 
     def record(self, instance_id=0):
         action = self.service.get_action('Record')
-        return action.call( InstanceID=instance_id)
+        if action:  # optional
+            return action.call( InstanceID=instance_id)
+        return None
 
     def seek(self, instance_id=0, unit='', target=0):
         action = self.service.get_action('Seek')
