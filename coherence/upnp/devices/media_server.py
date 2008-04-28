@@ -397,7 +397,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                 self.backend = backend
 
             def backend_failure(x):
-                self.warning('backend not installed, MediaServer activation aborted')
+                self.warning('backend %s not installed, MediaServer activation aborted - %s', backend, x.getErrorMessage())
                 self.debug(x)
 
             d.addCallback(backend_ready)
@@ -411,7 +411,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
     def init_failed(self, backend, msg):
         if self.backend != backend:
             return
-        self.warning('backend not installed, MediaServer activation aborted')
+        self.warning('backend not installed, MediaServer activation aborted - %s', msg.getErrorMessage())
         self.debug(msg)
 
     def init_complete(self, backend):

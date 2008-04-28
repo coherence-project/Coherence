@@ -66,7 +66,7 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                 self.backend = backend
 
             def backend_failure(x):
-                self.warning('backend not installed, %s activation aborted' % self.device_type)
+                self.warning('backend %s not installed, %s activation aborted - %s' % backend, self.device_type, x.getErrorMessage())
                 self.debug(x)
 
             d.addCallback(backend_ready)
