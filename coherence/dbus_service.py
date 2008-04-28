@@ -92,12 +92,12 @@ class DBusService(dbus.service.Object,log.Loggable):
                         if( variable.name != 'LastChange' and
                             variable.name[0:11] != 'A_ARG_TYPE_' and
                             variable.never_evented == False):
-                                if hasattr(variable, dbus_updated) == False:
-                                    variable.dbus_update = None
-                                if variable.dbus_updated != variable.last_touched:
-                                    v[unicode(variable.name)] = unicode(variable.value)
-                                    variable.dbus_updated = time.time()
-                                    #FIXME: we are missing variable dependencies here
+                                if hasattr(variable, 'dbus_updated') == False:
+                                    variable.dbus_updated = None
+                                #if variable.dbus_updated != variable.last_touched:
+                                #    v[unicode(variable.name)] = unicode(variable.value)
+                                #    variable.dbus_updated = time.time()
+                                #    #FIXME: we are missing variable dependencies here
                     if len(v) > 0:
                         lc[str(instance)] = v
                 if len(lc) > 0:
@@ -194,18 +194,18 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         r['type'] = device.get_device_type()
         return r
 
-    @dbus.service.method(BUS_NAME,in_signature='sso',out_signature='s')
+    @dbus.service.method(BUS_NAME,in_signature='ssoss',out_signature='s')
     def register(self, device_type, name, dbus_object,action_mapping,container_mapping):
         id = "n/a"
         return id
 
-    def cp_ms_detected(self,client,usn):
+    def cp_ms_detected(self,client,usn=''):
         self.devices.append(DBusDevice(client.device,self.bus))
         self.UPnP_ControlPoint_MediaServer_detected(usn)
 
-    def cp_mr_detected(self,client,usn):
+    def cp_mr_detected(self,client,usn=''):
         self.devices.append(DBusDevice(client.device,self.bus))
-        self.UPnP_ControlPoint_MediaRenderer_detected(usn),
+        self.UPnP_ControlPoint_MediaRenderer_detected(usn)
 
     @dbus.service.signal(BUS_NAME,
                          signature='s')

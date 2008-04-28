@@ -236,14 +236,6 @@ class Coherence(log.Loggable):
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
-        if config.get('use_dbus', 'no') == 'yes':
-            try:
-                from coherence import dbus_service
-                self.dbus = dbus_service.DBusPontoon(self)
-            except Exception, msg:
-                self.warning("Unable to activate dbus sub-system: %r" % msg)
-                self.debug(traceback.format_exc())
-
         self.ssdp_server = SSDPServer()
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
@@ -310,6 +302,14 @@ class Coherence(log.Loggable):
 
         if config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
+
+        if config.get('use_dbus', 'no') == 'yes':
+            try:
+                from coherence import dbus_service
+                self.dbus = dbus_service.DBusPontoon(self.ctrl)
+            except Exception, msg:
+                self.warning("Unable to activate dbus sub-system: %r" % msg)
+                self.debug(traceback.format_exc())
 
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin %r", plugin)
