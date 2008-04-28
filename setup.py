@@ -64,6 +64,7 @@ New in this 0.5.4 - Fools Garden - release
         IRadioStore = coherence.backends.iradio_storage:IRadioStore
         LastFMStore = coherence.backends.lastfm_storage:LastFMStore
         AmpacheStore = coherence.backends.ampache_storage:AmpacheStore
+        TrackerStore = coherence.backends.tracker_storage:TrackerStore
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
