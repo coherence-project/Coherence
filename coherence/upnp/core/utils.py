@@ -4,6 +4,12 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+import socket
+import fcntl
+import struct
+import string
+import urlparse
+
 from coherence.extern.et import parse_xml as et_parse_xml
 
 from twisted.web import server, http, static
@@ -12,12 +18,11 @@ from twisted.web import proxy, resource, server
 from twisted.internet import reactor, protocol
 from twisted.python import failure
 
-import socket
-import fcntl
-import struct
-import string
-import os
-import urlparse
+try:
+    import netifaces
+    have_netifaces = True
+except ImportError:
+    have_netifaces = False
 
 def parse_xml(data, encoding="utf-8"):
     return et_parse_xml(data,encoding)
@@ -50,9 +55,25 @@ def get_ip_address(ifname):
 
     Updated to work on BSD. OpenBSD and OSX share the same value for
     SIOCGIFADDR, and its likely that other BSDs do too.
+
+    Updated to work on Windows,
+    using the optional Python module netifaces
+    http://alastairs-place.net/netifaces/
+
     """
 
-    system_type = os.uname()[0]
+    from os import uname
+    system_type = uname()[0]
+
+    if system_type == 'Windows':
+        if have_netifaces:
+            if ifname in netifaces.interfaces():
+                iface = netifaces.ifaddresses(ifname)
+                ifaceadr = iface(netifaces.AF_INET)
+                # we now have a list of address dictionaries, there may be multiple addresses bound
+                return ifaceadr[0]['addr']
+        return '127.0.0.1'
+
     if system_type == "Linux":
         SIOCGIFADDR = 0x8915
     else:
@@ -70,6 +91,14 @@ def get_host_address():
         the default route, as this is most likely
         the interface we should bind to (on a single homed host!)
     """
+
+    from os import uname
+    system_type = uname()[0]
+
+    if system_type == 'Windows':
+        if have_netifaces:
+            return get_ip_address(netifaces.interfaces()[0])    # on windows assume first interface is primary
+
     try:
         route_file = '/proc/net/route'
         route = open(route_file)
@@ -84,8 +113,8 @@ def get_host_address():
                         return get_ip_address(l[0])
     except IOerror:
         """ fallback to parsing the output of netstat """
-        import os, posix
-        (osname,_, _, _,_) = os.uname()
+        import posix
+        (osname,_, _, _,_) = uname()
         osname = osname.lower()
         f = posix.popen('netstat -rn')
         lines = f.readlines()
@@ -98,7 +127,7 @@ def get_host_address():
                 else:
                     return get_ip_address(parts[-1])
 
-    """ return localhost if we havn't found anything """
+    """ return localhost if we haven't found anything """
     return '127.0.0.1'
 
 class Site(server.Site):
