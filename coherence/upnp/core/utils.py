@@ -4,10 +4,6 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import socket
-import fcntl
-import struct
-import string
 import urlparse
 
 from coherence.extern.et import parse_xml as et_parse_xml
@@ -60,12 +56,11 @@ def get_ip_address(ifname):
     using the optional Python module netifaces
     http://alastairs-place.net/netifaces/
 
+    Thx Lawrence for that patch!
     """
 
-    from os import uname
-    system_type = uname()[0]
-
-    if system_type == 'Windows':
+    import sys
+    if sys.platform == 'win32':
         if have_netifaces:
             if ifname in netifaces.interfaces():
                 iface = netifaces.ifaddresses(ifname)
@@ -73,6 +68,13 @@ def get_ip_address(ifname):
                 # we now have a list of address dictionaries, there may be multiple addresses bound
                 return ifaceadr[0]['addr']
         return '127.0.0.1'
+
+    from os import uname
+    import socket
+    import fcntl
+    import struct
+
+    system_type = uname()[0]
 
     if system_type == "Linux":
         SIOCGIFADDR = 0x8915
@@ -92,10 +94,8 @@ def get_host_address():
         the interface we should bind to (on a single homed host!)
     """
 
-    from os import uname
-    system_type = uname()[0]
-
-    if system_type == 'Windows':
+    import sys
+    if sys.platform == 'win32':
         if have_netifaces:
             return get_ip_address(netifaces.interfaces()[0])    # on windows assume first interface is primary
 
@@ -113,6 +113,7 @@ def get_host_address():
                         return get_ip_address(l[0])
     except IOerror:
         """ fallback to parsing the output of netstat """
+        from os import uname
         import posix
         (osname,_, _, _,_) = uname()
         osname = osname.lower()
@@ -435,10 +436,10 @@ class StaticFile(static.File):
         tsize = size
         if range is not None:
             # This is a request for partial data...
-            bytesrange = string.split(range, '=')
+            bytesrange = range.split('=')
             assert bytesrange[0] == 'bytes',\
                    "Syntactically invalid http range header!"
-            start, end = string.split(bytesrange[1],'-', 1)
+            start, end = bytesrange[1].split('-', 1)
             if start:
                 f.seek(int(start))
                 if end:
