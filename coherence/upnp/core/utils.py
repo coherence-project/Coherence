@@ -131,6 +131,32 @@ def get_host_address():
     """ return localhost if we haven't found anything """
     return '127.0.0.1'
 
+def de_chunk_payload(response):
+
+    import StringIO
+    """ This method takes a chunked HTTP data object and unchunks it."""
+    newresponse = StringIO.StringIO()
+    # chunked encoding consists of a bunch of lines with
+    # a length in hex followed by a data chunk and a CRLF pair.
+    response = StringIO.StringIO(response)
+
+    def read_chunk_length():
+        line = response.readline()
+        try:
+            len = int(line.strip(),16)
+        except ValueError:
+            len = 0
+        return len
+
+    len = read_chunk_length()
+    while (len > 0):
+        newresponse.write(response.read(len))
+        line = response.readline() # after chunk and before next chunk length
+        len = read_chunk_length()
+
+    return newresponse.getvalue()
+
+
 class Site(server.Site):
 
     noisy = False
@@ -310,7 +336,11 @@ class myHTTPPageGetter(client.HTTPPageGetter):
             self.factory.noPage(failure.Failure(
                 client.PartialDownloadError(self.status, self.message, response)))
         else:
-            self.factory.page(response)
+            if(self.headers.has_key('transfer-encoding') and
+               self.headers['transfer-encoding'][0].lower() == 'chunked'):
+                self.factory.page(de_chunk_payload(response))
+            else:
+                self.factory.page(response)
         # server might be stupid and not close connection. admittedly
         # the fact we do only one request per connection is also
         # stupid...
