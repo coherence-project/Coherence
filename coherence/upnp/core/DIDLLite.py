@@ -244,12 +244,14 @@ class Object(log.Loggable):
 
         root.attrib['parentID'] = str(self.parentID)
 
-        if self.refID:
-            root.attrib['refID'] = str(self.refID)
+        if(kwargs.get('upnp_client','') != 'XBox'):
+            if self.refID:
+                root.attrib['refID'] = str(self.refID)
 
         if kwargs.get('requested_id',None):
             if kwargs.get('requested_id') != root.attrib['id']:
-                root.attrib['refID'] = root.attrib['id']
+                if(kwargs.get('upnp_client','') != 'XBox'):
+                    root.attrib['refID'] = root.attrib['id']
                 r_id = kwargs.get('requested_id')
                 root.attrib['id'] = r_id
                 r_id = r_id.split('@',1)
@@ -261,7 +263,8 @@ class Object(log.Loggable):
         elif kwargs.get('parent_container',None):
             if(kwargs.get('parent_container') != '0' and
                kwargs.get('parent_container') != root.attrib['parentID']):
-                root.attrib['refID'] = root.attrib['id']
+                if(kwargs.get('upnp_client','') != 'XBox'):
+                    root.attrib['refID'] = root.attrib['id']
                 root.attrib['id'] = '@'.join((root.attrib['id'],kwargs.get('parent_container')))
                 root.attrib['parentID'] = kwargs.get('parent_container')
                 self.info("Changing ID from %r to %r, with parentID from %r to %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'],kwargs.get('parent_container'))
