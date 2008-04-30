@@ -207,6 +207,7 @@ class Artist(item.Item,BackendItem):
 
     def get_item(self):
         item = DIDLLite.MusicArtist(self.storeID+1000, AUDIO_ARTIST_CONTAINER_ID, self.name)
+        item.childCount = self.get_child_count()
         return item
 
     def get_id(self):
@@ -244,6 +245,8 @@ class Album(item.Item,BackendItem):
 
     def get_item(self):
         item = DIDLLite.MusicAlbum(self.storeID+1000, AUDIO_ALBUM_CONTAINER_ID, self.title)
+        item.artist = self.artist.name
+        item.childCount = self.get_child_count()
         if len(self.cover)>0:
             _,ext =  os.path.splitext(self.cover)
             item.albumArtURI = ''.join((self.store.urlbase,str(self.get_id()),'?cover',ext))
