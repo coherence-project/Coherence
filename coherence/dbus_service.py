@@ -161,9 +161,9 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             self.devices.append(DBusDevice(device,self.bus_name))
 
         louie.connect(self.cp_ms_detected, 'Coherence.UPnP.ControlPoint.MediaServer.detected', louie.Any)
-        louie.connect(self.UPnP_ControlPoint_MediaServer_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
+        #louie.connect(self.UPnP_ControlPoint_MediaServer_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
         louie.connect(self.cp_mr_detected, 'Coherence.UPnP.ControlPoint.MediaRenderer.detected', louie.Any)
-        louie.connect(self.UPnP_ControlPoint_MediaRenderer_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
+        #louie.connect(self.UPnP_ControlPoint_MediaRenderer_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
     def remove_client(self, usn, client):
