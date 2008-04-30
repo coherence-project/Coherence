@@ -116,7 +116,7 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-def parse_xml(data, encoding="utf-8"):
+def parse_xml(data, encoding="utf-8",dump_invalid_data=False):
     try:
         p = ET.XMLParser(encoding=encoding)
     except exceptions.TypeError:
@@ -131,18 +131,14 @@ def parse_xml(data, encoding="utf-8"):
         data = data.encode(encoding)
     except UnicodeDecodeError:
         pass
-    except Exception, error:
-        print "parse_xml encode Exception", error
-        import traceback
-        traceback.print_exc()
 
     # Guess from who we're getting this?
     data = data.replace('\x00','')
     try:
         p.feed(data)
     except Exception, error:
-        print "parse_xml feed Exception", error
-        print error, repr(data)
-        return None
+        if dump_invalid_data:
+            print error, repr(data)
+        raise Exception, error
     else:
         return ET.ElementTree(p.close())
