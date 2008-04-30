@@ -1,3 +1,18 @@
+2008-04-30 20:54  dev
+
+	* ChangeLog, NEWS, coherence/__init__.py, setup.py: New in this
+	  0.5.6 - Walpurgisnacht - release
+	  
+	  * a MediaServer backend for Meta Tracker
+	  (http://www.gnome.org/projects/tracker)
+	  * simplify the IP-address detection on Windows with the help of
+	  the optional Python package netifaces
+	  (http://alastairs-place.net/netifaces)
+	  * proper handling of filename encoding issues in the filesystem
+	  based MediaServer
+	  * and a lot of community driven fixes and enhancements,
+	  kudos given representatively to Lawrence and veerz
+
 2008-04-30 14:23  dev
 
 	* coherence/upnp/core/DIDLLite.py: remove 'refID' from the response
