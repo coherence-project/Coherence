@@ -305,6 +305,9 @@ class FlickrStore(log.Loggable, Plugin):
         return len(self.store)
 
     def get_by_id(self,id):
+        if isinstance(id, basestring):
+            id = id.split('@',1)
+            id = id[0]
         try:
             id = int(id)
         except ValueError:

@@ -391,6 +391,10 @@ class FSStore(BackendStore):
         return len(self.store)
 
     def get_by_id(self,id):
+        # we have referenced ids here when we are in WMC mapping mode
+        if isinstance(id, basestring):
+            id = id.split('@',1)
+            id = id[0]
         try:
             id = int(id)
         except ValueError:

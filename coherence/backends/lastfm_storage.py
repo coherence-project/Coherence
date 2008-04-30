@@ -374,6 +374,9 @@ class LastFMStore(log.Loggable,Plugin):
         return len(self.store)
 
     def get_by_id(self,id):
+        if isinstance(id, basestring):
+            id = id.split('@',1)
+            id = id[0]
         id = int(id)
         if id == 0:
             id = 1000
