@@ -1,0 +1,91 @@
+0.5.6 - Walpurgisnacht - 20080430
+
+ * a MediaServer backend for Meta Tracker (http://www.gnome.org/projects/tracker)
+ * simplify the IP-address detection on Windows with the help of
+   the optional Python package netifaces (http://alastairs-place.net/netifaces)
+ * proper handling of filename encoding issues in the filesystem based MediaServer
+ * and a lot of community driven fixes and enhancements,
+   kudos given representatively to Lawrence and veerz
+
+0.5.4 - Fools Garden - 20080401
+
+ * a DesktopApplet to easily start a Coherence instance from your desktops panel
+   Thx to Erwan Velu, Helio Chissini de Castro and Nicolas Lécureuil!
+ * more efforts to simplify the ordinary user experience
+   * allow now the backend definition via commandline, to just start up
+     a MediaServer or anything else, without bothering oneself with the config file
+   * specify logfile location and daemonization on the commandline too
+   * a bit more usable --help output
+   Thx again Erwan Velu!
+ * a MediaServer backend for Ampache - a Web-based Audio file manager (http://ampache.org)
+   Thx to the awesome help of Karl Vollmer!
+ * device implementations for BinaryLight and DimmableLight
+ * a little helper to extract device and service xml files and
+   send them to us - a beginning of our UPnP device fingerprint program
+ * and the usual bugfixes and enhancements
+
+0.5.2 - 20080229
+
+ * rework of the XBox 360 support
+ * refinements and improvements on the client side API, incorporating things we learned on extending the Rhythmbox UPnP plugin
+ * some efforts on smoothing the "just use it as a MediaServer/-Renderer" user experience
+ * rearrangement in the way multiple res elements are ordered, fixes issues which we had with some UPnP stacks and their 'wayward' interpretation of the specs
+ * and a lot more of the usual bugfixes and enhancements
+
+0.5.0 - 20071231
+
+ * better DLNA support, in particular for the Sony Playstation 3
+ * a MediaServer backend for Shoutcast internet radio streams
+ * an experimental last.fm MediaServer backend for the last.fm service
+ * provide methods to remove local devices from a Coherence instance
+ * slow move to an XML based configuration file
+ * support for BSD systems - thx kraft!
+ * an emerging D-Bus interface
+ * more platform independency for our Twisted inotify module,
+   using libc when possible
+ * and a lot more of the usual bugfixes and enhancements
+
+0.4.0 - 20070731
+
+ * integration of a new logging module
+    logging can now be configured via the config file or through an
+    environment variable COHERENCE_DEBUG, which overrides the config values.
+
+    Usage is like
+
+        COHERENCE_DEBUG=*:3 emit INFO level messages from all modules
+        COHERENCE_DEBUG=*:2,ssdp:4 WARNING level messages from all modules,
+                                           plus debug level for the ssdp module
+
+ * removed the dependency for SOAPpy, now using own methods and ElementTree only
+ * start reworking the client API, to make things there easier too,
+   see as an example https://coherence.beebits.net/wiki/CoherenceMediaRenderer
+ * serving cover art now to DLNA MediaRenderers
+ * refinements on the object creation and the import into the MediaServers
+ * an installable package for the Nokia Maemo platform on the N800,
+   complete with all dependencies, thanks to Rob Taylor of http://codethink.co.uk
+ * and a lot more of the usual bugfixes and enhancements
+
+0.3.0 - 20070611
+
+ * better DLNA support, especially for the PlayStation 3
+ * cover art in the MediaServers
+ * object creation and import in the MediaServers
+ * a new experimental MediaServer with an All, Artist, Album based structure
+ * support for deployment on the Nokia N800 - notably a working GStreamer
+   UPnP MediaRenderer there, with mp3 and ogg playback
+ * an album art (helper) module to fetch the album covers from the Amazon WebService
+ * icon support in the UPnP device description
+ * the usual bugfixes
+
+0.2.1 - 20070403
+
+ * bugfix release
+
+0.2.0 - 200070401
+
+ * fixes,fixes and more fixes
+
+0.1.0 - 20070215
+
+ * first public release

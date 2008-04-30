@@ -1,3 +1,220 @@
+2008-04-30 14:23  dev
+
+	* coherence/upnp/core/DIDLLite.py: remove 'refID' from the response
+	  if we see an XBox client, seems there is a problem with that
+	  there
+
+2008-04-30 12:28  dev
+
+	* coherence/backends/axiscam_storage.py,
+	  coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/iradio_storage.py,
+	  coherence/backends/lastfm_storage.py: add missing ID-separation,
+	  which will be needed when an XBox tries to browse the WMC mapped
+	  containers
+
+2008-04-30 09:12  dev
+
+	* coherence/extern/et.py: make the dumping of 'invalid xml data' an
+	  option and raise Exceptions instead of returning 'None'
+	  
+	  closes #105
+
+2008-04-30 09:10  dev
+
+	* coherence/backends/mediadb_storage.py: add some more details to
+	  the Album and the Artist object
+
+2008-04-30 09:09  dev
+
+	* coherence/dbus_service.py: remove for the moment some invalid
+	  signal mapping
+
+2008-04-29 21:58  dev
+
+	* coherence/upnp/core/utils.py: handle chunked encoded responses -
+	  thx Lawrence!
+	  
+	  readline and strip should do the trick on all platforms, if not
+	  let's reopen this ticket.
+	  
+	  closes #132.
+
+2008-04-29 12:03  dev
+
+	* coherence/upnp/core/utils.py: move on Windows not-available
+	  modules and methods out of the way
+
+2008-04-29 10:49  dev
+
+	* coherence/upnp/core/utils.py: tries to determine on Windows the
+	  interface to use and its IP-address.
+	  
+	  Uses the [http://alastairs-place.net/netifaces/ netifaces] modul
+	  for this.
+	  
+	  Addresses #107, #117, #129. pls cross-check
+
+2008-04-28 22:03  dev
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/tracker_storage.py, setup.py: a shiny new
+	  backend - ''TrackerStore''
+	  
+	  * connects via DBus to
+	  [http://www.gnome.org/projects/tracker/index.html Meta Tracker]
+	  and retrieves from the 'Music' service the there stored
+	  information about audio files (images and video will be next)
+	  * needs a Twisted glib2/gtk2 reactor and therefore the config
+	  option ''use_dbus'' set to 'yes'
+	  * the only config option for this backend so far is ''name''
+	  * the querying of Tracker is pretty lame atm, there is much room
+	  for optimization
+	  * notifications by Tracker about new files or modifications of
+	  the indexed files are not yet catched
+
+2008-04-28 21:46  dev
+
+	* coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: print a backend
+	  instantiation error message in log level 'warning', not only the
+	  failure object in 'debug'
+
+2008-04-28 21:44  dev
+
+	* coherence/base.py, coherence/dbus_service.py: rearrange
+	  activation of the DBus service, and rework that to follow the
+	  last changes
+
+2008-04-25 19:23  dev
+
+	* coherence/upnp/services/clients/av_transport_client.py,
+	  coherence/upnp/services/clients/connection_manager_client.py:
+	  take optional actions in the AVTransport and ConnectionManager
+	  service clients into account - thx Lawrence!
+	  
+	  Closes #130
+
+2008-04-25 14:13  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py:
+	  rearrange local functions in the Browse method
+
+2008-04-24 18:55  dev
+
+	* coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server_client.py: follow-up on the
+	  changes we did @ device creation and removal
+
+2008-04-24 18:53  dev
+
+	* coherence/upnp/core/DIDLLite.py: try to fallback when some other
+	  UPnP devices sends us a DIDLLite fragment with an non-standard
+	  UPnP-class, addresses #125
+
+2008-04-24 13:10  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py:
+	  again Xbox mappings, cleanup
+
+2008-04-23 21:48  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py:
+	  again a fix for the XBox mapping
+
+2008-04-23 19:17  dev
+
+	* coherence/upnp/core/device.py: remove nested embedded devices and
+	  their services
+
+2008-04-23 18:58  dev
+
+	* coherence/upnp/core/device.py, misc/upnp-tester.py: more
+	  adjustments to support nested embedded devices and a new version
+	  of the upnp-tester script supporting this
+
+2008-04-23 18:02  dev
+
+	* coherence/backends/fs_storage.py: add missing WMC mapping for the
+	  folder objects
+
+2008-04-23 15:43  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py: fix
+	  wrong handling of 'non-callable' WMC mappings
+
+2008-04-22 22:10  dev
+
+	* coherence/backends/mediadb_storage.py: fix access via mapped WMC
+	  containers
+
+2008-04-22 22:06  dev
+
+	* coherence/upnp/core/device.py,
+	  coherence/upnp/devices/control_point.py: more work on supporting
+	  embedded devices
+
+2008-04-22 20:27  dev
+
+	* coherence/upnp/core/device.py: and one more
+
+2008-04-22 20:24  dev
+
+	* coherence/upnp/core/device.py: one more adjustment
+
+2008-04-22 20:06  dev
+
+	* coherence/base.py, coherence/upnp/core/device.py: rework the
+	  handling of embedded devices a bit
+
+2008-04-19 20:28  dev
+
+	* bin/coherence: allow multiple --plugin commandline options
+
+2008-04-19 18:08  dev
+
+	* coherence/upnp/core/device.py: adding support for embedded
+	  devices, thx Lawrence for this patch - closes #123
+
+2008-04-19 10:07  dev
+
+	* coherence/upnp/core/DIDLLite.py: someday I'll probably have to
+	  pay for this :-(, but at the moment it solves issues with
+	  MediaRenderers sending back incomplete DIDLLite fragments
+
+2008-04-19 09:57  dev
+
+	* Coherence.egg-info/PKG-INFO, coherence/__init__.py,
+	  coherence/backends/ampache_storage.py,
+	  coherence/backends/fs_storage.py, coherence/extern/inotify.py,
+	  coherence/extern/xdg.py, coherence/upnp/devices/media_server.py:
+	  merged all fsstore-ng changes 844:848 back into trunk
+
+2008-04-02 11:09  dev
+
+	* misc/Desktop Applet/tango-system-file-manager-32x32.png:
+	  additional 32x32 sized icon for the DesktopApplet
+
+2008-04-02 08:35  dev
+
+	* misc/Desktop Applet/applet-coherence: write 1000 times on the
+	  wall: Don't do things in parallel!
+
+2008-04-02 07:59  dev
+
+	* setup.py: fix broken setup :-(
+
+2008-04-02 07:56  dev
+
+	* misc/Desktop Applet/applet-coherence: fall back for the icon
+	  retrieval
+
+2008-04-01 21:45  dev
+
+	* ChangeLog: checking in updated Changelog
+
 2008-04-01 21:43  dev
 
 	* ChangeLog, Coherence.egg-info/PKG-INFO, coherence/__init__.py,

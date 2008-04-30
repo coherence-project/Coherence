@@ -19,22 +19,14 @@ digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this 0.5.4 - Fools Garden - release
+New in this 0.5.6 - Walpurgisnacht - release
 
-* a DesktopApplet to easily start a Coherence instance from your desktops panel
-  Thx to Erwan Velu, Helio Chissini de Castro and Nicolas Lécureuil!
-* more efforts to simplify the ordinary user experience
-  * allow now the backend definition via commandline, to just start up
-    a MediaServer or anything else, without bothering oneself with the config file
-  * specify logfile location and daemonization on the commandline too
-  * a bit more usable --help output
-  Thx again Erwan Velu!
-* a MediaServer backend for Ampache - a Web-based Audio file manager (http://ampache.org)
-  Thx to the awesome help of Karl Vollmer!
-* device implementations for BinaryLight and DimmableLight
-* a little helper to extract device and service xml files and
-  send them to us - a beginning of our UPnP device fingerprint program
-* and the usual bugfixes and enhancements
+ * a MediaServer backend for Meta Tracker (http://www.gnome.org/projects/tracker)
+ * simplify the IP-address detection on Windows with the help of
+   the optional Python package netifaces (http://alastairs-place.net/netifaces)
+ * proper handling of filename encoding issues in the filesystem based MediaServer
+ * and a lot of community driven fixes and enhancements,
+   kudos given representatively to Lawrence and veerz
 
 """,
     author="Frank Scholz",
@@ -45,7 +37,7 @@ New in this 0.5.4 - Fools Garden - release
     url = "http://coherence.beebits.net",
     download_url = 'https://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
     keywords=['UPnP', 'DLNA', 'multimedia', 'gstreamer'],
-    classifiers = ['Development Status :: 4 - Beta',
+    classifiers = ['Development Status :: 5 - Production/Stable',
                    'Environment :: Console',
                    'Environment :: Web Environment',
                    'License :: OSI Approved :: MIT License',
