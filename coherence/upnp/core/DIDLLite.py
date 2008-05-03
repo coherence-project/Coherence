@@ -259,7 +259,10 @@ class Object(log.Loggable):
                     root.attrib['parentID'] = r_id[1]
                 except IndexError:
                     pass
-                self.info("Changing ID from %r to %r, with parentID %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'])
+                if(kwargs.get('upnp_client','') != 'XBox'):
+                    self.info("Changing ID from %r to %r, with parentID %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'])
+                else:
+                    self.info("Changing ID from %r to %r, with parentID %r", self.id, root.attrib['id'], root.attrib['parentID'])
         elif kwargs.get('parent_container',None):
             if(kwargs.get('parent_container') != '0' and
                kwargs.get('parent_container') != root.attrib['parentID']):
@@ -267,8 +270,10 @@ class Object(log.Loggable):
                     root.attrib['refID'] = root.attrib['id']
                 root.attrib['id'] = '@'.join((root.attrib['id'],kwargs.get('parent_container')))
                 root.attrib['parentID'] = kwargs.get('parent_container')
-                self.info("Changing ID from %r to %r, with parentID from %r to %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'],kwargs.get('parent_container'))
-
+                if(kwargs.get('upnp_client','') != 'XBox'):
+                    self.info("Changing ID from %r to %r, with parentID from %r to %r", root.attrib['refID'], root.attrib['id'], self.parentID, root.attrib['parentID'])
+                else:
+                    self.info("Changing ID from %r to %r, with parentID from %r to %r", self.id, root.attrib['id'], self.parentID, root.attrib['parentID'])
 
         if(isinstance(self, Container) and kwargs.get('upnp_client','') == 'XBox'):
             ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
