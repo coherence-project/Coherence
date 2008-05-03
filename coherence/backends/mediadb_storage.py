@@ -543,19 +543,19 @@ class MediaStore(BackendStore):
 
             if self.coverlocation is not None:
                 cover_path = os.path.join(self.coverlocation,filename +'.jpg')
-            if os.path.exists(cover_path) is True:
-                print "cover found:", cover_path
-                album.cover = cover_path
-            else:
-                def got_it(f,a):
-                    print "cover saved:",f, a.title
-                    a.cover = f
+                if os.path.exists(cover_path) is True:
+                    print "cover found:", cover_path
+                    album.cover = cover_path
+                else:
+                    def got_it(f,a):
+                        print "cover saved:",f, a.title
+                        a.cover = f
 
-                aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-                CoverGetter(cover_path,aws_key,
-                            callback=(got_it,(album)),
-                            artist=album.artist.name,
-                            title=album.title)
+                    aws_key = '1XHSE4FQJ0RK0X3S9WR2'
+                    CoverGetter(cover_path,aws_key,
+                                callback=(got_it,(album)),
+                                artist=album.artist.name,
+                                title=album.title)
 
     def get_by_id(self,id):
         self.info("get_by_id %s" % id)
