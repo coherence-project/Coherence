@@ -56,6 +56,16 @@ web-ui = no                               # set this to yes to enable some inter
     #[[GStreamerPlayer]]
     #    name = GStreamer Audio Player
 
+    #[[AmpacheStore]]
+    #    name = Ampache
+    #    url = http://localhost/ampache/server/xml.server.php
+    #    key = your password      # not your normal ampache user password,
+                                  # this is for the XML-API
+    #    user = your user         # optional
+
+    #[[TrackerStore]]
+    #    name = Tracker
+
     #[[ElisaPlayer]]
     #    name = Elisa
     #    host = localhost
