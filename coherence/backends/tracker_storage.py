@@ -627,6 +627,8 @@ class TrackerStore(BackendStore):
                 title = title.strip()
                 if len(title) == 0:
                     title = os.path.basename(file)
+                if mimetype == 'video/x-theora+ogg':
+                    mimetype = u'video/ogg'
                 video_item = Video(self,
                                    self.videos,VIDEO_ALL_CONTAINER_ID,
                                    file,title,\
@@ -701,6 +703,8 @@ class TrackerStore(BackendStore):
                 duration,album_track_count,\
                 track_number,codec,\
                 size,mimetype = track
+                if mimetype == 'video/x-vorbis+ogg':
+                    mimetype = 'audio/ogg'
                 track_item = Track(self,
                                    self.songs,AUDIO_ALL_CONTAINER_ID,
                                    file,title,artist,album,genre,\
@@ -767,4 +771,26 @@ class TrackerStore(BackendStore):
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                             ['http-get:*:audio/mpeg:*',
-                             'http-get:*:application/ogg:*',])
+                             'internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
+                             'http-get:*:application/ogg:*',
+                             'internal:%s:application/ogg:*' % self.server.coherence.hostname,
+                             'http-get:*:audio/ogg:*',
+                             'internal:%s:audio/ogg:*' % self.server.coherence.hostname,
+                             'http-get:*:video/ogg:*',
+                             'internal:%s:video/ogg:*' % self.server.coherence.hostname,
+                             'http-get:*:video/mpeg:*',
+                             'internal:%s:video/mpeg:*' % self.server.coherence.hostname,
+                             'http-get:*:video/x-msvideo:*',
+                             'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
+                             'http-get:*:video/avi:*',
+                             'internal:%s:video/avi:*' % self.server.coherence.hostname,
+                             'http-get:*:video/mp4:*',
+                             'internal:%s:video/mp4:*' % self.server.coherence.hostname,
+                             'http-get:*:video/quicktime:*',
+                             'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
+                             'http-get:*:image/jpg:*',
+                             'internal:%s:image/jpg:*' % self.server.coherence.hostname,
+                             'http-get:*:image/png:*',
+                             'internal:%s:image/png:*' % self.server.coherence.hostname,
+                             'http-get:*:image/gif:*',
+                             'internal:%s:image/gif:*' % self.server.coherence.hostname,])
