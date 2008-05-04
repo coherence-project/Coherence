@@ -3,7 +3,9 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
-from twisted.internet import reactor
+import os.path
+
+from twisted.internet import reactor, defer
 from twisted.python import failure, util
 
 from coherence.upnp.core import DIDLLite
@@ -19,12 +21,18 @@ import louie
 from coherence.backend import BackendItem, BackendStore
 
 ROOT_CONTAINER_ID = 0
-AUDIO_CONTAINER = 100
+AUDIO_CONTAINER_ID = 100
 AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
 AUDIO_PLAYLIST_CONTAINER_ID = 104
 AUDIO_GENRE_CONTAINER_ID = 105
+
+VIDEO_CONTAINER_ID = 200
+VIDEO_ALL_CONTAINER_ID = 201
+
+IMAGE_CONTAINER_ID = 300
+IMAGE_ALL_CONTAINER_ID = 301
 
 BUS_NAME = 'org.freedesktop.Tracker'
 OBJECT_PATH = '/org/freedesktop/tracker'
@@ -33,6 +41,24 @@ tracks_query = """
 <rdfq:Condition>\
 <rdfq:equals>\
 <rdfq:Property name="Audio:Title" />\
+<rdf:String>*</rdf:String>\
+</rdfq:equals>\
+</rdfq:Condition>\
+"""
+
+video_query = """
+<rdfq:Condition>\
+<rdfq:equals>\
+<rdfq:Property name="File:Name" />\
+<rdf:String>*</rdf:String>\
+</rdfq:equals>\
+</rdfq:Condition>\
+"""
+
+image_query = """
+<rdfq:Condition>\
+<rdfq:equals>\
+<rdfq:Property name="File:Name" />\
 <rdf:String>*</rdf:String>\
 </rdfq:equals>\
 </rdfq:Condition>\
@@ -298,6 +324,142 @@ class Track(BackendItem):
         return self.path
 
 
+class Video(BackendItem):
+
+    logCategory = 'tracker_store'
+
+    def __init__(self,store,
+                 id,parent_id,
+                 file,title,
+                 duration,\
+                 size,mimetype):
+
+        self.store = store
+        self.id = 'video.%d' % int(id)
+        self.parent_id = parent_id
+
+        self.path = unicode(file)
+
+        duration = str(duration).strip()
+        if len(duration) == 0:
+            duration = 0
+        seconds = int(duration)
+        hours = seconds / 3600
+        seconds = seconds - hours * 3600
+        minutes = seconds / 60
+        seconds = seconds - minutes * 60
+        self.duration = ("%d:%02d:%02d") % (hours, minutes, seconds)
+
+        self.title = unicode(title)
+
+        self.cover = None
+        self.mimetype = str(mimetype)
+        self.size = int(size)
+
+        self.url = self.store.urlbase + str(self.id)
+
+
+    def get_children(self, start=0, end=0):
+        return []
+
+    def get_child_count(self):
+        return 0
+
+    def get_item(self, parent_id=None):
+
+        self.debug("Video get_item %r @ %r" %(self.id,self.parent_id))
+
+        # create item
+        item = DIDLLite.VideoItem(self.id,self.parent_id)
+        #item.date =
+        item.title = self.title
+
+        item.albumArtURI = self.cover
+
+        # add http resource
+        res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+        if self.size > 0:
+            res.size = self.size
+        if self.duration > 0:
+            res.duration = str(self.duration)
+        item.res.append(res)
+
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.title
+
+    def get_url(self):
+        return self.url
+
+    def get_path(self):
+        return self.path
+
+
+class Image(BackendItem):
+
+    logCategory = 'tracker_store'
+
+    def __init__(self,store,
+                 id,parent_id,
+                 file,title,album,
+                 date,width,height,\
+                 size,mimetype):
+
+        self.store = store
+        self.id = 'image.%d' % int(id)
+        self.parent_id = parent_id
+
+        self.path = unicode(file)
+
+        self.title = unicode(title)
+
+        self.album = unicode(album.strip())
+        self.mimetype = str(mimetype)
+        self.size = int(size)
+
+        self.url = self.store.urlbase + str(self.id)
+
+
+    def get_children(self, start=0, end=0):
+        return []
+
+    def get_child_count(self):
+        return 0
+
+    def get_item(self, parent_id=None):
+
+        self.debug("Image get_item %r @ %r" %(self.id,self.parent_id))
+
+        # create item
+        item = DIDLLite.ImageItem(self.id,self.parent_id)
+        #item.date =
+        item.title = self.title
+
+        # add http resource
+        res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+        if self.size > 0:
+            res.size = self.size
+        item.res.append(res)
+
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.title
+
+    def get_url(self):
+        return self.url
+
+    def get_path(self):
+        return self.path
+
+
 class TrackerStore(BackendStore):
 
     """ this is a backend to Meta Tracker
@@ -311,8 +473,7 @@ class TrackerStore(BackendStore):
 
     def __init__(self, server, **kwargs):
 
-        if str(reactor.__class__) not in ("""<class 'twisted.internet.glib2reactor.Glib2Reactor'>""",
-                                          """<class 'twisted.internet.gtk2reactor.Gtk2Reactor'>"""):
+        if server.coherence.config.get('use_dbus','no') != 'yes':
             raise Exception, 'this backend needs use_dbus enabled in the configuration'
 
         self.config = kwargs
@@ -332,6 +493,9 @@ class TrackerStore(BackendStore):
         self.playlists = 0
         self.genres = 0
 
+        self.videos = 0
+        self.images = 0
+
         self.bus = dbus.SessionBus()
         tracker_object = self.bus.get_object(BUS_NAME,OBJECT_PATH)
         self.tracker_interface = dbus.Interface(tracker_object, 'org.freedesktop.Tracker')
@@ -343,39 +507,77 @@ class TrackerStore(BackendStore):
         self.containers = {}
         self.tracks = {}
         self.containers[ROOT_CONTAINER_ID] = \
-                    Container( ROOT_CONTAINER_ID,-1, self.name, store=self)
+                    Container(ROOT_CONTAINER_ID,-1,self.name,store=self)
+
+        self.containers[AUDIO_CONTAINER_ID] = \
+                    Container(AUDIO_CONTAINER_ID,ROOT_CONTAINER_ID,'Audio',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_CONTAINER_ID])
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                Container( AUDIO_ALL_CONTAINER_ID,AUDIO_CONTAINER_ID,'All Tracks',
                           store=self,
                           children_callback=None)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
 
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                Container( AUDIO_ALBUM_CONTAINER_ID,AUDIO_CONTAINER_ID,'Albums',
                           store=self,
                           children_callback=None)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                Container( AUDIO_ARTIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Artists',
                           store=self,
                           children_callback=None)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
-                Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                Container( AUDIO_PLAYLIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Playlists',
                           store=self,
                           children_callback=None,
                           container_class=DIDLLite.PlaylistContainer)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
         self.containers[AUDIO_GENRE_CONTAINER_ID] = \
-                Container( AUDIO_GENRE_CONTAINER_ID,ROOT_CONTAINER_ID, 'Genres',
+                Container( AUDIO_GENRE_CONTAINER_ID,AUDIO_CONTAINER_ID,'Genres',
                           store=self,
                           children_callback=None)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
-        self.get_tracks()
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
+
+        self.containers[VIDEO_CONTAINER_ID] = \
+                    Container(VIDEO_CONTAINER_ID,ROOT_CONTAINER_ID,'Video',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[VIDEO_CONTAINER_ID])
+
+        self.containers[VIDEO_ALL_CONTAINER_ID] = \
+                Container( VIDEO_ALL_CONTAINER_ID,VIDEO_CONTAINER_ID,'All Videos',
+                          store=self,
+                          children_callback=None)
+        self.containers[VIDEO_CONTAINER_ID].add_child(self.containers[VIDEO_ALL_CONTAINER_ID])
+
+        self.containers[IMAGE_CONTAINER_ID] = \
+                    Container(IMAGE_CONTAINER_ID,ROOT_CONTAINER_ID,'Images',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[IMAGE_CONTAINER_ID])
+
+        self.containers[IMAGE_ALL_CONTAINER_ID] = \
+                Container(IMAGE_ALL_CONTAINER_ID,IMAGE_CONTAINER_ID,'All Images',
+                          store=self,
+                          children_callback=None)
+        self.containers[IMAGE_CONTAINER_ID].add_child(self.containers[IMAGE_ALL_CONTAINER_ID])
+
+        def queries_finished(r):
+            louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+
+        def queries_failed(r):
+            error = ''
+            louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
+
+        l = []
+        l.append(self.get_tracks())
+        l.append(self.get_videos())
+        l.append(self.get_images())
+        dl = defer.DeferredList(l)
+        dl.addCallback(queries_finished)
+        dl.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error))
 
     def __repr__(self):
         return "TrackerStore"
@@ -403,14 +605,92 @@ class TrackerStore(BackendStore):
                     return self.containers[AUDIO_ALBUM_CONTAINER_ID].children[id]
                 if type == 'artist':
                     return self.containers[AUDIO_ARTIST_CONTAINER_ID].children[id]
+                if type == 'video':
+                    return self.containers[VIDEO_ALL_CONTAINER_ID].children[id]
+                if type == 'image':
+                    return self.containers[IMAGE_ALL_CONTAINER_ID].children[id]
             except (ValueError,KeyError):
                 return None
         return item
 
+    def get_videos(self):
+
+        def handle_error(error):
+            return error
+
+        def parse_videos_query_result(resultlist):
+            videos = []
+            for video in resultlist:
+                file,_,title,\
+                duration,\
+                size,mimetype = video
+                title = title.strip()
+                if len(title) == 0:
+                    title = os.path.basename(file)
+                video_item = Video(self,
+                                   self.videos,VIDEO_ALL_CONTAINER_ID,
+                                   file,title,\
+                                   duration,\
+                                   size,mimetype)
+                self.videos += 1
+                videos.append(video_item)
+
+            videos.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
+            for video_item in videos:
+                self.containers[VIDEO_ALL_CONTAINER_ID].add_child(video_item)
+
+        fields=[u'Video:Title',u'Video:Duration',
+                u'File:Size',u'File:Mime']
+
+        d = defer.Deferred()
+        d.addCallback(parse_videos_query_result)
+        d.addErrback(handle_error)
+        self.search_interface.Query(self.query_id,'Videos',fields,'','',video_query,False,0,-1,
+                                    reply_handler=lambda x: d.callback(x),error_handler=lambda x: d.errback(x))
+        return d
+
+    def get_images(self):
+
+        def handle_error(error):
+            return error
+
+        def parse_images_query_result(resultlist):
+            images = []
+            for image in resultlist:
+                file,_,title,album,\
+                date,width, height, \
+                size,mimetype = image
+                title = title.strip()
+                if len(title) == 0:
+                    title = os.path.basename(file)
+                image_item = Image(self,
+                                   self.images,IMAGE_ALL_CONTAINER_ID,
+                                   file,title,album,\
+                                   date,width,height,\
+                                   size,mimetype)
+                self.images += 1
+                images.append(image_item)
+
+            images.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
+            for image_item in images:
+                self.containers[IMAGE_ALL_CONTAINER_ID].add_child(image_item)
+
+        fields=[u'Image:Title',u'Image:Album',
+                u'Image:Date',u'Image:Width',u'Image:Height',
+                u'File:Size',u'File:Mime']
+
+        d = defer.Deferred()
+        d.addCallback(parse_images_query_result)
+        d.addErrback(handle_error)
+        self.search_interface.Query(self.query_id,'Images',fields,'','',image_query,False,0,-1,
+                                    reply_handler=lambda x: d.callback(x),error_handler=lambda x: d.errback(x))
+        return d
+
+
     def get_tracks(self):
 
         def handle_error(error):
-            louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
+            return error
 
         def parse_tracks_query_result(resultlist):
             albums = {}
@@ -460,17 +740,6 @@ class TrackerStore(BackendStore):
             sorted_keys.sort()
             for key in sorted_keys:
                 self.containers[AUDIO_ARTIST_CONTAINER_ID].add_child(artists[key])
-            louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-
-
-        fields=[u'Audio:Title',u'Audio:Artist',
-                u'Audio:Album',u'Audio:Genre',
-                u'Audio:Duration',u'Audio:AlbumTrackCount',
-                u'Audio:TrackNo',u'Audio:Codec',
-                u'File:Size', u'File:Mime']
-
-        self.search_interface.Query(self.query_id,'Music',fields,'','',tracks_query,False,0,-1,
-                                    reply_handler=parse_tracks_query_result,error_handler=handle_error)
 
         self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
                                  '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
@@ -478,6 +747,20 @@ class TrackerStore(BackendStore):
                                  '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
                                  '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
                                 })
+
+        fields=[u'Audio:Title',u'Audio:Artist',
+                u'Audio:Album',u'Audio:Genre',
+                u'Audio:Duration',u'Audio:AlbumTrackCount',
+                u'Audio:TrackNo',u'Audio:Codec',
+                u'File:Size', u'File:Mime']
+
+        d = defer.Deferred()
+        d.addCallback(parse_tracks_query_result)
+        d.addErrback(handle_error)
+        self.search_interface.Query(self.query_id,'Music',fields,'','',tracks_query,False,0,-1,
+                                    reply_handler=lambda x: d.callback(x),error_handler=lambda x: d.errback(x))
+        return d
+
 
 
     def upnp_init(self):
