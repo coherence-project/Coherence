@@ -29,7 +29,7 @@ didl_fragment = """
     </container>
 </DIDL-Lite>"""
 
-class TestUpnpUtils(unittest.TestCase):
+class TestDIDLLite(unittest.TestCase):
 
     def test_DIDLElement_class_detect(self):
         """ tests class creation from an XML DIDLLite fragment,
