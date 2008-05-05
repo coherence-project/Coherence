@@ -531,7 +531,7 @@ class TrackerStore(BackendStore):
         if len(l)>0:
             dl = defer.DeferredList(l)
             dl.addCallback(queries_finished)
-            dl.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error))
+            dl.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='Connection to Tracker service(s) failed!'))
         else:
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='No Tracker service defined!')
 
