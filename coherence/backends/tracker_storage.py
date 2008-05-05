@@ -509,61 +509,6 @@ class TrackerStore(BackendStore):
         self.containers[ROOT_CONTAINER_ID] = \
                     Container(ROOT_CONTAINER_ID,-1,self.name,store=self)
 
-        self.containers[AUDIO_CONTAINER_ID] = \
-                    Container(AUDIO_CONTAINER_ID,ROOT_CONTAINER_ID,'Audio',store=self)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_CONTAINER_ID])
-
-        self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,AUDIO_CONTAINER_ID,'All Tracks',
-                          store=self,
-                          children_callback=None)
-        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
-
-        self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,AUDIO_CONTAINER_ID,'Albums',
-                          store=self,
-                          children_callback=None)
-        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
-
-        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Artists',
-                          store=self,
-                          children_callback=None)
-        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
-
-        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
-                Container( AUDIO_PLAYLIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Playlists',
-                          store=self,
-                          children_callback=None,
-                          container_class=DIDLLite.PlaylistContainer)
-        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
-
-        self.containers[AUDIO_GENRE_CONTAINER_ID] = \
-                Container( AUDIO_GENRE_CONTAINER_ID,AUDIO_CONTAINER_ID,'Genres',
-                          store=self,
-                          children_callback=None)
-        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
-
-        self.containers[VIDEO_CONTAINER_ID] = \
-                    Container(VIDEO_CONTAINER_ID,ROOT_CONTAINER_ID,'Video',store=self)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[VIDEO_CONTAINER_ID])
-
-        self.containers[VIDEO_ALL_CONTAINER_ID] = \
-                Container( VIDEO_ALL_CONTAINER_ID,VIDEO_CONTAINER_ID,'All Videos',
-                          store=self,
-                          children_callback=None)
-        self.containers[VIDEO_CONTAINER_ID].add_child(self.containers[VIDEO_ALL_CONTAINER_ID])
-
-        self.containers[IMAGE_CONTAINER_ID] = \
-                    Container(IMAGE_CONTAINER_ID,ROOT_CONTAINER_ID,'Images',store=self)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[IMAGE_CONTAINER_ID])
-
-        self.containers[IMAGE_ALL_CONTAINER_ID] = \
-                Container(IMAGE_ALL_CONTAINER_ID,IMAGE_CONTAINER_ID,'All Images',
-                          store=self,
-                          children_callback=None)
-        self.containers[IMAGE_CONTAINER_ID].add_child(self.containers[IMAGE_ALL_CONTAINER_ID])
-
         def queries_finished(r):
             louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
@@ -571,13 +516,24 @@ class TrackerStore(BackendStore):
             error = ''
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
 
+        services = kwargs.get('service','Music,Videos,Images')
+        services = map(lambda x: x.strip().lower(),services.split(','))
+
         l = []
-        l.append(self.get_tracks())
-        l.append(self.get_videos())
-        l.append(self.get_images())
-        dl = defer.DeferredList(l)
-        dl.addCallback(queries_finished)
-        dl.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error))
+        mapping =  {'music':self.get_tracks,
+                    'videos':self.get_videos,
+                    'images':self.get_images}
+        for service in services:
+            try:
+                l.append(mapping[service]())
+            except KeyError:
+                self.warning('Wrong Tracker service definition - %r' % service)
+        if len(l)>0:
+            dl = defer.DeferredList(l)
+            dl.addCallback(queries_finished)
+            dl.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error))
+        else:
+            louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='No Tracker service defined!')
 
     def __repr__(self):
         return "TrackerStore"
@@ -641,6 +597,16 @@ class TrackerStore(BackendStore):
             for video_item in videos:
                 self.containers[VIDEO_ALL_CONTAINER_ID].add_child(video_item)
 
+        self.containers[VIDEO_CONTAINER_ID] = \
+                    Container(VIDEO_CONTAINER_ID,ROOT_CONTAINER_ID,'Video',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[VIDEO_CONTAINER_ID])
+
+        self.containers[VIDEO_ALL_CONTAINER_ID] = \
+                Container( VIDEO_ALL_CONTAINER_ID,VIDEO_CONTAINER_ID,'All Videos',
+                          store=self,
+                          children_callback=None)
+        self.containers[VIDEO_CONTAINER_ID].add_child(self.containers[VIDEO_ALL_CONTAINER_ID])
+
         fields=[u'Video:Title',u'Video:Duration',
                 u'File:Size',u'File:Mime']
 
@@ -676,6 +642,16 @@ class TrackerStore(BackendStore):
             images.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
             for image_item in images:
                 self.containers[IMAGE_ALL_CONTAINER_ID].add_child(image_item)
+
+        self.containers[IMAGE_CONTAINER_ID] = \
+                    Container(IMAGE_CONTAINER_ID,ROOT_CONTAINER_ID,'Images',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[IMAGE_CONTAINER_ID])
+
+        self.containers[IMAGE_ALL_CONTAINER_ID] = \
+                Container(IMAGE_ALL_CONTAINER_ID,IMAGE_CONTAINER_ID,'All Images',
+                          store=self,
+                          children_callback=None)
+        self.containers[IMAGE_CONTAINER_ID].add_child(self.containers[IMAGE_ALL_CONTAINER_ID])
 
         fields=[u'Image:Title',u'Image:Album',
                 u'Image:Date',u'Image:Width',u'Image:Height',
@@ -744,6 +720,43 @@ class TrackerStore(BackendStore):
             sorted_keys.sort()
             for key in sorted_keys:
                 self.containers[AUDIO_ARTIST_CONTAINER_ID].add_child(artists[key])
+
+
+        self.containers[AUDIO_CONTAINER_ID] = \
+                    Container(AUDIO_CONTAINER_ID,ROOT_CONTAINER_ID,'Audio',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_CONTAINER_ID])
+
+        self.containers[AUDIO_ALL_CONTAINER_ID] = \
+                Container( AUDIO_ALL_CONTAINER_ID,AUDIO_CONTAINER_ID,'All Tracks',
+                          store=self,
+                          children_callback=None)
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
+
+        self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
+                Container( AUDIO_ALBUM_CONTAINER_ID,AUDIO_CONTAINER_ID,'Albums',
+                          store=self,
+                          children_callback=None)
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
+
+        self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
+                Container( AUDIO_ARTIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Artists',
+                          store=self,
+                          children_callback=None)
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
+                Container( AUDIO_PLAYLIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Playlists',
+                          store=self,
+                          children_callback=None,
+                          container_class=DIDLLite.PlaylistContainer)
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
+
+        self.containers[AUDIO_GENRE_CONTAINER_ID] = \
+                Container( AUDIO_GENRE_CONTAINER_ID,AUDIO_CONTAINER_ID,'Genres',
+                          store=self,
+                          children_callback=None)
+        self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
+
 
         self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
                                  '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
