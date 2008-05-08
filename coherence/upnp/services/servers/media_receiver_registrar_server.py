@@ -21,7 +21,9 @@ class FakeMediaReceiverRegistrarBackend:
         r = { 'Result': 1}
         return r
 
-    def upnp_RegisterDevice(self, RegistrationReqMsg):
+    def upnp_RegisterDevice(self, *args, **kwargs):
+        """ in parameter RegistrationReqMsg """
+        RegistrationReqMsg = kwargs['RegistrationReqMsg']
         """ FIXME: check with WMC and WMP """
         r = { 'RegistrationRespMsg': 'WTF should be in here?'}
         return r
