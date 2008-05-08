@@ -143,7 +143,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
                     headers['user-agent'].find('Xbox/') == 0):
                 keywords['X_UPnPClient'] = 'XBox'
             if(headers.has_key('user-agent') and
-                    headers['user-agent'] == 'Mozilla/4.0 (compatible; UPnP/1.0; Windows 9x)'):
+                    headers['user-agent'].startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows""")):
                 keywords['X_UPnPClient'] = 'XBox'
             if(headers.has_key('x-av-client-info') and
                     headers['x-av-client-info'].find('"PLAYSTATION3') > 0):

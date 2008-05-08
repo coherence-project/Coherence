@@ -86,7 +86,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
         if(headers.has_key('user-agent') and
            (headers['user-agent'].find('Xbox/') == 0 or      # XBox
-            headers['user-agent'] == 'Mozilla/4.0 (compatible; UPnP/1.0; Windows 9x)') and  # wmp11
+            headers['user-agent'].startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows""")) and  # wmp11
            path in ['description-1.xml','description-2.xml']):
             self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
             if self.children.has_key('xbox-description-1.xml'):
