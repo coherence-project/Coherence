@@ -42,7 +42,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
         self.coherence = coherence
 
     def getChild(self, name, request):
-        self.info('SimpleRoot getChild %s, %s' % (name, request))
+        self.debug('SimpleRoot getChild %s, %s' % (name, request))
         try:
             return self.coherence.children[name]
         except:
@@ -100,8 +100,8 @@ class WebServer(log.Loggable):
         except ImportError:
             self.site = Site(SimpleRoot(coherence))
 
-        port = reactor.listenTCP( port, self.site)
-        coherence.web_server_port = port._realPortNumber
+        self.port = reactor.listenTCP( port, self.site)
+        coherence.web_server_port = self.port._realPortNumber
         # XXX: is this the right way to do it?
         self.warning( "WebServer on port %d ready" % coherence.web_server_port)
 
@@ -166,9 +166,8 @@ class Plugins(log.Loggable):
         except ImportError:
             self.info("plugin reception activated, no pkg_resources")
             from coherence.extern.simple_plugin import Reception
-            from coherence.backend import Backend
             reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
-            self.info(reception.guestlist()) #Backend)
+            self.info(reception.guestlist())
             for cls in reception.guestlist():
                 self._plugins[cls.__name__.split('.')[-1]] = cls
         except Exception, msg:
@@ -187,16 +186,24 @@ class Coherence(log.Loggable):
             obj = super(Coherence, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
             obj.setup(*args, **kwargs)
+            obj.cls = cls
             return obj
 
     def __init__(self, *args, **kwargs):
         pass
+
+    def clear(self):
+        """ we do need this to survive multiple calls
+            to Coherence during trial tests
+        """
+        self.cls._instance_ = None
 
     def setup(self, config={}):
 
         self.devices = []
         self.children = {}
         self._callbacks = {}
+        self.active_backends = {}
 
         self.dbus = None
         self.config = config
@@ -231,8 +238,14 @@ class Coherence(log.Loggable):
             _debug = '*:%d' % log.human2level(logmode)
         log.init(config.get('logfile', None), _debug)
 
-        plugin = louie.TwistedDispatchPlugin()
-        louie.install_plugin(plugin)
+        self.louieplugin = louie.TwistedDispatchPlugin()
+        try:
+            louie.install_plugin(self.louieplugin)
+        except louie.error.PluginTypeError:
+            """ we do need this to survive multiple calls
+                to Coherence during trial tests
+            """
+            pass
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
@@ -326,7 +339,9 @@ class Coherence(log.Loggable):
                     if device_class == None:
                         raise KeyError
                     self.info("Activating %s plugin as %s..." % (plugin, device))
-                    return device_class(self, plugin_class, **kwargs)
+                    new_backend = device_class(self, plugin_class, **kwargs)
+                    self.active_backends[str(new_backend.uuid)] = new_backend
+                    return new_backend
                 except KeyError:
                     self.warning("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
                 except Exception, msg:
@@ -341,9 +356,19 @@ class Coherence(log.Loggable):
     def remove_plugin(self, plugin):
         """ removes a backend from Coherence          """
         """ plugin is the object return by add_plugin """
+        """ or an UUID string                         """
 
+        if isinstance(plugin,basestring):
+            try:
+                plugin = self.active_backends[plugin]
+            except KeyError:
+                self.warning("no backend with the uuid %r found" % plugin)
+                return
+
+        del self.active_backends[plugin.uuid]
         self.info("removing plugin %r", plugin)
         plugin.unregister()
+
 
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
@@ -351,8 +376,17 @@ class Coherence(log.Loggable):
         pass
 
     def shutdown( self):
+        louie.remove_plugin(self.louieplugin)
+        for backend in self.active_backends.itervalues():
+            backend.unregister()
+        self.active_backends = {}
         """ send service unsubscribe messages """
         try:
+            self.web_server.port.stopListening()
+            self.msearch.double_discover_loop.stop()
+            self.msearch.port.stopListening()
+            self.ssdp_server.resend_notify_loop.stop()
+            self.ssdp_server.port.stopListening()
             self.renew_service_subscription_loop.stop()
         except:
             pass
@@ -366,6 +400,7 @@ class Coherence(log.Loggable):
             l.append(d)
             d.addCallback(root_device.remove)
 
+        """anything left over"""
         self.ssdp_server.shutdown()
         dl = defer.DeferredList(l)
         self.warning('Coherence UPnP framework shutdown')
@@ -419,6 +454,9 @@ class Coherence(log.Loggable):
 
     def get_devices(self):
         return self.devices
+
+    def get_local_devices(self):
+        return [d for d in self.devices if d.manifestation == 'local']
 
     def get_nonlocal_devices(self):
         return [d for d in self.devices if d.manifestation == 'remote']
