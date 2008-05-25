@@ -363,12 +363,16 @@ class Coherence(log.Loggable):
                 plugin = self.active_backends[plugin]
             except KeyError:
                 self.warning("no backend with the uuid %r found" % plugin)
-                return
+                return ""
 
-        del self.active_backends[plugin.uuid]
-        self.info("removing plugin %r", plugin)
-        plugin.unregister()
-
+        try:
+            del self.active_backends[plugin.uuid]
+            self.info("removing plugin %r", plugin)
+            plugin.unregister()
+            return plugin.uuid
+        except KeyError:
+            self.warning("no backend with the uuid %r found" % plugin.uuid)
+            return ""
 
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal

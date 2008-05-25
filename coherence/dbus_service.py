@@ -199,6 +199,18 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         id = "n/a"
         return id
 
+    @dbus.service.method(BUS_NAME,in_signature='sa{ss}',out_signature='s')
+    def add_plugin(self,backend,arguments):
+        kwargs = {}
+        for k,v in arguments.iteritems():
+            kwargs[str(k)] = unicode(v)
+        p = self.controlpoint.coherence.add_plugin(backend,**kwargs)
+        return str(p.uuid)
+
+    @dbus.service.method(BUS_NAME,in_signature='s',out_signature='s')
+    def remove_plugin(self,uuid):
+        return self.controlpoint.coherence.remove_plugin(uuid)
+
     def cp_ms_detected(self,client,usn=''):
         self.devices.append(DBusDevice(client.device,self.bus))
         self.UPnP_ControlPoint_MediaServer_detected(usn)
