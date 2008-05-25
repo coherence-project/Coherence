@@ -39,13 +39,13 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         # Create SSDP server
         try:
-            port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
-            port.setLoopbackMode(1)
+            self.port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
+            #self.port.setLoopbackMode(1)
 
-            port.joinGroup(SSDP_ADDR)
+            self.port.joinGroup(SSDP_ADDR)
 
-            l = task.LoopingCall(self.resendNotify)
-            l.start(777.0, now=False)
+            self.resend_notify_loop = task.LoopingCall(self.resendNotify)
+            self.resend_notify_loop.start(777.0, now=False)
 
         except error.CannotListenError, err:
             self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")

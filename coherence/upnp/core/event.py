@@ -9,7 +9,7 @@ from urlparse import urlsplit
 
 from twisted.internet import reactor, defer
 from twisted.web import resource, server
-from twisted.internet.protocol import Protocol, ClientCreator
+from twisted.internet.protocol import Protocol, ClientCreator, _InstanceFactory
 from twisted.python import failure
 
 from coherence import log, SERVER_ID
@@ -125,6 +125,8 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                 #print headers['sid']
                 if self.subscribers.has_key(headers['sid']):
                     s = self.subscribers[headers['sid']]
+                    s['timeout'] = headers['timeout']
+                    s['created'] = time.time()
                 elif not headers.has_key('callback'):
                     request.setResponseCode(404)
                     request.setHeader('SERVER', SERVER_ID)
@@ -136,10 +138,9 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                 s = { 'sid' : str(sid),
                       'callback' : headers['callback'][1:len(headers['callback'])-1],
                       'seq' : 0}
-                reactor.callLater(0.8, self.service.new_subscriber, s)
-
-            s['timeout'] = headers['timeout']
-            s['created'] = time.time()
+                s['timeout'] = headers['timeout']
+                s['created'] = time.time()
+                self.service.new_subscriber(s)
 
             request.setHeader('SID', s['sid'])
             #request.setHeader('Subscription-ID', sid)  wrong example in the UPnP UUID spec?
@@ -194,6 +195,10 @@ class EventProtocol(Protocol, log.Loggable):
         self.timeout_checker = reactor.callLater(30, lambda : self.transport.loseConnection())
 
     def dataReceived(self, data):
+        try:
+            self.timeout_checker.cancel()
+        except:
+            pass
         self.info("response received from the Service Events HTTP server ")
         #self.debug(data)
         cmd, headers = utils.parse_http_response(data)
@@ -326,6 +331,10 @@ class NotificationProtocol(Protocol, log.Loggable):
         self.timeout_checker = reactor.callLater(30, lambda : self.transport.loseConnection())
 
     def dataReceived(self, data):
+        try:
+            self.timeout_checker.cancel()
+        except:
+            pass
         cmd, headers = utils.parse_http_response(data)
         self.debug( "notification response received %r %r", cmd, headers)
         try:
@@ -360,7 +369,7 @@ def send_notification(s, xml):
         host = host_port
         port = 80
 
-    def send_request(p):
+    def send_request(p, porthistor):
         request = ['NOTIFY %s HTTP/1.1' % path,
                     'HOST:  %s:%d' % (host, port),
                     'SEQ:  %d' % s['seq'],
@@ -380,14 +389,21 @@ def send_notification(s, xml):
         if s['seq'] > 0xffffffff:
             s['seq'] = 1
         p.transport.write(request)
+        port.disconnect()
         #return p.transport.write(request)
 
-    def got_error(failure):
+    def got_error(failure, port):
+        port.disconnect()
         log.info(log_category, "error sending notification to %r %r",
                  s['sid'], s['callback'])
         log.debug(log_category, failure)
 
-    c = ClientCreator(reactor, NotificationProtocol)
-    d = c.connectTCP(host, port)
-    d.addCallback(send_request)
-    d.addErrback(got_error)
+    #c = ClientCreator(reactor, NotificationProtocol)
+    #d = c.connectTCP(host, port)
+
+    d = defer.Deferred()
+    f = _InstanceFactory(reactor, NotificationProtocol(), d)
+    port = reactor.connectTCP(host, port, f, timeout=30, bindAddress=None)
+
+    d.addCallback(send_request, port)
+    d.addErrback(got_error, port)

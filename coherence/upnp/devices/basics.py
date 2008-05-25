@@ -193,6 +193,7 @@ class BasicDeviceMixin(object):
                 device_version -= 1
 
     def unregister(self):
+
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
         self.coherence.remove_web_resource(uuid[5:])
@@ -201,6 +202,15 @@ class BasicDeviceMixin(object):
         while version > 0:
             s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
             for service in self._services:
+                try:
+                    service.check_subscribers_loop.stop()
+                except:
+                    pass
+                if hasattr(service,'check_moderated_loop') and service.check_moderated_loop != None:
+                    try:
+                        service.check_moderated_loop.stop()
+                    except:
+                        pass
                 if hasattr(service,'version') and service.version < version:
                     continue
                 try:

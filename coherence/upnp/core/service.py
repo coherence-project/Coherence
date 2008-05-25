@@ -339,6 +339,7 @@ class ServiceServer(log.Loggable):
         self.check_subscribers_loop = task.LoopingCall(self.check_subscribers)
         self.check_subscribers_loop.start(120.0, now=False)
 
+        self.check_moderated_loop = None
         if moderated_variables.has_key(self.service_type):
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
             #self.check_moderated_loop.start(5.0, now=False)
