@@ -55,8 +55,8 @@ class SOAPProxy(log.Loggable):
         self.debug("callRemote payload: ", payload)
 
         def gotError(failure, url):
-            print "error requesting", url
-            print failure
+            self.warning("error requesting url %r" % url)
+            self.debug(failure)
             return failure
 
         return getPage(self.url, postdata=payload, method="POST",

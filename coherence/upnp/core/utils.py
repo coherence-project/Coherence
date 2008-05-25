@@ -102,7 +102,7 @@ def get_host_address():
     try:
         route_file = '/proc/net/route'
         route = open(route_file)
-        if (route):
+        if(route):
             tmp = route.readline() #skip first line
             while (tmp != ''):
                 tmp = route.readline()
@@ -111,7 +111,7 @@ def get_host_address():
                     if l[2] != '00000000': #default gateway...
                         route.close()
                         return get_ip_address(l[0])
-    except IOerror:
+    except IOerror, msg:
         """ fallback to parsing the output of netstat """
         from os import uname
         import posix
@@ -127,6 +127,9 @@ def get_host_address():
                     return get_ip_address(parts[5])
                 else:
                     return get_ip_address(parts[-1])
+    except Exception, msg:
+        import traceback
+        traceback.print_exc()
 
     """ return localhost if we haven't found anything """
     return '127.0.0.1'
@@ -162,7 +165,8 @@ class Site(server.Site):
     noisy = False
 
     def startFactory(self):
-        http._logDateTimeStart()
+        pass
+        #http._logDateTimeStart()
 
 
 class ProxyClient(http.HTTPClient):
@@ -344,6 +348,7 @@ class myHTTPPageGetter(client.HTTPPageGetter):
         # server might be stupid and not close connection. admittedly
         # the fact we do only one request per connection is also
         # stupid...
+        self.quietLoss = 1
         self.transport.loseConnection()
 
 class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
