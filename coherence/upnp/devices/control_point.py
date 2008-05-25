@@ -15,6 +15,8 @@ from coherence.upnp.core.event import EventServer
 
 from coherence.upnp.devices.media_server_client import MediaServerClient
 from coherence.upnp.devices.media_renderer_client import MediaRendererClient
+from coherence.upnp.devices.binary_light_client import BinaryLightClient
+from coherence.upnp.devices.dimmable_light_client import DimmableLightClient
 
 import louie
 
@@ -29,6 +31,8 @@ class DeviceQuery(object):
         self.fired = False
         self.timeout = timeout
         self.oneshot = oneshot
+        if self.type == 'uuid':
+            self.pattern = self.pattern[5:]
 
     def fire(self, device):
         if callable(self.callback):
@@ -46,11 +50,14 @@ class DeviceQuery(object):
         elif(self.type == 'friendly_name' and
            device.friendly_name == self.pattern):
             self.fire(device)
+        elif(self.type == 'uuid' and
+           device.get_uuid() == self.pattern):
+            self.fire(device)
 
 class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
 
-    def __init__(self,coherence,auto_client=['MediaServer','MediaRenderer']):
+    def __init__(self,coherence,auto_client=['MediaServer','MediaRenderer','BinaryLight','DimmableLight']):
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -98,18 +105,22 @@ class ControlPoint(log.Loggable):
         return self.coherence.get_device_by_host(host)
 
     def check_device( self, device):
-        self.info("found device %s of type %s" %(device.get_friendly_name(),
-                                                device.get_device_type()))
-        short_type = device.get_device_type().split(':')[3]
-        if short_type in self.auto_client:
-            if short_type == 'MediaServer':
-                self.info("identified MediaServer", device.get_friendly_name())
-                client = MediaServerClient(device)
-                device.set_client( client)
+        self.info("found device %s of type %s - %r" %(device.get_friendly_name(),
+                                                device.get_device_type(), device.client))
+        if device.client == None:
+            short_type = device.get_device_type().split(':')[3]
+            if short_type in self.auto_client:
+                self.info("identified %s %r" % (short_type,device.get_friendly_name()))
 
-            if short_type == 'MediaRenderer':
-                self.info("identified MediaRenderer", device.get_friendly_name())
-                client = MediaRendererClient(device)
+                if short_type == 'MediaServer':
+                    client = MediaServerClient(device)
+                if short_type == 'MediaRenderer':
+                    client = MediaRendererClient(device)
+                if short_type == 'BinaryLight':
+                    client = BinaryLightClient(device)
+                if short_type == 'DimmableLight':
+                    client = DimmableLightClient(device)
+
                 device.set_client( client)
 
         self.process_queries(device)
@@ -302,7 +313,8 @@ if __name__ == '__main__':
     config['logmode'] = 'warning'
     config['serverport'] = 30020
 
-    ctrl = ControlPoint(Coherence(config),auto_client=[])
+    #ctrl = ControlPoint(Coherence(config),auto_client=[])
+    #ctrl = ControlPoint(Coherence(config))
 
     def show_devices():
         print "show_devices"
@@ -320,10 +332,10 @@ if __name__ == '__main__':
         print "query_devices with timeout"
         ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result, timeout=10, oneshot=False))
 
-    reactor.callLater(2, show_devices)
-    reactor.callLater(3, query_devices)
-    reactor.callLater(4, query_devices2)
-    reactor.callLater(5, ctrl.add_query, DeviceQuery('friendly_name', 'Coherence Test Content', the_result, timeout=10, oneshot=False))
+    #reactor.callLater(2, show_devices)
+    #reactor.callLater(3, query_devices)
+    #reactor.callLater(4, query_devices2)
+    #reactor.callLater(5, ctrl.add_query, DeviceQuery('friendly_name', 'Coherence Test Content', the_result, timeout=10, oneshot=False))
 
 
 
