@@ -24,7 +24,7 @@
    send them to us - a beginning of our UPnP device fingerprint program
  * and the usual bugfixes and enhancements
 
-0.5.2 - 20080229
+0.5.2 - Little Leap - 20080229
 
  * rework of the XBox 360 support
  * refinements and improvements on the client side API, incorporating things we learned on extending the Rhythmbox UPnP plugin
