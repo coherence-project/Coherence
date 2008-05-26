@@ -407,3 +407,5 @@ def send_notification(s, xml):
 
     d.addCallback(send_request, port_item)
     d.addErrback(got_error, port_item)
+
+    return d,port_item

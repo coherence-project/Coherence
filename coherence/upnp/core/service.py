@@ -325,6 +325,8 @@ class ServiceServer(log.Loggable):
         self._variables = {0: {}}
         self._subscribers = {}
 
+        self._pending_notifications = {}
+
         self.last_change = None
         self.init_var_and_actions()
 
@@ -345,6 +347,11 @@ class ServiceServer(log.Loggable):
             #self.check_moderated_loop.start(5.0, now=False)
             self.check_moderated_loop.start(0.5, now=False)
 
+    def _release(self):
+        for p in self._pending_notifications.values():
+            p.disconnect()
+        self._pending_notifications = {}
+
     def get_action(self, action_name):
         return self._actions[action_name]
 
@@ -356,6 +363,9 @@ class ServiceServer(log.Loggable):
 
     def get_subscribers(self):
         return self._subscribers
+
+    def rm_notification(self,result,d):
+        del self._pending_notifications[d]
 
     def new_subscriber(self, subscriber):
         notify = []
@@ -385,7 +395,9 @@ class ServiceServer(log.Loggable):
 
         if evented_variables > 0:
             xml = ET.tostring( root, encoding='utf-8')
-            event.send_notification(subscriber, xml)
+            d,p = event.send_notification(subscriber, xml)
+            self._pending_notifications[d] = p
+            d.addBoth(self.rm_notification,d)
         self._subscribers[subscriber['sid']] = subscriber
 
     def get_id(self):
@@ -427,8 +439,9 @@ class ServiceServer(log.Loggable):
                 len(self._subscribers) > 0):
                 xml = self.build_single_notification(instance, variable_name, variable.value)
                 for s in self._subscribers.values():
-                    event.send_notification(s, xml)
-
+                    d,p = event.send_notification(s, xml)
+                    self._pending_notifications[d] = p
+                    d.addBoth(self.rm_notification,d)
         try:
             variable = self._variables[instance][variable_name]
             if isinstance( value, defer.Deferred):
@@ -510,7 +523,9 @@ class ServiceServer(log.Loggable):
         xml = ET.tostring( root, encoding='utf-8')
         #print "propagate_notification", xml
         for s in self._subscribers.values():
-            event.send_notification(s, xml)
+            d,p = event.send_notification(s,xml)
+            self._pending_notifications[d] = p
+            d.addBoth(self.rm_notification,d)
 
     def check_subscribers(self):
         for s in self._subscribers.values():

@@ -209,6 +209,8 @@ class BasicDeviceMixin(object):
                     pass
             if hasattr(service,'release'):
                 service.release()
+            if hasattr(service,'_release'):
+                service._release()
 
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
