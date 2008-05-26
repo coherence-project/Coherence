@@ -369,7 +369,7 @@ def send_notification(s, xml):
         host = host_port
         port = 80
 
-    def send_request(p, porthistor):
+    def send_request(p,port_item):
         request = ['NOTIFY %s HTTP/1.1' % path,
                     'HOST:  %s:%d' % (host, port),
                     'SEQ:  %d' % s['seq'],
@@ -389,11 +389,11 @@ def send_notification(s, xml):
         if s['seq'] > 0xffffffff:
             s['seq'] = 1
         p.transport.write(request)
-        port.disconnect()
+        port_item.disconnect()
         #return p.transport.write(request)
 
-    def got_error(failure, port):
-        port.disconnect()
+    def got_error(failure,port_item):
+        port_item.disconnect()
         log.info(log_category, "error sending notification to %r %r",
                  s['sid'], s['callback'])
         log.debug(log_category, failure)
@@ -403,7 +403,7 @@ def send_notification(s, xml):
 
     d = defer.Deferred()
     f = _InstanceFactory(reactor, NotificationProtocol(), d)
-    port = reactor.connectTCP(host, port, f, timeout=30, bindAddress=None)
+    port_item = reactor.connectTCP(host, port, f, timeout=30, bindAddress=None)
 
-    d.addCallback(send_request, port)
-    d.addErrback(got_error, port)
+    d.addCallback(send_request, port_item)
+    d.addErrback(got_error, port_item)
