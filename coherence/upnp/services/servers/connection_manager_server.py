@@ -52,6 +52,9 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
         self.remove_lingering_connections_loop = task.LoopingCall(self.remove_lingering_connections)
         self.remove_lingering_connections_loop.start(180.0, now=False)
 
+    def release(self):
+        self.remove_lingering_connections_loop.stop()
+
 
     def add_connection(self, RemoteProtocolInfo,
                              Direction,

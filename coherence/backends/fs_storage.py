@@ -387,6 +387,10 @@ class FSStore(BackendStore):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
+    def release(self):
+        if self.inotify != None:
+            self.inotify.release()
+
     def len(self):
         return len(self.store)
 

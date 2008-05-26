@@ -50,7 +50,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         except error.CannotListenError, err:
             self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
+        self.active_calls = []
+
     def shutdown(self):
+        for call in reactor.getDelayedCalls():
+            if call.func == self.send_it:
+                call.cancel()
         '''Make sure we send out the byebye notifications.'''
         for st in self.known:
             if self.known[st]['MANIFESTATION'] == 'local':
@@ -150,19 +155,19 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             self.warning('Unknown subtype %s for notification type %s' %
                     (headers['nts'], headers['nt']))
 
+    def send_it(self,response,destination,delay,usn):
+        self.info('send discovery response delayed by %ds for %s to %r' % (delay,usn,destination))
+        try:
+            self.transport.write(response,destination)
+        except (AttributeError,socket.error), msg:
+            self.info("failure sending out byebye notification: %r" % msg)
+
     def discoveryRequest(self, headers, (host, port)):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
 
         self.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
         self.info('Discovery request for %s' % headers['st'])
-
-        def send_it(response, destination, delay, usn):
-            self.info('send discovery response delayed by %ds for %s to %r' % (delay, usn, destination))
-            try:
-                self.transport.write(response, destination)
-            except (AttributeError,socket.error), msg:
-                self.info("failure sending out byebye notification: %r" % msg)
 
         # Do we know about this service?
         for i in self.known.values():
@@ -185,7 +190,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
-                reactor.callLater(delay, send_it,
+
+                reactor.callLater(delay, self.send_it,
                                 '\r\n'.join(response), (host, port), delay, usn)
 
     def doNotify(self, usn):
