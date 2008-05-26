@@ -35,20 +35,21 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     _callbacks = {}
 
-    def __init__(self):
-
+    def __init__(self,test=False):
         # Create SSDP server
-        try:
-            self.port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
-            #self.port.setLoopbackMode(1)
+        self.test = test
+        if self.test == False:
+            try:
+                self.port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
+                #self.port.setLoopbackMode(1)
 
-            self.port.joinGroup(SSDP_ADDR)
+                self.port.joinGroup(SSDP_ADDR)
 
-            self.resend_notify_loop = task.LoopingCall(self.resendNotify)
-            self.resend_notify_loop.start(777.0, now=False)
+                self.resend_notify_loop = task.LoopingCall(self.resendNotify)
+                self.resend_notify_loop.start(777.0, now=False)
 
-        except error.CannotListenError, err:
-            self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
+            except error.CannotListenError, err:
+                self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
         self.active_calls = []
 
@@ -57,9 +58,10 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if call.func == self.send_it:
                 call.cancel()
         '''Make sure we send out the byebye notifications.'''
-        for st in self.known:
-            if self.known[st]['MANIFESTATION'] == 'local':
-                self.doByebye(st)
+        if self.test == False:
+            for st in self.known:
+                if self.known[st]['MANIFESTATION'] == 'local':
+                    self.doByebye(st)
 
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""

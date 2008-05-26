@@ -35,7 +35,7 @@ class TestDBUS(unittest.TestCase):
 
     def setUp(self):
         louie.reset()
-        self.coherence = Coherence({'logmode':'error','use_dbus':'yes','controlpoint':'yes'})
+        self.coherence = Coherence({'unittest':'yes','logmode':'error','use_dbus':'yes','controlpoint':'yes'})
         self.bus = dbus.SessionBus()
         self.coherence_service = self.bus.get_object(BUS_NAME,OBJECT_PATH)
         self.uuid = UUID()

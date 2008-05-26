@@ -27,7 +27,7 @@ class TestSwitchPowerClient(unittest.TestCase):
 
     def setUp(self):
         louie.reset()
-        self.coherence = Coherence({'logmode':'error','subsystem_log':{'controlpoint':'error'},'controlpoint':'yes'})
+        self.coherence = Coherence({'unittest':'yes','logmode':'error','subsystem_log':{'controlpoint':'error'},'controlpoint':'yes'})
         self.uuid = UUID()
         p = self.coherence.add_plugin('SimpleLight', name='test-light-%d'%os.getpid(),uuid=str(self.uuid))
 

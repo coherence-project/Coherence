@@ -34,7 +34,7 @@ class TestContentDirectoryServer(unittest.TestCase):
         f.child('images').makedirs()
         f.child('video').makedirs()
         louie.reset()
-        self.coherence = Coherence({'logmode':'error','subsystem_log':{'controlpoint':'error'},'controlpoint':'yes'})
+        self.coherence = Coherence({'unittest':'yes','logmode':'error','subsystem_log':{'controlpoint':'error'},'controlpoint':'yes'})
         self.uuid = UUID()
         p = self.coherence.add_plugin('FSStore',
                                       name='MediaServer-%d'%os.getpid(),

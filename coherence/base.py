@@ -249,7 +249,11 @@ class Coherence(log.Loggable):
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
-        self.ssdp_server = SSDPServer()
+        unittest = config.get('unittest', False)
+        if unittest != False:
+            unittest == True
+
+        self.ssdp_server = SSDPServer(test=unittest)
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
         louie.connect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
@@ -258,7 +262,7 @@ class Coherence(log.Loggable):
         self.ssdp_server.subscribe("new_device", self.add_device)
         self.ssdp_server.subscribe("removed_device", self.remove_device)
 
-        self.msearch = MSearch(self.ssdp_server)
+        self.msearch = MSearch(self.ssdp_server,test=unittest)
 
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown)
 
@@ -387,10 +391,14 @@ class Coherence(log.Loggable):
         """ send service unsubscribe messages """
         try:
             self.web_server.port.stopListening()
-            self.msearch.double_discover_loop.stop()
-            self.msearch.port.stopListening()
-            self.ssdp_server.resend_notify_loop.stop()
-            self.ssdp_server.port.stopListening()
+            if hasattr(self.msearch, 'double_discover_loop'):
+                self.msearch.double_discover_loop.stop()
+            if hasattr(self.msearch, 'port'):
+                self.msearch.port.stopListening()
+            if hasattr(self.ssdp_server, 'resend_notify_loop'):
+                self.ssdp_server.resend_notify_loop.stop()
+            if hasattr(self.ssdp_server, 'port'):
+                self.ssdp_server.port.stopListening()
             self.renew_service_subscription_loop.stop()
         except:
             pass

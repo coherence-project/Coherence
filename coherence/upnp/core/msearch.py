@@ -22,12 +22,13 @@ from coherence import log
 class MSearch(DatagramProtocol, log.Loggable):
     logCategory = 'msearch'
 
-    def __init__(self, ssdp_server):
+    def __init__(self, ssdp_server, test=False):
         self.ssdp_server = ssdp_server
-        self.port = reactor.listenUDP(0, self)
+        if test == False:
+            self.port = reactor.listenUDP(0, self)
 
-        self.double_discover_loop = task.LoopingCall(self.double_discover)
-        self.double_discover_loop.start(120.0)
+            self.double_discover_loop = task.LoopingCall(self.double_discover)
+            self.double_discover_loop.start(120.0)
 
     def datagramReceived(self, data, (host, port)):
         cmd, headers = utils.parse_http_response(data)
