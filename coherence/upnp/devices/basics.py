@@ -197,6 +197,12 @@ class BasicDeviceMixin(object):
         if self.backend != None and hasattr(self.backend,'release'):
             self.backend.release()
 
+        if not hasattr(self,'_services'):
+            """ seems we never made it to actually
+                completing that device
+            """
+            return
+
         for service in self._services:
             try:
                 service.check_subscribers_loop.stop()

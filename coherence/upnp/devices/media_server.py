@@ -414,6 +414,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             return
         self.warning('backend not installed, MediaServer activation aborted - %s', msg.getErrorMessage())
         self.debug(msg)
+        del self.coherence.active_backends[str(self.uuid)]
 
     def init_complete(self, backend):
         if self.backend != backend:
