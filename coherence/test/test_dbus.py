@@ -21,13 +21,6 @@ from coherence.upnp.core.uuid import UUID
 
 import louie
 
-import dbus
-
-from dbus.mainloop.glib import DBusGMainLoop
-DBusGMainLoop(set_as_default=True)
-
-import dbus.service
-
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'
 
@@ -97,3 +90,17 @@ class TestDBUS(unittest.TestCase):
                                           reply_handler=handle_add_plugin_reply,
                                           error_handler=handle_error)
         return d
+
+if reactor.__class__.__name__ != 'Glib2Reactor':
+    TestDBUS.skip = """This test needs a Glib2Reactor, pls start trial with the '-r glib2' option"""
+
+
+try:
+    import dbus
+
+    from dbus.mainloop.glib import DBusGMainLoop
+    DBusGMainLoop(set_as_default=True)
+
+    import dbus.service
+except ImportError:
+    TestDBUS.skip = "Python dbus-bindings not available"

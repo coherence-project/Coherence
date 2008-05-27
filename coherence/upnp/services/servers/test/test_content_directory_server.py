@@ -104,6 +104,40 @@ class TestContentDirectoryServer(unittest.TestCase):
         self.coherence.ctrl.add_query(DeviceQuery('uuid', str(self.uuid), the_result, timeout=10, oneshot=True))
         return d
 
+    def test_Browse_Metadata(self):
+        """ tries to find the activated FSStore backend
+            and requests metadata for ObjectID 0.
+        """
+        d = Deferred()
+
+        def the_result(mediaserver):
+            try:
+                self.assertEqual(str(self.uuid), mediaserver.udn)
+            except:
+                d.errback()
+
+            def got_first_answer(r):
+                """ we expect one item here """
+                try:
+                    self.assertEqual(len(r), 1)
+                except:
+                    d.errback()
+                    return
+                item = r[0]
+                try:
+                    self.assertEqual(item.title, 'root')
+                except:
+                    d.errback()
+                    return
+                d.callback(None)
+
+            call = mediaserver.client.content_directory.browse(object_id='0',browse_flag='BrowseMetadata',process_result=False)
+            call.addCallback(got_first_answer)
+            call.addErrback(lambda x: d.errback(None))
+
+        self.coherence.ctrl.add_query(DeviceQuery('uuid', str(self.uuid), the_result, timeout=10, oneshot=True))
+        return d
+
     def test_XBOX_Browse(self):
         """ tries to find the activated FSStore backend
             and browses all audio files.
