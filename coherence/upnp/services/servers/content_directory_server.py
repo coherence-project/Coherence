@@ -89,7 +89,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def got_error(r):
             return r
 
-        def process_result(result):
+        def process_result(result,total=None):
             if result == None:
                 result = []
             l = []
@@ -106,10 +106,14 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             for i in result:
                 d = defer.maybeDeferred( i.get_item)
                 l.append(d)
-            if item == None:
-                total = 0
-            else:
+
+            #if item == None:
+            #    total = 0
+            #else:
+            #    total = item.get_child_count()
+            if total == None:
                 total = item.get_child_count()
+
             dl = defer.DeferredList(l)
             dl.addCallback(process_items, total)
             return dl
@@ -135,19 +139,19 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
-                        return process_result(items)
+                        return process_result(items, total)
                     else:
                         d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
-                        d.addCallback(process_result)
+                        d.addCallback(process_result,None)
                         d.addErrback(got_error)
                         return d
 
             item = self.backend.get_by_id(root_id)
             if item == None:
-                return process_result([])
+                return process_result([],0)
 
             d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
-            d.addCallback(process_result)
+            d.addCallback(process_result,None)
             d.addErrback(got_error)
 
             return d
@@ -157,7 +161,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             return failure.Failure(errorCode(701))
 
         d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
-        d.addCallback(process_result)
+        d.addCallback(process_result,None)
         d.addErrback(got_error)
 
         return d
@@ -184,6 +188,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         else:
             requested_id = str(ObjectID)
 
+        self.info("upnp_Browse request %r %r %r %r", ObjectID, BrowseFlag, StartingIndex, RequestedCount)
+
         didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
                            requested_id=requested_id,
                            parent_container=parent_container)
@@ -191,7 +197,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def got_error(r):
             return r
 
-        def process_result(result):
+        def process_result(result,total=None):
             if result == None:
                 result = []
             if BrowseFlag == 'BrowseDirectChildren':
@@ -209,7 +215,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                 for i in result:
                     d = defer.maybeDeferred( i.get_item)
                     l.append(d)
-                total = item.get_child_count()
+                if total == None:
+                    total = item.get_child_count()
                 dl = defer.DeferredList(l)
                 dl.addCallback(process_items, total)
                 return dl
@@ -253,7 +260,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
-                        return process_result(items)
+                        return process_result(items,total)
                     else:
                         d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
                         d.addCallback(process_result)
