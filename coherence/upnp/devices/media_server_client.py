@@ -79,15 +79,23 @@ class MediaServerClient(log.Loggable):
         if self.detection_completed == True:
             return
         if self.content_directory != None:
+            if not hasattr(self.content_directory.service, 'last_time_updated'):
+                return
             if self.content_directory.service.last_time_updated == None:
                 return
         if self.connection_manager != None:
+            if not hasattr(self.connection_manager.service, 'last_time_updated'):
+                return
             if self.connection_manager.service.last_time_updated == None:
                 return
         if self.av_transport != None:
+            if not hasattr(self.av_transport.service, 'last_time_updated'):
+                return
             if self.av_transport.service.last_time_updated == None:
                 return
         if self.scheduled_recording != None:
+            if not hasattr(self.scheduled_recording.service, 'last_time_updated'):
+                return
             if self.scheduled_recording.service.last_time_updated == None:
                 return
         self.detection_completed = True

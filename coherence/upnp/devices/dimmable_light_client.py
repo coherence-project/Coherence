@@ -53,9 +53,13 @@ class DimmableLightClient(log.Loggable):
         if self.detection_completed == True:
             return
         if self.switch_power != None:
+            if not hasattr(self.switch_power.service, 'last_time_updated'):
+                return
             if self.switch_power.service.last_time_updated == None:
                 return
         if self.dimming != None:
+            if not hasattr(self.dimming.service, 'last_time_updated'):
+                return
             if self.dimming.service.last_time_updated == None:
                 return
         self.detection_completed = True
