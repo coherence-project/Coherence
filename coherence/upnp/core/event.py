@@ -191,8 +191,12 @@ class EventProtocol(Protocol, log.Loggable):
         self.service = service
         self.action = action
 
+    def teardown(self):
+        self.transport.loseConnection()
+        self.service.event_connection = None
+
     def connectionMade(self):
-        self.timeout_checker = reactor.callLater(30, lambda : self.transport.loseConnection())
+        self.timeout_checker = reactor.callLater(30, self.teardown)
 
     def dataReceived(self, data):
         try:
@@ -214,12 +218,11 @@ class EventProtocol(Protocol, log.Loggable):
                     self.service.set_timeout(time.time() + 4294967296) # FIXME: that's lame
                 elif timeout.startswith('Second-'):
                     timeout = int(timeout[len('Second-'):])
-                    self.service.set_timeout(time.time() + timeout)
+                    self.service.set_timeout(timeout)
             except:
                 #print headers
                 pass
-        self.transport.loseConnection()
-
+        self.teardown()
 
     def connectionLost( self, reason):
         try:
@@ -252,9 +255,12 @@ def subscribe(service, action='subscribe'):
         log.info(log_category, "event.subscribe.send_request %r, action: %r %r",
                  p, action, service.get_event_sub_url())
         if action == 'subscribe':
+            timeout = service.timeout
+            if timeout == 0:
+                timeout = 1800
             request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
                         "HOST: %s:%d" % (host, port),
-                        "TIMEOUT: Second-1800",
+                        "TIMEOUT: Second-%d" % timeout,
                         ]
             service.event_connection = p
         else:

@@ -20,7 +20,7 @@ from coherence.upnp.core.event import EventSubscriptionServer
 from coherence.extern.et import ET
 
 from twisted.web import static
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from twisted.python import failure, util
 from twisted.internet import task
 
@@ -93,6 +93,12 @@ class Service(log.Loggable):
 
     def remove(self):
         self.info("removal of ", self.device.friendly_name, self.service_type, self.id)
+        try:
+            self.renew_subscription_call.cancel()
+        except:
+            pass
+        if self.event_connection != None:
+            self.event_connection.teardown()
         if self.subscription_id != None:
             self.unsubscribe()
         for name,action in self._actions.items():
@@ -115,7 +121,15 @@ class Service(log.Loggable):
         return self.service_type
 
     def set_timeout(self, timeout):
+        self.info("set timout for %s/%s to %d" %(self.device.friendly_name,self.service_type,int(timeout)))
         self.timeout = timeout
+        try:
+            self.renew_subscription_call.reset(int(self.timeout)-30)
+            self.info("reset renew subscription call for %s/%s to %d" % (self.device.friendly_name,self.service_type,int(self.timeout)-30))
+        except:
+            self.renew_subscription_call = reactor.callLater(int(self.timeout)-30,
+                                                                 self.renew_subscription)
+            self.info("starting renew subscription call for %s/%s to %d" % (self.device.friendly_name,self.service_type,int(self.timeout)-30))
 
     def get_timeout(self):
         return self.timeout
@@ -127,6 +141,7 @@ class Service(log.Loggable):
         return self.subscription_id
 
     def set_sid(self, sid):
+        self.info("set subscription id for %s/%s to %s" %(self.device.friendly_name,self.service_type,sid))
         self.subscription_id = sid
         if sid is not None:
             subscribe(self)
@@ -194,6 +209,7 @@ class Service(log.Loggable):
 
 
     def renew_subscription(self):
+        self.info("renew_subscription")
         event.subscribe(self)
 
     def process_event(self,event):

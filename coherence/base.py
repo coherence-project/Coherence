@@ -286,8 +286,8 @@ class Coherence(log.Loggable):
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
-        self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
-        self.renew_service_subscription_loop.start(20.0, now=False)
+        #self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
+        #self.renew_service_subscription_loop.start(20.0, now=False)
 
         self.available_plugins = None
 
@@ -399,7 +399,7 @@ class Coherence(log.Loggable):
                 self.ssdp_server.resend_notify_loop.stop()
             if hasattr(self.ssdp_server, 'port'):
                 self.ssdp_server.port.stopListening()
-            self.renew_service_subscription_loop.stop()
+            #self.renew_service_subscription_loop.stop()
         except:
             pass
         l = []

@@ -116,7 +116,7 @@ class Device(log.Loggable):
         """ iterate over device's services and renew subscriptions """
         self.info("renew service subscriptions for %s" % self.friendly_name)
         now = time.time()
-        for service in self.get_services():
+        for service in self.services:
             self.info("check service %r %r " % (service.id, service.get_sid()), service.get_timeout(), now)
             if service.get_sid() is not None:
                 if service.get_timeout() < now:
@@ -124,6 +124,9 @@ class Device(log.Loggable):
                           "maybe we need to rethink the loop time and timeout calculation?")
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
+
+        for device in self.devices:
+            device.renew_service_subscriptions()
 
     def unsubscribe_service_subscriptions(self):
         """ iterate over device's services and unsubscribe subscriptions """
