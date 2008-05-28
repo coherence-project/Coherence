@@ -418,8 +418,14 @@ class AmpacheStore(BackendStore):
             self.warning('error parsing ampache answer %r', msg)
             raise SyntaxError, 'error parsing ampache answer %r' % msg
         try:
-            self.warning('error on token request %r', response.find('error').text)
-            raise ValueError, response.find('error').text
+            error = response.find('error').text
+            if error == 'Error Invalid Handshake, attempt logged':
+                """ maybe we've send out the wrong version number,
+                    let's try it again
+                """
+                return self.get_token(api_version=350001)
+            self.warning('error on token request %r', error)
+            raise ValueError, error
         except AttributeError:
             try:
                 self.token = response.find('auth').text
@@ -456,13 +462,15 @@ class AmpacheStore(BackendStore):
         self.warning('error calling ampache %r', e)
         louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
-    def get_token( self):
+    def get_token( self,api_version=None):
         """ ask Ampache for the authorization token """
         timestamp = int(time.time())
         passphrase = md5('%d%s' % (timestamp, self.key))
         request = ''.join((self.url, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, timestamp)))
         if self.user != None:
             request = ''.join((request, '&user=%s' % self.user))
+        if api_version != None:
+            request = ''.join((request, '&version=%s' % str(api_version)))
         self.info("auth_request %r", request)
         d = utils.getPage(request)
         d.addCallback(self.got_auth_response)
@@ -583,7 +591,7 @@ class AmpacheStore(BackendStore):
         self.containers[AUDIO_GENRE_CONTAINER_ID].item.childCount = self.genres
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
 
-    def upnp_Browse(self, *args, **kwargs):
+    def upnp_XBrowse(self, *args, **kwargs):
         try:
             ObjectID = kwargs['ObjectID']
         except:

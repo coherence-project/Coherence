@@ -118,6 +118,12 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             dl.addCallback(process_items, total)
             return dl
 
+        def proceed(result):
+            d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+            d.addCallback(process_result,found_item=result)
+            d.addErrback(got_error)
+            return d
+
         try:
             root_id = ContainerID
         except:
@@ -139,32 +145,33 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
-                        return process_result(items, total)
+                        return process_result(items,total=total)
                     else:
-                        d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
-                        d.addCallback(process_result,None)
-                        d.addErrback(got_error)
-                        return d
+                        if isinstance(item,defer.Deferred):
+                            item.addCallback(proceed)
+                            return item
+                        else:
+                            return proceed(item)
 
             item = self.backend.get_by_id(root_id)
             if item == None:
-                return process_result([],0)
+                return process_result([],total=0)
 
-            d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
-            d.addCallback(process_result,None)
-            d.addErrback(got_error)
-
-            return d
+            if isinstance(item,defer.Deferred):
+                item.addCallback(proceed)
+                return item
+            else:
+                return proceed(item)
 
         item = self.backend.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
 
-        d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
-        d.addCallback(process_result,None)
-        d.addErrback(got_error)
-
-        return d
+        if isinstance(item,defer.Deferred):
+            item.addCallback(proceed)
+            return item
+        else:
+            return proceed(item)
 
     def upnp_Browse(self, *args, **kwargs):
         try:
@@ -183,6 +190,11 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         parent_container = None
         requested_id = None
 
+        item = None
+        total = 0
+        items = []
+
+
         if BrowseFlag == 'BrowseDirectChildren':
             parent_container = str(ObjectID)
         else:
@@ -197,7 +209,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def got_error(r):
             return r
 
-        def process_result(result,total=None):
+        def process_result(result,total=None,found_item=None):
             if result == None:
                 result = []
             if BrowseFlag == 'BrowseDirectChildren':
@@ -215,8 +227,20 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                 for i in result:
                     d = defer.maybeDeferred( i.get_item)
                     l.append(d)
-                if total == None:
+
+                if found_item != None:
+                    def got_child_count(count):
+                        dl = defer.DeferredList(l)
+                        dl.addCallback(process_items, count)
+                        return dl
+
+                    d = defer.maybeDeferred(found_item.get_child_count)
+                    d.addCallback(got_child_count)
+
+                    return d
+                elif total == None:
                     total = item.get_child_count()
+
                 dl = defer.DeferredList(l)
                 dl.addCallback(process_items, total)
                 return dl
@@ -239,8 +263,16 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
             return r
 
-        total = 0
-        items = []
+        def proceed(result):
+            if BrowseFlag == 'BrowseDirectChildren':
+                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+            else:
+                d = defer.maybeDeferred( result.get_item)
+
+            d.addCallback(process_result,found_item=result)
+            d.addErrback(got_error)
+            return d
+
 
         root_id = ObjectID
 
@@ -260,33 +292,30 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex+RequestedCount]
-                        return process_result(items,total)
+                        return process_result(items,total=total)
                     else:
-                        d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
-                        d.addCallback(process_result)
-                        d.addErrback(got_error)
-                        return d
+                        if isinstance(item,defer.Deferred):
+                            item.addCallback(proceed)
+                            return item
+                        else:
+                            return proceed(item)
 
             item = self.backend.get_by_id(root_id)
             if item == None:
-                return process_result([])
+                return process_result([],total=0)
 
-            d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
-            d.addCallback(process_result)
-            d.addErrback(got_error)
-
-            return d
+            if isinstance(item,defer.Deferred):
+                item.addCallback(proceed)
+                return item
+            else:
+                return proceed(item)
 
         item = self.backend.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
 
-        if BrowseFlag == 'BrowseDirectChildren':
-            d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
+        if isinstance(item,defer.Deferred):
+            item.addCallback(proceed)
+            return item
         else:
-            d = defer.maybeDeferred(item.get_item)
-
-        d.addCallback(process_result)
-        d.addErrback(got_error)
-
-        return d
+            return proceed(item)
