@@ -89,9 +89,10 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def got_error(r):
             return r
 
-        def process_result(result,total=None):
+        def process_result(result,total=None,found_item=None):
             if result == None:
                 result = []
+
             l = []
 
             def process_items(result, tm):
@@ -107,11 +108,17 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                 d = defer.maybeDeferred( i.get_item)
                 l.append(d)
 
-            #if item == None:
-            #    total = 0
-            #else:
-            #    total = item.get_child_count()
-            if total == None:
+            if found_item != None:
+                def got_child_count(count):
+                    dl = defer.DeferredList(l)
+                    dl.addCallback(process_items, count)
+                    return dl
+
+                d = defer.maybeDeferred(found_item.get_child_count)
+                d.addCallback(got_child_count)
+
+                return d
+            elif total == None:
                 total = item.get_child_count()
 
             dl = defer.DeferredList(l)
