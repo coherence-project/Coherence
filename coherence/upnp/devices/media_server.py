@@ -12,10 +12,10 @@ from StringIO import StringIO
 import urllib
 
 from twisted.internet import task
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 from twisted.web import static
 from twisted.web import resource, server
-from twisted.web import proxy
+#from twisted.web import proxy
 from twisted.python import util
 from twisted.python.filepath import FilePath
 
@@ -25,7 +25,7 @@ from coherence import __version__
 
 from coherence.upnp.core.service import ServiceServer
 from coherence.upnp.core.utils import StaticFile
-#from coherence.upnp.core.utils import ReverseProxyResource
+from coherence.upnp.core.utils import ReverseProxyResource
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -50,6 +50,17 @@ class MSRoot(resource.Resource, log.Loggable):
         log.Loggable.__init__(self)
         self.server = server
         self.store = store
+
+    #def delayed_response(self, resrc, request):
+    #    print "delayed_response", resrc, request
+    #    body = resrc.render(request)
+    #    print "delayed_response", body
+    #    if body == 1:
+    #        print "delayed_response not yet done"
+    #        return
+    #    request.setHeader("Content-length", str(len(body)))
+    #    request.write(response)
+    #    request.finish()
 
     def getChildWithDefault(self, path, request):
         self.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
@@ -120,9 +131,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
         request.setResponseCode(404)
 
-    def getChild(self, name, request):
-        self.info('getChild %s, %s' % (name, request))
-        ch = self.store.get_by_id(name)
+    def process_child(self,ch,name,request):
         if ch != None:
             self.info('Child found', ch)
             if(request.method == 'GET' or
@@ -144,7 +153,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     request.content = StringIO()
 
             if hasattr(ch, "location"):
-                if isinstance(ch.location, proxy.ReverseProxyResource):
+                if isinstance(ch.location, ReverseProxyResource):
                     self.info('getChild proxy %s to %s' % (name, ch.location.uri))
                     new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                                 'Output',
@@ -154,7 +163,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     d = request.notifyFinish()
                     d.addBoth(self.requestFinished, new_id, request)
                     request.setHeader('transferMode.dlna.org', 'Streaming')
-                    if hasattr(ch.item, 'res'):
+                    if hasattr(ch,'item') and hasattr(ch.item, 'res'):
                         if ch.item.res[0].protocolInfo is not None:
                             _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
                             if additional_info != '*':
@@ -192,6 +201,15 @@ class MSRoot(resource.Resource, log.Loggable):
                 ch = StaticFile(p)
         self.info('MSRoot ch', ch)
         return ch
+
+    def getChild(self, name, request):
+        self.info('getChild %s, %s' % (name, request))
+        ch = self.store.get_by_id(name)
+        if isinstance(ch, defer.Deferred):
+            ch.addCallback(self.process_child,name,request)
+            #ch.addCallback(self.delayed_response, request)
+            return ch
+        return self.process_child(ch,name,request)
 
     def list_content(self, name, item, request):
         self.info('list_content', name, item, request)

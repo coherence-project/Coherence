@@ -8,11 +8,19 @@ import urlparse
 
 from coherence.extern.et import parse_xml as et_parse_xml
 
+from coherence import SERVER_ID
+
+
 from twisted.web import server, http, static
 from twisted.web import client, error
 from twisted.web import proxy, resource, server
-from twisted.internet import reactor, protocol
+from twisted.internet import reactor,protocol,defer
 from twisted.python import failure
+
+try:
+    from twisted.protocols._c_urlarg import unquote
+except ImportError:
+    from urllib import unquote
 
 try:
     import netifaces
@@ -159,10 +167,39 @@ def de_chunk_payload(response):
 
     return newresponse.getvalue()
 
+class Request(server.Request):
+
+    def process(self):
+        "Process a request."
+
+        # get site from channel
+        self.site = self.channel.site
+
+        # set various default headers
+        self.setHeader('server', SERVER_ID)
+        self.setHeader('date', http.datetimeToString())
+        self.setHeader('content-type', "text/html")
+
+        # Resource Identification
+        self.prepath = []
+        self.postpath = map(unquote, self.path[1:].split('/'))
+        try:
+            def deferred_rendering(r):
+                self.render(r)
+
+            resrc = self.site.getResourceFor(self)
+            if isinstance(resrc, defer.Deferred):
+                resrc.addCallback(deferred_rendering)
+                resrc.addErrback(self.processingFailed)
+            else:
+                self.render(resrc)
+        except:
+            self.processingFailed(failure.Failure())
 
 class Site(server.Site):
 
     noisy = False
+    requestFactory = Request
 
     def startFactory(self):
         pass
@@ -178,7 +215,7 @@ class ProxyClient(http.HTTPClient):
         self.rest = rest
         if headers.has_key("proxy-connection"):
             del headers["proxy-connection"]
-        headers["connection"] = "close"
+        #headers["connection"] = "close"
         self.headers = headers
         print "command", command
         print "rest", rest

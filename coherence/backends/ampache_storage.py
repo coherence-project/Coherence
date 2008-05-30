@@ -37,6 +37,25 @@ AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
 AUDIO_PLAYLIST_CONTAINER_ID = 104
 AUDIO_GENRE_CONTAINER_ID = 105
+AUDIO_TAG_CONTAINER_ID = 106
+
+
+from urlparse import urlsplit
+
+class ProxySong(utils.ReverseProxyResource):
+
+    def __init__(self, uri):
+        self.uri = uri
+        _,host_port,path,query,_ = urlsplit(uri)
+        if host_port.find(':') != -1:
+            host,port = tuple(host_port.split(':'))
+            port = int(port)
+        else:
+            host = host_port
+            port = 80
+
+        utils.ReverseProxyResource.__init__(self, host, port, '?'.join((path,query)))
+
 
 class Container(BackendItem):
 
@@ -267,11 +286,61 @@ class Genre(BackendItem):
     def get_name(self):
         return self.name
 
+class Tag(BackendItem):
+
+    logCategory = 'ampache_store'
+
+    def __init__(self, store, element):
+        self.store = store
+        self.ampache_id = element.get('id')
+        self.id = 'tag.%d' % int(element.get('id'))
+
+        try:
+            self.count_albums = int(element.find('albums').text)
+        except:
+            self.count_albums = None
+        try:
+            self.count_artists = int(element.find('artists').text)
+        except:
+            self.count_artists = None
+        try:
+            self.count_songs = int(element.find('songs').text)
+        except:
+            self.count_songs = None
+        self.name = element.find('name').text
+
+    def get_children(self,start=0,end=0):
+        return self.store.ampache_query('tag_songs', start, end-start, filter=self.ampache_id)
+
+    def get_child_count(self):
+        if self.count_songs != None:
+            return self.count_songs
+
+        def got_childs(result):
+            self.count_songs = len(result)
+            return self.count_songs
+
+        d = self.get_children()
+        d.addCallback(got_childs)
+        return d
+
+    def get_item(self, parent_id = AUDIO_TAG_CONTAINER_ID):
+        item = DIDLLite.Genre(self.id, parent_id, self.name)
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.name
+
+
 class Track(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self, element):
+    def __init__(self,store,element):
+        self.store = store
         self.id = 'song.%d' % int(element.get('id'))
         self.parent_id = 'album.%d' % int(element.find('album').get('id'))
 
@@ -304,6 +373,9 @@ class Track(BackendItem):
             self.size = int(element.find('size').text)
         except:
             self.size = 0
+
+        if self.store.proxy == True:
+            self.location = ProxySong(self.url)
 
     def get_children(self, start=0, request_count=0):
         return []
@@ -346,7 +418,10 @@ class Track(BackendItem):
         return self.title
 
     def get_url(self):
-        return self.url
+        if self.store.proxy == True:
+            return self.store.urlbase + str(self.id)
+        else:
+            return self.url
 
     def get_path(self):
         return None
@@ -368,6 +443,11 @@ class AmpacheStore(BackendStore):
         self.user = kwargs.get('user',None)
         self.url = kwargs.get('url','http://localhost/ampache/server/xml.server.php')
 
+        if kwargs.get('proxy','no') in [1,'Yes','yes','True','true']:
+            self.proxy = True
+        else:
+            self.proxy = False
+
         self.urlbase = kwargs.get('urlbase','')
         if self.urlbase[len(self.urlbase)-1] != '/':
             self.urlbase += '/'
@@ -381,7 +461,7 @@ class AmpacheStore(BackendStore):
         self.albums = 0
         self.artists = 0
 
-        self.get_token()
+        self.get_token(api_version=350001)
 
     def __repr__(self):
         return "Ampache storage"
@@ -404,7 +484,7 @@ class AmpacheStore(BackendStore):
         except ValueError:
             try:
                 type,id = id.split('.')
-                if type in ['song','artist','album','playlist','genre']:
+                if type in ['song','artist','album','playlist','genre','tag']:
                     item = self.ampache_query(type, filter=str(id))
             except ValueError:
                 return None
@@ -419,11 +499,11 @@ class AmpacheStore(BackendStore):
             raise SyntaxError, 'error parsing ampache answer %r' % msg
         try:
             error = response.find('error').text
-            if error == 'Error Invalid Handshake, attempt logged':
-                """ maybe we've send out the wrong version number,
-                    let's try it again
-                """
-                return self.get_token(api_version=350001)
+            #if error == 'Error Invalid Handshake, attempt logged':
+            #    """ maybe we've send out the wrong version number,
+            #        let's try it again
+            #    """
+            #    return self.get_token(api_version=350001)
             self.warning('error on token request %r', error)
             raise ValueError, error
         except AttributeError:
@@ -440,8 +520,12 @@ class AmpacheStore(BackendStore):
                     self.genres = int(response.find('genres').text)
                 except:
                     self.genres = 0
+                try:
+                    self.tags = int(response.find('tags').text)
+                except:
+                    self.tags = 0
                 self.info('ampache returned auth token %r', self.token)
-                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d' % (self.songs, self.artists,self.albums,self.playlists,self.genres))
+                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d' % (self.songs, self.artists,self.albums,self.playlists,self.genres,self.tags))
 
                 self.containers = {}
                 self.containers[ROOT_CONTAINER_ID] = \
@@ -493,7 +577,7 @@ class AmpacheStore(BackendStore):
                     return None
                 else:
                     if q.tag in ['song']:
-                        return Track(q)
+                        return Track(self,q)
                     if q.tag == 'artist':
                         return Artist(self,q)
                     if q.tag in ['album']:
@@ -502,16 +586,18 @@ class AmpacheStore(BackendStore):
                         return Playlist(self,q)
                     if q.tag in ['genre']:
                         return Genre(self,q)
+                    if q.tag in ['tag']:
+                        return Tag(self,q)
             else:
-                if query_item in ('songs','artists','albums','playlists','genres'):
+                if query_item in ('songs','artists','albums','playlists','genres','tag'):
                     query_item = query_item[:-1]
-                if query_item in ('playlist_songs','album_songs','genre_songs'):
+                if query_item in ('playlist_songs','album_songs','genre_songs','tag_songs'):
                     query_item = 'song'
                 if query_item in ('artist_albums',):
                     query_item = 'album'
                 for q in response.findall(query_item):
                     if query_item in ('song',):
-                        items.append(Track(q))
+                        items.append(Track(self,q))
                     if query_item in ('artist',):
                         items.append(Artist(self,q))
                     if query_item in ('album',):
@@ -520,6 +606,8 @@ class AmpacheStore(BackendStore):
                         items.append(Playlist(self,q))
                     if query_item in ('genre',):
                         items.append(Genre(self,q))
+                    if query_item in ('tag',):
+                        items.append(Tag(self,q))
         return items
 
     def ampache_query(self, item, start=0, request_count=0, filter=None):
@@ -548,6 +636,9 @@ class AmpacheStore(BackendStore):
 
     def ampache_query_genres(self, start=0, request_count=0):
         return self.ampache_query('genres', start, request_count)
+
+    def ampache_query_tags(self, start=0, request_count=0):
+        return self.ampache_query('tags', start, request_count)
 
     def upnp_init(self):
         if self.server:
@@ -590,6 +681,13 @@ class AmpacheStore(BackendStore):
                           children_callback=self.ampache_query_genres)
         self.containers[AUDIO_GENRE_CONTAINER_ID].item.childCount = self.genres
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
+
+        self.containers[AUDIO_TAG_CONTAINER_ID] = \
+                Container( AUDIO_TAG_CONTAINER_ID,ROOT_CONTAINER_ID, 'Tags',
+                          store=self,
+                          children_callback=self.ampache_query_tags)
+        self.containers[AUDIO_TAG_CONTAINER_ID].item.childCount = self.tags
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_TAG_CONTAINER_ID])
 
     def upnp_XBrowse(self, *args, **kwargs):
         try:
