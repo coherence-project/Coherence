@@ -11,7 +11,7 @@ import shutil
 import time
 import re
 from datetime import datetime
-import urllib2
+import urllib
 
 import mimetypes
 mimetypes.init()
@@ -108,7 +108,7 @@ class FSItem(BackendItem):
                 size = 0
 
             if mimetype != 'item':
-                res = Resource('file://'+ urllib2.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+                res = Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
                 res.size = size
                 self.item.res.append(res)
 
@@ -162,7 +162,7 @@ class FSItem(BackendItem):
                         self.item.res.append(new_res)
                         if not hasattr(self.item, 'attachments'):
                             self.item.attachments = {}
-                        self.item.attachments[hash_from_path] = utils.StaticFile(urllib2.quote(thumbnail))
+                        self.item.attachments[hash_from_path] = utils.StaticFile(urllib.quote(thumbnail))
 
 
             try:
@@ -195,7 +195,7 @@ class FSItem(BackendItem):
         else:
             host = host_port
 
-        res = Resource('file://'+urllib2.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+        res = Resource('file://'+urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
         try:
             res.size = self.location.getsize()
         except:
