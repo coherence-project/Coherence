@@ -97,6 +97,12 @@ class BackendStore(Backend):
         """
         #louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
+    def release(self):
+        """ if anything needs to be cleaned up upon
+            shutdown of this backend, this is the place
+            for it
+        """
+        pass
 
 
     def _get_all_items(self,id):
@@ -223,7 +229,7 @@ class BackendItem(log.Loggable):
         return self.item
 
     def get_name(self):
-        """ called the MediaServer web
+        """ called by the MediaServer web
             should return
 
             - the name of the item,
@@ -232,7 +238,7 @@ class BackendItem(log.Loggable):
         return self.name
 
     def get_path(self):
-        """ called the MediaServer web
+        """ called by the MediaServer web
             should return
 
             - the filepath where to find the media file
@@ -241,7 +247,7 @@ class BackendItem(log.Loggable):
         return self.location
 
     def get_cover(self):
-        """ called the MediaServer web
+        """ called by the MediaServer web
             should return
 
             - the filepath where to find the album art file

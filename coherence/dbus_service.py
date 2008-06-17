@@ -24,6 +24,8 @@ BUS_NAME = 'org.Coherence'     # the one with the dots
 OBJECT_PATH = '/org/Coherence'  # the one with the slashes ;-)
 
 from coherence import __version__
+from coherence.upnp.core import DIDLLite
+
 
 import louie
 
@@ -50,6 +52,9 @@ class DBusService(dbus.service.Object,log.Loggable):
 
         self.subscribe()
 
+    def path(self):
+        return OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type
+
     def variable_changed(self,variable):
         #print self.service, "got signal for change of", variable
         #print variable.name, variable.value
@@ -59,7 +64,7 @@ class DBusService(dbus.service.Object,log.Loggable):
     @dbus.service.signal(BUS_NAME+'.service',
                          signature='sv')
     def StateVariableChanged(self, variable, value):
-        self.info("%s service %s signals StateVariable %s changed to >%s<" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
+        self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
 
     @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
@@ -114,19 +119,23 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         self.device = device
         self.id = device.get_id()[5:].replace('-','')
         bus_name = dbus.service.BusName(BUS_NAME+'.device', bus)
-        d = dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + self.id)
+        d = dbus.service.Object.__init__(self, bus_name, self.path())
         self.debug("DBusDevice %r %r %r", device, self.id, d)
         self.services = []
         for service in device.get_services():
             self.services.append(DBusService(service,self,bus))
 
+    def path(self):
+        return OBJECT_PATH + '/devices/' + self.id
+
     @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='v')
     def get_info(self):
-        r = [self.device.get_device_type(),
-                self.device.get_friendly_name(),
-                self.device.get_usn(),
-                self.services]
-        return dbus.Array(r,signature='v',variant_level=2)
+        r = {'path':self.path(),
+             'device_type':self.device.get_device_type(),
+             'friendly_name':self.device.get_friendly_name(),
+             'udn':self.device.get_id(),
+             'services':self.services}
+        return dbus.Dictionary(r,signature='sv',variant_level=2)
 
     @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='s')
     def get_friendly_name(self):
@@ -177,19 +186,20 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def version(self):
         return __version__
 
-    @dbus.service.method(BUS_NAME,in_signature='',out_signature='as')
+    @dbus.service.method(BUS_NAME,in_signature='',out_signature='av')
     def get_devices(self):
         r = []
         for device in self.devices:
-            r.append(device.get_id())
-        return r
+            #r.append(device.path())
+            r.append(device.get_info())
+        return dbus.Array(r,signature='v',variant_level=2)
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_device_with_id(self,id):
         r = {}
         device = self.controlpoint.get_device_with_id(id)
         r['id'] = device.get_id()
-        r['usn'] = device.usn
+        r['udn'] = device.udn
         r['name'] = device.get_friendly_name()
         r['type'] = device.get_device_type()
         return r
@@ -212,16 +222,18 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         return self.controlpoint.coherence.remove_plugin(uuid)
 
     def cp_ms_detected(self,client,usn=''):
-        self.devices.append(DBusDevice(client.device,self.bus))
-        self.UPnP_ControlPoint_MediaServer_detected(usn)
+        new_device = DBusDevice(client.device,self.bus)
+        self.devices.append(new_device)
+        self.UPnP_ControlPoint_MediaServer_detected(new_device.path(),usn)
 
     def cp_mr_detected(self,client,usn=''):
-        self.devices.append(DBusDevice(client.device,self.bus))
-        self.UPnP_ControlPoint_MediaRenderer_detected(usn)
+        new_device = DBusDevice(client.device,self.bus)
+        self.devices.append(new_device)
+        self.UPnP_ControlPoint_MediaRenderer_detected(new_device.path(),usn)
 
     @dbus.service.signal(BUS_NAME,
-                         signature='s')
-    def UPnP_ControlPoint_MediaServer_detected(self,usn):
+                         signature='ss')
+    def UPnP_ControlPoint_MediaServer_detected(self,device,usn):
         self.info("emitting signal UPnP_ControlPoint_MediaServer_detected")
 
     @dbus.service.signal(BUS_NAME,
@@ -230,8 +242,8 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         self.info("emitting signal UPnP_ControlPoint_MediaServer_removed")
 
     @dbus.service.signal(BUS_NAME,
-                         signature='s')
-    def UPnP_ControlPoint_MediaRenderer_detected(self,usn):
+                         signature='ss')
+    def UPnP_ControlPoint_MediaRenderer_detected(self,device,usn):
         self.info("emitting signal UPnP_ControlPoint_MediaRenderer_detected")
 
     @dbus.service.signal(BUS_NAME,

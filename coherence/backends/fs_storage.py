@@ -217,10 +217,6 @@ class FSItem(BackendItem):
 
         self.parent.update_id += 1
 
-    def __del__(self):
-        #print "FSItem __del__", self.id, self.get_name()
-        pass
-
     def check_for_cover_art(self):
         """ let's try to find in the current directory some jpg file,
             or png if the jpg search fails, and take the first one

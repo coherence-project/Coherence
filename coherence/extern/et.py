@@ -139,6 +139,7 @@ def parse_xml(data, encoding="utf-8",dump_invalid_data=False):
     except Exception, error:
         if dump_invalid_data:
             print error, repr(data)
+        p.close()
         raise Exception, error
     else:
         return ET.ElementTree(p.close())

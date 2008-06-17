@@ -111,10 +111,10 @@ class ContentDirectoryClient:
                             Filter=filter,SortCriteria=sort_criteria,
                             StartingIndex=str(starting_index),
                             RequestedCount=str(requested_count))
-        if process_result == True:
+        if process_result in [True,1,'1','true','True','yes','Yes']:
             d.addCallback(got_process_result)
-        else:
-            d.addCallback(got_result)
+        #else:
+        #    d.addCallback(got_result)
         return d
 
     def search(self, container_id, criteria, starting_index=0,

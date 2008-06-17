@@ -120,4 +120,4 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
                                                static.File(icon['url'][7:]))
 
         self.register()
-        self.info("%s %s (%s) activated" % (self.backend.name, self.device_type, self.backend))
+        self.warning("%s %s (%s) activated" % (self.backend.name, self.device_type, self.backend))

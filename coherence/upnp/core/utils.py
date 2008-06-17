@@ -196,6 +196,7 @@ class Request(server.Request):
         except:
             self.processingFailed(failure.Failure())
 
+
 class Site(server.Site):
 
     noisy = False
@@ -314,7 +315,6 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
 
     proxyClientFactoryClass = ProxyClientFactory
 
-
     def __init__(self, host, port, path, reactor=reactor):
         """
         @param host: the host of the web server to proxy.
@@ -335,11 +335,9 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.path = path
         self.reactor = reactor
 
-
     def getChild(self, path, request):
         return ReverseProxyResource(
             self.host, self.port, self.path + '/' + path)
-
 
     def render(self, request):
         """
@@ -362,6 +360,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
             request.getAllHeaders(), request.content.read(), request)
         self.reactor.connectTCP(self.host, self.port, clientFactory)
         return server.NOT_DONE_YET
+
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 
@@ -387,6 +386,7 @@ class myHTTPPageGetter(client.HTTPPageGetter):
         # stupid...
         self.quietLoss = 1
         self.transport.loseConnection()
+
 
 class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
 
@@ -414,6 +414,7 @@ class HeaderAwareHTTPDownloader(client.HTTPDownloader):
                 # server is acting wierdly
                 self.requestedPartial = 0
 
+
 def getPage(url, contextFactory=None, *args, **kwargs):
     """Download a web page as a string.
 
@@ -433,6 +434,7 @@ def getPage(url, contextFactory=None, *args, **kwargs):
         reactor.connectTCP(host, port, factory)
     return factory.deferred
 
+
 def downloadPage(url, file, contextFactory=None, *args, **kwargs):
     """Download a web page to a file.
 
@@ -451,6 +453,7 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
     else:
         reactor.connectTCP(host, port, factory)
     return factory.deferred
+
 
 class StaticFile(static.File):
     """ taken from twisted.web.static and modified
@@ -577,6 +580,7 @@ class CET(tzinfo):
     def dst(self,dt):
         return timedelta(0)
 
+
 class CEST(tzinfo):
 
     def __init__(self):
@@ -591,6 +595,7 @@ class CEST(tzinfo):
 
     def dst(self,dt):
         return timedelta(0)
+
 
 bdates = [ datetime(1997,2,28,17,20,tzinfo=CET()),   # Sebastian Oliver
            datetime(1999,9,19,4,12,tzinfo=CEST()),   # Patrick Niklas

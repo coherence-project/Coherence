@@ -171,6 +171,8 @@ class MSRoot(resource.Resource, log.Loggable):
                     return ch.location
             try:
                 p = ch.get_path()
+            except TypeError:
+                return self.list_content(name, ch, request)
             except Exception, msg:
                 self.debug("error accessing items path %r" % msg)
                 self.debug(traceback.format_exc())
@@ -222,36 +224,50 @@ class MSRoot(resource.Resource, log.Loggable):
             if uri[-1] != '/':
                 uri += '/'
 
-            page += """<ul>"""
-            for c in item.get_children():
-                if hasattr(c,'get_url'):
-                    path = c.get_url()
-                    self.debug('has get_url', path)
-                elif hasattr(c,'get_path'):
-                    #path = c.get_path().encode('utf-8').encode('string_escape')
-                    path = c.get_path()
-                    if isinstance(path,unicode):
-                        path = path.encode('ascii','xmlcharrefreplace')
+            def build_page(r,page):
+                print "build_page", r
+                page += """<ul>"""
+                for c in r:
+                    if hasattr(c,'get_url'):
+                        path = c.get_url()
+                        self.debug('has get_url', path)
+                    elif hasattr(c,'get_path') and c.get_path != None:
+                        #path = c.get_path().encode('utf-8').encode('string_escape')
+                        path = c.get_path()
+                        if isinstance(path,unicode):
+                            path = path.encode('ascii','xmlcharrefreplace')
+                        else:
+                            path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
+                        self.debug('has get_path', path)
                     else:
-                        path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
-                    self.debug('has get_path', path)
-                else:
-                    path = request.uri.split('/')
-                    path[-1] = str(c.get_id())
-                    path = '/'.join(path)
-                    self.debug('got path', path)
-                title = c.get_name()
-                self.debug( 'title is:', type(title))
-                try:
-                    if isinstance(title,unicode):
-                        title = title.encode('ascii','xmlcharrefreplace')
-                    else:
-                        title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
-                except (UnicodeEncodeError,UnicodeDecodeError):
-                    title = c.get_name().encode('utf-8').encode('string_escape')
-                page += '<li><a href="%s">%s</a></li>' % \
-                                    (path, title)
-            page += """</ul>"""
+                        path = request.uri.split('/')
+                        path[-1] = str(c.get_id())
+                        path = '/'.join(path)
+                        self.debug('got path', path)
+                    title = c.get_name()
+                    self.debug( 'title is:', type(title))
+                    try:
+                        if isinstance(title,unicode):
+                            title = title.encode('ascii','xmlcharrefreplace')
+                        else:
+                            title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
+                    except (UnicodeEncodeError,UnicodeDecodeError):
+                        title = c.get_name().encode('utf-8').encode('string_escape')
+                    page += '<li><a href="%s">%s</a></li>' % \
+                                        (path, title)
+                page += """</ul>"""
+                page += """</body></html>"""
+                return static.Data(page,'text/html')
+
+            children = item.get_children()
+            if isinstance(children, defer.Deferred):
+                print "list_content, we have a Deferred", children
+                children.addCallback(build_page,page)
+                #children.addErrback(....) #FIXME
+                return children
+
+            return build_page(children,page)
+
         elif( hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
             #path = item.get_path().encode('utf-8').encode('string_escape')
             path = urllib.quote(item.get_path().encode('utf-8'))
@@ -502,4 +518,4 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                                StaticFile(icon['url'][7:]))
 
         self.register()
-        self.info("%s MediaServer (%s) activated" % (self.backend.name, self.backend))
+        self.warning("%s %s (%s) activated" % (self.backend.name, self.device_type, self.backend))

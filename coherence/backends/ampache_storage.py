@@ -61,6 +61,8 @@ class Container(BackendItem):
 
     logCategory = 'ampache_store'
 
+    get_path = None
+
     def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container):
         self.id = id
         self.parent_id = parent_id
@@ -120,6 +122,8 @@ class Playlist(BackendItem):
 
     logCategory = 'ampache_store'
 
+    get_path = None
+
     def __init__(self, store, element):
         self.store = store
         self.ampache_id = element.get('id')
@@ -159,6 +163,8 @@ class Album(BackendItem):
 
     logCategory = 'ampache_store'
 
+    get_path = None
+
     def __init__(self, store, element):
         self.store = store
         self.ampache_id = element.get('id')
@@ -197,6 +203,8 @@ class Album(BackendItem):
 class Artist(BackendItem):
 
     logCategory = 'ampache_store'
+
+    get_path = None
 
     def __init__(self, store, element):
         self.store = store
@@ -241,6 +249,8 @@ class Artist(BackendItem):
 class Genre(BackendItem):
 
     logCategory = 'ampache_store'
+
+    get_path = None
 
     def __init__(self, store, element):
         self.store = store
@@ -289,6 +299,8 @@ class Genre(BackendItem):
 class Tag(BackendItem):
 
     logCategory = 'ampache_store'
+
+    get_path = None
 
     def __init__(self, store, element):
         self.store = store

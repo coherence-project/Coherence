@@ -134,6 +134,8 @@ def sanitize(filename):
 
 class Container(BackendItem):
 
+    get_path = None
+
     def __init__(self, id, parent_id, name, children_callback=None):
         self.id = id
         self.parent_id = parent_id
@@ -186,6 +188,8 @@ class Artist(item.Item,BackendItem):
     name = attributes.text(allowNone=False, indexed=True)
     musicbrainz_id = attributes.text()
 
+    get_path = None
+
     def get_children(self,start=0,request_count=0):
         all_id = 'artist_all_tracks_%d' % (self.storeID+1000)
         self.store.containers[all_id] = \
@@ -232,6 +236,8 @@ class Album(item.Item,BackendItem):
     artist = attributes.reference(allowNone=False, indexed=True)
     cd_count = attributes.integer(default=1)
     cover = attributes.text(default=u'')
+
+    get_path = None
 
     def get_children(self,start=0,request_count=0):
         children = list(self.store.query(Track, Track.album == self,sort=Track.track_nr.ascending))
@@ -378,6 +384,8 @@ class Playlist(item.Item,BackendItem):
 
     name = attributes.text(allowNone=False, indexed=True)
     # references to tracks
+
+    get_path = None
 
 class MediaStore(BackendStore):
     logCategory = 'media_store'
