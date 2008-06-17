@@ -73,6 +73,7 @@ New in this 0.5.6 - Walpurgisnacht - release
 
     package_data = {
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
+                      'ui/icons/*.png',
                       'web/static/*.css','web/static/*.js'],
         'misc': ['Desktop Applet/*.png'],
     },
