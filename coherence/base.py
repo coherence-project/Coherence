@@ -384,13 +384,17 @@ class Coherence(log.Loggable):
         pass
 
     def shutdown( self):
-        louie.remove_plugin(self.louieplugin)
+        if self.louieplugin != None:
+            louie.remove_plugin(self.louieplugin)
+            self.louieplugin = None
         for backend in self.active_backends.itervalues():
             backend.unregister()
         self.active_backends = {}
         """ send service unsubscribe messages """
         try:
-            self.web_server.port.stopListening()
+            if self.web_server.port != None:
+                self.web_server.port.stopListening()
+                self.web_server.port = None
             if hasattr(self.msearch, 'double_discover_loop'):
                 self.msearch.double_discover_loop.stop()
             if hasattr(self.msearch, 'port'):

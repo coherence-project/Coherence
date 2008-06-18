@@ -59,6 +59,5 @@ class TestSwitchPowerClient(unittest.TestCase):
 
             call.addCallback(got_answer)
 
-
         self.coherence.ctrl.add_query(DeviceQuery('uuid', str(self.uuid), the_result, timeout=10, oneshot=True))
         return d
