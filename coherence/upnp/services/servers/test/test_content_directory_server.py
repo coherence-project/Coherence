@@ -21,6 +21,7 @@ from coherence import __version__
 from coherence.base import Coherence
 from coherence.upnp.core.uuid import UUID
 from coherence.upnp.devices.control_point import DeviceQuery
+from coherence.upnp.core import DIDLLite
 
 import louie
 
@@ -76,18 +77,19 @@ class TestContentDirectoryServer(unittest.TestCase):
 
             def got_second_answer(r,childcount):
                 try:
-                    self.assertEqual(len(r), childcount)
+                    self.assertEqual(int(r['TotalMatches']), childcount)
                     d.callback(None)
                 except:
                     d.errback()
 
             def got_first_answer(r):
                 try:
-                    self.assertEqual(len(r), 1)
+                    self.assertEqual(int(r['TotalMatches']), 1)
                 except:
                     d.errback()
 
-                item = r[0]
+                didl = DIDLLite.DIDLElement.fromString(r['Result'])
+                item = didl.getItems()[0]
                 try:
                     self.assertEqual(item.childCount, 3)
                 except:
@@ -117,13 +119,13 @@ class TestContentDirectoryServer(unittest.TestCase):
                 d.errback()
 
             def got_first_answer(r):
-                """ we expect one item here """
                 try:
-                    self.assertEqual(len(r), 1)
+                    self.assertEqual(int(r['TotalMatches']), 1)
                 except:
                     d.errback()
                     return
-                item = r[0]
+                didl = DIDLLite.DIDLElement.fromString(r['Result'])
+                item = didl.getItems()[0]
                 try:
                     self.assertEqual(item.title, 'root')
                 except:
@@ -153,7 +155,7 @@ class TestContentDirectoryServer(unittest.TestCase):
             def got_first_answer(r):
                 """ we expect four audio files here """
                 try:
-                    self.assertEqual(len(r), 4)
+                    self.assertEqual(int(r['TotalMatches']), 4)
                 except:
                     d.errback()
                     return
@@ -191,11 +193,12 @@ class TestContentDirectoryServer(unittest.TestCase):
             def got_first_answer(r):
                 """ we expect one item here """
                 try:
-                    self.assertEqual(len(r), 1)
+                    self.assertEqual(int(r['TotalMatches']), 1)
                 except:
                     d.errback()
                     return
-                item = r[0]
+                didl = DIDLLite.DIDLElement.fromString(r['Result'])
+                item = didl.getItems()[0]
                 try:
                     self.assertEqual(item.title, 'root')
                 except:
