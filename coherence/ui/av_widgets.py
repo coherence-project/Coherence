@@ -110,7 +110,7 @@ class TreeWidget(object):
         self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_detected', self.media_server_found, dbus_interface=BUS_NAME)
         self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_removed', self.media_server_removed, dbus_interface=BUS_NAME)
 
-    def media_server_found(self,device):
+    def media_server_found(self,device,udn=None):
         #print "media_server_found", device['friendly_name']
         item = self.store.append(None)
         self.store.set_value(item, NAME_COLUMN, device['friendly_name'])
@@ -127,7 +127,7 @@ class TreeWidget(object):
         #print "media_server_removed", udn
         row_count = 0
         for row in self.store:
-            if udn == row[1]:
+            if udn == row[UDN_COLUMN]:
                 self.store.remove(self.store.get_iter(row_count))
             row_count += 1
 

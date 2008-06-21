@@ -170,9 +170,9 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             self.devices.append(DBusDevice(device,self.bus_name))
 
         louie.connect(self.cp_ms_detected, 'Coherence.UPnP.ControlPoint.MediaServer.detected', louie.Any)
-        #louie.connect(self.UPnP_ControlPoint_MediaServer_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
+        louie.connect(self.cp_ms_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
         louie.connect(self.cp_mr_detected, 'Coherence.UPnP.ControlPoint.MediaRenderer.detected', louie.Any)
-        #louie.connect(self.UPnP_ControlPoint_MediaRenderer_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
+        louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
     def remove_client(self, usn, client):
@@ -181,6 +181,15 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             getattr(self,str('UPnP_ControlPoint_%s_removed' % client.device_type))(usn)
         except:
             pass
+
+    def remove(self,udn):
+        #print "DBusPontoon remove", udn
+        for device in self.devices:
+            #print "check against", device.device.get_id()
+            if udn == device.device.get_id():
+                device.device = None
+                self.devices.remove(device)
+                break
 
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
     def version(self):
@@ -221,32 +230,41 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def remove_plugin(self,uuid):
         return self.controlpoint.coherence.remove_plugin(uuid)
 
-    def cp_ms_detected(self,client,usn=''):
+    def cp_ms_detected(self,client,udn=''):
         new_device = DBusDevice(client.device,self.bus)
         self.devices.append(new_device)
-        self.UPnP_ControlPoint_MediaServer_detected(new_device.path(),usn)
+        self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),udn)
 
-    def cp_mr_detected(self,client,usn=''):
+    def cp_mr_detected(self,client,udn=''):
         new_device = DBusDevice(client.device,self.bus)
         self.devices.append(new_device)
-        self.UPnP_ControlPoint_MediaRenderer_detected(new_device.path(),usn)
+        self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),udn)
+
+    def cp_ms_removed(self,udn):
+        #print "cp_ms_removed", udn
+        self.UPnP_ControlPoint_MediaServer_removed(udn)
+        self.remove(udn)
+
+    def cp_mr_removed(self,udn):
+        self.UPnP_ControlPoint_MediaRenderer_removed(udn)
+        self.remove(udn)
 
     @dbus.service.signal(BUS_NAME,
-                         signature='ss')
-    def UPnP_ControlPoint_MediaServer_detected(self,device,usn):
+                         signature='vs')
+    def UPnP_ControlPoint_MediaServer_detected(self,device,udn):
         self.info("emitting signal UPnP_ControlPoint_MediaServer_detected")
 
     @dbus.service.signal(BUS_NAME,
                          signature='s')
-    def UPnP_ControlPoint_MediaServer_removed(self,usn):
+    def UPnP_ControlPoint_MediaServer_removed(self,udn):
         self.info("emitting signal UPnP_ControlPoint_MediaServer_removed")
 
     @dbus.service.signal(BUS_NAME,
-                         signature='ss')
-    def UPnP_ControlPoint_MediaRenderer_detected(self,device,usn):
+                         signature='vs')
+    def UPnP_ControlPoint_MediaRenderer_detected(self,device,udn):
         self.info("emitting signal UPnP_ControlPoint_MediaRenderer_detected")
 
     @dbus.service.signal(BUS_NAME,
                          signature='s')
-    def UPnP_ControlPoint_MediaRenderer_removed(self,usn):
+    def UPnP_ControlPoint_MediaRenderer_removed(self,udn):
         self.info("emitting signal UPnP_ControlPoint_MediaRenderer_removed")
