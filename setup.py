@@ -57,6 +57,7 @@ New in this 0.5.6 - Walpurgisnacht - release
         LastFMStore = coherence.backends.lastfm_storage:LastFMStore
         AmpacheStore = coherence.backends.ampache_storage:AmpacheStore
         TrackerStore = coherence.backends.tracker_storage:TrackerStore
+        DVBDStore = coherence.backends.dvbd_storage:DVBDStore
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
