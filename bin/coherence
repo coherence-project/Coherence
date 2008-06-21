@@ -208,12 +208,14 @@ class Options(usage.Options):
                 ]
     optParameters = [['configfile', 'c', setConfigFile(), 'configfile'],
                      ['logfile', 'l', None, 'logfile'],
+                     ['option', 'o', None, 'activate option'],
                      ['plugin', 'p', None, 'activate plugin']
                     ]
 
     def __init__(self):
         usage.Options.__init__(self)
         self['plugins'] = []
+        self['options'] = {}
 
     def opt_version(self):
         print "Coherence version:", __version__
@@ -233,6 +235,13 @@ class Options(usage.Options):
 
     def opt_plugin(self,option):
         self['plugins'].append(option)
+
+    def opt_option(self,option):
+        try:
+            key,value = option.split(':')
+            self['options'][key] = value
+        except:
+            pass
 
 def main(config):
 
@@ -275,11 +284,16 @@ if __name__ == '__main__':
 
     #print config
 
+    for k,v in options['options'].items():
+        config[k] = v
+
     config['logfile'] = options['logfile']
 
     if options['daemon'] == 1:
         if options['logfile'] == None:
             config['logmode'] = 'none'
+
+    print config
 
     if config.get('use_dbus', 'no') == 'yes':
         try:
