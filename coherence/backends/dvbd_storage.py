@@ -3,15 +3,14 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
-import os.path
+
+from datetime import datetime
 
 from twisted.internet import reactor, defer
 from twisted.python import failure, util
 from twisted.python.filepath import FilePath
 
 from coherence.upnp.core import DIDLLite
-from coherence.upnp.core.soap_service import errorCode
-from coherence.upnp.core import utils
 
 import dbus
 
@@ -103,7 +102,7 @@ class Recording(BackendItem):
         self.location = FilePath(unicode(file))
         self.title = unicode(title)
         self.mimetype = str(mimetype)
-        self.date = int(date)
+        self.date = datetime.fromtimestamp(int(date))
         self.duration = int(duration)
         self.size = self.location.getsize()
         self.bitrate = 0
