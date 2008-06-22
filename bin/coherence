@@ -282,8 +282,6 @@ if __name__ == '__main__':
         print "no config file %r found" % options['configfile']
         pass
 
-    #print config
-
     for k,v in options['options'].items():
         config[k] = v
 
@@ -293,7 +291,7 @@ if __name__ == '__main__':
         if options['logfile'] == None:
             config['logmode'] = 'none'
 
-    print config
+    #print config
 
     if config.get('use_dbus', 'no') == 'yes':
         try:

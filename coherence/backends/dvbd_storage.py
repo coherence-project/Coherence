@@ -7,6 +7,7 @@ import os.path
 
 from twisted.internet import reactor, defer
 from twisted.python import failure, util
+from twisted.python.filepath import FilePath
 
 from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.soap_service import errorCode
@@ -43,7 +44,6 @@ class Container(BackendItem):
             self.children = children_callback
         else:
             self.children = util.OrderedDict()
-        self.item.childCount = None #self.get_child_count()
 
         if store!=None:
             self.get_url = lambda: store.urlbase + str(self.id)
@@ -92,21 +92,22 @@ class Recording(BackendItem):
 
     def __init__(self,store,
                  id,parent_id,
-                 file,title,\
-                 size,mimetype):
+                 file,title,
+                 date,duration,
+                 mimetype):
 
         self.store = store
-        self.id = 'recording.%d' % int(id)
+        self.id = 'recording.%s' % id
         self.parent_id = parent_id
 
-        self.path = unicode(file)
-
+        self.location = FilePath(unicode(file))
         self.title = unicode(title)
         self.mimetype = str(mimetype)
-        self.size = int(size)
-
+        self.date = int(date)
+        self.duration = int(duration)
+        self.size = self.location.getsize()
+        self.bitrate = 0
         self.url = self.store.urlbase + str(self.id)
-
 
     def get_children(self, start=0, end=0):
         return []
@@ -120,7 +121,7 @@ class Recording(BackendItem):
 
         # create item
         item = DIDLLite.VideoBroadcast(self.id,self.parent_id)
-        #item.date =
+        item.date = self.date
         item.title = self.title
 
         # add http resource
@@ -145,7 +146,7 @@ class Recording(BackendItem):
         return self.url
 
     def get_path(self):
-        return self.path
+        return self.location.path
 
 
 class DVBDStore(BackendStore):
@@ -175,12 +176,11 @@ class DVBDStore(BackendStore):
 
         self.bus = dbus.SessionBus()
         dvb_daemon = self.bus.get_object(BUS_NAME,OBJECT_PATH)
-        self.store_interface = dbus.Interface(tracker_object, 'org.gnome.DVB.RecordingsStore')
+        self.store_interface = dbus.Interface(dvb_daemon, 'org.gnome.DVB.RecordingsStore')
 
         dvb_daemon.connect_to_signal('changed', self.recording_changed, dbus_interface=BUS_NAME)
 
         self.containers = {}
-        self.tracks = {}
         self.containers[ROOT_CONTAINER_ID] = \
                     Container(ROOT_CONTAINER_ID,-1,self.name,store=self)
 
@@ -191,7 +191,7 @@ class DVBDStore(BackendStore):
             error = ''
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
 
-        d = get_recordings()
+        d = self.get_recordings()
         d.addCallback(query_finished)
         d.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='Connection to DVB Daemon failed!'))
 
@@ -222,6 +222,7 @@ class DVBDStore(BackendStore):
         pass
 
     def get_recording_details(self,id):
+
         def get_title(id):
             d = defer.Deferred()
             self.store_interface.GetName(id,
@@ -236,6 +237,13 @@ class DVBDStore(BackendStore):
                                          error_handler=lambda x: d.errback(x))
             return d
 
+        def get_date(id):
+            d = defer.Deferred()
+            self.store_interface.GetStartTime(id,
+                                         reply_handler=lambda x: d.callback(x),
+                                         error_handler=lambda x: d.errback(x))
+            return d
+
         def get_duration(id):
             d = defer.Deferred()
             self.store_interface.GetLength(id,
@@ -243,15 +251,23 @@ class DVBDStore(BackendStore):
                                          error_handler=lambda x: d.errback(x))
             return d
 
-        dl = defer.DeferredList((get_title(id),get_path(id),get_duration(id)))
-        return dl
-
-    def get_recordings(self):
+        def process_details(r, id):
+            return {'id':id,'name':r[0][1],'path':r[1][1],'date':r[2][1],'duration':r[3][1]}
 
         def handle_error(error):
             return error
 
+        dl = defer.DeferredList((get_title(id),get_path(id),get_date(id),get_duration(id)))
+        dl.addCallback(process_details,id)
+        dl.addErrback(handle_error)
+        return dl
+
+    def get_recordings(self):
+        def handle_error(error):
+            return error
+
         def process_query_result(ids):
+            #print "process_query_result", ids
             if len(ids) == 0:
                 return
             l = []
@@ -261,9 +277,21 @@ class DVBDStore(BackendStore):
             dl = defer.DeferredList(l)
             return dl
 
-        def process_details(r):
-            print 'process_details', r
-            #self.containers[RECORDINGS_CONTAINER_ID].add_child(video_item)
+        def process_details(results):
+            #print 'process_details', results
+            for result,recording in results:
+                #print result, recording['name']
+                if result == True:
+                    print "add", recording['id'], recording['name'], recording['path'], recording['date'], recording['duration']
+                    video_item = Recording(self,
+                                           recording['id'],
+                                           RECORDINGS_CONTAINER_ID,
+                                           recording['path'],
+                                           recording['name'],
+                                           recording['date'],
+                                           recording['duration'],
+                                           'video/mpegts')
+                    self.containers[RECORDINGS_CONTAINER_ID].add_child(video_item)
 
         self.containers[RECORDINGS_CONTAINER_ID] = \
                     Container(RECORDINGS_CONTAINER_ID,ROOT_CONTAINER_ID,'Recordings',store=self)
