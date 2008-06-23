@@ -4,7 +4,7 @@
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
 from twisted.web import server, resource
-from twisted.python import log, failure
+from twisted.python import failure
 from twisted.internet import defer
 
 from coherence import log, SERVER_ID

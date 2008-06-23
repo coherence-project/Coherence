@@ -10,6 +10,7 @@
 """
 
 from os.path import join as path_join
+import socket
 
 import pygtk
 pygtk.require("2.0")
@@ -19,6 +20,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)
 import dbus.service
+
+from coherence.upnp.core.utils import get_host_address
+
 
 # dbus defines
 BUS_NAME = 'org.Coherence'
@@ -43,6 +47,11 @@ class TreeWidget(object):
         self.cb_item_dbl_click = cb_item_dbl_click
         self.cb_item_right_click = None
         self.cb_resource_chooser = cb_resource_chooser
+
+        self.hostname = socket.gethostbyname(socket.gethostname())
+        if self.hostname.startswith('127.'):
+            """ use interface detection via routing table as last resort """
+            self.hostname = get_host_address()
 
         self.build_ui()
         self.init_controlpoint()
@@ -182,7 +191,9 @@ class TreeWidget(object):
                     if callable(self.cb_resource_chooser):
                         service = self.cb_resource_chooser(item.res)
                     else:
-                        res = item.res.get_matching(['*:*:*:*'], protocol_type='http-get')
+                        res = item.res.get_matching(['*:%s:*:*' % self.hostname], protocol_type='internal')
+                        if len(res) == 0:
+                            res = item.res.get_matching(['*:*:*:*'], protocol_type='http-get')
                         if len(res) > 0:
                             res = res[0]
                             remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
