@@ -41,6 +41,7 @@ class TreeWidget(object):
                       cb_resource_chooser=None):
 
         self.cb_item_dbl_click = cb_item_dbl_click
+        self.cb_item_right_click = None
         self.cb_resource_chooser = cb_resource_chooser
 
         self.build_ui()
@@ -86,9 +87,15 @@ class TreeWidget(object):
 
         #self.treeview.insert_column_with_attributes(-1, 'MediaServers', cell, text=0)
         self.treeview.connect("row-activated", self.browse)
+        self.treeview.connect("button_press_event", self.button_action)
 
         self.window.add(self.treeview)
 
+    def button_action(self, widget, event):
+        #print "button_action", widget, event, event.button
+        if self.cb_item_right_click != None:
+            return self.cb_item_right_click(widget, event)
+        return 0
 
     def handle_error(self,error):
         print error
