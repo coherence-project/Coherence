@@ -24,8 +24,8 @@ ROOT_CONTAINER_ID = 0
 
 RECORDINGS_CONTAINER_ID = 100
 
-BUS_NAME = 'org.gnome.DVB.Manager'
-OBJECT_PATH = '/org/gnome/DVB/Manager'
+BUS_NAME = 'org.gnome.DVB'
+OBJECT_PATH = '/org/gnome/DVB/RecordingsStore'
 
 class Container(BackendItem):
 
@@ -238,7 +238,7 @@ class DVBDStore(BackendStore):
 
         def get_date(id):
             d = defer.Deferred()
-            self.store_interface.GetStartTime(id,
+            self.store_interface.GetStartTimestamp(id,
                                          reply_handler=lambda x: d.callback(x),
                                          error_handler=lambda x: d.errback(x))
             return d
