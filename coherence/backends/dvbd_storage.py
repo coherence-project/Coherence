@@ -98,6 +98,8 @@ class Recording(BackendItem):
         self.store = store
         self.id = 'recording.%s' % id
         self.parent_id = parent_id
+        self.real_id = id
+
 
         self.location = FilePath(unicode(file))
         self.title = unicode(title)
@@ -125,6 +127,16 @@ class Recording(BackendItem):
 
         # add http resource
         res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+        if self.size > 0:
+            res.size = self.size
+        if self.duration > 0:
+            res.duration = str(self.duration)
+        if self.bitrate > 0:
+            res.bitrate = str(bitrate)
+        item.res.append(res)
+
+        # add internal resource
+        res = DIDLLite.Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (self.store.server.coherence.hostname,self.mimetype))
         if self.size > 0:
             res.size = self.size
         if self.duration > 0:
@@ -311,3 +323,25 @@ class DVBDStore(BackendStore):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                             ['http-get:*:video/mpegts:*',
                              'internal:%s:video/mpegts:*' % self.server.coherence.hostname,])
+
+    def upnp_DestroyObject(self, *args, **kwargs):
+        ObjectID = kwargs['ObjectID']
+
+        item = self.get_by_id(ObjectID)
+        if item == None:
+            return failure.Failure(errorCode(701))
+
+        def handle_success(deleted,id):
+            print deleted, id
+            if deleted == False:
+                return failure.Failure(errorCode(715))
+            return {}
+
+        def handle_error(error):
+            return failure.Failure(errorCode(701))
+
+        d = defer.Deferred()
+        self.store_interface.Delete(int(item.real_id),
+                                    reply_handler=lambda x: d.callback(x,ObjectID),
+                                    error_handler=lambda x: d.errback(x))
+        return d
