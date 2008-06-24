@@ -123,6 +123,8 @@ class ContentDirectoryClient:
         starting_index = str(starting_index)
         requested_count = str(requested_count)
         action = self.service.get_action('Search')
+        if action == None:
+            return None
         d = action.call( ContainerID=container_id,
                             SearchCriteria=criteria,
                             Filter="*",
@@ -169,50 +171,70 @@ class ContentDirectoryClient:
         if elements is None:
             elements = ''
         action = self.service.get_action('CreateObject')
-        return action.call( ContainerID=container_id,
-                            Elements=elements)
+        if action:  # optional
+            return action.call( ContainerID=container_id,
+                                Elements=elements)
+        return None
 
     def destroy_object(self, object_id):
         action = self.service.get_action('DestroyObject')
-        return action.call( ObjectID=object_id)
+        if action:  # optional
+            return action.call( ObjectID=object_id)
+        return None
 
     def update_object(self, object_id, current_tag_value, new_tag_value):
         action = self.service.get_action('UpdateObject')
-        return action.call( ObjectID=object_id,
-                            CurrentTagValue=current_tag_value,
-                            NewTagValue=new_tag_value)
+        if action:  # optional
+            return action.call( ObjectID=object_id,
+                                CurrentTagValue=current_tag_value,
+                                NewTagValue=new_tag_value)
+        return None
 
     def move_object(self, object_id, new_parent_id):
         action = self.service.get_action('MoveObject')
-        return action.call( ObjectID=object_id,
-                            NewParentID=new_parent_id)
+        if action:  # optional
+            return action.call( ObjectID=object_id,
+                                NewParentID=new_parent_id)
+        return None
 
     def import_resource(self, source_uri, destination_uri):
         action = self.service.get_action('ImportResource')
-        return action.call( SourceURI=source_uri,
-                            DestinationURI=destination_uri)
+        if action:  # optional
+            return action.call( SourceURI=source_uri,
+                                DestinationURI=destination_uri)
+        return None
 
     def export_resource(self, source_uri, destination_uri):
         action = self.service.get_action('ExportResource')
-        return action.call( SourceURI=source_uri,
-                            DestinationURI=destination_uri)
+        if action:  # optional
+            return action.call( SourceURI=source_uri,
+                                DestinationURI=destination_uri)
+        return None
 
     def delete_resource(self, resource_uri):
         action = self.service.get_action('DeleteResource')
-        return action.call( ResourceURI=resource_uri)
+        if action:  # optional
+            return action.call( ResourceURI=resource_uri)
+        return None
 
     def stop_transfer_resource(self, transfer_id):
         action = self.service.get_action('StopTransferResource')
-        return action.call( TransferID=transfer_id)
+        if action:  # optional
+            return action.call( TransferID=transfer_id)
+        return None
 
     def get_transfer_progress(self, transfer_id):
         action = self.service.get_action('GetTransferProgress')
-        return action.call( TransferID=transfer_id)
+        if action:  # optional
+            return action.call( TransferID=transfer_id)
+        return None
 
     def create_reference(self, container_id, object_id):
         action = self.service.get_action('CreateReference')
-        return action.call( ContainerID=container_id,
-                            ObjectID=object_id)
+        if action:  # optional
+            return action.call( ContainerID=container_id,
+                                ObjectID=object_id)
+        return None
 
 
     def _failure(self, error):

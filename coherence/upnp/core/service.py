@@ -587,10 +587,15 @@ class ServiceServer(log.Loggable):
         for action_node in tree.findall('.//action'):
             name = action_node.findtext('name')
             implementation = 'required'
+            needs_callback = False
             if action_node.find('Optional') != None:
                 implementation = 'optional'
+                if action_node.find('Optional').attrib.get(
+                                        '{urn:schemas-beebits-net:service-1-0}X_needs_backend',
+                                        None) != None:
+                    needs_callback = True
+
             arguments = []
-            needs_callback = False
             for argument in action_node.findall('.//argument'):
                 arg_name = argument.findtext('name')
                 arg_direction = argument.findtext('direction')

@@ -9,10 +9,10 @@ Note:
 This file uses tabs (not spaces) for block indentation.
 Any updates to this file should maintain this convention.
 This includes disabling any automatic tab-to-space conversion
-feature provided by your editor. 
+feature provided by your editor.
 ================================================================-->
 <scpd>
-	<serviceStateTable>
+	<serviceStateTable xmlns:coherence="urn:schemas-beebits-net:service-1-0">
 		<stateVariable>
 			<name>SearchCapabilities</name>
 			<sendEventsAttribute>no</sendEventsAttribute>
@@ -167,7 +167,7 @@ feature provided by your editor.
 		</stateVariable>
 	</serviceStateTable>
 
-	<actionList>
+	<actionList xmlns:coherence="urn:schemas-beebits-net:service-1-0">
 		<action>
 			<name>GetSearchCapabilities</name>
 			<argumentList>
@@ -338,7 +338,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>CreateObject</name>
 			<argumentList>
 				<argument>
@@ -365,7 +365,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>DestroyObject</name>
 			<argumentList>
 				<argument>
@@ -377,7 +377,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>UpdateObject</name>
 			<argumentList>
 				<argument>
@@ -399,7 +399,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>MoveObject</name>
 			<argumentList>
 				<argument>
@@ -421,7 +421,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>ImportResource</name>
 			<argumentList>
 				<argument>
@@ -443,7 +443,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>ExportResource</name>
 			<argumentList>
 				<argument>
@@ -465,7 +465,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>DeleteResource</name>
 			<argumentList>
 				<argument>
@@ -477,7 +477,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>StopTransferResource</name>
 			<argumentList>
 				<argument>
@@ -489,7 +489,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>GetTransferProgress</name>
 			<argumentList>
 				<argument>
@@ -516,7 +516,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>CreateReference</name>
 			<argumentList>
 				<argument>
