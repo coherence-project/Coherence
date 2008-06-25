@@ -186,6 +186,9 @@ class DVBDStore(BackendStore):
         self.server = server
         self.update_id = 0
 
+        if kwargs.get('enable_destroy','no') == 'yes':
+            self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
+
         self.bus = dbus.SessionBus()
         dvb_daemon = self.bus.get_object(BUS_NAME,OBJECT_PATH)
         self.store_interface = dbus.Interface(dvb_daemon, 'org.gnome.DVB.RecordingsStore')
@@ -325,7 +328,7 @@ class DVBDStore(BackendStore):
                             ['http-get:*:video/mpegts:*',
                              'internal:%s:video/mpegts:*' % self.server.coherence.hostname,])
 
-    def upnp_DestroyObject(self, *args, **kwargs):
+    def hidden_upnp_DestroyObject(self, *args, **kwargs):
         ObjectID = kwargs['ObjectID']
 
         item = self.get_by_id(ObjectID)

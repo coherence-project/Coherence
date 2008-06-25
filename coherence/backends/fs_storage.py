@@ -357,6 +357,9 @@ class FSStore(BackendStore):
         except:
             self.inotify = None
 
+        if kwargs.get('enable_destroy','no') == 'yes':
+            self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
+
         self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
@@ -438,7 +441,7 @@ class FSStore(BackendStore):
                 self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.get_path())
 
     def create(self, mimetype, path, parent):
-        #print "create", mimetype, path, type(path)
+        #print "create", mimetype, path, type(path), parent
         UPnPClass = classChooser(mimetype)
         if UPnPClass == None:
             return None
@@ -451,6 +454,7 @@ class FSStore(BackendStore):
         self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=True)
         if hasattr(self, 'update_id'):
             self.update_id += 1
+            #print self.update_id
             if self.server:
                 if hasattr(self.server,'content_directory_server'):
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
@@ -463,7 +467,7 @@ class FSStore(BackendStore):
         return id
 
     def append(self,path,parent):
-        #print "append", path, type(path)
+        #print "append", path, type(path), parent
         try:
             mimetype,_ = mimetypes.guess_type(path, strict=False)
             if mimetype == None:
@@ -675,6 +679,23 @@ class FSStore(BackendStore):
             return {'ObjectID': id, 'Result': didl.toString()}
 
         return failure.Failure(errorCode(712))
+
+    def hidden_upnp_DestroyObject(self, *args, **kwargs):
+        ObjectID = kwargs['ObjectID']
+
+        item = self.get_by_id(ObjectID)
+        if item == None:
+            return failure.Failure(errorCode(701))
+
+        print "upnp_DestroyObject", item.location
+        try:
+            item.location.remove()
+        except Exception, msg:
+            print Exception, msg
+            return failure.Failure(errorCode(715))
+
+        return {}
+
 
 if __name__ == '__main__':
 
