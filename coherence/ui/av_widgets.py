@@ -110,7 +110,6 @@ class TreeWidget(object):
         print error
 
     def handle_devices_reply(self,devices):
-
         for device in devices:
             if device['device_type'].split(':')[3] == 'MediaServer':
                 self.media_server_found(device)
@@ -125,6 +124,55 @@ class TreeWidget(object):
 
         self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_detected', self.media_server_found, dbus_interface=BUS_NAME)
         self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_removed', self.media_server_removed, dbus_interface=BUS_NAME)
+        self.devices = {}
+
+    def device_has_action(self,udn,service,action):
+        try:
+            self.devices[udn][service]['actions'].index(action)
+            return True
+        except:
+            return False
+
+    def state_variable_change( self, udn, service, variable, value):
+        #print "state_variable_change", udn, service, variable, 'changed to', value
+        if variable == 'ContainerUpdateIDs':
+            changes = value.split(',')
+            while len(changes) > 1:
+                container = changes.pop(0).strip()
+                update_id = changes.pop(0).strip()
+
+                def match_func(model, iter, data):
+                    column, key = data # data is a tuple containing column number, key
+                    value = model.get_value(iter, column)
+                    return value == key
+
+                def search(model, iter, func, data):
+                    #print "search", model, iter, data
+                    while iter:
+                        if func(model, iter, data):
+                            return iter
+                        result = search(model, model.iter_children(iter), func, data)
+                        if result: return result
+                        iter = model.iter_next(iter)
+                    return None
+
+                row_count = 0
+                for row in self.store:
+                    if udn == row[UDN_COLUMN]:
+                        iter = self.store.get_iter(row_count)
+                        match_iter = search(self.store, self.store.iter_children(iter),
+                                        match_func, (ID_COLUMN, container))
+                        if match_iter:
+                            print "heureka, we have a change in ", container, ", container needs a reload"
+                            child = self.store.iter_children(match_iter)
+                            while child:
+                                self.store.remove(child)
+                                child = self.store.iter_children(match_iter)
+                            self.browse(self.treeview,self.store.get_path(match_iter),None,
+                                        starting_index=0,requested_count=0,force=True)
+
+                        break
+                    row_count += 1
 
     def media_server_found(self,device,udn=None):
         #print "media_server_found", device['friendly_name']
@@ -133,11 +181,27 @@ class TreeWidget(object):
         self.store.set_value(item, ID_COLUMN, '0')
         self.store.set_value(item, UPNP_CLASS_COLUMN, 'root')
         self.store.set_value(item, CHILD_COUNT_COLUMN, -1)
-        self.store.set_value(item, UDN_COLUMN, device['udn'])
+        self.store.set_value(item, UDN_COLUMN, str(device['udn']))
         self.store.set_value(item, ICON_COLUMN, self.device_icon)
+        self.devices[str(device['udn'])] =  {'ContentDirectory':{}}
         for service in device['services']:
-            if service.split('/')[-1] == 'ContentDirectory':
+            service_type = service.split('/')[-1]
+            if service_type == 'ContentDirectory':
                 self.store.set_value(item, SERVICE_COLUMN, service)
+                self.devices[str(device['udn'])]['ContentDirectory'] = {}
+
+                def reply(r,udn):
+                    self.devices[udn]['ContentDirectory']['actions'] = r
+
+                def reply_subscribe(udn, service, r):
+                    for k,v in r.iteritems():
+                        self.state_variable_change(udn,service,k,v)
+
+                s = self.bus.get_object(BUS_NAME+'.service',service)
+                s.connect_to_signal('StateVariableChanged', self.state_variable_change, dbus_interface=BUS_NAME+'.service')
+                s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
+                s.subscribe(reply_handler=reply_subscribe,error_handler=self.handle_error)
+
 
     def media_server_removed(self,udn):
         #print "media_server_removed", udn
@@ -145,7 +209,18 @@ class TreeWidget(object):
         for row in self.store:
             if udn == row[UDN_COLUMN]:
                 self.store.remove(self.store.get_iter(row_count))
+                del self.devices[str(udn)]
             row_count += 1
+        """
+        iter = self.store.get_iter_first()
+        while iter != None:
+            row_udn, = self.store.get(iter,UDN_COLUMN)
+            next_iter = self.store.iter_next(iter)
+            if udn == row_udn:
+                self.store.remove(iter)
+                del self.devices[udn]
+            iter = next_iter
+        """
 
     def browse(self,view,row_path,column,starting_index=0,requested_count=0,force=False):
         #print "browse", view, row_path, column,starting_index,requested_count,force
@@ -228,10 +303,27 @@ class TreeWidget(object):
         if service == '':
             return
         s = self.bus.get_object(BUS_NAME+'.service',service)
-        s.browse({'object_id':object_id,'process_result':'no',
+        s.action('browse',
+                 {'object_id':object_id,'process_result':'no',
                   'starting_index':str(starting_index),'requested_count':str(requested_count)},
                  reply_handler=reply,error_handler=self.handle_error)
 
+    def destroy_object(self, row_path):
+        print "destroy_object", row_path
+        iter = self.store.get_iter(row_path)
+        object_id, = self.store.get(iter,ID_COLUMN)
+        parent_iter = self.store.iter_parent(iter)
+        service, = self.store.get(parent_iter,SERVICE_COLUMN)
+        if service == '':
+            return
+
+        def reply(r):
+            print "reply", r
+
+        s = self.bus.get_object(BUS_NAME+'.service',service)
+        s.action('destroy_object',
+                 {'object_id':object_id},
+                 reply_handler=reply,error_handler=self.handle_error)
 
 
 if __name__ == '__main__':

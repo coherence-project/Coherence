@@ -52,6 +52,28 @@ class DBusService(dbus.service.Object,log.Loggable):
 
         self.subscribe()
 
+        #interfaces = self._dbus_class_table[self.__class__.__module__ + '.' + self.__class__.__name__]
+        #for (name, funcs) in interfaces.iteritems():
+        #    print name, funcs
+        #    if funcs.has_key('destroy_object'):
+        #        print """removing 'destroy_object'"""
+        #        del funcs['destroy_object']
+        #    for func in funcs.values():
+        #        if getattr(func, '_dbus_is_method', False):
+        #            print self.__class__._reflect_on_method(func)
+
+        #self._get_service_methods()
+
+    def _get_service_methods(self):
+        '''Returns a list of method descriptors for this object'''
+        methods = []
+        for func in dir(self):
+            func = getattr(self,func)
+            if callable(func) and hasattr(func, '_dbus_is_method'):
+                print func, func._dbus_interface, func._dbus_is_method
+                if hasattr(func, 'im_func'):
+                    print func.im_func
+
     def path(self):
         return OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type
 
@@ -59,12 +81,40 @@ class DBusService(dbus.service.Object,log.Loggable):
         #print self.service, "got signal for change of", variable
         #print variable.name, variable.value
         #print type(variable.name), type(variable.value)
-        self.StateVariableChanged(variable.name, variable.value)
+        self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
 
     @dbus.service.signal(BUS_NAME+'.service',
-                         signature='sv')
-    def StateVariableChanged(self, variable, value):
+                         signature='sssv')
+    def StateVariableChanged(self, udn, service, variable, value):
         self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='as')
+    def get_available_actions(self):
+        actions = self.service.get_actions()
+        r = []
+        for name in actions.keys():
+            r.append(name)
+        return r
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='sv',out_signature='v',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def action(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
+
+        def reply(data):
+            dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
+
+        if self.service.client is not None:
+            #print "action", name
+            func = getattr(self.service.client,name,None)
+            #print "action", func
+            if callable(func):
+                kwargs = {}
+                for k,v in arguments.items():
+                    kwargs[str(k)] = str(v)
+                d = func(**kwargs)
+                d.addCallback(reply)
+                d.addErrback(dbus_async_err_cb)
+        return ''
 
     @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
@@ -82,7 +132,23 @@ class DBusService(dbus.service.Object,log.Loggable):
             d.addErrback(dbus_async_err_cb)
         return ''
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='v')
+    @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def destroy_object(self,arguments,dbus_async_cb,dbus_async_err_cb):
+
+        def reply(data):
+            dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
+
+        if self.service.client is not None:
+            kwargs = {}
+            for k,v in arguments.items():
+                kwargs[str(k)] = str(v)
+            d = self.service.client.destroy_object(**kwargs)
+            d.addCallback(reply)
+            d.addErrback(dbus_async_err_cb)
+        return ''
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='ssv')
     def subscribe(self):
         notify = [v for v in self.service._variables[0].values() if v.send_events == True]
         if len(notify) == 0:
@@ -109,7 +175,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                     data[unicode(n.name)] = lc
             else:
                 data[unicode(n.name)] = unicode(n.value)
-        return dbus.Dictionary(data,signature='sv',variant_level=3)
+        return self.dbus_device.device.get_id(), self.type, dbus.Dictionary(data,signature='sv',variant_level=3)
 
 
 class DBusDevice(dbus.service.Object,log.Loggable):
