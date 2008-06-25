@@ -101,7 +101,6 @@ class Recording(BackendItem):
         self.parent_id = parent_id
         self.real_id = id
 
-
         self.location = FilePath(unicode(file))
         self.title = unicode(title)
         self.mimetype = str(mimetype)
@@ -234,7 +233,16 @@ class DVBDStore(BackendStore):
         return item
 
     def recording_changed(self, id, mode):
-        pass
+        self.containers[RECORDINGS_CONTAINER_ID].update_id += 1
+        if hasattr(self, 'update_id'):
+            self.update_id += 1
+            if self.server:
+                if hasattr(self.server,'content_directory_server'):
+                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                value = (RECORDINGS_CONTAINER_ID,self.containers[RECORDINGS_CONTAINER_ID].update_id)
+                if self.server:
+                    if hasattr(self.server,'content_directory_server'):
+                        self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
     def get_recording_details(self,id):
 
@@ -335,8 +343,8 @@ class DVBDStore(BackendStore):
         if item == None:
             return failure.Failure(errorCode(701))
 
-        def handle_success(deleted,id):
-            print deleted, id
+        def handle_success(deleted):
+            print 'deleted', deleted, kwargs['ObjectID']
             if deleted == False:
                 return failure.Failure(errorCode(715))
             return {}
@@ -346,6 +354,6 @@ class DVBDStore(BackendStore):
 
         d = defer.Deferred()
         self.store_interface.Delete(int(item.real_id),
-                                    reply_handler=lambda x: d.callback(x,ObjectID),
+                                    reply_handler=lambda x: d.callback(x),
                                     error_handler=lambda x: d.errback(x))
         return d
