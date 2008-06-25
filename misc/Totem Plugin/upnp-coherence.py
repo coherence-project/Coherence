@@ -70,9 +70,8 @@ class UPnPClient(totem.Plugin):
                 self.totem_object.action_remote(totem.REMOTE_COMMAND_ENQUEUE,url)
                 self.totem_object.action_remote(totem.REMOTE_COMMAND_PLAY,url)
 
-        if not has_attr(self, 'context_no_delete'):
+        if not hasattr(self, 'context_no_delete'):
             self.context_no_delete = gtk.Menu()
-            self.context_with_delete = gtk.Menu()
             play_menu = gtk.MenuItem("Play")
             play_menu.connect("activate", action, 'item.play')
             enqueue_menu = gtk.MenuItem("Enqueue")
@@ -81,12 +80,17 @@ class UPnPClient(totem.Plugin):
             self.context_no_delete.append(enqueue_menu)
             self.context_no_delete.show_all()
 
-        if not has_attr(self, 'context_no_delete'):
+        if not hasattr(self, 'context_with_delete'):
+            self.context_with_delete = gtk.Menu()
+            play_menu = gtk.MenuItem("Play")
+            play_menu.connect("activate", action, 'item.play')
+            enqueue_menu = gtk.MenuItem("Enqueue")
+            enqueue_menu.connect("activate", action, 'item.enqueue')
             self.context_with_delete.append(play_menu)
             self.context_with_delete.append(enqueue_menu)
             self.context_with_delete.append(gtk.SeparatorMenuItem())
             menu = gtk.MenuItem("Delete")
-            menu.context_with_delete("activate", action, 'item.delete')
+            menu.connect("activate", action, 'item.delete')
             self.context_with_delete.append(menu)
             self.context_with_delete.show_all()
 
