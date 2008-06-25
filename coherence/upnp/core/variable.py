@@ -180,6 +180,8 @@ class StateVariable(log.Loggable):
         callback( self)
 
     def notify(self):
+        if self.name.startswith('A_ARG_TYPE_'):
+            return
         self.info("Variable %s sends notify about new value >%r<" %(self.name, self.value))
         #if self.old_value == '':
         #    return
