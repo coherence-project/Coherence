@@ -35,7 +35,7 @@ from coherence.extern.inotify import IN_CHANGED
 
 from coherence.extern.xdg import xdg_content
 
-import louie
+import coherence.extern.louie
 
 from coherence.backend import BackendItem, BackendStore
 

@@ -9,7 +9,7 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
-import louie
+import coherence.extern.louie
 
 class Backend(log.Loggable,Plugin):
 

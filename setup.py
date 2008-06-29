@@ -79,7 +79,6 @@ New in this 0.5.6 - Walpurgisnacht - release
         'misc': ['Desktop Applet/*.png'],
     },
     install_requires=[
-    'Louie >= 1.1',
     'ConfigObj >= 4.3',
     ],
 )

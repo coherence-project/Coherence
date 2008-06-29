@@ -8,7 +8,7 @@ from coherence.upnp.services.clients.dimming_client import DimmingClient
 
 from coherence import log
 
-import louie
+import coherence.extern.louie
 
 class DimmableLightClient(log.Loggable):
     logCategory = 'dimminglight_client'

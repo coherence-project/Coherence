@@ -16,7 +16,7 @@ import dbus
 
 import dbus.service
 
-import louie
+import coherence.extern.louie
 
 from coherence.backend import BackendItem, BackendStore
 

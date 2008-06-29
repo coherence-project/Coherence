@@ -15,7 +15,7 @@ from coherence.upnp.core import DIDLLite
 
 import string
 
-import louie
+import coherence.extern.louie
 
 from coherence.extern.simple_plugin import Plugin
 

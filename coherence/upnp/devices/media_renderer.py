@@ -21,7 +21,7 @@ from coherence.upnp.services.servers.av_transport_server import AVTransportServe
 
 from coherence.upnp.devices.basics import RootDeviceXML, DeviceHttpRoot, BasicDeviceMixin
 
-import louie
+import coherence.extern.louie
 
 from coherence import log
 

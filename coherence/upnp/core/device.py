@@ -13,7 +13,7 @@ from coherence.upnp.core.service import Service
 from coherence.upnp.core import utils
 from coherence import log
 
-import louie
+import coherence.extern.louie
 
 ns = "urn:schemas-upnp-org:device-1-0"
 

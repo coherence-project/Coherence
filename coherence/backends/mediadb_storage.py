@@ -50,7 +50,7 @@ from urlparse import urlsplit
 from axiom import store, item, attributes
 from epsilon.extime import Time
 
-import louie
+import coherence.extern.louie
 
 from twisted.internet import reactor, defer
 

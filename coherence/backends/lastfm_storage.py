@@ -27,7 +27,7 @@ from coherence.upnp.core import utils
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
-import louie
+import coherence.extern.louie
 
 from coherence.extern.simple_plugin import Plugin
 

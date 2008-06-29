@@ -15,7 +15,7 @@ from twisted.python import failure
 from coherence import log, SERVER_ID
 from coherence.upnp.core import utils
 
-import louie
+import coherence.extern.louie
 
 global hostname, web_server_port
 hostname = None

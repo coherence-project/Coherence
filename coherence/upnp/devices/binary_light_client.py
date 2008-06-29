@@ -7,7 +7,7 @@ from coherence.upnp.services.clients.switch_power_client import SwitchPowerClien
 
 from coherence import log
 
-import louie
+import coherence.extern.louie
 
 class BinaryLightClient(log.Loggable):
     logCategory = 'binarylight_client'

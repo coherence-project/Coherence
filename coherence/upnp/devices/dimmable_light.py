@@ -19,7 +19,7 @@ from coherence.upnp.services.servers.dimming_server import DimmingServer
 
 from coherence.upnp.devices.basics import RootDeviceXML, DeviceHttpRoot, BasicDeviceMixin
 
-import louie
+import coherence.extern.louie
 
 from coherence import log
 

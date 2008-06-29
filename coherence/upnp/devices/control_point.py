@@ -18,7 +18,7 @@ from coherence.upnp.devices.media_renderer_client import MediaRendererClient
 from coherence.upnp.devices.binary_light_client import BinaryLightClient
 from coherence.upnp.devices.dimmable_light_client import DimmableLightClient
 
-import louie
+import coherence.extern.louie
 
 from coherence import log
 

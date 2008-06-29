@@ -13,7 +13,7 @@ from twisted.internet import task, address, defer
 from twisted.internet import reactor
 from twisted.web import resource
 
-import louie
+import coherence.extern.louie
 
 from coherence import __version__
 

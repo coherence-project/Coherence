@@ -19,7 +19,7 @@ except ImportError:
 
 from coherence import log
 
-import louie
+import coherence.extern.louie
 
 class StateVariable(log.Loggable):
     logCategory = 'variable'

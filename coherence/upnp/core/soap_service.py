@@ -15,7 +15,7 @@ from coherence.upnp.core.utils import parse_xml
 
 from coherence.upnp.core import soap_lite
 
-import louie
+import coherence.extern.louie
 
 class errorCode(Exception):
     def __init__(self, status):

@@ -12,7 +12,7 @@ from twisted.web import server, resource
 
 from zope.interface import implements, Interface
 
-import louie
+import coherence.extern.louie
 
 from coherence import log
 

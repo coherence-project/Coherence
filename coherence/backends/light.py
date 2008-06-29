@@ -3,7 +3,7 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
-import louie
+import coherence.extern.louie
 
 from coherence.backend import Backend
 

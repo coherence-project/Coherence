@@ -17,7 +17,7 @@ from coherence.upnp.services.servers.switch_power_server import SwitchPowerServe
 
 from coherence.upnp.devices.basics import RootDeviceXML, DeviceHttpRoot, BasicDeviceMixin
 
-import louie
+import coherence.extern.louie
 
 from coherence import log
 

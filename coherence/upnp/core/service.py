@@ -24,7 +24,7 @@ from twisted.internet import defer, reactor
 from twisted.python import failure, util
 from twisted.internet import task
 
-import louie
+import coherence.extern.louie
 
 from coherence import log
 
