@@ -159,7 +159,8 @@ class Plugins(log.Loggable):
             for id in ids:
                 for entrypoint in pkg_resources.iter_entry_points(id):
                     try:
-                        self._plugins[entrypoint.name] = entrypoint.load()
+                        #print entrypoint, type(entrypoint)
+                        self._plugins[entrypoint.name] = entrypoint.load(require=False)
                     except ImportError, msg:
                         self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                         self.info(traceback.format_exc())
