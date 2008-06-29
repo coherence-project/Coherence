@@ -24,7 +24,7 @@ from twisted.internet import defer, reactor
 from twisted.python import failure, util
 from twisted.internet import task
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence import log
 
@@ -151,14 +151,16 @@ class Service(log.Loggable):
         return self._actions
 
     def get_action( self, name):
-        return self.get_actions()[name]
+        try:
+            return self._actions[name]
+        except KeyError:
+            return None # not implemented
 
     def get_state_variables(self, instance):
-        return self._variables.get(instance)
+        return self._variables.get(int(instance))
 
     def get_state_variable(self, name, instance=0):
-        instance = int(instance)
-        return self._variables.get(instance).get(name)
+        return self._variables.get(int(instance)).get(name)
 
     def get_control_url(self):
         return self.url_base + self.control_url
@@ -229,6 +231,27 @@ class Service(log.Loggable):
                         self.info("%r %r %r" % (namespace_uri, tag,var.attrib['val']))
                         self.get_state_variable(tag, instance_id).update(var.attrib['val'])
                         self.info("updated var %r" % var)
+                        if len(var.attrib) > 1:
+                            self.info("Extended StateVariable %s - %r", var.tag, var.attrib)
+                            if var.attrib.has_key('channel') and var.attrib['channel'] != 'Master':
+                                # TODO handle attributes that them selves have multiple instances
+                                self.info("Skipping update to %s its not for master channel %s", var.tag, var.attrib)
+                                pass
+                            else:
+                                if not self.get_state_variables(instance_id):
+                                    # TODO Create instance ?
+                                    self.error("%r update failed (not self.get_state_variables(instance_id)) %r", self, instance_id)
+                                elif not self.get_state_variables(instance_id).has_key(tag):
+                                    # TODO Create instance StateVariable?
+                                    # SONOS stuff
+                                    self.error("%r update failed (not self.get_state_variables(instance_id).has_key(tag)) %r", self, tag)
+                                else:
+                                    val = None
+                                    if var.attrib.has_key('val'):
+                                        val = var.attrib['val']
+                                    #self.debug("%r update %r %r %r", self,namespace_uri, tag, var.attrib['val'])
+                                    self.get_state_variable(tag, instance_id).update(var.attrib['val'])
+                                    self.debug("updated 'attributed' var %r", var)
             else:
                 self.get_state_variable(var_name, 0).update(var_value)
         if self.last_time_updated == None:
@@ -369,7 +392,10 @@ class ServiceServer(log.Loggable):
         self._pending_notifications = {}
 
     def get_action(self, action_name):
-        return self._actions[action_name]
+        try:
+            return self._actions[action_name]
+        except KeyError:
+            return None # not implemented
 
     def get_actions(self):
         return self._actions
@@ -459,7 +485,7 @@ class ServiceServer(log.Loggable):
                     self._pending_notifications[d] = p
                     d.addBoth(self.rm_notification,d)
         try:
-            variable = self._variables[instance][variable_name]
+            variable = self._variables[int(instance)][variable_name]
             if isinstance( value, defer.Deferred):
                 value.addCallback(process_value)
             else:
@@ -469,7 +495,7 @@ class ServiceServer(log.Loggable):
 
     def get_variable(self, variable_name, instance=0):
         try:
-            return self._variables[instance][variable_name]
+            return self._variables[int(instance)][variable_name]
         except:
             return None
 

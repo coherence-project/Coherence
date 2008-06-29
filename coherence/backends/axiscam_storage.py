@@ -11,7 +11,7 @@ from sets import Set
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 

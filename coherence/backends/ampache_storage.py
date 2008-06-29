@@ -25,7 +25,7 @@ from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import utils
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 

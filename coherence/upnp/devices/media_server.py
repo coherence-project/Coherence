@@ -34,7 +34,7 @@ from coherence.upnp.services.servers.media_receiver_registrar_server import Fake
 
 from coherence.upnp.devices.basics import BasicDeviceMixin
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence import log
 

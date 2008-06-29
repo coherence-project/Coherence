@@ -12,7 +12,7 @@ from twisted.python import failure
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 from coherence.upnp.core.soap_service import errorCode
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 

@@ -23,7 +23,7 @@ from coherence.upnp.core.uuid import UUID
 from coherence.upnp.devices.control_point import DeviceQuery
 from coherence.upnp.core import DIDLLite
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 
 class TestContentDirectoryServer(unittest.TestCase):

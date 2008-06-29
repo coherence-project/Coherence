@@ -19,7 +19,7 @@ from coherence import __version__
 from coherence.base import Coherence
 from coherence.upnp.core.uuid import UUID
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'

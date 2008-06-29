@@ -9,7 +9,7 @@ from coherence.upnp.services.clients.av_transport_client import AVTransportClien
 
 from coherence import log
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 class MediaServerClient(log.Loggable):
     logCategory = 'ms_client'

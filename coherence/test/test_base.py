@@ -18,7 +18,7 @@ from twisted.internet.defer import Deferred
 
 from coherence.base import Coherence
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 
 class TestCoherence(unittest.TestCase):

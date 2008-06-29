@@ -27,7 +27,7 @@ from coherence import __version__
 from coherence.upnp.core import DIDLLite
 
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence import log
 

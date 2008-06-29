@@ -17,7 +17,7 @@ import pygst
 pygst.require('0.10')
 import gst
 
-import coherence.extern.louie
+import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 
