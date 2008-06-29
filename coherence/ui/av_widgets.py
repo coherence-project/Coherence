@@ -11,6 +11,7 @@
 
 from os.path import join as path_join
 import socket
+import urllib
 
 import pygtk
 pygtk.require("2.0")
@@ -96,6 +97,7 @@ class TreeWidget(object):
 
         #self.treeview.insert_column_with_attributes(-1, 'MediaServers', cell, text=0)
         self.treeview.connect("row-activated", self.browse)
+        self.treeview.connect("row-expanded", self.row_expanded)
         self.treeview.connect("button_press_event", self.button_action)
 
         self.window.add(self.treeview)
@@ -168,7 +170,7 @@ class TreeWidget(object):
                             while child:
                                 self.store.remove(child)
                                 child = self.store.iter_children(match_iter)
-                            self.browse(self.treeview,self.store.get_path(match_iter),None,
+                            self.browse(self.treeview,self.store.get_path(match_iter),None,False,
                                         starting_index=0,requested_count=0,force=True)
 
                         break
@@ -183,6 +185,9 @@ class TreeWidget(object):
         self.store.set_value(item, CHILD_COUNT_COLUMN, -1)
         self.store.set_value(item, UDN_COLUMN, str(device['udn']))
         self.store.set_value(item, ICON_COLUMN, self.device_icon)
+
+        self.store.append(item, ('...loading...','','placeholder',-1,'','',None))
+
         self.devices[str(device['udn'])] =  {'ContentDirectory':{}}
         for service in device['services']:
             service_type = service.split('/')[-1]
@@ -193,6 +198,19 @@ class TreeWidget(object):
                 def reply(r,udn):
                     self.devices[udn]['ContentDirectory']['actions'] = r
 
+                def got_icons(r,udn,item):
+                    #print 'got_icons', r
+                    for icon in r:
+                        ###FIXME, we shouldn't just use the first icon
+                        icon_loader = gtk.gdk.PixbufLoader()
+                        icon_loader.write(urllib.urlopen(str(icon['url'])).read())
+                        icon_loader.close()
+                        icon = icon_loader.get_pixbuf()
+                        icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
+                        self.store.set_value(item, ICON_COLUMN, icon)
+                        break
+
+
                 def reply_subscribe(udn, service, r):
                     for k,v in r.iteritems():
                         self.state_variable_change(udn,service,k,v)
@@ -201,6 +219,9 @@ class TreeWidget(object):
                 s.connect_to_signal('StateVariableChanged', self.state_variable_change, dbus_interface=BUS_NAME+'.service')
                 s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
                 s.subscribe(reply_handler=reply_subscribe,error_handler=self.handle_error)
+
+                d = self.bus.get_object(BUS_NAME+'.device',device['path'])
+                d.get_device_icons(reply_handler=lambda x : got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
 
 
     def media_server_removed(self,udn):
@@ -211,28 +232,30 @@ class TreeWidget(object):
                 self.store.remove(self.store.get_iter(row_count))
                 del self.devices[str(udn)]
             row_count += 1
-        """
-        iter = self.store.get_iter_first()
-        while iter != None:
-            row_udn, = self.store.get(iter,UDN_COLUMN)
-            next_iter = self.store.iter_next(iter)
-            if udn == row_udn:
-                self.store.remove(iter)
-                del self.devices[udn]
-            iter = next_iter
-        """
+
+    def row_expanded(self,view,iter,row_path):
+        #print "row_expanded", view,iter,row_path
+        child = self.store.iter_children(iter)
+        if child:
+            upnp_class, = self.store.get(child,UPNP_CLASS_COLUMN)
+            if upnp_class == 'placeholder':
+                self.browse(view,row_path,None)
 
     def browse(self,view,row_path,column,starting_index=0,requested_count=0,force=False):
-        #print "browse", view, row_path, column,starting_index,requested_count,force
+        #print "browse", view,row_path,column,starting_index,requested_count,force
         iter = self.store.get_iter(row_path)
-        children = self.store.iter_children(iter)
-        if children != None and force == False:
-            if view.row_expanded(row_path):
-                view.collapse_row(row_path)
-            else:
-                view.expand_row(row_path, False)
-            return
-        title,object_id, upnp_class = self.store.get(iter,NAME_COLUMN,ID_COLUMN,UPNP_CLASS_COLUMN)
+        child = self.store.iter_children(iter)
+        if child:
+            upnp_class, = self.store.get(child,UPNP_CLASS_COLUMN)
+            if upnp_class != 'placeholder':
+                if force == False:
+                    if view.row_expanded(row_path):
+                        view.collapse_row(row_path)
+                    else:
+                        view.expand_row(row_path, False)
+                    return
+
+        title,object_id,upnp_class = self.store.get(iter,NAME_COLUMN,ID_COLUMN,UPNP_CLASS_COLUMN)
         if(not upnp_class.startswith('object.container') and
            not upnp_class == 'root'):
             url, = self.store.get(iter,SERVICE_COLUMN)
@@ -246,6 +269,12 @@ class TreeWidget(object):
         def reply(r):
             #print "browse_reply - %s of %s returned" % (r['NumberReturned'],r['TotalMatches'])
             from coherence.upnp.core import DIDLLite
+
+            child = self.store.iter_children(iter)
+            if child:
+                upnp_class, = self.store.get(child,UPNP_CLASS_COLUMN)
+                if upnp_class == 'placeholder':
+                    self.store.remove(child)
 
             didl = DIDLLite.DIDLElement.fromString(r['Result'])
             for item in didl.getItems():
@@ -283,7 +312,10 @@ class TreeWidget(object):
                     elif item.upnp_class.startswith('object.item.imageItem'):
                         icon = self.image_icon
 
-                self.store.append(iter, (title,item.id,item.upnp_class,child_count,'',service,icon))
+                new_iter = self.store.append(iter, (title,item.id,item.upnp_class,child_count,'',service,icon))
+                if item.upnp_class.startswith('object.container'):
+                    self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None))
+
 
             if int(r['TotalMatches']) > 0:
                 view.expand_row(row_path, False)

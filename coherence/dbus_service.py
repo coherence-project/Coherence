@@ -219,6 +219,11 @@ class DBusDevice(dbus.service.Object,log.Loggable):
     def get_usn(self):
         return self.device.get_usn()
 
+    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='av')
+    def get_device_icons(self):
+        return dbus.Array(self.device.icons,signature='av',variant_level=2)
+
+
 class DBusPontoon(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
 
