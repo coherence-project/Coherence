@@ -277,7 +277,6 @@ if __name__ == '__main__':
         except:
             print "hmm, seems we are in trouble reading in any sort of config file"
             print traceback.format_exc()
-
     except IOError:
         print "no config file %r found" % options['configfile']
         pass

@@ -5,6 +5,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import socket
+import time
 
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
@@ -43,6 +44,9 @@ class MSearch(DatagramProtocol, log.Loggable):
                                             headers['server'],
                                             headers['cache-control'],
                                             host=host)
+            else:
+                self.ssdp_server.known[headers['usn']]['last-seen'] = time.time()
+                self.debug('updating last-seen for %r' % headers['usn'])
 
         # make raw data available
         # send out the signal after we had a chance to register the device

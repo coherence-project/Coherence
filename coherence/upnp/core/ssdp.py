@@ -48,6 +48,9 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.resend_notify_loop = task.LoopingCall(self.resendNotify)
                 self.resend_notify_loop.start(777.0, now=False)
 
+                self.check_valid_loop = task.LoopingCall(self.check_valid)
+                self.check_valid_loop.start(333.0, now=False)
+
             except error.CannotListenError, err:
                 self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
@@ -57,6 +60,10 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         for call in reactor.getDelayedCalls():
             if call.func == self.send_it:
                 call.cancel()
+        if self.resend_notify_loop.running:
+            self.resend_notify_loop.stop()
+        if self.check_valid_loop.running:
+            self.check_valid_loop.stop()
         '''Make sure we send out the byebye notifications.'''
         if self.test == False:
             for st in self.known:
@@ -117,6 +124,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.known[usn]['MANIFESTATION'] = manifestation
         self.known[usn]['SILENT'] = silent
         self.known[usn]['HOST'] = host
+        self.known[usn]['last-seen'] = time.time()
 
         self.msg(self.known[usn])
 
@@ -147,7 +155,10 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.debug('Notification headers:', headers)
 
         if headers['nts'] == 'ssdp:alive':
-            if not self.isKnown(headers['usn']):
+            try:
+                self.known[headers['usn']]['last-seen'] = time.time()
+                self.debug('updating last-seen for %r' % headers['usn'])
+            except KeyError:
                 self.register('remote', headers['usn'], headers['nt'], headers['location'],
                               headers['server'], headers['cache-control'], host=host)
         elif headers['nts'] == 'ssdp:byebye':
@@ -213,6 +224,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         del stcpy['MANIFESTATION']
         del stcpy['SILENT']
         del stcpy['HOST']
+        del stcpy['last-seen']
+
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
         self.debug('doNotify content', resp)
@@ -238,6 +251,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             del stcpy['MANIFESTATION']
             del stcpy['SILENT']
             del stcpy['HOST']
+            del stcpy['last-seen']
             resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
             resp.extend(('', ''))
             self.debug('doByebye content', resp)
@@ -253,6 +267,28 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         for usn in self.known:
             if self.known[usn]['MANIFESTATION'] == 'local':
                 self.doNotify(usn)
+
+    def check_valid(self):
+        """ check if the discovered devices are still ok, or
+            if we haven't received a new discovery response
+        """
+        self.debug("Checking devices/services are still valid")
+        removable = []
+        for usn in self.known:
+            if self.known[usn]['MANIFESTATION'] != 'local':
+                _,expiry = self.known[usn]['CACHE-CONTROL'].split('=')
+                expiry = int(expiry)
+                now = time.time()
+                last_seen = self.known[usn]['last-seen']
+                self.debug("Checking if %r is still valid - last seen %d (+%d), now %d" % (self.known[usn]['USN'],last_seen,expiry,now))
+                if last_seen + expiry + 30 < now:
+                    self.debug("Expiring: %r" % self.known[usn])
+                    if self.known[usn]['ST'] == 'upnp:rootdevice':
+                        louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=self.known[usn]['ST'], infos=self.known[usn])
+                    removable.append(usn)
+        while len(removable) > 0:
+            usn = removable.pop(0)
+            del self.known[usn]
 
     def subscribe(self, name, callback):
         self._callbacks.setdefault(name,[]).append(callback)
