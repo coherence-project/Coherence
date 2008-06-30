@@ -170,7 +170,7 @@ class TreeWidget(object):
                             while child:
                                 self.store.remove(child)
                                 child = self.store.iter_children(match_iter)
-                            self.browse(self.treeview,self.store.get_path(match_iter),None,False,
+                            self.browse(self.treeview,self.store.get_path(match_iter),None,
                                         starting_index=0,requested_count=0,force=True)
 
                         break
@@ -341,7 +341,7 @@ class TreeWidget(object):
                  reply_handler=reply,error_handler=self.handle_error)
 
     def destroy_object(self, row_path):
-        print "destroy_object", row_path
+        #print "destroy_object", row_path
         iter = self.store.get_iter(row_path)
         object_id, = self.store.get(iter,ID_COLUMN)
         parent_iter = self.store.iter_parent(iter)
@@ -350,7 +350,8 @@ class TreeWidget(object):
             return
 
         def reply(r):
-            print "reply", r
+            #print "destroy_object reply", r
+            pass
 
         s = self.bus.get_object(BUS_NAME+'.service',service)
         s.action('destroy_object',

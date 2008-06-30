@@ -68,6 +68,11 @@ class Container(BackendItem):
         else:
             return children[start:end]
 
+    def remove_children(self):
+        if not callable(self.children):
+            self.children = util.OrderedDict()
+            self.item.childCount = 0
+
     def get_child_count(self):
         if self.item.childCount != None:
             return self.item.childCount
@@ -192,7 +197,7 @@ class DVBDStore(BackendStore):
         dvb_daemon = self.bus.get_object(BUS_NAME,OBJECT_PATH)
         self.store_interface = dbus.Interface(dvb_daemon, 'org.gnome.DVB.RecordingsStore')
 
-        dvb_daemon.connect_to_signal('changed', self.recording_changed, dbus_interface=BUS_NAME)
+        dvb_daemon.connect_to_signal('changed', self.recording_changed, dbus_interface='org.gnome.DVB.RecordingsStore')
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
@@ -233,16 +238,26 @@ class DVBDStore(BackendStore):
         return item
 
     def recording_changed(self, id, mode):
-        self.containers[RECORDINGS_CONTAINER_ID].update_id += 1
-        if hasattr(self, 'update_id'):
-            self.update_id += 1
-            if self.server:
-                if hasattr(self.server,'content_directory_server'):
-                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-                value = (RECORDINGS_CONTAINER_ID,self.containers[RECORDINGS_CONTAINER_ID].update_id)
+        self.containers[RECORDINGS_CONTAINER_ID].remove_children()
+
+        def handle_result(r):
+            self.containers[RECORDINGS_CONTAINER_ID].update_id += 1
+            if hasattr(self, 'update_id'):
+                self.update_id += 1
                 if self.server:
                     if hasattr(self.server,'content_directory_server'):
-                        self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+                        self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                    value = (RECORDINGS_CONTAINER_ID,self.containers[RECORDINGS_CONTAINER_ID].update_id)
+                    if self.server:
+                        if hasattr(self.server,'content_directory_server'):
+                            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+
+        def handle_error(error):
+            print error
+
+        d = self.get_recordings()
+        d.addCallback(handle_result)
+        d.addErrback(handle_error)
 
     def get_recording_details(self,id):
 
@@ -275,7 +290,10 @@ class DVBDStore(BackendStore):
             return d
 
         def process_details(r, id):
-            return {'id':id,'name':r[0][1],'path':r[1][1],'date':r[2][1],'duration':r[3][1]}
+            name = r[0][1]
+            if len(name) == 0:
+                name = 'Recording ' + str(id)
+            return {'id':id,'name':name,'path':r[1][1],'date':r[2][1],'duration':r[3][1]}
 
         def handle_error(error):
             return error
@@ -356,4 +374,6 @@ class DVBDStore(BackendStore):
         self.store_interface.Delete(int(item.real_id),
                                     reply_handler=lambda x: d.callback(x),
                                     error_handler=lambda x: d.errback(x))
+        d.addCallback(handle_success)
+        d.addErrback(handle_error)
         return d
