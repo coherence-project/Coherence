@@ -197,7 +197,7 @@ class DVBDStore(BackendStore):
         dvb_daemon = self.bus.get_object(BUS_NAME,OBJECT_PATH)
         self.store_interface = dbus.Interface(dvb_daemon, 'org.gnome.DVB.RecordingsStore')
 
-        dvb_daemon.connect_to_signal('changed', self.recording_changed, dbus_interface='org.gnome.DVB.RecordingsStore')
+        dvb_daemon.connect_to_signal('Changed', self.recording_changed, dbus_interface='org.gnome.DVB.RecordingsStore')
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
