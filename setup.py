@@ -19,14 +19,24 @@ digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this 0.5.6 - Walpurgisnacht - release
+New in this 0.5.8 - Trix and Flix - release
 
- * a MediaServer backend for Meta Tracker (http://www.gnome.org/projects/tracker)
- * simplify the IP-address detection on Windows with the help of
-   the optional Python package netifaces (http://alastairs-place.net/netifaces)
- * proper handling of filename encoding issues in the filesystem based MediaServer
- * and a lot of community driven fixes and enhancements,
-   kudos given representatively to Lawrence and veerz
+ * a MediaServer backend for DVB-Daemon (http://www.k-d-w.org/node/42)
+   * exporting atm the stored recordings
+   * allowing to delete recordings from within a UPnP client, when enabled on the backend
+   * will export EPG data and allow scheduling via UPnP in the future
+ * client device and service implementations for BinaryLight and DimmableLight devices
+ * rework of the D-Bus support
+   * should now be usable from other languages (C,Perl,..) too
+   * support for activating/deactivation a backend via D-Bus, allowing for instance to start a MediaServer backend via D-Bus
+ * a plugin for Totem (http://www.gnome.org/projects/totem/)
+   * enabling Totem to detect and browse UPnP A/V MediaServers
+   * using only D-Bus to communicate with a Coherence instance
+ * a basic reusable PyGTK based UPnP A/V ControlPoint widget, used in the Totem plugin
+ * rework (again) of the XBox 360 support - getting closer
+ * our first set of unit tests
+ * include a copy of Louie (http://pylouie.org) to solve a setuptools runtime dependency issue and make the life of distribution packagers a bit easier
+ * and the usual bugfixes and enhancements
 
 """,
     author="Frank Scholz",
@@ -35,7 +45,7 @@ New in this 0.5.6 - Walpurgisnacht - release
     packages=packages,
     scripts = ['bin/coherence','misc/Desktop Applet/applet-coherence'],
     url = "http://coherence.beebits.net",
-    download_url = 'https://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
+    download_url = 'http://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
     keywords=['UPnP', 'DLNA', 'multimedia', 'gstreamer'],
     classifiers = ['Development Status :: 5 - Production/Stable',
                    'Environment :: Console',

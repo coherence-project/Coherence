@@ -1,3 +1,534 @@
+2008-06-30 19:11  dev
+
+	* coherence/backends/dvbd_storage.py: fixing Vala capitalizing
+	  issue
+
+2008-06-30 18:47  dev
+
+	* coherence/backends/dvbd_storage.py, coherence/ui/av_widgets.py:
+	  corrections re the DVB-Daemon DBus connection
+
+2008-06-30 17:04  dev
+
+	* coherence/backends/dvbd_storage.py: missed one import correction
+
+2008-06-29 17:08  dev
+
+	* misc/org.Coherence.service: a DBus activation file for Coherence,
+	  copy that into /usr/share/dbus-1/services
+
+2008-06-29 16:23  dev
+
+	* bin/coherence, coherence/upnp/core/msearch.py,
+	  coherence/upnp/core/ssdp.py: remove devices and services on the
+	  SSDP level if they haven't send a new notification message within
+	  their ''max-age'' time (plus a 30 seconds extra)
+
+2008-06-29 12:36  dev
+
+	* coherence/backend.py, coherence/backends/ampache_storage.py,
+	  coherence/backends/axiscam_storage.py,
+	  coherence/backends/buzztard_control.py,
+	  coherence/backends/elisa_renderer.py,
+	  coherence/backends/elisa_storage.py,
+	  coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/iradio_storage.py,
+	  coherence/backends/lastfm_storage.py,
+	  coherence/backends/light.py,
+	  coherence/backends/mediadb_storage.py,
+	  coherence/backends/tracker_storage.py, coherence/base.py,
+	  coherence/dbus_service.py, coherence/test/test_base.py,
+	  coherence/test/test_dbus.py, coherence/upnp/core/device.py,
+	  coherence/upnp/core/event.py, coherence/upnp/core/msearch.py,
+	  coherence/upnp/core/service.py,
+	  coherence/upnp/core/soap_service.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/core/variable.py,
+	  coherence/upnp/devices/binary_light.py,
+	  coherence/upnp/devices/binary_light_client.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/dimmable_light.py,
+	  coherence/upnp/devices/dimmable_light_client.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/devices/media_server_client.py,
+	  coherence/upnp/services/clients/test/test_switch_power_client.py,
+	  coherence/upnp/services/servers/test/test_content_directory_server.py,
+	  coherence/web/ui.py: next time start thinking before checking in
+
+2008-06-29 11:36  dev
+
+	* Coherence.egg-info/requires.txt, coherence/backend.py,
+	  coherence/backends/ampache_storage.py,
+	  coherence/backends/axiscam_storage.py,
+	  coherence/backends/buzztard_control.py,
+	  coherence/backends/dvbd_storage.py,
+	  coherence/backends/elisa_renderer.py,
+	  coherence/backends/elisa_storage.py,
+	  coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/iradio_storage.py,
+	  coherence/backends/lastfm_storage.py,
+	  coherence/backends/light.py,
+	  coherence/backends/mediadb_storage.py,
+	  coherence/backends/tracker_storage.py, coherence/base.py,
+	  coherence/dbus_service.py, coherence/extern/louie,
+	  coherence/extern/louie/PKG-INFO,
+	  coherence/extern/louie/__init__.py,
+	  coherence/extern/louie/dispatcher.py,
+	  coherence/extern/louie/error.py,
+	  coherence/extern/louie/plugin.py,
+	  coherence/extern/louie/robustapply.py,
+	  coherence/extern/louie/saferef.py,
+	  coherence/extern/louie/sender.py,
+	  coherence/extern/louie/signal.py,
+	  coherence/extern/louie/version.py, coherence/test/test_base.py,
+	  coherence/test/test_dbus.py, coherence/upnp/core/device.py,
+	  coherence/upnp/core/event.py, coherence/upnp/core/msearch.py,
+	  coherence/upnp/core/service.py,
+	  coherence/upnp/core/soap_service.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/core/variable.py,
+	  coherence/upnp/devices/binary_light.py,
+	  coherence/upnp/devices/binary_light_client.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/dimmable_light.py,
+	  coherence/upnp/devices/dimmable_light_client.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/devices/media_server_client.py,
+	  coherence/upnp/services/clients/test/test_switch_power_client.py,
+	  coherence/upnp/services/servers/test/test_content_directory_server.py,
+	  coherence/web/ui.py, setup.py: the only reasonable solution to
+	  get around that setuptools 'after-install' dependency check for
+	  ''Nose'' seems to include our own copy of Louie in
+	  coherence.extern - which I'm doing herewith.
+	  
+	  #closes 146 hopefully now final
+
+2008-06-29 10:02  dev
+
+	* coherence/base.py: pass a 'well-hidden' option to pkg_resources
+	  EntryPoint.load to not check for any requirements when we load
+	  our backends, #closes #146
+	  
+	  We expect to have all our dependencies resolved at install time,
+	  or that the backend shouts out if there is something missing.
+
+2008-06-29 08:55  dev
+
+	* coherence/dbus_service.py, coherence/ui/av_widgets.py: * make
+	  device icons accessible via DBus
+	  * use the device icon in the TreeWidget
+	  * add a 'dummy' child to every container so the row-expander
+	  triangle shows up (thx aTc@mediatomb)
+
+2008-06-25 16:27  dev
+
+	* coherence/backends/dvbd_storage.py: fix wrong dbus callback in
+	  DestroyObject and relay the signal we get when a recording
+	  'changes' - new one, gets deleted or the file(s) are updated
+
+2008-06-25 12:53  dev
+
+	* misc/Totem Plugin/upnp-coherence.py: now the right version :-/
+
+2008-06-25 09:07  dev
+
+	* coherence/dbus_service.py, coherence/ui/av_widgets.py, misc/Totem
+	  Plugin/upnp-coherence.py: * introduce a generic action method in
+	  the DBus interface and a way to retrieve all available actions,
+	  to get around the limitation of not having 'dynamic' DBus object
+	  interfaces
+	  * use these new methods in the TreeWidget
+	  * react on ''ContainerUpdateIDs'' changes in the TreeWidget and
+	  rebrowse that container
+	  * add a ''DestroyObject'' method to the TreeWidget and make that
+	  accessible from the Totem plugin
+
+2008-06-25 09:03  dev
+
+	* coherence/upnp/core/variable.py: don't notify about changes in
+	  'used-as-an-argument-only' StateVariables
+
+2008-06-25 09:01  dev
+
+	* coherence/backends/dvbd_storage.py,
+	  coherence/backends/fs_storage.py: * add new UPnP ContentDirectory
+	  action ''DestroyObject''
+	  * disabled by default, can be enabled with the backend-option
+	  ''enable_destroy:yes''
+
+2008-06-24 13:51  dev
+
+	* coherence/backends/dvbd_storage.py: missing import
+
+2008-06-24 13:39  dev
+
+	* coherence/backends/dvbd_storage.py: * add a internal: resource to
+	  a recording item
+	  * first version of a DeleteObject action
+
+2008-06-24 13:35  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/core/xml-service-descriptions/ContentDirectory2.xml,
+	  coherence/upnp/services/clients/content_directory_client.py:
+	  handle optional actions that really need '''backend support'''
+
+2008-06-23 20:02  dev
+
+	* coherence/ui/av_widgets.py, coherence/upnp/core/soap_service.py:
+	  try to support internal: resource detection
+
+2008-06-23 19:26  dev
+
+	* coherence/ui/av_widgets.py, misc/Totem Plugin/upnp-coherence.py:
+	  added a right-click context menu to the Totem UPnP client to
+	  allow to 'play' or just 'enqueue' the selected media files. If
+	  more than one file is selected and 'play' is choosen, the first
+	  one starts playing, the others are enqueued.
+	  
+	  Closes #145
+
+2008-06-23 19:23  dev
+
+	* coherence/backends/dvbd_storage.py: fixes needed to let the
+	  backend talk to the DVB-Daemon - thx Sebastian
+	  
+	  it is working now, displaying all the recordings in the client -
+	  just Totem refuses to play the MPEG-TS via http
+
+2008-06-22 12:23  dev
+
+	* misc/Totem Plugin/upnp-coherence.py: change the way a file in
+	  Totem is 'loaded' and 'played', closes #144
+
+2008-06-22 10:49  dev
+
+	* coherence/backends/dvbd_storage.py: import cleanups and date
+	  object correction
+
+2008-06-22 10:28  dev
+
+	* bin/coherence, coherence/backends/dvbd_storage.py: first working
+	  version of the DVB-Daemon backend
+
+2008-06-21 17:12  dev
+
+	* coherence/dbus_service.py, coherence/ui/av_widgets.py: fixing
+	  bugs re the louie/DBus signal relaying
+
+2008-06-21 17:10  dev
+
+	* Coherence.egg-info/entry_points.txt, bin/coherence: allow options
+	  passed to coherence on the commandline, primary ''controlpoint''
+	  and ''use_dbus''
+	  
+	  usage:
+	  {{{
+	  coherence -o controlpoint:yes --option=use_dbus:yes
+	  }}}
+
+2008-06-21 11:08  dev
+
+	* coherence/backends/dvbd_storage.py, setup.py: experimental, not
+	  yet functional, backend for the Gnome DVB Daemon
+
+2008-06-18 09:08  dev
+
+	* coherence/test/test_base.py: unit test missing in [921]
+
+2008-06-18 09:06  dev
+
+	* coherence/base.py,
+	  coherence/upnp/services/clients/test/test_switch_power_client.py:
+	  changes to properly handle several Coherence base class shutdown
+	  calls
+
+2008-06-18 09:05  dev
+
+	* coherence/upnp/services/servers/test/test_content_directory_server.py:
+	  adjusting test to the change in return parameters for Browse
+	  action
+
+2008-06-17 10:45  dev
+
+	* ., coherence/backend.py, coherence/backends/ampache_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/backends/mediadb_storage.py, coherence/dbus_service.py,
+	  coherence/extern/et.py, coherence/test, coherence/upnp/core/test,
+	  coherence/upnp/core/utils.py,
+	  coherence/upnp/devices/binary_light.py,
+	  coherence/upnp/devices/dimmable_light.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py,
+	  coherence/upnp/services/clients/content_directory_client.py,
+	  coherence/upnp/services/clients/test,
+	  coherence/upnp/services/servers/test: * rework of the DBus API,
+	  hopefully more reasonable now, still needs some cross-language
+	  check
+	  * modifications in the MediaServer http part to allow child
+	  lookups returning a Deferred
+	  * housekeeping
+
+2008-06-17 10:38  dev
+
+	* setup.py: include the ui icons in the setup process
+
+2008-06-17 10:37  dev
+
+	* coherence/ui, coherence/ui/__init__.py,
+	  coherence/ui/av_widgets.py, coherence/ui/icons,
+	  coherence/ui/icons/audio-x-generic.png,
+	  coherence/ui/icons/folder.png,
+	  coherence/ui/icons/image-x-generic.png,
+	  coherence/ui/icons/network-server.png,
+	  coherence/ui/icons/video-x-generic.png: the beginning of a set of
+	  reusable widgets for UPnP related PyGTK apps
+	  
+	  * a ContentDirectoryService client TreeWidget
+
+2008-06-17 09:05  dev
+
+	* misc/Totem Plugin, misc/Totem Plugin/upnp-coherence.py,
+	  misc/Totem Plugin/upnp-coherence.totem-plugin: glue code for the
+	  Totem UPnP plugin
+
+2008-05-30 18:10  dev
+
+	* coherence/backends/ampache_storage.py,
+	  coherence/upnp/core/utils.py,
+	  coherence/upnp/devices/media_server.py: a proxy feature for the
+	  Ampache backend, the necessary modifications in the MediaServer
+	  Resource and a small overlay for twisted.web.server.Request to
+	  handle Deferreds returned by getChild
+
+2008-05-30 18:05  dev
+
+	* coherence/backends/fs_storage.py: use urllib instead of urllib2,
+	  fixes #141
+
+2008-05-29 18:29  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py: fix?
+
+2008-05-28 21:31  dev
+
+	* coherence/base.py, coherence/upnp/core/device.py,
+	  coherence/upnp/core/event.py, coherence/upnp/core/service.py:
+	  move the service clients event subscription renewal into the
+	  Service class, with a dedicated callLater(timeout-30sec)
+	  
+	  * no more unnecessary checks in a loop in the Coherence class
+	  * no more "blocking" iteration over all devices and their
+	  sub-devices
+	  
+	  closes #135
+
+2008-05-28 09:41  dev
+
+	* coherence/backends/ampache_storage.py,
+	  coherence/upnp/services/servers/content_directory_server.py: move
+	  the complex 'items are Deferreds' and their 'childs are Deferreds
+	  too' handling methods into the generic CDS Browse and Search
+	  actions
+
+2008-05-27 22:18  dev
+
+	* coherence/upnp/devices/basics.py,
+	  coherence/upnp/devices/media_server.py: clean the mess up when a
+	  device instantiation failed
+
+2008-05-27 14:01  dev
+
+	* coherence/test/test_dbus.py,
+	  coherence/upnp/services/servers/test/test_content_directory_server.py:
+	  * skip DBus related tests when no Glib2Reactor is active
+	  * one more test for the CDS
+
+2008-05-27 14:00  dev
+
+	* coherence/upnp/devices/binary_light_client.py,
+	  coherence/upnp/devices/dimmable_light_client.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server_client.py: just some
+	  precautions against race-conditions
+
+2008-05-27 13:16  dev
+
+	* coherence/upnp/services/servers/content_directory_server.py,
+	  coherence/upnp/services/servers/test/test_content_directory_server.py:
+	  XBox related fixes in the CDS's Browse and Search methods, and
+	  first unit tests for that
+
+2008-05-26 18:23  dev
+
+	* coherence/base.py, coherence/test/test_dbus.py,
+	  coherence/upnp/core/msearch.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/services/clients/test/test_switch_power_client.py,
+	  coherence/upnp/services/servers/test/test_content_directory_server.py:
+	  disable SSDP and MSEARCH activity during unittests, now we are
+	  invisible and hopefully get not disturbed by nosey things on the
+	  network
+
+2008-05-26 18:19  dev
+
+	* coherence/upnp/core/event.py, coherence/upnp/core/service.py,
+	  coherence/upnp/devices/basics.py: cancel pending event
+	  notifications on shutdown
+
+2008-05-26 13:52  dev
+
+	* coherence/upnp/core/event.py: eliminating some strange characters
+	  from "Outer Space"
+
+2008-05-26 10:25  dev
+
+	* coherence/backends/fs_storage.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/devices/basics.py,
+	  coherence/upnp/services/servers/connection_manager_server.py,
+	  coherence/upnp/services/servers/test,
+	  coherence/upnp/services/servers/test/__init__.py,
+	  coherence/upnp/services/servers/test/test_content_directory_server.py:
+	  a first test for the ContentDirectoryServer Browse method and the
+	  accompanying fixes to get the test through trial
+
+2008-05-25 15:03  dev
+
+	* coherence/upnp/devices/binary_light_client.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/dimmable_light_client.py,
+	  coherence/upnp/services/clients/dimming_client.py,
+	  coherence/upnp/services/clients/switch_power_client.py,
+	  coherence/upnp/services/clients/test,
+	  coherence/upnp/services/clients/test/__init__.py,
+	  coherence/upnp/services/clients/test/test_switch_power_client.py:
+	  client device and service implementations for BinaryLight and
+	  DimmableLight devices
+
+2008-05-25 14:58  dev
+
+	* coherence/upnp/core/event.py, coherence/upnp/core/msearch.py,
+	  coherence/upnp/core/service.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/devices/basics.py: more changes related to a
+	  proper shutdown
+
+2008-05-25 14:56  dev
+
+	* coherence/upnp/core/soap_proxy.py, coherence/upnp/core/utils.py:
+	  some minor cleanups
+
+2008-05-25 14:25  dev
+
+	* coherence/base.py, coherence/dbus_service.py, coherence/test,
+	  coherence/test/__init__.py, coherence/test/test_dbus.py: two new
+	  DBUS methods:
+	  
+	  * add_plugin(backend,arguments) --> uuid
+	  this isn't a feedback whether the device is actually
+	  instantiated,
+	  as that will happen asynchronous and signalled later
+	  * remove_plugin(uuid) -> returns same uuid on success or an empty
+	  string on failure
+	  
+	  and the accompanying tests
+
+2008-05-25 13:35  dev
+
+	* coherence/base.py: * keep a list of activated backends for their
+	  potential removal
+	  * proper cleanups on shutdown, mostly needed when called from
+	  within trial tests
+
+2008-05-25 12:59  dev
+
+	* NEWS: for the sake of completeness
+
+2008-05-08 07:35  dev
+
+	* coherence/upnp/services/servers/media_receiver_registrar_server.py:
+	  retrieve arguments from kwargs dict like anywhere else, as we
+	  might get something added on the way
+
+2008-05-08 07:33  dev
+
+	* coherence/upnp/core/soap_service.py,
+	  coherence/upnp/devices/media_server.py: some more adjustments for
+	  WMP 11
+
+2008-05-05 16:33  dev
+
+	* coherence/upnp/core/soap_service.py,
+	  coherence/upnp/devices/media_server.py: some attempt to deal with
+	  WMP11
+
+2008-05-05 16:32  dev
+
+	* coherence/backends/tracker_storage.py: send the right error
+	  message string
+
+2008-05-05 12:38  dev
+
+	* coherence/backends/tracker_storage.py: allow specification which
+	  Meta Tracker service(s) to use via config
+	  
+	  * service:Music,Videos,Images is the default
+
+2008-05-04 21:43  dev
+
+	* coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/tracker_storage.py: extend the
+	  SinkProtocolInfo and SourceProtocolInfo lists
+
+2008-05-04 19:42  dev
+
+	* coherence/backends/tracker_storage.py: first attempt to integrate
+	  Videos and Images returned from Tracker
+
+2008-05-04 11:53  dev
+
+	* coherence/upnp/core/test/test_didl.py: corrected class name
+
+2008-05-04 11:44  dev
+
+	* coherence/upnp/core/test, coherence/upnp/core/test/__init__.py,
+	  coherence/upnp/core/test/test_didl.py,
+	  coherence/upnp/core/test/test_utils.py: first unit tests
+	  
+	  addresses #20
+
+2008-05-03 19:16  dev
+
+	* docs/coherence.conf.example: updated with examples for the new
+	  MediaServers
+
+2008-05-03 14:14  dev
+
+	* coherence/upnp/core/DIDLLite.py: fix wrong log output when
+	  accessed by an XBox, thx again netmask!
+	  
+	  closes #138
+
+2008-05-03 13:46  dev
+
+	* coherence/backends/mediadb_storage.py: fix missing variable
+	  definition - thx netmask for spotting this
+	  
+	  closes #137
+
+2008-05-03 13:45  dev
+
+	* Coherence.egg-info/PKG-INFO, coherence/__init__.py: increase
+	  version number for next development cycle
+
+2008-04-30 20:56  dev
+
+	* ChangeLog: updated ChangeLog
+
 2008-04-30 20:54  dev
 
 	* ChangeLog, NEWS, coherence/__init__.py, setup.py: New in this
