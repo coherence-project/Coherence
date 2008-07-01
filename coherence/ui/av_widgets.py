@@ -166,12 +166,14 @@ class TreeWidget(object):
                                         match_func, (ID_COLUMN, container))
                         if match_iter:
                             print "heureka, we have a change in ", container, ", container needs a reload"
+                            path = self.store.get_path(match_iter)
+                            expanded = self.treeview.row_expanded(path)
                             child = self.store.iter_children(match_iter)
                             while child:
                                 self.store.remove(child)
                                 child = self.store.iter_children(match_iter)
-                            self.browse(self.treeview,self.store.get_path(match_iter),None,
-                                        starting_index=0,requested_count=0,force=True)
+                            self.browse(self.treeview,path,None,
+                                        starting_index=0,requested_count=0,force=True,expand=expanded)
 
                         break
                     row_count += 1
@@ -241,7 +243,7 @@ class TreeWidget(object):
             if upnp_class == 'placeholder':
                 self.browse(view,row_path,None)
 
-    def browse(self,view,row_path,column,starting_index=0,requested_count=0,force=False):
+    def browse(self,view,row_path,column,starting_index=0,requested_count=0,force=False,expand=False):
         #print "browse", view,row_path,column,starting_index,requested_count,force
         iter = self.store.get_iter(row_path)
         child = self.store.iter_children(iter)
@@ -276,6 +278,12 @@ class TreeWidget(object):
                 if upnp_class == 'placeholder':
                     self.store.remove(child)
 
+            title, = self.store.get(iter,NAME_COLUMN)
+            try:
+                title = title[:title.rindex('(')]
+                self.store.set_value(iter,NAME_COLUMN, "%s(%d)" % (title,int(r['TotalMatches'])))
+            except ValueError:
+                pass
             didl = DIDLLite.DIDLElement.fromString(r['Result'])
             for item in didl.getItems():
                 #print item.title, item.id, item.upnp_class
@@ -317,7 +325,8 @@ class TreeWidget(object):
                     self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None))
 
 
-            if int(r['TotalMatches']) > 0:
+            if((int(r['TotalMatches']) > 0 and force==False) or
+                expand==True):
                 view.expand_row(row_path, False)
 
             if(requested_count != int(r['NumberReturned']) and

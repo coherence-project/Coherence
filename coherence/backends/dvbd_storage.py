@@ -202,6 +202,9 @@ class DVBDStore(BackendStore):
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                     Container(ROOT_CONTAINER_ID,-1,self.name,store=self)
+        self.containers[RECORDINGS_CONTAINER_ID] = \
+                    Container(RECORDINGS_CONTAINER_ID,ROOT_CONTAINER_ID,'Recordings',store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[RECORDINGS_CONTAINER_ID])
 
         def query_finished(r):
             louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -241,16 +244,19 @@ class DVBDStore(BackendStore):
         self.containers[RECORDINGS_CONTAINER_ID].remove_children()
 
         def handle_result(r):
+            print "recording changed, handle_result"
+            print self.containers[RECORDINGS_CONTAINER_ID].update_id
             self.containers[RECORDINGS_CONTAINER_ID].update_id += 1
-            if hasattr(self, 'update_id'):
-                self.update_id += 1
-                if self.server:
-                    if hasattr(self.server,'content_directory_server'):
-                        self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-                    value = (RECORDINGS_CONTAINER_ID,self.containers[RECORDINGS_CONTAINER_ID].update_id)
-                    if self.server:
-                        if hasattr(self.server,'content_directory_server'):
-                            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+            print self.containers[RECORDINGS_CONTAINER_ID].update_id
+
+            if( self.server and
+                hasattr(self.server,'content_directory_server')):
+                if hasattr(self, 'update_id'):
+                    self.update_id += 1
+                    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+                value = (RECORDINGS_CONTAINER_ID,self.containers[RECORDINGS_CONTAINER_ID].update_id)
+                print "ContainerUpdateIDs new value", value
+                self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         def handle_error(error):
             print error
@@ -333,10 +339,6 @@ class DVBDStore(BackendStore):
                                            recording['duration'],
                                            'video/mpegts')
                     self.containers[RECORDINGS_CONTAINER_ID].add_child(video_item)
-
-        self.containers[RECORDINGS_CONTAINER_ID] = \
-                    Container(RECORDINGS_CONTAINER_ID,ROOT_CONTAINER_ID,'Recordings',store=self)
-        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[RECORDINGS_CONTAINER_ID])
 
         d = defer.Deferred()
         d.addCallback(process_query_result)
