@@ -1,7 +1,7 @@
 """Common plugins for Louie."""
 
-from louie import dispatcher
-from louie import error
+from coherence.extern.louie import dispatcher
+from coherence.extern.louie import error
 
 
 def install_plugin(plugin):
@@ -105,4 +105,3 @@ class TwistedDispatchPlugin(Plugin):
             self._internet.reactor.callLater(0, d.callback, None)
             return d
         return wrapper
-

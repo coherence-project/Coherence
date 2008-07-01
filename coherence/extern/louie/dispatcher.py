@@ -8,16 +8,16 @@ Internal attributes:
 - ``WEAKREF_TYPES``: Tuple of types/classes which represent weak
   references to receivers, and thus must be dereferenced on retrieval
   to retrieve the callable object
-        
+
 - ``connections``::
 
     { senderkey (id) : { signal : [receivers...] } }
-    
+
 - ``senders``: Used for cleaning up sender references on sender
   deletion::
 
     { senderkey (id) : weakref(sender) }
-    
+
 - ``senders_back``: Used for cleaning up receiver references on receiver
   deletion::
 
@@ -32,11 +32,11 @@ try:
 except NameError:
     from sets import Set as set, ImmutableSet as frozenset
 
-from louie import error
-from louie import robustapply
-from louie import saferef
-from louie.sender import Any, Anonymous
-from louie.signal import All
+from coherence.extern.louie import error
+from coherence.extern.louie import robustapply
+from coherence.extern.louie import saferef
+from coherence.extern.louie.sender import Any, Anonymous
+from coherence.extern.louie.signal import All
 
 
 # Support for statistics.
@@ -87,7 +87,7 @@ def connect(receiver, signal=All, sender=Any, weak=True):
       If weak is ``True``, then receiver must be weak-referencable (more
       precisely ``saferef.safe_ref()`` must be able to create a
       reference to the receiver).
-    
+
       Receivers are fairly flexible in their specification, as the
       machinery in the ``robustapply`` module takes care of most of the
       details regarding figuring out appropriate subsets of the sent
@@ -100,27 +100,27 @@ def connect(receiver, signal=All, sender=Any, weak=True):
       passes in pre-weakrefed receiver references.
 
     - ``signal``: The signal to which the receiver should respond.
-    
+
       If ``All``, receiver will receive all signals from the indicated
       sender (which might also be ``All``, but is not necessarily
       ``All``).
-        
+
       Otherwise must be a hashable Python object other than ``None``
       (``DispatcherError`` raised on ``None``).
-        
+
     - ``sender``: The sender to which the receiver should respond.
-    
+
       If ``Any``, receiver will receive the indicated signals from any
       sender.
-        
+
       If ``Anonymous``, receiver will only receive indicated signals
       from ``send``/``send_exact`` which do not specify a sender, or
       specify ``Anonymous`` explicitly as the sender.
 
       Otherwise can be any python object.
-        
+
     - ``weak``: Whether to use weak references to the receiver.
-      
+
       By default, the module will attempt to use weak references to
       the receiver objects.  If this parameter is ``False``, then strong
       references will be used.
@@ -177,11 +177,11 @@ def disconnect(receiver, signal=All, sender=Any, weak=True):
     """Disconnect ``receiver`` from ``sender`` for ``signal``.
 
     - ``receiver``: The registered receiver to disconnect.
-    
+
     - ``signal``: The registered signal to disconnect.
-    
+
     - ``sender``: The registered sender to disconnect.
-    
+
     - ``weak``: The weakref state to disconnect.
 
     ``disconnect`` reverses the process of ``connect``, the semantics for
@@ -194,7 +194,7 @@ def disconnect(receiver, signal=All, sender=Any, weak=True):
     an object is deleted; the framework will remove routes for deleted
     objects automatically.  It's only necessary to disconnect if you
     want to stop routing to a live object.
-        
+
     Returns ``None``, may raise ``DispatcherTypeError`` or
     ``DispatcherKeyError``.
     """
@@ -210,7 +210,7 @@ def disconnect(receiver, signal=All, sender=Any, weak=True):
         receivers = signals[signal]
     except KeyError:
         raise error.DispatcherKeyError(
-            'No receivers found for signal %r from sender %r' 
+            'No receivers found for signal %r from sender %r'
             % (signal, sender)
             )
     try:
@@ -269,7 +269,7 @@ def live_receivers(receivers):
                     break
             if live:
                 yield receiver
-            
+
 
 def get_all_receivers(sender=Any, signal=All):
     """Get list of all receivers from global tables.
@@ -302,11 +302,11 @@ def get_all_receivers(sender=Any, signal=All):
 
 def send(signal=All, sender=Anonymous, *arguments, **named):
     """Send ``signal`` from ``sender`` to all connected receivers.
-    
+
     - ``signal``: (Hashable) signal value; see ``connect`` for details.
 
     - ``sender``: The sender of the signal.
-    
+
       If ``Any``, only receivers registered for ``Any`` will receive the
       message.
 
@@ -401,7 +401,7 @@ def send_exact(signal=All, sender=Anonymous, *arguments, **named):
             )
         responses.append((receiver, response))
     return responses
-    
+
 
 def send_robust(signal=All, sender=Anonymous, *arguments, **named):
     """Send ``signal`` from ``sender`` to all connected receivers catching
@@ -410,7 +410,7 @@ def send_robust(signal=All, sender=Anonymous, *arguments, **named):
     - ``signal``: (Hashable) signal value, see connect for details
 
     - ``sender``: The sender of the signal.
-    
+
       If ``Any``, only receivers registered for ``Any`` will receive the
       message.
 
@@ -486,7 +486,7 @@ def _remove_receiver(receiver):
     except KeyError:
         pass
 
-            
+
 def _cleanup_connections(senderkey, signal):
     """Delete empty signals for ``senderkey``. Delete ``senderkey`` if
     empty."""
@@ -515,7 +515,7 @@ def _remove_sender(senderkey):
         del connections[senderkey]
     except KeyError:
         pass
-    # Senderkey will only be in senders dictionary if sender 
+    # Senderkey will only be in senders dictionary if sender
     # could be weakly referenced.
     try:
         del senders[senderkey]
@@ -565,8 +565,8 @@ def _remove_old_back_refs(senderkey, signal, receiver, receivers):
             _kill_back_ref(old_receiver, senderkey)
             return True
         return False
-        
-        
+
+
 def _kill_back_ref(receiver, senderkey):
     """Do actual removal of back reference from ``receiver`` to
     ``senderkey``."""
@@ -583,5 +583,3 @@ def _kill_back_ref(receiver, senderkey):
         except KeyError:
             pass
     return True
-
-    
