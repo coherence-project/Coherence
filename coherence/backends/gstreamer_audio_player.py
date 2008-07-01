@@ -616,7 +616,13 @@ class GStreamerPlayer(log.Loggable,Plugin):
                              'internal:%s:video/mp4:*' % self.server.coherence.hostname,
                              'http-get:*:video/mp4:*',
                              'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
-                             'http-get:*:video/quicktime:*'],
+                             'http-get:*:video/quicktime:*',
+                             'internal:%s:image/gif:*' % self.server.coherence.hostname,
+                             'http-get:*:image/gif:*',
+                             'internal:%s:image/jpeg:*' % self.server.coherence.hostname,
+                             'http-get:*:image/jpeg:*',
+                             'internal:%s:image/png:*' % self.server.coherence.hostname,
+                             'http-get:*:image/png:*'],
                             default=True)
         self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)

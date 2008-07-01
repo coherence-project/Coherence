@@ -1,10 +1,10 @@
 <scpd>
-    <serviceStateTable>
+    <serviceStateTable xmlns:coherence="urn:schemas-beebits-net:service-1-0">
         <stateVariable>
             <name>TransportState</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-            <allowedValueList>
+            <allowedValueList coherence:X_withVendorDefines="True">
                 <allowedValue>STOPPED</allowedValue>
                 <allowedValue>PLAYING</allowedValue>
             </allowedValueList>
@@ -13,9 +13,9 @@
             <name>TransportStatus</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-            <allowedValueList>
+            <allowedValueList coherence:X_withVendorDefines="True">
                 <allowedValue>OK</allowedValue>
-                <allowedValue>ERROR_OCCURRED</allowedValue>           
+                <allowedValue>ERROR_OCCURRED</allowedValue>
             </allowedValueList>
         </stateVariable>
         <stateVariable>
@@ -51,7 +51,7 @@
             <name>TransportPlaySpeed</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-	<allowedValueList>
+	<allowedValueList coherence:X_withVendorDefines="True">
                 <allowedValue>1</allowedValue>
             </allowedValueList>
         </stateVariable>
@@ -74,7 +74,7 @@
             <name>NumberOfTracks</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>ui4</dataType>
-		<allowedValueRange>
+		<allowedValueRange coherence:X_withVendorDefines="True">
 			<minimum>0</minimum>
 		</allowedValueRange>
          </stateVariable>
@@ -82,7 +82,7 @@
             <name>CurrentTrack</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>ui4</dataType>
-		<allowedValueRange>
+		<allowedValueRange coherence:X_withVendorDefines="True">
 			<minimum>0</minimum>
 			<step>1</step>
 		</allowedValueRange>
@@ -162,7 +162,7 @@
             <name>A_ARG_TYPE_SeekMode</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-            <allowedValueList>
+            <allowedValueList coherence:X_withVendorDefines="True">
                  <allowedValue>TRACK_NR</allowedValue>
             </allowedValueList>
         </stateVariable>
@@ -474,4 +474,3 @@
         </action>
     </actionList>
 </scpd>
-
