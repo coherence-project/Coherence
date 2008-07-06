@@ -161,7 +161,7 @@ class Plugins(log.Loggable):
                     try:
                         #print entrypoint, type(entrypoint)
                         self._plugins[entrypoint.name] = entrypoint.load(require=False)
-                    except ImportError, msg:
+                    except (ImportError, pkg_resources.ResolutionError), msg:
                         self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                         self.info(traceback.format_exc())
         except ImportError:
