@@ -145,6 +145,9 @@ class Resource:
                     additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=PNG_LRG',))
                 if content_format == 'video/mpeg':
                     additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG_PS_PAL',))
+                if content_format == 'video/mpegts':
+                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG_TS_PAL',))
+                    content_format = 'video/mpeg'
                 if content_format == 'video/mp4':
                     additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC',))
                 if content_format == 'video/x-msvideo':
@@ -155,7 +158,7 @@ class Resource:
     def toElement(self,**kwargs):
 
         root = ET.Element('res')
-        if kwargs.get('upnp_client','') in ('XBox', 'PLAYSTATION3'):
+        if kwargs.get('upnp_client','') in ('XBox'):
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format == 'video/x-msvideo':
                 content_format = 'video/avi'
