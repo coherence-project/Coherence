@@ -119,7 +119,7 @@ def get_host_address():
                     if l[2] != '00000000': #default gateway...
                         route.close()
                         return get_ip_address(l[0])
-    except IOerror, msg:
+    except IOError, msg:
         """ fallback to parsing the output of netstat """
         from os import uname
         import posix
