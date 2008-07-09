@@ -105,39 +105,41 @@ def get_host_address():
     import sys
     if sys.platform == 'win32':
         if have_netifaces:
-            return get_ip_address(netifaces.interfaces()[0])    # on windows assume first interface is primary
-
-    try:
-        route_file = '/proc/net/route'
-        route = open(route_file)
-        if(route):
-            tmp = route.readline() #skip first line
-            while (tmp != ''):
-                tmp = route.readline()
-                l = tmp.split('\t')
-                if (len(l) > 2):
-                    if l[2] != '00000000': #default gateway...
-                        route.close()
-                        return get_ip_address(l[0])
-    except IOError, msg:
-        """ fallback to parsing the output of netstat """
-        from os import uname
-        import posix
-        (osname,_, _, _,_) = uname()
-        osname = osname.lower()
-        f = posix.popen('netstat -rn')
-        lines = f.readlines()
-        f.close()
-        for l in lines:
-            parts = [x.strip() for x in l.split(' ') if len(x) > 0]
-            if parts[0] in ('0.0.0.0','default'):
-                if osname[:6] == 'darwin':
-                    return get_ip_address(parts[5])
-                else:
-                    return get_ip_address(parts[-1])
-    except Exception, msg:
-        import traceback
-        traceback.print_exc()
+            interfaces = netifaces.interfaces()
+            if len(interfaces):
+                return get_ip_address(interfaces[0])    # on windows assume first interface is primary
+    else:
+        try:
+            route_file = '/proc/net/route'
+            route = open(route_file)
+            if(route):
+                tmp = route.readline() #skip first line
+                while (tmp != ''):
+                    tmp = route.readline()
+                    l = tmp.split('\t')
+                    if (len(l) > 2):
+                        if l[2] != '00000000': #default gateway...
+                            route.close()
+                            return get_ip_address(l[0])
+        except IOError, msg:
+            """ fallback to parsing the output of netstat """
+            from os import uname
+            import posix
+            (osname,_, _, _,_) = uname()
+            osname = osname.lower()
+            f = posix.popen('netstat -rn')
+            lines = f.readlines()
+            f.close()
+            for l in lines:
+                parts = [x.strip() for x in l.split(' ') if len(x) > 0]
+                if parts[0] in ('0.0.0.0','default'):
+                    if osname[:6] == 'darwin':
+                        return get_ip_address(parts[5])
+                    else:
+                        return get_ip_address(parts[-1])
+        except Exception, msg:
+            import traceback
+            traceback.print_exc()
 
     """ return localhost if we haven't found anything """
     return '127.0.0.1'
