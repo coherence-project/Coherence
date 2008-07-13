@@ -255,6 +255,9 @@ class Service(log.Loggable):
             else:
                 self.get_state_variable(var_name, 0).update(var_value)
         if self.last_time_updated == None:
+            # The clients (e.g. media_server_client) check for last time to detect whether service detection is complete
+            # so we need to set it here and now to avoid a potential race condition
+            self.last_time_updated = time.time()
             louie.send('Coherence.UPnP.DeviceClient.Service.notified', sender=self.device, service=self)
             self.info("send signal Coherence.UPnP.DeviceClient.Service.notified for %r" % self)
         self.last_time_updated = time.time()
