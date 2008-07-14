@@ -5,7 +5,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 
 import rhythmdb
-import louie
+import coherence.extern.louie as louie
 import urllib
 from coherence.upnp.core import DIDLLite
 
@@ -294,7 +294,7 @@ class MediaStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        print "creating UPnP MediaStore"
+        self.warning("__init__ MediaStore %r", kwargs)
         self.server = server
         self.db = kwargs['db']
         self.plugin = kwargs['plugin']
@@ -377,6 +377,8 @@ class MediaStore(BackendStore):
                 'rhythmbox:%s:*:*' % self.server.coherence.hostname,
                 'http-get:*:audio/mpeg:*',
             ])
+        self.warning("__init__ MediaStore initialized")
+
 
     def children_tracks(self, parent_id):
         tracks = []

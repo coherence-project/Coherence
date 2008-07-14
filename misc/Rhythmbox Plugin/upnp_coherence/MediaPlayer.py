@@ -10,7 +10,7 @@ import rhythmdb
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import DIDLLite
 
-import louie
+import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 
@@ -40,13 +40,6 @@ class RhythmboxPlayer(log.Loggable):
         self.name = "Rhythmbox on %s" % self.server.coherence.hostname
 
         self.player = self.shell.get_player()
-        self.player.connect ('playing-song-changed',
-                                 self.playing_song_changed),
-        self.player.connect ('playing-changed',
-                                 self.playing_changed)
-        self.player.connect ('elapsed-changed',
-                                 self.elapsed_changed)
-        self.player.connect("notify::volume", self.volume_changed)
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
         self.playing = False
@@ -388,6 +381,14 @@ class RhythmboxPlayer(log.Loggable):
         self.player.set_volume(float(volume/100.0))
 
     def upnp_init(self):
+        self.player.connect ('playing-song-changed',
+                                 self.playing_song_changed),
+        self.player.connect ('playing-changed',
+                                 self.playing_changed)
+        self.player.connect ('elapsed-changed',
+                                 self.elapsed_changed)
+        self.player.connect("notify::volume", self.volume_changed)
+
         self.current_connection_id = None
         self.server.connection_manager_server.set_variable(0, 'SinkProtocolInfo',
                             ['rhythmbox:%s:audio/mpeg:*' % self.server.coherence.hostname,

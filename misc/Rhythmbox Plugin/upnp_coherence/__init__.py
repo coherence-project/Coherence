@@ -117,7 +117,7 @@ class CoherencePlugin(rb.Plugin,log.Loggable):
 
     def get_coherence (self):
         coherence_instance = None
-        required_version = (0, 5, 8)
+        required_version = (0, 5, 7)
 
         try:
             from coherence.base import Coherence
