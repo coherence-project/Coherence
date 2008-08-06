@@ -36,7 +36,7 @@ class DimmableLightClient(log.Loggable):
         else:
             self.warning("SwitchPower service not available, device not implemented properly according to the UPnP specification")
             return
-        if self.dimming_client:
+        if self.dimming:
             self.info("Dimming service available")
         else:
             self.warning("Dimming service not available, device not implemented properly according to the UPnP specification")
