@@ -223,6 +223,7 @@ class INotify(FileDescriptor, object):
                 break
 
             wd, mask, cookie, size = struct.unpack("=LLLL", self._buffer[0:16])
+            print "doRead", wd, mask, cookie, size
             if size:
                 name = self._buffer[16:16+size].rstrip('\0')
             else:
@@ -239,8 +240,9 @@ class INotify(FileDescriptor, object):
             if name:
                 #name = unicode(name, 'utf-8')
                 path = os.path.join(path, name)
-
-                iwp.notify( name, mask)
+                iwp.notify(name, mask)
+            else:
+                iwp.notify(path, mask)
 
             if( iwp.auto_add and mask & IN_ISDIR and mask & IN_CREATE):
                 self.watch(path, mask = iwp.mask, auto_add = True, callbacks=iwp.callbacks)
@@ -302,4 +304,5 @@ if __name__ == '__main__':
     i2 = INotify()
     print i2
     i2.watch('/', auto_add = True, callbacks=(i2.notify,None), recursive=False)
+
     reactor.run()
