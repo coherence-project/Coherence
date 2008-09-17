@@ -11,10 +11,19 @@ try:
         m =hashlib.md5()
         m.update(s)
         return m.hexdigest()
+    def sha1(s):
+        m =hashlib.sha1()
+        m.update(s)
+        return m.hexdigest()
 except ImportError:
     import md5 as oldmd5
     def md5(s):
         m=oldmd5.new()
+        m.update(s)
+        return m.hexdigest()
+    import sha1 as oldsha1
+    def sha1(s):
+        m=oldsha1.new()
         m.update(s)
         return m.hexdigest()
 
@@ -473,7 +482,10 @@ class AmpacheStore(BackendStore):
         self.albums = 0
         self.artists = 0
 
-        self.get_token(api_version=350001)
+        self.api_version=int(kwargs.get('api_version',350001))
+        #self.api_version=int(kwargs.get('api_version',340001))
+
+        self.get_token()
 
     def __repr__(self):
         return "Ampache storage"
@@ -502,7 +514,7 @@ class AmpacheStore(BackendStore):
                 return None
         return item
 
-    def got_auth_response( self, response):
+    def got_auth_response( self,response,renegotiate=False):
         self.info( "got_auth_response %r", response)
         try:
             response = utils.parse_xml(response, encoding='utf-8')
@@ -511,11 +523,6 @@ class AmpacheStore(BackendStore):
             raise SyntaxError, 'error parsing ampache answer %r' % msg
         try:
             error = response.find('error').text
-            #if error == 'Error Invalid Handshake, attempt logged':
-            #    """ maybe we've send out the wrong version number,
-            #        let's try it again
-            #    """
-            #    return self.get_token(api_version=350001)
             self.warning('error on token request %r', error)
             raise ValueError, error
         except AttributeError:
@@ -539,49 +546,74 @@ class AmpacheStore(BackendStore):
                 self.info('ampache returned auth token %r', self.token)
                 self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d' % (self.songs, self.artists,self.albums,self.playlists,self.genres,self.tags))
 
-                self.containers = {}
-                self.containers[ROOT_CONTAINER_ID] = \
-                            Container( ROOT_CONTAINER_ID,-1, self.name, store=self)
+                if renegotiate == False:
+                    self.containers = {}
+                    self.containers[ROOT_CONTAINER_ID] = \
+                                Container( ROOT_CONTAINER_ID,-1, self.name, store=self)
 
-                self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
-                                         '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
-                                         '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
-                                         '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
-                                         '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
-                                        })
+                    self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
+                                             '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
+                                             '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+                                             '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
+                                             '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
+                                            })
 
-                louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+                    louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
             except AttributeError:
                 raise ValueError, 'no authorization token returned'
 
-    def got_auth_error(self, e):
+    def got_auth_error(self,e,renegotiate=False):
         self.warning('error calling ampache %r', e)
-        louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
+        if renegotiate == False:
+            louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
-    def get_token( self,api_version=None):
+    def get_token(self,renegotiate=False):
         """ ask Ampache for the authorization token """
         timestamp = int(time.time())
-        passphrase = md5('%d%s' % (timestamp, self.key))
+        if self.api_version <= 350001:
+            passphrase = md5('%d%s' % (timestamp, self.key))
+        else:
+            passphrase = sha1('%d%s' % (timestamp, self.key))
         request = ''.join((self.url, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, timestamp)))
         if self.user != None:
             request = ''.join((request, '&user=%s' % self.user))
-        if api_version != None:
-            request = ''.join((request, '&version=%s' % str(api_version)))
+        if self.api_version != None:
+            request = ''.join((request, '&version=%s' % str(self.api_version)))
         self.info("auth_request %r", request)
         d = utils.getPage(request)
-        d.addCallback(self.got_auth_response)
-        d.addErrback(self.got_auth_error)
+        d.addCallback(self.got_auth_response,renegotiate)
+        d.addErrback(self.got_auth_error,renegotiate)
+        return d
 
     def got_error(self, e):
         self.warning('error calling ampache %r', e)
+        return e
 
-    def got_response(self, response, query_item):
+    def got_response(self, response, query_item, request):
         self.info("got a response for %r", query_item)
         response = utils.parse_xml(response, encoding='utf-8')
         items = []
         try:
-            self.warning('error on token request %r', response.find('error').text)
-            raise ValueError, response.find('error').text
+            error = response.find('error').text
+            self.warning('error on token request %r', error)
+            if error == '401': # session error, we need to renegotiate our session
+                d = self.get_token(renegotiate=True)
+
+                def resend_request(result, old_request):
+                    # exchange the auth token in the resending request
+                    request = old_request.split('&')
+                    for part in request:
+                        if part.startswith('auth='):
+                            r[r.index(part)] = 'auth=%s' % self.token
+                            break
+                    request = '&'.join(request)
+                    self.info("ampache_query %r", request)
+                    return utils.getPage(request)
+
+                d.addCallback(resend_request, request)
+                d.addErrBack(self.got_error)
+                return d
+            raise ValueError, error.text
         except AttributeError:
             if query_item in ('song','artist','album','playlist','genre'):
                 q = response.find(query_item)
@@ -630,7 +662,7 @@ class AmpacheStore(BackendStore):
             request = ''.join((request, '&filter=%s' % filter))
         self.info("ampache_query %r", request)
         d = utils.getPage(request)
-        d.addCallback(self.got_response, item)
+        d.addCallback(self.got_response, item, request)
         d.addErrback(self.got_error)
         return d
 
