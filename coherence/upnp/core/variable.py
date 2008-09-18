@@ -40,10 +40,7 @@ class StateVariable(log.Loggable):
         self.last_time_touched = None
         self.allowed_value_range = None
         self.never_evented = False
-        if send_events in [True,1,'1','true','True','yes','Yes']:
-            self.send_events = True
-        else:
-            self.send_events = False
+        self.send_events = utils.means_true(send_events)
         self._callbacks = []
         if isinstance( self.service, service.ServiceServer):
             self.moderated = self.service.is_variable_moderated(name)
@@ -65,8 +62,7 @@ class StateVariable(log.Loggable):
         return self.allowed_values
 
     def set_never_evented(self, value):
-        if value in [True,1,'1','true','True','yes','Yes']:
-            self.never_evented = True
+        self.never_evented = utils.means_true(value)
 
     def update(self, value):
         self.info("variable check for update", self.name, value, self.service)
@@ -124,10 +120,7 @@ class StateVariable(log.Loggable):
                             new_value.append(v)
                     new_value = ','.join(new_value)
                 elif self.data_type == 'boolean':
-                    if value in [True,1,'1','true','True','yes','Yes']:
-                        new_value = '1'
-                    else:
-                        new_value = '0'
+                    new_value = utils.generalise_boolean(value)
                 elif self.data_type == 'bin.base64':
                     new_value = value
                 else:
@@ -149,10 +142,7 @@ class StateVariable(log.Loggable):
                 else:
                     new_value = value
             elif self.data_type == 'boolean':
-                if value in [1,'true','True','yes','Yes']:
-                    new_value = '1'
-                else:
-                    new_value = '0'
+                    new_value = utils.generalise_boolean(value)
             elif self.data_type == 'bin.base64':
                 new_value = value
             else:
