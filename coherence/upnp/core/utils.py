@@ -28,6 +28,25 @@ try:
 except ImportError:
     have_netifaces = False
 
+
+def means_true(value):
+    if isinstance(value,basestring):
+        value = value.lower()
+    return value in [True,1,'1','true','yes','ok']
+
+def generalise_boolean(value):
+    """ standardize the different boolean incarnations
+
+        transform anything that looks like a "True" into a '1',
+        and everything else into a '0'
+    """
+    if means_true(value):
+        return '1'
+    return '0'
+
+generalize_boolean = generalise_boolean
+
+
 def parse_xml(data, encoding="utf-8"):
     return et_parse_xml(data,encoding)
 
