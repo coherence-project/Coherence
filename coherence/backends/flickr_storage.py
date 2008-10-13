@@ -704,8 +704,8 @@ class FlickrStore(log.Loggable, Plugin):
                                                                     'http-get:*:image/gif:*,'
                                                                     'http-get:*:image/png:*',
                                                                     default=True)
-        parent = self.append( 'Flickr', None)
-        self.most_wanted = self.append( 'Most Wanted', parent)
+        parent = self.appendDirectory( 'Flickr', None)
+        self.most_wanted = self.appendDirectory( 'Most Wanted', parent)
         d = self.flickr_interestingness()
         d.addCallback(self.append_flickr_result, self.most_wanted)
 
