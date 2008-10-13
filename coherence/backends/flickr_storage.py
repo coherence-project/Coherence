@@ -730,8 +730,7 @@ def main():
 
     log.init(None, 'debug')
 
-
-    f = FlickrStore(None,userid='netzflocken',password='aceton',permissions='write')
+    f = FlickrStore(None)
 
     def got_flickr_result(result):
         print "flickr", result
@@ -765,33 +764,6 @@ def main():
     #d = f.flickr_interestingness()
     #d.addCallback(got_flickr_result)
 
-    def got_auth_token(result):
-        print "got_auth_token", result
-        result = result.getroot()
-        token = result.find('token').text
-        print 'token', token
-
-    def get_auth_token(result,frob):
-        d =f.flickr_auth_getToken(frob)
-        d.addCallback(got_auth_token)
-        d.addErrback(got_error)
-
-    def got_frob(result):
-        print "flickr", result
-        result = result.getroot()
-        frob = result.text
-        print frob
-        from twisted.internet import threads
-        d = threads.deferToThread(FlickrAuthenticate,f.flickr_api_key,f.flickr_api_secret,frob,f.flickr_userid,f.flickr_password,f.flickr_permissions)
-        d.addCallback(get_auth_token, frob)
-        d.addErrback(got_error)
-
-    #d = f.flickr_test_login()
-
-
-    d = f.flickr_auth_getFrob()
-    d.addCallback(got_frob)
-    d.addErrback(got_error)
 
     #f.upnp_init()
     #print f.store
