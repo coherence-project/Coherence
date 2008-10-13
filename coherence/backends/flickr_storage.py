@@ -1,15 +1,31 @@
+# -*- coding: utf-8 -*-
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2007, Frank Scholz <coherence@beebits.net>
+# Copyright 2007,2008 Frank Scholz <coherence@beebits.net>
 
 import time
 import re
 from datetime import datetime
 from email.Utils import parsedate_tz
 
+try:
+    import hashlib
+    def md5(s):
+        m =hashlib.md5()
+        m.update(s)
+        return m.hexdigest()
+except ImportError:
+    import md5 as oldmd5
+    def md5(s):
+        m=oldmd5.new()
+        m.update(s)
+        return m.hexdigest()
+
 from twisted.python import failure
 from twisted.web.xmlrpc import Proxy
+from twisted.web import client
 from twisted.internet import task
 
 from coherence.upnp.core.utils import parse_xml, ReverseProxyResource
@@ -26,6 +42,40 @@ from coherence import log
 
 from urlparse import urlsplit
 
+
+
+class FlickrAuthenticate(object):
+
+    def __init__(self,api_key,api_secret,frob,userid,password,perms):
+        from mechanize import Browser
+
+        browser = Browser()
+        browser.set_handle_robots(False)
+        browser.set_handle_refresh(True,max_time=1)
+        browser.set_handle_redirect(True)
+
+        api_sig = ''.join((api_secret,'api_key',api_key,'frob',frob,'perms',perms))
+        api_sig=md5(api_sig)
+        login_url = "http://flickr.com/services/auth/?api_key=%s&perms=%s&frob=%s&api_sig=%s" % (api_key,perms,frob,api_sig)
+        browser.open(login_url)
+        browser.select_form(name='login_form')
+        browser['login']=userid
+        browser['passwd']=password
+        print browser.form
+        browser.submit()
+        for form in browser.forms():
+            try:
+                if form['frob'] == frob:
+                    print form
+                    browser.form = form
+                    browser.submit()
+                    break;
+            except:
+                pass
+        else:
+            raise Exception('no form for authentication found') # lame :-/
+
+
 class ProxyImage(ReverseProxyResource):
 
     def __init__(self, uri):
@@ -40,15 +90,24 @@ class ProxyImage(ReverseProxyResource):
 
         ReverseProxyResource.__init__(self, host, port, path)
 
+
 class FlickrItem(log.Loggable):
     logCategory = 'flickr_storage'
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False,proxy=False):
         self.id = id
         self.real_url = None
-        if mimetype == 'directory':
+        self.obj = obj
+
+        if isinstance(obj, str):
             self.name = obj
-            self.mimetype = mimetype
+            self.mimetype = 'directory'
+        elif mimetype == 'directory':
+            title = obj.find('title')
+            self.name = title.text;
+            if len(self.name) == 0:
+                self.name = obj.get('id')
+            self.mimetype = 'directory'
         else:
             self.name = obj.get('title') #.encode('utf-8')
             if len(self.name) == 0:
@@ -198,6 +257,7 @@ class FlickrItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url
 
+
 class FlickrStore(log.Loggable, Plugin):
     logCategory = 'flickr_storage'
 
@@ -210,6 +270,11 @@ class FlickrStore(log.Loggable, Plugin):
         self.name = kwargs.get('name','Flickr')
         self.proxy = kwargs.get('proxy','false')
         self.refresh = int(kwargs.get('refresh',60))*60
+
+        self.flickr_userid = kwargs.get('userid',None)
+        self.flickr_password = kwargs.get('password',None)
+        self.flickr_permissions = kwargs.get('permissions',None)
+
         if self.proxy in [1,'Yes','yes','True','true']:
             self.proxy = True
         else:
@@ -227,12 +292,26 @@ class FlickrStore(log.Loggable, Plugin):
         self.update_id = 0
         self.flickr = Proxy('http://api.flickr.com/services/xmlrpc/')
         self.flickr_api_key = '837718c8a622c699edab0ea55fcec224'
+        self.flickr_api_secret = '30a684822c341c3c'
         self.store = {}
 
         self.refresh_store_loop = task.LoopingCall(self.refresh_store)
         self.refresh_store_loop.start(self.refresh, now=False)
 
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        #self.server.coherence.store_plugin_config(self.server.uuid, {'test':'äöüß'})
+
+        self.flickr_userid = kwargs.get('userid',None)
+        self.flickr_password = kwargs.get('password',None)
+        self.flickr_permisisons = kwargs.get('permissions','read')
+
+        self.flickr_authtoken = kwargs.get('authtoken',None)
+
+        if self.flickr_authtoken == None:
+            if not None in (self.flickr_userid,self.flickr_password):
+                d = self.flickr_authenticate_app()
+                d.addBoth(lambda x: louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self))
+        else:
+            louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -276,6 +355,84 @@ class FlickrStore(log.Loggable, Plugin):
 
         return None
 
+    def appendDirectory( self, obj, parent):
+        mimetype = 'directory'
+
+        UPnPClass = classChooser(mimetype)
+        id = self.getnextID()
+        update = False
+        if hasattr(self, 'update_id'):
+            update = True
+
+        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+                                        UPnPClass, update=update, proxy=self.proxy)
+        if hasattr(self, 'update_id'):
+            self.update_id += 1
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            if parent:
+                #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
+                value = (parent.get_id(),parent.get_update_id())
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+
+        return self.store[id]
+
+    def appendPhoto( self, obj, parent):
+        mimetype = 'image/'
+
+        UPnPClass = classChooser(mimetype)
+        id = self.getnextID()
+        update = False
+        if hasattr(self, 'update_id'):
+            update = True
+
+        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+                                        UPnPClass, update=update, proxy=self.proxy)
+        if hasattr(self, 'update_id'):
+            self.update_id += 1
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            if parent:
+                #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
+                value = (parent.get_id(),parent.get_update_id())
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+
+        def update_photo_details(result, photo):
+            dates = result.find('dates')
+            self.debug("update_photo_details", dates.get('posted'), dates.get('taken'))
+            photo.item.date = datetime(*time.strptime(dates.get('taken'),
+                                               "%Y-%m-%d %H:%M:%S")[0:6])
+
+        #d = self.flickr_photos_getInfo(obj.get('id'),obj.get('secret'))
+        #d.addCallback(update_photo_details, self.store[id])
+
+        return None
+
+    def appendPhotoset( self, obj, parent):
+        mimetype = 'directory'
+
+        UPnPClass = classChooser(mimetype)
+        id = self.getnextID()
+        update = False
+        if hasattr(self, 'update_id'):
+            update = True
+
+        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+                                        UPnPClass, update=update, proxy=self.proxy)
+        if hasattr(self, 'update_id'):
+            self.update_id += 1
+            if self.server:
+                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            if parent:
+                #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
+                value = (parent.get_id(),parent.get_update_id())
+                if self.server:
+                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+
+        return self.store[id]
+
     def remove(self, id):
         #print 'FlickrStore remove id', id
         try:
@@ -300,6 +457,21 @@ class FlickrStore(log.Loggable, Plugin):
             self.append(photo, parent)
             count += 1
         self.info("initialized photo set %s with %d images" % (parent.get_name(), count))
+
+    def append_flickr_photo_result(self, result, parent):
+        count = 0
+        for photo in result.getiterator('photo'):
+            self.appendPhoto(photo, parent)
+            count += 1
+        self.info("initialized photo set %s with %d images" % (parent.get_name(), count))
+
+    def append_flickr_photoset_result(self, result, parent):
+        photoset_count = 0
+        for photoset in result.getiterator('photoset'):
+            photoset = self.appendPhotoset(photoset, parent)
+            d = self.flickr_photoset(photoset)
+            d.addCallback(self.append_flickr_photo_result, photoset)
+            photoset_count += 1
 
     def len(self):
         return len(self.store)
@@ -365,28 +537,62 @@ class FlickrStore(log.Loggable, Plugin):
         d.addCallback(update_flickr_result, self.most_wanted)
         d.addErrback(got_error)
 
+        d = self.flickr.recent()
+        d.addCallback(update_flickr_result, self.recent)
+        d.addErrback(got_error)
+
+        if self.flickr_authtoken != None:
+            d= self.flickr_photosets()
+            d.addCallback(self.append_flickr_photoset_result, self.photosets)
+            d.addErrback(got_error)
+
+            d = self.flickr_notInSet()
+            d.addCallback(self.append_flickr_photo_result, self.photosets)
+            d.addErrback(got_error)
+
+            d = self.flickr_favorites()
+            d.addCallback(self.append_flickr_photo_result, self.favorites)
+            d.addErrback(got_error)
+
     def flickr_call(self, method, **kwargs):
-        def got_result(result):
-            #print 'flickr_call result', result.encode('utf-8')
+        def got_result(result,method):
+            self.debug('flickr_call %r result %r' % (method,result))
             result = parse_xml(result, encoding='utf-8')
             return result
 
-        def got_error(error):
-            self.warning("connection to Flickr service failed! %r", error)
+        def got_error(error,method):
+            self.warning("connection to Flickr %r service failed! %r" % (method, error))
             self.debug("%r", error.getTraceback())
             return error
 
         args = {}
         args.update(kwargs)
         args['api_key'] = self.flickr_api_key
+        if 'api_sig' in args:
+            args['method'] = method
 
+        self.debug('flickr_call %s %r',method,args)
         d = self.flickr.callRemote(method, args)
-        d.addCallback(got_result)
-        d.addErrback(got_error)
+        d.addCallback(got_result,method)
+        d.addErrback(got_error,method)
         return d
 
-    def flickr_test_echo(self, name='Test'):
-        d = self.flickr_call('flickr.test.echo', **kwargs)
+    def flickr_test_echo(self):
+        d = self.flickr_call('flickr.test.echo')
+        return d
+
+    def flickr_test_login(self):
+        d = self.flickr_call('flickr.test.login',signed=True)
+        return d
+
+    def flickr_auth_getFrob(self):
+        api_sig = md5(self.flickr_api_secret + 'api_key' + self.flickr_api_key + 'method' + 'flickr.auth.getFrob')
+        d = self.flickr_call('flickr.auth.getFrob',api_sig=api_sig)
+        return d
+
+    def flickr_auth_getToken(self,frob):
+        api_sig = md5(self.flickr_api_secret + 'api_key' + self.flickr_api_key + 'frob' + frob + 'method' + 'flickr.auth.getToken')
+        d = self.flickr_call('flickr.auth.getToken',frob=frob,api_sig=api_sig)
         return d
 
     def flickr_photos_getInfo(self, photo_id=None, secret=None):
@@ -400,6 +606,77 @@ class FlickrStore(log.Loggable, Plugin):
             per_page = 500
         #d = self.flickr_call('flickr.interestingness.getList', date=date, per_page=per_page)
         d = self.flickr_call('flickr.interestingness.getList', per_page=per_page)
+        return d
+
+    def flickr_recent(self, date=None, per_page=100):
+        if date == None:
+            date = time.strftime( "%Y-%m-%d", time.localtime(time.time()-86400))
+        if per_page > 500:
+            per_page = 500
+        d = self.flickr_call('flickr.photos.getRecent', per_page=per_page)
+        return d
+
+    def flickr_notInSet(self, date=None, per_page=100):
+        api_sig = md5(self.flickr_api_secret + 'api_key' + self.flickr_api_key + 'auth_token' + self.flickr_authtoken + 'method' + 'flickr.photos.getNotInSet')
+        d = self.flickr_call('flickr.photos.getNotInSet',
+                                    auth_token=self.flickr_authtoken,
+                                    api_sig=api_sig)
+        return d
+
+    def flickr_photosets(self, date=None, per_page=100):
+        api_sig = md5(self.flickr_api_secret + 'api_key' + self.flickr_api_key + 'auth_token' + self.flickr_authtoken + 'method' + 'flickr.photosets.getList')
+        d = self.flickr_call('flickr.photosets.getList',
+                                    auth_token=self.flickr_authtoken,
+                                    api_sig=api_sig)
+        return d
+
+    def flickr_photoset(self, photoset, date=None, per_page=100):
+        api_sig = md5(self.flickr_api_secret + 'api_key' + self.flickr_api_key + 'auth_token' + self.flickr_authtoken + 'method' + 'flickr.photosets.getPhotos' + 'photoset_id' + photoset.obj.get('id'))
+        d = self.flickr_call('flickr.photosets.getPhotos',
+                                    photoset_id=photoset.obj.get('id'),
+                                    auth_token=self.flickr_authtoken,
+                                    api_sig=api_sig)
+        return d
+
+    def flickr_favorites(self, date=None, per_page=100):
+        api_sig = md5(self.flickr_api_secret + 'api_key' + self.flickr_api_key + 'auth_token' + self.flickr_authtoken + 'method' + 'flickr.favorites.getList')
+        d = self.flickr_call('flickr.favorites.getList',
+                                    auth_token=self.flickr_authtoken,
+                                    api_sig=api_sig)
+        return d
+
+    def flickr_authenticate_app(self):
+
+        def got_error(error):
+            print error
+
+        def got_auth_token(result):
+            print "got_auth_token", result
+            result = result.getroot()
+            token = result.find('token').text
+            print 'token', token
+            self.flickr_authtoken = token
+            self.server.coherence.store_plugin_config(self.server.uuid, {'authtoken':token})
+
+        def get_auth_token(result,frob):
+            d =self.flickr_auth_getToken(frob)
+            d.addCallback(got_auth_token)
+            d.addErrback(got_error)
+            return d
+
+        def got_frob(result):
+            print "flickr", result
+            result = result.getroot()
+            frob = result.text
+            print frob
+            from twisted.internet import threads
+            d = threads.deferToThread(FlickrAuthenticate,self.flickr_api_key,self.flickr_api_secret,frob,self.flickr_userid,self.flickr_password,self.flickr_permissions)
+            d.addCallback(get_auth_token, frob)
+            d.addErrback(got_error)
+
+        d = self.flickr_auth_getFrob()
+        d.addCallback(got_frob)
+        d.addErrback(got_error)
         return d
 
     def soap_flickr_test_echo(self, value):
@@ -432,9 +709,29 @@ class FlickrStore(log.Loggable, Plugin):
         d = self.flickr_interestingness()
         d.addCallback(self.append_flickr_result, self.most_wanted)
 
+        self.recent = self.appendDirectory( 'Recent', parent)
+        d = self.flickr_recent()
+        d.addCallback(self.append_flickr_photo_result, self.recent)
+
+        if self.flickr_authtoken != None:
+            self.photosets = self.appendDirectory( 'Gallery', parent)
+            d = self.flickr_photosets()
+            d.addCallback(self.append_flickr_photoset_result, self.photosets)
+
+            d = self.flickr_notInSet()
+            d.addCallback(self.append_flickr_photo_result, self.photosets)
+
+            self.favorites = self.appendDirectory( 'Favorites', parent)
+            d = self.flickr_favorites()
+            d.addCallback(self.append_flickr_photo_result, self.favorites)
+
+
 def main():
 
-    f = FlickrStore(None)
+    log.init(None, 'debug')
+
+
+    f = FlickrStore(None,userid='netzflocken',password='aceton',permissions='write')
 
     def got_flickr_result(result):
         print "flickr", result
@@ -461,9 +758,40 @@ def main():
     def got_upnp_result(result):
         print "upnp", result
 
-    #d = f.flickr_test_echo(name='Coherence')
-    d = f.flickr_interestingness()
-    d.addCallback(got_flickr_result)
+    def got_error(error):
+        print error
+
+    #d = f.flickr_test_echo()
+    #d = f.flickr_interestingness()
+    #d.addCallback(got_flickr_result)
+
+    def got_auth_token(result):
+        print "got_auth_token", result
+        result = result.getroot()
+        token = result.find('token').text
+        print 'token', token
+
+    def get_auth_token(result,frob):
+        d =f.flickr_auth_getToken(frob)
+        d.addCallback(got_auth_token)
+        d.addErrback(got_error)
+
+    def got_frob(result):
+        print "flickr", result
+        result = result.getroot()
+        frob = result.text
+        print frob
+        from twisted.internet import threads
+        d = threads.deferToThread(FlickrAuthenticate,f.flickr_api_key,f.flickr_api_secret,frob,f.flickr_userid,f.flickr_password,f.flickr_permissions)
+        d.addCallback(get_auth_token, frob)
+        d.addErrback(got_error)
+
+    #d = f.flickr_test_login()
+
+
+    d = f.flickr_auth_getFrob()
+    d.addCallback(got_frob)
+    d.addErrback(got_error)
 
     #f.upnp_init()
     #print f.store
