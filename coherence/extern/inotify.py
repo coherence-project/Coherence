@@ -223,7 +223,7 @@ class INotify(FileDescriptor, object):
                 break
 
             wd, mask, cookie, size = struct.unpack("=LLLL", self._buffer[0:16])
-            print "doRead", wd, mask, cookie, size
+            #print "doRead", wd, mask, cookie, size
             if size:
                 name = self._buffer[16:16+size].rstrip('\0')
             else:
