@@ -523,7 +523,7 @@ class FlickrStore(log.Loggable, Plugin):
                     self.remove(child.get_id())
             self.info("refresh pass 1:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
             for photo in new_ones.values():
-                self.append(photo, parent)
+                self.appendPhoto(photo, parent)
 
             self.debug("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
             if len(new_ones) > 0:
