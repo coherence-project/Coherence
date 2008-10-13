@@ -7,6 +7,7 @@ import string
 import socket
 import os, sys
 import traceback
+import copy
 
 from twisted.python import filepath, util
 from twisted.internet import task, address, defer
@@ -312,8 +313,14 @@ class Coherence(log.Loggable):
                 for plugin in plugins:
                     try:
                         backend = plugin['backend']
-                        del plugin['backend']
-                        self.add_plugin(backend, **plugin)
+                        arguments = copy.copy(plugin)
+                        del arguments['backend']
+                        backend = self.add_plugin(backend, **arguments)
+                        from coherence.extern.config import Config
+                        if isinstance(self.config,Config):
+                            if 'uuid' not in plugin:
+                                plugin['uuid'] = str(backend.uuid)[5:]
+                                self.config.save()
                     except Exception, msg:
                         self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
                         self.info(traceback.format_exc())
@@ -378,6 +385,32 @@ class Coherence(log.Loggable):
         except KeyError:
             self.warning("no backend with the uuid %r found" % plugin.uuid)
             return ""
+
+    def store_plugin_config(self,uuid,items):
+        """ find the backend with uuid
+            and store in its the config
+            the key and value pair(s)
+        """
+        plugins = self.config.get('pluginlist')
+        if plugins is None:
+            self.info("storing a plugin config option is only possible with the new config file format")
+            return
+        uuid = str(uuid)
+        if uuid.startswith('uuid:'):
+            uuid = uuid[5:]
+        if isinstance(items,tuple):
+            new = {}
+            new[items[0]] = items[1]
+        for plugin in plugins:
+            try:
+                if plugin['uuid'] == uuid:
+                    for k,v in items.items():
+                        plugin[k] = v
+                    self.config.save()
+            except:
+                pass
+        else:
+            self.info("storing plugin config option for %s failed, plugin not found" % uuid)
 
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal

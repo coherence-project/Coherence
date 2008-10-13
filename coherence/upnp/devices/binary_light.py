@@ -27,28 +27,8 @@ class HttpRoot(DeviceHttpRoot):
 
 class BinaryLight(log.Loggable,BasicDeviceMixin):
     logCategory = 'binarylight'
-
-    def __init__(self, coherence, backend, **kwargs):
-        self.coherence = coherence
-        self.device_type = 'BinaryLight'
-        self.version = 1
-        #log.Loggable.__init__(self)
-
-        try:
-            self.uuid = kwargs['uuid']
-        except KeyError:
-            from coherence.upnp.core.uuid import UUID
-            self.uuid = UUID()
-
-        self.backend = None
-
-        self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
-        if len(self.icons) == 0:
-            if kwargs.has_key('icon'):
-                self.icons.append(kwargs['icon'])
-
-        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
-        reactor.callLater(0.2, self.fire, backend, **kwargs)
+    device_type = 'BinaryLight'
+    version = 1
 
     def fire(self,backend,**kwargs):
         if kwargs.get('no_thread_needed',False) == False:
@@ -120,4 +100,4 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
                                                static.File(icon['url'][7:]))
 
         self.register()
-        self.warning("%s %s (%s) activated" % (self.backend.name, self.device_type, self.backend))
+        self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))

@@ -12,7 +12,7 @@ from StringIO import StringIO
 import urllib
 
 from twisted.internet import task
-from twisted.internet import reactor, defer
+from twisted.internet import defer
 from twisted.web import static
 from twisted.web import resource, server
 #from twisted.web import proxy
@@ -33,8 +33,6 @@ from coherence.upnp.services.servers.media_receiver_registrar_server import Medi
 from coherence.upnp.services.servers.media_receiver_registrar_server import FakeMediaReceiverRegistrarBackend
 
 from coherence.upnp.devices.basics import BasicDeviceMixin
-
-import coherence.extern.louie as louie
 
 from coherence import log
 
@@ -391,34 +389,7 @@ class RootDeviceXML(static.Data):
 class MediaServer(log.Loggable,BasicDeviceMixin):
     logCategory = 'mediaserver'
 
-    def __init__(self, coherence, backend, **kwargs):
-        self.coherence = coherence
-        self.device_type = 'MediaServer'
-        self.version = int(kwargs.get('version',self.coherence.config.get('version',2)))
-
-        try:
-            self.uuid = kwargs['uuid']
-        except KeyError:
-            from coherence.upnp.core.uuid import UUID
-            self.uuid = UUID()
-
-        self.backend = None
-        urlbase = self.coherence.urlbase
-        if urlbase[-1] != '/':
-            urlbase += '/'
-        self.urlbase = urlbase + str(self.uuid)[5:]
-
-        self.msg('MediaServer urlbase %s' % self.urlbase)
-
-        kwargs['urlbase'] = self.urlbase
-        self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
-        if len(self.icons) == 0:
-            if kwargs.has_key('icon'):
-                self.icons.append(kwargs['icon'])
-
-        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
-        louie.connect( self.init_failed, 'Coherence.UPnP.Backend.init_failed', louie.Any)
-        reactor.callLater(0.2, self.fire, backend, **kwargs)
+    device_type = 'MediaServer'
 
     def fire(self,backend,**kwargs):
         if kwargs.get('no_thread_needed',False) == False:
@@ -442,13 +413,6 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             #        can close down this device
         else:
             self.backend = backend(self, **kwargs)
-
-    def init_failed(self, backend, msg):
-        if self.backend != backend:
-            return
-        self.warning('backend not installed, MediaServer activation aborted - %s', msg.getErrorMessage())
-        self.debug(msg)
-        del self.coherence.active_backends[str(self.uuid)]
 
     def init_complete(self, backend):
         if self.backend != backend:
@@ -518,4 +482,4 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                                StaticFile(icon['url'][7:]))
 
         self.register()
-        self.warning("%s %s (%s) activated" % (self.backend.name, self.device_type, self.backend))
+        self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))

@@ -2,7 +2,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2007, Frank Scholz <coherence@beebits.net>
+# Copyright 2007,2008 Frank Scholz <coherence@beebits.net>
 
 from coherence.extern.et import ET, indent
 
