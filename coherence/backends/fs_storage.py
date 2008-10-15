@@ -16,6 +16,8 @@ import urllib
 import mimetypes
 mimetypes.init()
 mimetypes.add_type('video/mp4', '.mp4')
+mimetypes.add_type('video/mpegts', '.ts')
+mimetypes.add_type('video/divx', '.divx')
 
 from urlparse import urlsplit
 
@@ -542,6 +544,18 @@ class FSStore(BackendStore):
         self.next_id += 1
         return ret
 
+    def backend_import(self,item,data):
+        try:
+            f = open(item.get_path(), 'w+b')
+            f.write(data)
+            f.close()
+            return 200
+        except IOError:
+            self.warning("import of file %s failed" % item.get_path())
+        except Exception,msg:
+            self.warning(traceback.format_exc())
+        return 500
+
     def upnp_init(self):
         self.current_connection_id = None
         if self.server:
@@ -636,7 +650,7 @@ class FSStore(BackendStore):
 
         item = elt.getItems()[0]
         if(item.id != '' or
-           int(item.parentID) != ContainerID or
+           int(item.parentID) != int(ContainerID) or
            item.restricted == True or
            item.title == ''):
             return failure.Failure(errorCode(712))
@@ -666,7 +680,7 @@ class FSStore(BackendStore):
             didl.addItem(new_item.item)
             return {'ObjectID': id, 'Result': didl.toString()}
 
-        if item.upnp_class.startswith('object.item.'):
+        if item.upnp_class.startswith('object.item'):
             #path = os.path.join(parent_item.get_path(),item.title)
             id = self.create('item',None,parent_item)
 

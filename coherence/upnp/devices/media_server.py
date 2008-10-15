@@ -116,16 +116,14 @@ class MSRoot(resource.Resource, log.Loggable):
 
     def import_file(self,name,request):
         self.info("import file, id %s" % name)
+        print "import file, id %s" % name
         ch = self.store.get_by_id(name)
+        print "ch", ch
         if ch is not None:
-            try:
-                f = open(ch.get_path(), 'w+b')
-                f.write(request.content.read()) #FIXME: is this the right way?
-                f.close()
-                request.setResponseCode(200)
+            if hasattr(self.store,'backend_import'):
+                response_code = self.store.backend_import(ch,request.content)
+                request.setResponseCode(response_code)
                 return
-            except IOError:
-                self.warning("import of file %s failed" % ch.get_path())
 
         request.setResponseCode(404)
 
