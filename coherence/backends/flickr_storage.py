@@ -110,7 +110,7 @@ class FlickrItem(log.Loggable):
 
         if isinstance(obj, str):
             self.name = obj
-            if isinstance(id,basestring) and id.startswith('upload.'):
+            if isinstance(self.id,basestring) and self.id.startswith('upload.'):
                 self.mimetype = mimetype
             else:
                 self.mimetype = 'directory'
@@ -131,7 +131,7 @@ class FlickrItem(log.Loggable):
             self.mimetype = 'image/jpeg'
 
         self.parent = parent
-        if not (isinstance(id,basestring) and id.startswith('upload.')):
+        if not (isinstance(self.id,basestring) and self.id.startswith('upload.')):
             if parent:
                 parent.add_child(self,update=update)
 
@@ -144,7 +144,7 @@ class FlickrItem(log.Loggable):
             except:
                 self.flickr_id = None
             self.url = urlbase + str(self.id)
-        elif isinstance(id,basestring) and id.startswith('upload.'):
+        elif isinstance(self.id,basestring) and self.id.startswith('upload.'):
             self.url = urlbase + str(self.id)
             self.location = None
         else:
@@ -170,7 +170,7 @@ class FlickrItem(log.Loggable):
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(id, parent_id, self.get_name())
+        self.item = UPnPClass(self.id, parent_id, self.get_name())
         if isinstance(self.item, Container):
             self.item.childCount = 0
         self.child_count = 0
@@ -182,7 +182,7 @@ class FlickrItem(log.Loggable):
             res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             res.size = None
             self.item.res.append(res)
-            if not (isinstance(id,basestring) and id.startswith('upload.')):
+            if not (isinstance(self.id,basestring) and self.id.startswith('upload.')):
                 self.set_item_size_and_date()
 
     def set_item_size_and_date(self):
@@ -810,8 +810,7 @@ class FlickrStore(log.Loggable, Plugin):
             d.addCallback(self.append_flickr_photo_result, self.favorites)
 
     def upnp_ImportResource(self, *args, **kwargs):
-        print upnp_ImportResource, args, kwargs
-        return failure.Failure(errorCode(718))
+        print 'upnp_ImportResource', args, kwargs
         SourceURI = kwargs['SourceURI']
         DestinationURI = kwargs['DestinationURI']
 
@@ -825,38 +824,22 @@ class FlickrStore(log.Loggable, Plugin):
         if item == None:
             return failure.Failure(errorCode(718))
 
-        def gotPage(headers):
-            #print "gotPage", headers
-            content_type = headers.get('content-type',[])
-            if not isinstance(content_type, list):
-                content_type = list(content_type)
-            if len(content_type) > 0:
-                extension = mimetypes.guess_extension(content_type[0], strict=False)
-                item.set_path(None,extension)
-            shutil.move(tmp_path, item.get_path())
-            item.rebuild(self.urlbase)
-            if hasattr(self, 'update_id'):
-                self.update_id += 1
-                if self.server:
-                    if hasattr(self.server,'content_directory_server'):
-                        self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-                if item.parent is not None:
-                    value = (item.parent.get_id(),item.parent.get_update_id())
-                    if self.server:
-                        if hasattr(self.server,'content_directory_server'):
-                            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
+        def gotPage(result):
+
+            try:
+                import cStringIO as StringIO
+            except ImportError:
+                import StringIO
+
+            self.backend_import(item,StringIO.StringIO(result[0]))
 
         def gotError(error, url):
             self.warning("error requesting", url)
             self.info(error)
-            os.unlink(tmp_path)
             return failure.Failure(errorCode(718))
 
-        tmp_fp, tmp_path = tempfile.mkstemp()
-        os.close(tmp_fp)
-
-        utils.downloadPage(SourceURI,
-                           tmp_path).addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
+        d = getPage(SourceURI)
+        d.addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
 
         transfer_id = 0  #FIXME
 
@@ -913,7 +896,9 @@ class FlickrStore(log.Loggable, Plugin):
                 res.data = None
             didl = DIDLElement()
             didl.addItem(new_item.item)
-            return {'ObjectID': new_id, 'Result': didl.toString()}
+            r = {'ObjectID': new_id, 'Result': didl.toString()}
+            print r
+            return r
 
         return failure.Failure(errorCode(712))
 
@@ -957,6 +942,7 @@ class FlickrStore(log.Loggable, Plugin):
         fields['auth_token'] = self.flickr_authtoken
 
         fields['api_sig'] = self.flickr_create_api_signature(**fields)
+        fields['api_key'] = self.flickr_api_key
         fields['photo'] = image
 
         (content_type, formdata) = self.encode_multipart_form(fields)
@@ -969,7 +955,7 @@ class FlickrStore(log.Loggable, Plugin):
                               postdata=formdata)
 
         def got_something(result):
-            #print "got_something", result
+            print "got_something", result
             result = parse_xml(result[0], encoding='utf-8')
             result = result.getroot()
             if(result.attrib['stat'] == 'ok' and
@@ -1016,7 +1002,9 @@ def main():
 
     log.init(None, 'debug')
 
-    f = FlickrStore(None)
+    f = FlickrStore(None,userid='x',password='xx',
+                    permissions='xxx',
+                    authtoken='xxx-x')
 
     def got_flickr_result(result):
         print "flickr", result
@@ -1046,7 +1034,6 @@ def main():
     def got_error(error):
         print error
 
-    #f.flickr_authtoken = '72157607980419464-acee7f632f118bb3'
     #f.flickr_upload(FilePath('/tmp/image.jpg'),title='test')
 
     #d = f.flickr_test_echo()
@@ -1054,8 +1041,8 @@ def main():
     #d.addCallback(got_flickr_result)
 
 
-    f.upnp_init()
-    print f.store
+    #f.upnp_init()
+    #print f.store
     #r = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
     #                    RequestedCount=0,
     #                    StartingIndex=0,

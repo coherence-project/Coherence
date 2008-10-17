@@ -165,7 +165,10 @@ def get_host_address():
 
 def de_chunk_payload(response):
 
-    import StringIO
+    try:
+        import cStringIO as StringIO
+    except ImportError:
+        import StringIO
     """ This method takes a chunked HTTP data object and unchunks it."""
     newresponse = StringIO.StringIO()
     # chunked encoding consists of a bunch of lines with
