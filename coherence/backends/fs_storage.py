@@ -560,7 +560,15 @@ class FSStore(BackendStore):
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                        ['internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
+                        ['http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000',
+                         'http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMABASE;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000',
+                         'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                         'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                         'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                         'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                         'http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000',
+                         'http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVMED_BASE;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01700000000000000000000000000000',
+                         'internal:%s:audio/mpeg:*' % self.server.coherence.hostname,
                          'http-get:*:audio/mpeg:*',
                          'internal:%s:video/mp4:*' % self.server.coherence.hostname,
                          'http-get:*:video/mp4:*',
@@ -571,9 +579,14 @@ class FSStore(BackendStore):
                          'internal:%s:video/avi:*' % self.server.coherence.hostname,
                          'http-get:*:video/avi:*',
                          'internal:%s:video/quicktime:*' % self.server.coherence.hostname,
-                         'http-get:*:video/quicktime:*'],
+                         'http-get:*:video/quicktime:*',
+                         'internal:%s:image/gif:*' % self.server.coherence.hostname,
+                         'http-get:*:image/gif:*',
+                         'internal:%s:image/jpeg:*' % self.server.coherence.hostname,
+                         'http-get:*:image/jpeg:*'],
                         default=True)
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            #self.server.content_directory_server.set_variable(0, 'SortCapabilities', '*')
 
 
     def upnp_ImportResource(self, *args, **kwargs):

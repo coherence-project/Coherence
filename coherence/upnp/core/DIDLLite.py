@@ -116,10 +116,10 @@ def classChooser(mimetype, sub=None):
             return AudioItem
     return None
 
-simple_dlna_tags = ('DLNA.ORG.PS=1',       # play speed parameter
+simple_dlna_tags = ['DLNA.ORG.PS=1',       # play speed parameter
                     'DLNA.ORG_CI=0',       # transcoded parameter
                     'DLNA.ORG_OP=01',      # operations parameter
-                    'DLNA.ORG_FLAGS=01700000000000000000000000000000')
+                    'DLNA.ORG_FLAGS=01700000000000000000000000000000']
 
 
 class Resource:
@@ -138,21 +138,26 @@ class Resource:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if additional_info == '*':
                 if content_format == 'audio/mpeg':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MP3',))
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MP3'])
                 if content_format == 'image/jpeg':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_LRG',))
+                    dlna_tags = simple_dlna_tags
+                    dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
+                    additional_info = ';'.join(dlna_tags+['DLNA.ORG_PN=JPEG_LRG'])
                 if content_format == 'image/png':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=PNG_LRG',))
+                    dlna_tags = simple_dlna_tags
+                    dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=PNG_LRG'])
                 if content_format == 'video/mpeg':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG_PS_PAL',))
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MPEG_PS_PAL'])
                 if content_format == 'video/mpegts':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG_TS_PAL',))
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MPEG_TS_PAL'])
                     content_format = 'video/mpeg'
                 if content_format == 'video/mp4':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC',))
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'])
                 if content_format == 'video/x-msvideo':
-                    additional_info = ';'.join(simple_dlna_tags+('DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC',))
-
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC'])
+                if content_format == 'video/x-ms-wmv':
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=WMV_BASE'])
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self,**kwargs):
@@ -706,7 +711,7 @@ class DIDLElement(ElementInterface,log.Loggable):
         elt = elt.getroot()
         for node in elt.getchildren():
             upnp_class_name =  node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
-            upnp_class = instance.get_upnp_class(upnp_class_name)
+            upnp_class = instance.get_upnp_class(upnp_class_name.strip())
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)
         return instance
