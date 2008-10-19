@@ -71,7 +71,7 @@ New in this 0.5.8 - Trix and Flix - release
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
-        GStreamerPlayer = coherence.backends.gstreamer_audio_player:GStreamerPlayer
+        GStreamerPlayer = coherence.backends.gstreamer_renderer:GStreamerPlayer
         BuzztardPlayer = coherence.backends.buzztard_control:BuzztardPlayer
 
         [coherence.plugins.backend.binary_light]
@@ -86,7 +86,8 @@ New in this 0.5.8 - Trix and Flix - release
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
                       'ui/icons/*.png',
                       'web/static/*.css','web/static/*.js'],
-        'misc': ['Desktop Applet/*.png'],
+        'misc': ['Desktop Applet/*.png',
+                 'device icons/*.png'],
     },
     install_requires=[
     'ConfigObj >= 4.3',

@@ -1,1 +1,4 @@
 recursive-exclude debian *
+recursive-include "misc/device icons"
+recursive-include "misc/Totem Plugin"
+recursive-include "misc/Rhythmbox Plugin"

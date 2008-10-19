@@ -90,8 +90,11 @@ class MSRoot(resource.Resource, log.Loggable):
 
         if(request.method == 'POST' and
            request.uri.endswith('?import')):
-            self.import_file(path,request)
-            return self.import_response(path)
+            d = self.import_file(path,request)
+            if isinstance(d, defer.Deferred):
+                d.addBoth(self.import_response,path)
+                return d
+            return self.import_response(None,path)
 
         if(headers.has_key('user-agent') and
            (headers['user-agent'].find('Xbox/') == 0 or      # XBox
@@ -122,6 +125,8 @@ class MSRoot(resource.Resource, log.Loggable):
         if ch is not None:
             if hasattr(self.store,'backend_import'):
                 response_code = self.store.backend_import(ch,request.content)
+                if isinstance(response_code, defer.Deferred):
+                    return response_code
                 request.setResponseCode(response_code)
                 return
 
@@ -284,7 +289,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
 
-    def import_response(self,id):
+    def import_response(self,result,id):
         return static.Data('<html><p>import of %s finished</p></html>'% id,'text/html')
 
     def render(self,request):
@@ -375,6 +380,12 @@ class RootDeviceXML(static.Data):
                 for k,v in icon.items():
                     if k == 'url':
                         if v.startswith('file://'):
+                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                            continue
+                        elif v == '.face':
+                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+'face-icon.png'
+                            continue
+                        else:
                             ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
                             continue
                     ET.SubElement(i, k).text = str(v)
@@ -478,6 +489,15 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                 if icon['url'].startswith('file://'):
                     self.web_resource.putChild(os.path.basename(icon['url']),
                                                StaticFile(icon['url'][7:]))
+                elif icon['url'] == '.face':
+                    face_path = os.path.join(os.path.expanduser('~'), ".face")
+                    if os.path.exists(face_path):
+                        self.web_resource.putChild('face-icon.png',StaticFile(face_path))
+                else:
+                    from pkg_resources import resource_filename
+                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device icons',icon['url'])))
+                    if os.path.exists(icon_path):
+                        self.web_resource.putChild(icon['url'],StaticFile(icon_path))
 
         self.register()
         self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))
