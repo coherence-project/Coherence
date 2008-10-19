@@ -758,10 +758,14 @@ class FlickrStore(log.Loggable, Plugin):
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                    'http-get:*:image/jpeg:*,'
-                                                                    'http-get:*:image/gif:*,'
-                                                                    'http-get:*:image/png:*',
-                                                                    default=True)
+                                                                  'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000,'
+                                                                  'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000,'
+                                                                  'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000,'
+                                                                  'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000,'
+                                                                  'http-get:*:image/jpeg:*,'
+                                                                  'http-get:*:image/gif:*,'
+                                                                  'http-get:*:image/png:*',
+                                                                default=True)
         self.store[ROOT_CONTAINER_ID] = FlickrItem( ROOT_CONTAINER_ID, 'Flickr', None,
                                                     'directory', self.urlbase,
                                                     Container, update=True, proxy=self.proxy)
@@ -985,18 +989,20 @@ class FlickrStore(log.Loggable, Plugin):
                 print "add_it", obj, obj.getroot(), parent
                 root = obj.getroot()
                 self.appendPhoto(obj.getroot(),parent)
+                return 200
 
             d.addCallback(add_it,item.parent)
             d.addErrback(got_fail)
+            return d
 
         def got_fail(err):
             print err
-            pass
+            return err
 
         d.addCallback(got_photoid, item)
         d.addErrback(got_fail)
         #FIXME we should return the deferred here
-        return 200
+        return d
 
 def main():
 
