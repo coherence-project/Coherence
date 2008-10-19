@@ -301,6 +301,47 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def remove_plugin(self,uuid):
         return self.controlpoint.coherence.remove_plugin(uuid)
 
+    @dbus.service.method(BUS_NAME,in_signature='ssa{ss}',out_signature='v',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def create_object(self,device_id,container_id,arguments,dbus_async_cb,dbus_async_err_cb):
+        device = self.controlpoint.get_device_with_id(device_id)
+        if device != None:
+            client = device.get_client()
+            new_arguments = {}
+            for k,v in arguments.items():
+                new_arguments[str(k)] = unicode(v)
+
+            def reply(data):
+                dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
+
+            d = client.content_directory.create_object(str(container_id), new_arguments)
+            d.addCallback(reply)
+            d.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(BUS_NAME,in_signature='sss',out_signature='v',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def import_resource(self,device_id,source_uri, destination_uri,dbus_async_cb,dbus_async_err_cb):
+        device = self.controlpoint.get_device_with_id(device_id)
+        if device != None:
+            client = device.get_client()
+
+            def reply(data):
+                dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
+
+            d = client.content_directory.import_resource(str(source_uri), str(destination_uri))
+            d.addCallback(reply)
+            d.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(BUS_NAME,in_signature='ss',out_signature='v',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def put_resource(self,destination_uri,filepath,dbus_async_cb,dbus_async_err_cb):
+        def reply(data):
+            dbus_async_cb(200)
+
+        d = self.controlpoint.put_resource(str(destination_uri),unicode(filepath))
+        d.addCallback(reply)
+        d.addErrback(dbus_async_err_cb)
+
     def cp_ms_detected(self,client,udn=''):
         new_device = DBusDevice(client.device,self.bus)
         self.devices.append(new_device)

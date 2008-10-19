@@ -164,6 +164,7 @@ class ControlPoint(log.Loggable):
                                 headers=headers, postdata=data)
             df.addCallback(got_result)
             df.addErrback(got_error)
+            return df
         except IOError:
             pass
 
