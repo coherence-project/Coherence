@@ -9,7 +9,7 @@
     icons taken from the Tango Desktop Project
 """
 
-from os.path import join as path_join
+import os.path
 import socket
 import urllib
 
@@ -23,6 +23,9 @@ DBusGMainLoop(set_as_default=True)
 import dbus.service
 
 from coherence.upnp.core.utils import get_host_address
+
+import mimetypes
+mimetypes.init()
 
 
 # dbus defines
@@ -39,6 +42,322 @@ SERVICE_COLUMN = 5
 ICON_COLUMN = 6
 
 from pkg_resources import resource_filename
+
+class DeviceExportWidget(object):
+    def __init__(self,name='Nautilus',standalone=True,root=None):
+        self.root=root
+        self.uuid = None
+        self.name = name
+        self.standalone=standalone
+
+        icon = resource_filename(__name__, os.path.join('icons','emblem-new.png'))
+        self.new_icon = gtk.gdk.pixbuf_new_from_file(icon)
+        icon = resource_filename(__name__, os.path.join('icons','emblem-shared.png'))
+        self.shared_icon = gtk.gdk.pixbuf_new_from_file(icon)
+        icon = resource_filename(__name__, os.path.join('icons','emblem-unreadable.png'))
+        self.unshared_icon = gtk.gdk.pixbuf_new_from_file(icon)
+
+        self.filestore = gtk.ListStore(str,gtk.gdk.Pixbuf)
+
+        self.init_controlpoint()
+
+    def build_ui(self,root=None):
+        if root != None:
+            self.root = root
+        self.window = gtk.VBox(homogeneous=False, spacing=0)
+
+        self.fileview = gtk.TreeView(self.filestore)
+        column = gtk.TreeViewColumn('Folders to share')
+        self.fileview.append_column(column)
+        icon_cell = gtk.CellRendererPixbuf()
+        text_cell = gtk.CellRendererText()
+
+        column.pack_start(icon_cell, False)
+        column.pack_start(text_cell, True)
+
+        column.set_attributes(text_cell, text=0)
+        column.add_attribute(icon_cell, "pixbuf",1)
+
+        self.window.pack_start(self.fileview,expand=True,fill=True)
+
+        buttonbox = gtk.HBox(homogeneous=False, spacing=0)
+        button = gtk.Button(stock=gtk.STOCK_ADD)
+        button.set_sensitive(False)
+        button.connect("clicked", self.new_files)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        button = gtk.Button(stock=gtk.STOCK_REMOVE)
+        #button.set_sensitive(False)
+        button.connect("clicked", self.remove_files)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        button = gtk.Button(stock=gtk.STOCK_CANCEL)
+        button.connect("clicked", self.share_cancel)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        button = gtk.Button(stock=gtk.STOCK_APPLY)
+        button.connect("clicked", self.share_files)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+
+        self.window.pack_end(buttonbox,expand=False,fill=False)
+        return self.window
+
+    def init_controlpoint(self):
+        self.bus = dbus.SessionBus()
+        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+
+    def share_cancel(self,button):
+        for row in self.filestore:
+            print row
+            if row[1] == self.new_icon:
+                del row
+                continue
+            if row[1] == self.unshared_icon:
+                row[1] = self.shared_icon
+
+        if self.standalone:
+            gtk.main_quit()
+        else:
+            self.root.hide()
+
+    def share_files(self,button):
+        print "share_files with", self.uuid
+        folders = []
+        for row in self.filestore:
+            if row[1] == self.unshared_icon:
+                del row
+                continue
+            folders.append(row[0])
+
+        if self.uuid == None:
+            if len(folders) > 0:
+                self.uuid = self.coherence.add_plugin('FSStore', {'name': self.name,
+                                                              'create_root': 'yes',
+                                                              'content':','.join(folders)},
+                                            dbus_interface=BUS_NAME)
+        else:
+            result = self.coherence.call_plugin(self.uuid,'update_config',{'content':','.join(folders)})
+            if result != self.uuid:
+                print "something failed", result
+        for row in self.filestore:
+            row[1] = self.shared_icon
+        self.root.hide()
+
+    def add_files(self,files):
+        print "add_files", files
+        for filename in files:
+            for row in self.filestore:
+                if os.path.abspath(filename) == row[0]:
+                    break
+            else:
+                self.add_file(filename)
+
+    def add_file(self,filename):
+        self.filestore.append([os.path.abspath(filename),self.new_icon])
+
+    def new_files(self,button):
+        print "new_files"
+
+    def remove_files(self,button):
+        print "remove_files"
+        selection = self.fileview.get_selection()
+        print selection
+        model, selected_rows = selection.get_selected_rows()
+        for row_path in selected_rows:
+            #model.remove(model.get_iter(row_path))
+            row = model[row_path]
+            row[1] = self.unshared_icon
+
+
+class DeviceImportWidget(object):
+
+    def __init__(self,standalone=True,root=None):
+        self.standalone=standalone
+        self.root=root
+        self.build_ui()
+        self.init_controlpoint()
+
+    def build_ui(self):
+        self.window = gtk.VBox(homogeneous=False, spacing=0)
+        self.combobox = gtk.ComboBox()
+        self.store = gtk.ListStore(str,  # 0: friendly name
+                                   str,  # 1: device udn
+                                   gtk.gdk.Pixbuf)
+
+        icon = resource_filename(__name__, os.path.join('icons','network-server.png'))
+        self.device_icon = gtk.gdk.pixbuf_new_from_file(icon)
+
+        # create a CellRenderers to render the data
+        icon_cell = gtk.CellRendererPixbuf()
+        text_cell = gtk.CellRendererText()
+
+        self.combobox.pack_start(icon_cell, False)
+        self.combobox.pack_start(text_cell, True)
+
+        self.combobox.set_attributes(text_cell, text=0)
+        self.combobox.add_attribute(icon_cell, "pixbuf",2)
+
+        self.combobox.set_model(self.store)
+
+
+        item = self.store.append(None)
+        self.store.set_value(item, 0, 'Select a MediaServer...')
+        self.store.set_value(item, 1, '')
+        self.store.set_value(item, 2, None)
+        self.combobox.set_active(0)
+
+        self.window.pack_start(self.combobox,expand=False,fill=False)
+
+        self.filestore = gtk.ListStore(str)
+
+        self.fileview = gtk.TreeView(self.filestore)
+        column = gtk.TreeViewColumn('Files')
+        self.fileview.append_column(column)
+        text_cell = gtk.CellRendererText()
+
+        column.pack_start(text_cell, True)
+        column.set_attributes(text_cell, text=0)
+
+        self.window.pack_start(self.fileview,expand=True,fill=True)
+
+        buttonbox = gtk.HBox(homogeneous=False, spacing=0)
+        button = gtk.Button(stock=gtk.STOCK_ADD)
+        button.set_sensitive(False)
+        button.connect("clicked", self.new_files)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        button = gtk.Button(stock=gtk.STOCK_REMOVE)
+        button.set_sensitive(False)
+        button.connect("clicked", self.remove_files)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        button = gtk.Button(stock=gtk.STOCK_CANCEL)
+        if self.standalone:
+            button.connect("clicked", gtk.main_quit)
+        else:
+            button.connect("clicked", lambda x: self.root.destroy())
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        button = gtk.Button(stock=gtk.STOCK_APPLY)
+        button.connect("clicked", self.import_files)
+        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+
+        self.window.pack_end(buttonbox,expand=False,fill=False)
+
+    def add_file(self,filename):
+        self.filestore.append([os.path.abspath(filename)])
+
+    def new_files(self,button):
+        print "new_files"
+
+    def remove_files(self,button):
+        print "remove_files"
+
+    def import_files(self,button):
+        print "import_files"
+        active = self.combobox.get_active()
+        if active <= 0:
+            print "no MediaServer selected"
+            return None
+        friendlyname, uuid,_ = self.store[active]
+
+        try:
+            row = self.filestore[0]
+            print 'import to', friendlyname,os.path.basename(row[0])
+
+            def success(r):
+                print 'success',r
+                self.filestore.remove(self.filestore.get_iter(0))
+                self.import_files(None)
+
+            def reply(r):
+                print 'reply',r['Result'], r['ObjectID']
+                from coherence.upnp.core import DIDLLite
+
+                didl = DIDLLite.DIDLElement.fromString(r['Result'])
+                item = didl.getItems()[0]
+                res = item.res.get_matching(['*:*:*:*'], protocol_type='http-get')
+                if len(res) > 0:
+                    print 'importURI',res[0].importUri
+                    self.coherence.put_resource(res[0].importUri,row[0],
+                                                reply_handler=success,
+                                                error_handler=self.handle_error)
+
+            mimetype,_ = mimetypes.guess_type(row[0], strict=False)
+            if mimetype.startswith('image/'):
+                upnp_class = 'object.item.imageItem'
+            elif mimetype.startswith('video/'):
+                upnp_class = 'object.item.videoItem'
+            elif mimetype.startswith('audio/'):
+                upnp_class = 'object.item.audioItem'
+            else:
+                upnp_class = 'object.item'
+
+            self.coherence.create_object(uuid,'DLNA.ORG_AnyContainer',
+                                            {'parentID':'DLNA.ORG_AnyContainer','upnp_class':upnp_class,'title':os.path.basename(row[0])},
+                                            reply_handler=reply,
+                                            error_handler=self.handle_error)
+
+        except IndexError:
+            pass
+
+
+    def handle_error(self,error):
+        print error
+
+    def handle_devices_reply(self,devices):
+        for device in devices:
+            if device['device_type'].split(':')[3] == 'MediaServer':
+                self.media_server_found(device)
+
+    def init_controlpoint(self):
+        self.bus = dbus.SessionBus()
+        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+
+        self.coherence.get_devices(dbus_interface=BUS_NAME,
+                                   reply_handler=self.handle_devices_reply,
+                                   error_handler=self.handle_error)
+
+        self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_detected', self.media_server_found, dbus_interface=BUS_NAME)
+        self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_removed', self.media_server_removed, dbus_interface=BUS_NAME)
+        self.devices = {}
+
+    def media_server_found(self,device,udn=None):
+        for service in device['services']:
+            service_type = service.split('/')[-1]
+            if service_type == 'ContentDirectory':
+
+                def got_icons(r,udn,item):
+                    #print 'got_icons', r
+                    for icon in r:
+                        ###FIXME, we shouldn't just use the first icon
+                        icon_loader = gtk.gdk.PixbufLoader()
+                        icon_loader.write(urllib.urlopen(str(icon['url'])).read())
+                        icon_loader.close()
+                        icon = icon_loader.get_pixbuf()
+                        icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
+                        self.store.set_value(item, ICON_COLUMN, icon)
+                        break
+
+                def reply(r,udn):
+                    if 'CreateObject' in r:
+                        self.devices[udn] =  {'ContentDirectory':{}}
+                        self.devices[udn]['ContentDirectory']['actions'] = r
+
+                        item = self.store.append(None)
+                        self.store.set_value(item, 0, str(device['friendly_name']))
+                        self.store.set_value(item, 1, str(device['udn']))
+                        self.store.set_value(item, 2, self.device_icon)
+
+                        d = self.bus.get_object(BUS_NAME+'.device',device['path'])
+                        d.get_device_icons(reply_handler=lambda x : got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
+
+                s = self.bus.get_object(BUS_NAME+'.service',service)
+                s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
+
+    def media_server_removed(self,udn):
+        row_count = 0
+        for row in self.store:
+            if udn == row[1]:
+                self.store.remove(self.store.get_iter(row_count))
+                del self.devices[str(udn)]
+                break
+            row_count += 1
+
 
 class TreeWidget(object):
 
@@ -61,15 +380,15 @@ class TreeWidget(object):
         self.window = gtk.ScrolledWindow()
         self.window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
-        icon = resource_filename(__name__, path_join('icons','network-server.png'))
+        icon = resource_filename(__name__, os.path.join('icons','network-server.png'))
         self.device_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, path_join('icons','folder.png'))
+        icon = resource_filename(__name__, os.path.join('icons','folder.png'))
         self.folder_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, path_join('icons','audio-x-generic.png'))
+        icon = resource_filename(__name__, os.path.join('icons','audio-x-generic.png'))
         self.audio_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, path_join('icons','video-x-generic.png'))
+        icon = resource_filename(__name__, os.path.join('icons','video-x-generic.png'))
         self.video_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, path_join('icons','image-x-generic.png'))
+        icon = resource_filename(__name__, os.path.join('icons','image-x-generic.png'))
         self.image_icon = gtk.gdk.pixbuf_new_from_file(icon)
 
         self.store = gtk.TreeStore(str,  # 0: name or title
@@ -233,6 +552,7 @@ class TreeWidget(object):
             if udn == row[UDN_COLUMN]:
                 self.store.remove(self.store.get_iter(row_count))
                 del self.devices[str(udn)]
+                break
             row_count += 1
 
     def row_expanded(self,view,iter,row_path):
