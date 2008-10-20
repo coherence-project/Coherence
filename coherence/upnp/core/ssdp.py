@@ -60,12 +60,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         for call in reactor.getDelayedCalls():
             if call.func == self.send_it:
                 call.cancel()
-        if self.resend_notify_loop.running:
-            self.resend_notify_loop.stop()
-        if self.check_valid_loop.running:
-            self.check_valid_loop.stop()
-        '''Make sure we send out the byebye notifications.'''
         if self.test == False:
+            if self.resend_notify_loop.running:
+                self.resend_notify_loop.stop()
+            if self.check_valid_loop.running:
+                self.check_valid_loop.stop()
+            '''Make sure we send out the byebye notifications.'''
             for st in self.known:
                 if self.known[st]['MANIFESTATION'] == 'local':
                     self.doByebye(st)

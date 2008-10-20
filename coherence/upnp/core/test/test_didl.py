@@ -29,6 +29,18 @@ didl_fragment = """
     </container>
 </DIDL-Lite>"""
 
+test_didl_fragment = """
+<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"
+           xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
+           xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite">
+    <item id="" restricted="0">
+        <dc:title>New Track</dc:title>
+        <upnp:class>object.item.audioItem.musicTrack</upnp:class>
+        <res protocolInfo="*:*:audio:*">
+        </res>
+    </item>
+</DIDL-Lite>"""
+
 class TestDIDLLite(unittest.TestCase):
 
     def test_DIDLElement_class_detect(self):
@@ -39,6 +51,15 @@ class TestDIDLLite(unittest.TestCase):
         items = didl_element.getItems()
         self.assertEqual(len(items),1)
         self.assertTrue(isinstance(items[0],DIDLLite.MusicAlbum))
+
+    def test_DIDLElement_class_2_detect(self):
+        """ tests class creation from an XML DIDLLite fragment,
+            expects a MusicTrack item in return
+        """
+        didl_element = DIDLLite.DIDLElement.fromString(test_didl_fragment)
+        items = didl_element.getItems()
+        self.assertEqual(len(items),1)
+        self.assertTrue(isinstance(items[0],DIDLLite.MusicTrack))
 
     def test_DIDLElement_class_fallback_1(self):
         """ tests class fallback creation from an XML DIDLLite fragment with

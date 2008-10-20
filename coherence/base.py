@@ -183,10 +183,12 @@ class Coherence(log.Loggable):
     def __new__(cls, *args, **kwargs):
         obj = getattr(cls, '_instance_', None)
         if obj is not None:
+            cls._incarnations_ += 1
             return obj
         else:
             obj = super(Coherence, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
+            cls._incarnations_ = 1
             obj.setup(*args, **kwargs)
             obj.cls = cls
             return obj
@@ -251,8 +253,10 @@ class Coherence(log.Loggable):
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
-        unittest = config.get('unittest', False)
-        if unittest != False:
+        unittest = config.get('unittest', 'no')
+        if unittest == 'no':
+            unittest == False
+        else:
             unittest == True
 
         self.ssdp_server = SSDPServer(test=unittest)
@@ -418,6 +422,9 @@ class Coherence(log.Loggable):
         pass
 
     def shutdown( self):
+        if self._incarnations_ > 1:
+            self._incarnations_ -= 1
+            return
         if self.louieplugin != None:
             louie.remove_plugin(self.louieplugin)
             self.louieplugin = None
