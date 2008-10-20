@@ -71,6 +71,8 @@ try:
 
             self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
             self.window.set_default_size(350, 300)
+            self.window.set_title('Coherence DLNA/UPnP Share')
+
             self.window.connect("delete_event", self.ui_destroy)
 
             self.window.add(self.ui.build_ui(root=self.window))

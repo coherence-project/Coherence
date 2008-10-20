@@ -129,7 +129,9 @@ class DeviceExportWidget(object):
         if self.uuid == None:
             if len(folders) > 0:
                 self.uuid = self.coherence.add_plugin('FSStore', {'name': self.name,
+                                                              'version':'1',
                                                               'create_root': 'yes',
+                                                              'import_folder': '/tmp/UPnP Imports',
                                                               'content':','.join(folders)},
                                             dbus_interface=BUS_NAME)
         else:
@@ -322,7 +324,7 @@ class DeviceImportWidget(object):
             if service_type == 'ContentDirectory':
 
                 def got_icons(r,udn,item):
-                    #print 'got_icons', r
+                    print 'got_icons', r
                     for icon in r:
                         ###FIXME, we shouldn't just use the first icon
                         icon_loader = gtk.gdk.PixbufLoader()
@@ -330,7 +332,7 @@ class DeviceImportWidget(object):
                         icon_loader.close()
                         icon = icon_loader.get_pixbuf()
                         icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
-                        self.store.set_value(item, ICON_COLUMN, icon)
+                        self.store.set_value(item, 2, icon)
                         break
 
                 def reply(r,udn):

@@ -55,7 +55,7 @@ class FSItem(BackendItem):
             self.location = unicode(path)
         else:
             if mimetype == 'item' and path is None:
-                path = os.path.join(parent.get_path(),unicode(self.id))
+                path = os.path.join(parent.get_realpath(),unicode(self.id))
             #self.location = FilePath(unicode(path))
             self.location = FilePath(path)
         self.mimetype = mimetype
@@ -372,13 +372,26 @@ class FSStore(BackendStore):
         if kwargs.get('enable_destroy','no') == 'yes':
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
 
+        self.import_folder = kwargs.get('import_folder',None)
+        if self.import_folder != None:
+            self.import_folder = os.path.abspath(self.import_folder)
+            if not os.path.isdir(self.import_folder):
+                self.import_folder = None
+
         self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
-        if len(self.content)>1 or utils.means_true(kwargs.get('create_root',False)):
+        if(len(self.content)>1 or
+           utils.means_true(kwargs.get('create_root',False)) or
+           self.import_folder != None):
             UPnPClass = classChooser('root')
             id = self.getnextID()
             parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True)
+
+        if self.import_folder != None:
+            id = self.getnextID()
+            self.store[id] = FSItem( id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True)
+            self.import_folder_id = id
 
         for path in self.content:
             if isinstance(path,(list,tuple)):
@@ -588,12 +601,16 @@ class FSStore(BackendStore):
     def backend_import(self,item,data):
         try:
             f = open(item.get_path(), 'w+b')
+            if hasattr(data,'read'):
+                data = data.read()
             f.write(data)
             f.close()
+            item.rebuild(self.urlbase)
             return 200
         except IOError:
             self.warning("import of file %s failed" % item.get_path())
         except Exception,msg:
+            import traceback
             self.warning(traceback.format_exc())
         return 500
 
@@ -682,9 +699,12 @@ class FSStore(BackendStore):
         return {'TransferID': transfer_id}
 
     def upnp_CreateObject(self, *args, **kwargs):
+        #print "CreateObject", kwargs
         if kwargs['ContainerID'] == 'DLNA.ORG_AnyContainer':
-            """ for the moment """
-            return failure.Failure(errorCode(712))
+            if self.import_folder != None:
+                ContainerID = self.import_folder_id
+            else:
+                return failure.Failure(errorCode(712))
         else:
             ContainerID = kwargs['ContainerID']
         Elements = kwargs['Elements']
@@ -703,8 +723,10 @@ class FSStore(BackendStore):
             return failure.Failure(errorCode(712))
 
         item = elt.getItems()[0]
+        if item.parentID == 'DLNA.ORG_AnyContainer':
+            item.parentID = ContainerID
         if(item.id != '' or
-           int(item.parentID) != int(ContainerID) or
+           item.parentID != ContainerID or
            item.restricted == True or
            item.title == ''):
             return failure.Failure(errorCode(712))
@@ -735,8 +757,10 @@ class FSStore(BackendStore):
             return {'ObjectID': id, 'Result': didl.toString()}
 
         if item.upnp_class.startswith('object.item'):
-            #path = os.path.join(parent_item.get_path(),item.title)
-            id = self.create('item',None,parent_item)
+            _,_,content_format,_ = item.res[0].protocolInfo.split(':')
+            extension = mimetypes.guess_extension(content_format, strict=False)
+            path = os.path.join(parent_item.get_realpath(),item.title+extension)
+            id = self.create('item',path,parent_item)
 
             new_item = self.get_by_id(id)
             for res in new_item.item.res:
