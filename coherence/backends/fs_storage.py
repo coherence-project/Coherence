@@ -13,6 +13,8 @@ import re
 from datetime import datetime
 import urllib
 
+from sets import Set
+
 import mimetypes
 mimetypes.init()
 mimetypes.add_type('video/mp4', '.mp4')
@@ -284,6 +286,12 @@ class FSItem(BackendItem):
         else:
             self.location
 
+    def get_realpath(self):
+        if isinstance( self.location,FilePath):
+            return self.location.path
+        else:
+            self.location
+
     def set_path(self,path=None,extension=None):
         if path is None:
             path = self.get_path()
@@ -296,7 +304,7 @@ class FSItem(BackendItem):
             self.location = path
 
     def get_name(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location,FilePath):
             name = self.location.basename().decode("utf-8", "replace")
         else:
             name = self.location.decode("utf-8", "replace")
@@ -342,10 +350,12 @@ class FSStore(BackendStore):
                 self.content = l
         else:
             self.content = xdg_content()
+            self.content = [x[0] for x in self.content]
         if self.content == None:
             self.content = 'tests/content'
         if not isinstance( self.content, list):
             self.content = [self.content]
+        self.content = Set([os.path.abspath(x) for x in self.content])
         self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])
 
@@ -365,7 +375,7 @@ class FSStore(BackendStore):
         self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
-        if len(self.content)>1:
+        if len(self.content)>1 or utils.means_true(kwargs.get('create_root',False)):
             UPnPClass = classChooser('root')
             id = self.getnextID()
             parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True)
@@ -413,17 +423,48 @@ class FSStore(BackendStore):
             return None
 
     def get_id_by_name(self, parent, name):
+        print 'get_id_by_name'
         try:
+            name = os.path.abspath(name)
+            print name
             parent = self.store[int(parent)]
             for child in parent.children:
                 if not isinstance(name, unicode):
                     name = name.decode("utf8")
-                if name == child.get_name():
+                print child.get_name(),child.get_realpath(), name == child.get_path()
+                if name == child.get_realpath():
                     return child.id
         except:
             pass
 
         return None
+
+    def update_config(self,**kwargs):
+        print "update_config", kwargs
+        if 'content' in kwargs:
+            new_content = kwargs['content']
+            new_content = Set([os.path.abspath(x) for x in new_content.split(',')])
+            new_folders = new_content.difference(self.content)
+            obsolete_folders = self.content.difference(new_content)
+            print new_folders, obsolete_folders
+            for folder in obsolete_folders:
+                self.remove_content_folder(folder)
+            for folder in new_folders:
+                self.add_content_folder(folder)
+            self.content = new_content
+
+    def add_content_folder(self,path):
+        path = os.path.abspath(path)
+        if path not in self.content:
+            self.content.add(path)
+            self.walk(path, self.store[1000], self.ignore_file_pattern)
+
+    def remove_content_folder(self,path):
+        path = os.path.abspath(path)
+        if path in self.content:
+            id = self.get_id_by_name(1000, path)
+            self.remove(id)
+            self.content.remove(path)
 
     def walk(self, path, parent=None, ignore_file_pattern=''):
         containers = []
@@ -492,7 +533,7 @@ class FSStore(BackendStore):
         return None
 
     def remove(self, id):
-        #print 'FSSTore remove id', id
+        print 'FSSTore remove id', id
         try:
             item = self.store[int(id)]
             parent = item.get_parent()

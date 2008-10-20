@@ -293,13 +293,30 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def add_plugin(self,backend,arguments):
         kwargs = {}
         for k,v in arguments.iteritems():
-            kwargs[str(k)] = unicode(v)
+            kwargs[str(k)] = str(v)
         p = self.controlpoint.coherence.add_plugin(backend,**kwargs)
         return str(p.uuid)
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='s')
     def remove_plugin(self,uuid):
         return self.controlpoint.coherence.remove_plugin(uuid)
+
+    @dbus.service.method(BUS_NAME,in_signature='ssa{ss}',out_signature='s')
+    def call_plugin(self,uuid,method,arguments):
+        try:
+            plugin = self.controlpoint.coherence.active_backends[uuid]
+        except KeyError:
+            self.warning("no backend with the uuid %r found" % uuid)
+            return ""
+        function = getattr(plugin.backend, method, None)
+        if function == None:
+            return ""
+        kwargs = {}
+        for k,v in arguments.iteritems():
+            kwargs[str(k)] = str(v)
+        function(**kwargs)
+        return uuid
+
 
     @dbus.service.method(BUS_NAME,in_signature='ssa{ss}',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
