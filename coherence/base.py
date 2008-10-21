@@ -255,9 +255,9 @@ class Coherence(log.Loggable):
 
         unittest = config.get('unittest', 'no')
         if unittest == 'no':
-            unittest == False
+            unittest = False
         else:
-            unittest == True
+            unittest = True
 
         self.ssdp_server = SSDPServer(test=unittest)
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
