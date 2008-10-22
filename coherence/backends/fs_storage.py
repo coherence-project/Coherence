@@ -435,8 +435,8 @@ class FSStore(BackendStore):
         except:
             return None
 
-    def get_id_by_name(self, parent, name):
-        print 'get_id_by_name'
+    def get_id_by_name(self, parent=0, name=''):
+        print 'get_id_by_name', parent, name
         try:
             name = os.path.abspath(name)
             print name
@@ -451,6 +451,15 @@ class FSStore(BackendStore):
             pass
 
         return None
+
+    def get_url_by_name(self,parent=0,name=''):
+        print 'get_url_by_name', parent, name
+        id = self.get_id_by_name(parent,name)
+        print 'get_url_by_name', id
+        if id == None:
+            return ''
+        return self.store[id].url
+
 
     def update_config(self,**kwargs):
         print "update_config", kwargs
