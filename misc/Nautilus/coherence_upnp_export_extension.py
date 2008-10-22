@@ -27,6 +27,7 @@
 """
 
 import sys
+import os
 
 import dbus
 
@@ -56,7 +57,7 @@ try:
     class CoherenceExportExtension(nautilus.MenuProvider):
 
         def __init__(self):
-            print "CoherenceExportExtension"
+            print "CoherenceExportExtension", os.getpid()
             from coherence.ui.av_widgets import DeviceExportWidget
             self.ui = DeviceExportWidget(standalone=False)
             self.ui_create()

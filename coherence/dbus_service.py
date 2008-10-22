@@ -7,6 +7,8 @@
 
 """
 
+import time
+
 #import gtk
 import dbus
 
@@ -109,8 +111,11 @@ class DBusService(dbus.service.Object,log.Loggable):
             #print "action", func
             if callable(func):
                 kwargs = {}
-                for k,v in arguments.items():
-                    kwargs[str(k)] = str(v)
+                try:
+                    for k,v in arguments.items():
+                        kwargs[str(k)] = str(v)
+                except:
+                    pass
                 d = func(**kwargs)
                 d.addCallback(reply)
                 d.addErrback(dbus_async_err_cb)
@@ -246,6 +251,29 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
+        self.pinboard = {}
+
+    @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='')
+    def pin(self,key,value):
+        self.pinboard[key] = value
+        print self.pinboard
+
+    @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
+    def get_pin(self,key):
+        return self.pinboard.get(key,'Coherence::Pin::None')
+
+    @dbus.service.method(BUS_NAME,in_signature='s',out_signature='')
+    def unpin(self,key):
+        del self.pinboard[key]
+
+    @dbus.service.method(BUS_NAME,in_signature='s',out_signature='s')
+    def create_oob(self,file):
+        print 'create_oob'
+        key = str(time.time())
+        self.pinboard[key] = file
+        print self.pinboard
+        return self.controlpoint.coherence.urlbase + 'oob?key=' + key
+
     def remove_client(self, usn, client):
         self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
         try:
@@ -313,7 +341,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             return ""
         kwargs = {}
         for k,v in arguments.iteritems():
-            kwargs[str(k)] = str(v)
+            kwargs[str(k)] = unicode(v)
         function(**kwargs)
         return uuid
 

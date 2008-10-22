@@ -134,6 +134,7 @@ class DeviceExportWidget(object):
                                                               'import_folder': '/tmp/UPnP Imports',
                                                               'content':','.join(folders)},
                                             dbus_interface=BUS_NAME)
+                #self.coherence.pin('Nautilus::MediaServer::%d'%os.getpid(),self.uuid)
         else:
             result = self.coherence.call_plugin(self.uuid,'update_config',{'content':','.join(folders)})
             if result != self.uuid:

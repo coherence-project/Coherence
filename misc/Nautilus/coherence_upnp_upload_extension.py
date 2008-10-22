@@ -21,6 +21,7 @@
 """
 
 import sys
+import os
 
 import pygtk
 pygtk.require("2.0")
@@ -52,7 +53,7 @@ try:
     class CoherenceUploadExtension(nautilus.MenuProvider):
 
         def __init__(self):
-            print "CoherenceUploadExtension"
+            print "CoherenceUploadExtension", os.getpid()
             pass
 
         def get_file_items(self, window, files):
