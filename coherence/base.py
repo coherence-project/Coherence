@@ -12,7 +12,7 @@ import copy
 from twisted.python import filepath, util
 from twisted.internet import task, address, defer
 from twisted.internet import reactor
-from twisted.web import resource
+from twisted.web import resource,static
 
 import coherence.extern.louie as louie
 
@@ -44,6 +44,9 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
     def getChild(self, name, request):
         self.debug('SimpleRoot getChild %s, %s' % (name, request))
+        if name == 'oob':
+            """ we have an out-of-band request """
+            return static.File(self.coherence.dbus.pinboard[request.args['key'][0]])
         try:
             return self.coherence.children[name]
         except:
