@@ -437,6 +437,7 @@ class RhythmboxPlayer(log.Loggable):
         #print '>>>', local_protocol_infos
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
+            return {}
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
             #import pdb; pdb.set_trace()
