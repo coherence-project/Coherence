@@ -19,6 +19,8 @@ from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)
 
 import dbus.service
+import dbus.gobject_service
+
 #import dbus.glib
 
 
@@ -293,6 +295,10 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
     def version(self):
         return __version__
+
+    @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
+    def hostname(self):
+        return self.controlpoint.coherence.hostname
 
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='av')
     def get_devices(self):

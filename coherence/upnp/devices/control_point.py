@@ -95,6 +95,16 @@ class ControlPoint(log.Loggable):
         else:
             self.queries.append(query)
 
+    def connect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+        """ wrapper method around louie.connect
+        """
+        louie.connect(receiver,signal=signal,sender=sender,weak=weak)
+
+    def disconnect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+        """ wrapper method around louie.disconnect
+        """
+        louie.disconnect(receiver,signal=signal,sender=sender,weak=weak)
+
     def get_devices(self):
         return self.coherence.get_devices()
 

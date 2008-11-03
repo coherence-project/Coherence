@@ -10,7 +10,6 @@
 """
 
 import os.path
-import socket
 import urllib
 
 import pygtk
@@ -21,8 +20,6 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)
 import dbus.service
-
-from coherence.upnp.core.utils import get_host_address
 
 import mimetypes
 mimetypes.init()
@@ -371,11 +368,6 @@ class TreeWidget(object):
         self.cb_item_right_click = None
         self.cb_resource_chooser = cb_resource_chooser
 
-        self.hostname = socket.gethostbyname(socket.gethostname())
-        if self.hostname.startswith('127.'):
-            """ use interface detection via routing table as last resort """
-            self.hostname = get_host_address()
-
         self.build_ui()
         self.init_controlpoint()
 
@@ -441,6 +433,8 @@ class TreeWidget(object):
     def init_controlpoint(self):
         self.bus = dbus.SessionBus()
         self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+
+        self.hostname = self.coherence.hostname(dbus_interface=BUS_NAME)
 
         self.coherence.get_devices(dbus_interface=BUS_NAME,
                                    reply_handler=self.handle_devices_reply,
