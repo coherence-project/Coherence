@@ -46,7 +46,7 @@ from coherence.backend import BackendItem, BackendStore
 class FSItem(BackendItem):
     logCategory = 'fs_item'
 
-    def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass,update=False,store=None):
         self.id = object_id
         self.parent = parent
         if parent:
@@ -63,6 +63,7 @@ class FSItem(BackendItem):
             urlbase += '/'
         self.url = urlbase + str(self.id)
 
+        self.store = store
 
         if parent == None:
             parent_id = -1
@@ -124,6 +125,30 @@ class FSItem(BackendItem):
             res.size = size
             self.item.res.append(res)
 
+            """ if this item is of type audio and we want to add a transcoding rule for it,
+                this is the way to do it:
+
+                create a new Resource object, at least a 'http-get'
+                and maybe an 'internal' one too
+
+                for transcoding to wav this looks like that
+
+                res = Resource(url_for_transcoded audio,
+                        'http-get:*:audio/x-wav:%s'% ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_TN',)))
+                res.size = None
+                self.item.res.append(res)
+            """
+
+            if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+                if self.mimetype in ('application/ogg','audio/ogg'):
+                    dlna_pn = 'DLNA.ORG_PN=LPCM'
+                    dlna_tags = simple_dlna_tags
+                    dlna_tags[1] = 'DLNA.ORG_CI=1'
+                    #dlna_tags[2] = 'DLNA.ORG_OP=00'
+                    new_res = Resource(self.url+'?transcoded=lpcm',
+                        'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join(dlna_tags+[dlna_pn])))
+                    new_res.size = None
+                    self.item.res.append(new_res)
 
             """ if this item is an image and we want to add a thumbnail for it
                 we have to follow these rules:
@@ -134,14 +159,14 @@ class FSItem(BackendItem):
                 for an JPG this looks like that
 
                 res = Resource(url_for_thumbnail,
-                        'http-get:*:image/jpg:%s'% ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_TN',)))
+                        'http-get:*:image/jpg:%s'% ';'.join(simple_dlna_tags+['DLNA.ORG_PN=JPEG_TN']))
                 res.size = size_of_thumbnail
                 self.item.res.append(res)
 
                 and for a PNG the Resource creation is like that
 
                 res = Resource(url_for_thumbnail,
-                        'http-get:*:image/png:%s'% ';'.join(simple_dlna_tags+('DLNA.ORG_PN=PNG_TN',)))
+                        'http-get:*:image/png:%s'% ';'.join(simple_dlna_tags+['DLNA.ORG_PN=PNG_TN']))
 
                 if not hasattr(self.item, 'attachments'):
                     self.item.attachments = {}
@@ -159,9 +184,12 @@ class FSItem(BackendItem):
                         else:
                             dlna_pn = 'DLNA.ORG_PN=PNG_TN'
 
+                        dlna_tags = simple_dlna_tags
+                        dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
+
                         hash_from_path = str(id(thumbnail))
                         new_res = Resource(self.url+'?attachment='+hash_from_path,
-                            'http-get:*:%s:%s' % (mimetype, ';'.join(simple_dlna_tags+(dlna_pn,))))
+                            'http-get:*:%s:%s' % (mimetype, ';'.join(dlna_tags+[dlna_pn])))
                         new_res.size = os.path.getsize(thumbnail)
                         self.item.res.append(new_res)
                         if not hasattr(self.item, 'attachments'):
@@ -386,11 +414,11 @@ class FSStore(BackendStore):
            self.import_folder != None):
             UPnPClass = classChooser('root')
             id = self.getnextID()
-            parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True)
+            parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True,store=self)
 
         if self.import_folder != None:
             id = self.getnextID()
-            self.store[id] = FSItem( id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True)
+            self.store[id] = FSItem( id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True,store=self)
             self.import_folder_id = id
 
         for path in self.content:
@@ -436,15 +464,15 @@ class FSStore(BackendStore):
             return None
 
     def get_id_by_name(self, parent=0, name=''):
-        print 'get_id_by_name', parent, name
+        #print 'get_id_by_name', parent, name
         try:
             name = os.path.abspath(name)
-            print name
+            #print name
             parent = self.store[int(parent)]
             for child in parent.children:
                 if not isinstance(name, unicode):
                     name = name.decode("utf8")
-                print child.get_name(),child.get_realpath(), name == child.get_path()
+                #print child.get_name(),child.get_realpath(), name == child.get_path()
                 if name == child.get_realpath():
                     return child.id
         except:
@@ -453,9 +481,9 @@ class FSStore(BackendStore):
         return None
 
     def get_url_by_name(self,parent=0,name=''):
-        print 'get_url_by_name', parent, name
+        #print 'get_url_by_name', parent, name
         id = self.get_id_by_name(parent,name)
-        print 'get_url_by_name', id
+        #print 'get_url_by_name', id
         if id == None:
             return ''
         return self.store[id].url
@@ -516,7 +544,7 @@ class FSStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=True)
+        self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=True,store=self)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             #print self.update_id

@@ -139,6 +139,8 @@ class Resource:
             if additional_info == '*':
                 if content_format == 'audio/mpeg':
                     additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MP3'])
+                if content_format == 'audio/x-wav':
+                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=LPCM'])
                 if content_format == 'image/jpeg':
                     dlna_tags = simple_dlna_tags
                     dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'

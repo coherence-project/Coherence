@@ -40,6 +40,9 @@ COVER_REQUEST_INDICATOR = re.compile(".*?cover\.[A-Z|a-z]{3,4}$")
 
 ATTACHMENT_REQUEST_INDICATOR = re.compile(".*?attachment=.*$")
 
+TRANSCODED_REQUEST_INDICATOR = re.compile(".*?transcoded=.*$")
+
+
 class MSRoot(resource.Resource, log.Loggable):
     logCategory = 'mediaserver'
 
@@ -87,6 +90,21 @@ class MSRoot(resource.Resource, log.Loggable):
                 except:
                     request.setResponseCode(404)
                     return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
+
+        if(request.method in ('GET','HEAD') and
+           TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
+            self.info("request transcoding to %r for id %s" % (request.args,path))
+            if self.server.coherence.config.get('transcoding', 'no') == 'yes':
+                ch = self.store.get_by_id(path)
+                try:
+                    from coherence.transcoder import PCMTranscoder
+                    return PCMTranscoder(ch.get_path())
+                except:
+                    self.debug(traceback.format_exc())
+                    request.setResponseCode(404)
+                    return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+            request.setResponseCode(404)
+            return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
 
         if(request.method == 'POST' and
            request.uri.endswith('?import')):
