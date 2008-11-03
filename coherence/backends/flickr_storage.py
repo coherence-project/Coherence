@@ -328,7 +328,8 @@ class FlickrStore(log.Loggable, Plugin):
 
         self.flickr_authtoken = kwargs.get('authtoken',None)
 
-        if self.flickr_authtoken == None:
+        if(self.flickr_authtoken == None and
+           self.server.coherence.writeable_config() == True):
             if not None in (self.flickr_userid,self.flickr_password):
                 d = self.flickr_authenticate_app()
                 d.addBoth(lambda x: louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self))

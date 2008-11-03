@@ -162,7 +162,10 @@ class BasicDeviceMixin(object):
         self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
         if len(self.icons) == 0:
             if kwargs.has_key('icon'):
-                self.icons.append(kwargs['icon'])
+                if isinstance(kwargs['icon'],dict):
+                    self.icons.append(kwargs['icon'])
+                else:
+                    self.icons = kwargs['icon']
 
         louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
         louie.connect( self.init_failed, 'Coherence.UPnP.Backend.init_failed', louie.Any)

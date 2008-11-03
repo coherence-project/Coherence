@@ -225,13 +225,21 @@ class Coherence(log.Loggable):
         """
 
         try:
-            logmode = config['logging'].get('level','warning')
+            logmode = config.get('logging').get('level','warning')
         except KeyError:
             logmode = config.get('logmode', 'warning')
         _debug = []
 
         try:
-            for subsystem in config['logging'].get('subsystemlist',[]):
+            subsystems = config.get('logging')['subsystem']
+            if isinstance(subsystems,dict):
+                subsystems = [subsystems]
+            for subsystem in subsystems:
+                try:
+                    if subsystem['active'] == 'no':
+                        continue
+                except (KeyError,TypeError):
+                    pass
                 self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
                 _debug.append('%s:%d' % (subsystem['name'].lower(), log.human2level(subsystem['level'])))
         except KeyError:
@@ -273,7 +281,7 @@ class Coherence(log.Loggable):
 
         self.msearch = MSearch(self.ssdp_server,test=unittest)
 
-        reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown)
+        reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
         if network_if:
             self.hostname = get_ip_address(network_if)
@@ -300,7 +308,12 @@ class Coherence(log.Loggable):
 
         self.available_plugins = None
 
-        plugins = config.get('pluginlist')
+        try:
+            plugins = config['plugin']
+            if isinstance(plugins,dict):
+                plugins=[plugins]
+        except:
+            plugins = None
         if plugins is None:
             plugins = config.get('plugins',None)
 
@@ -319,12 +332,17 @@ class Coherence(log.Loggable):
             else:
                 for plugin in plugins:
                     try:
+                        if plugin['active'] == 'no':
+                            continue
+                    except (KeyError,TypeError):
+                        pass
+                    try:
                         backend = plugin['backend']
                         arguments = copy.copy(plugin)
                         del arguments['backend']
                         backend = self.add_plugin(backend, **arguments)
-                        from coherence.extern.config import Config
-                        if isinstance(self.config,Config):
+                        from coherence.extern.simple_config import ConfigItem
+                        if self.writeable_config() == True:
                             if 'uuid' not in plugin:
                                 plugin['uuid'] = str(backend.uuid)[5:]
                                 self.config.save()
@@ -393,15 +411,24 @@ class Coherence(log.Loggable):
             self.warning("no backend with the uuid %r found" % plugin.uuid)
             return ""
 
+    def writeable_config(self):
+        """ do we have a new-style config file """
+        from coherence.extern.simple_config import ConfigItem
+        if isinstance(self.config,ConfigItem):
+            return True
+        return False
+
     def store_plugin_config(self,uuid,items):
         """ find the backend with uuid
             and store in its the config
             the key and value pair(s)
         """
-        plugins = self.config.get('pluginlist')
+        plugins = self.config.get('plugin')
         if plugins is None:
-            self.info("storing a plugin config option is only possible with the new config file format")
+            self.warning("storing a plugin config option is only possible with the new config file format")
             return
+        if isinstance(plugins,dict):
+            plugins = [plugins]
         uuid = str(uuid)
         if uuid.startswith('uuid:'):
             uuid = uuid[5:]
@@ -424,7 +451,9 @@ class Coherence(log.Loggable):
         #print kwargs
         pass
 
-    def shutdown( self):
+    def shutdown( self,force=False):
+        if force == True:
+            self._incarnations_ = 1
         if self._incarnations_ > 1:
             self._incarnations_ -= 1
             return
@@ -556,3 +585,13 @@ class Coherence(log.Loggable):
 
     def remove_web_resource(self, name):
         del self.children[name]
+
+    def connect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+        """ wrapper method around louie.connect
+        """
+        louie.connect(receiver,signal=signal,sender=sender,weak=weak)
+
+    def disconnect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+        """ wrapper method around louie.disconnect
+        """
+        louie.disconnect(receiver,signal=signal,sender=sender,weak=weak)

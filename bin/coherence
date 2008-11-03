@@ -20,7 +20,7 @@ from twisted.python import usage, text
 
 from coherence import __version__
 
-from coherence.extern.config import Config
+from coherence.extern.simple_config import Config
 
 """
  thankfully taken from twisted.scripts._twistd_unix.py
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     config = {}
 
     try:
-        config = Config(options['configfile'])
+        config = Config(options['configfile'],root='config').config
     except SyntaxError:
         import traceback
         #print traceback.format_exc()
@@ -284,15 +284,16 @@ if __name__ == '__main__':
     for k,v in options['options'].items():
         config[k] = v
 
-    config['logfile'] = options['logfile']
+    config.set('logfile',options['logfile'])
 
     if options['daemon'] == 1:
         if options['logfile'] == None:
-            config['logmode'] = 'none'
+            config.set('logmode','none')
 
     #print config
 
-    if config.get('use_dbus', 'no') == 'yes':
+    if(config.get('use_dbus', 'no') == 'yes' or
+       config.get('transcoding', 'no') == 'yes'):
         try:
             from twisted.internet import glib2reactor
             glib2reactor.install()
@@ -300,12 +301,14 @@ if __name__ == '__main__':
             print "error installing glib2reactor"
 
     if len(options['plugins']) > 0:
-        plugins = config.get('pluginlist')
+        plugins = config.get('plugin')
+        if isinstance(plugins,dict):
+            config['plugin']=[plugins]
         if plugins is None:
             plugins = config.get('plugins',None)
         if plugins == None:
-            config['pluginlist'] = []
-            plugins = config['pluginlist']
+            config.set('plugin',[])
+            plugins = config['plugin']
 
         while len(options['plugins']) > 0:
             p = options['plugins'].pop()
