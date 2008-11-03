@@ -226,7 +226,7 @@ class Coherence(log.Loggable):
 
         try:
             logmode = config.get('logging').get('level','warning')
-        except KeyError:
+        except (KeyError,AttributeError):
             logmode = config.get('logmode', 'warning')
         _debug = []
 
@@ -242,7 +242,7 @@ class Coherence(log.Loggable):
                     pass
                 self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
                 _debug.append('%s:%d' % (subsystem['name'].lower(), log.human2level(subsystem['level'])))
-        except KeyError:
+        except (KeyError,TypeError):
             subsystem_log = config.get('subsystem_log',{})
             for subsystem,level in subsystem_log.items():
                 #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
