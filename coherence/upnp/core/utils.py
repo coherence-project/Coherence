@@ -109,11 +109,15 @@ def get_ip_address(ifname):
         SIOCGIFADDR = 0xc0206921
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        SIOCGIFADDR,
-        struct.pack('256s', ifname[:15])
-    )[20:24])
+    try:
+        return socket.inet_ntoa(fcntl.ioctl(
+            s.fileno(),
+            SIOCGIFADDR,
+            struct.pack('256s', ifname[:15])
+        )[20:24])
+    except IOError:
+        return '127.0.0.1'
+
 
 def get_host_address():
     """ try to get determine the interface used for

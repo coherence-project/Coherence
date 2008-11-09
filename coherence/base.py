@@ -284,7 +284,8 @@ class Coherence(log.Loggable):
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
         if network_if:
-            self.hostname = get_ip_address(network_if)
+            print '%r %s' % (network_if,network_if)
+            self.hostname = get_ip_address('%s' % network_if)
         else:
             try:
                 self.hostname = socket.gethostbyname(socket.gethostname())

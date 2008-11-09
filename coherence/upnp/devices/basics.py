@@ -176,7 +176,10 @@ class BasicDeviceMixin(object):
             return
         self.warning('backend not installed, %s activation aborted - %s' % (self.device_type,msg.getErrorMessage()))
         self.debug(msg)
-        del self.coherence.active_backends[str(self.uuid)]
+        try:
+            del self.coherence.active_backends[str(self.uuid)]
+        except KeyError:
+            pass
 
     def register(self):
         s = self.coherence.ssdp_server
