@@ -68,6 +68,7 @@ New in this 0.5.8 - Trix and Flix - release
         AmpacheStore = coherence.backends.ampache_storage:AmpacheStore
         TrackerStore = coherence.backends.tracker_storage:TrackerStore
         DVBDStore = coherence.backends.dvbd_storage:DVBDStore
+        AppleTrailersStore = coherence.backends.appletrailers_storage:AppleTrailersStore
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
