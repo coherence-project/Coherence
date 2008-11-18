@@ -29,6 +29,9 @@ from twisted.internet import protocol
 try:
     from twisted.mail import smtp
 
+    from twisted.names import client as namesclient
+    from twisted.names import dns
+
     import StringIO
 
     class SMTPClient(smtp.ESMTPClient):
@@ -89,9 +92,6 @@ except ImportError:
 
 from twisted.internet import reactor, defer
 from twisted.web import client
-
-from twisted.names import client as namesclient
-from twisted.names import dns
 
 from coherence.base import Coherence
 
