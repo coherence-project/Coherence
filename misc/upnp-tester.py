@@ -26,7 +26,66 @@ from twisted.internet import stdio
 from twisted.protocols import basic
 from twisted.internet import protocol
 
-from twisted.mail import smtp
+try:
+    from twisted.mail import smtp
+
+    import StringIO
+
+    class SMTPClient(smtp.ESMTPClient):
+
+        """ build an email message and send it to our googlemail account
+        """
+
+        def __init__(self, mail_from, mail_to, mail_subject, mail_file, *args, **kwargs):
+            smtp.ESMTPClient.__init__(self, *args, **kwargs)
+            self.mailFrom = mail_from
+            self.mailTo = mail_to
+            self.mailSubject = mail_subject
+            self.mail_file =  mail_file
+            self.mail_from =  mail_from
+
+        def getMailFrom(self):
+            result = self.mailFrom
+            self.mailFrom = None
+            return result
+
+        def getMailTo(self):
+            return [self.mailTo]
+
+        def getMailData(self):
+            from email.mime.application import MIMEApplication
+            from email.mime.multipart import MIMEMultipart
+
+            msg = MIMEMultipart()
+            msg['Subject'] = self.mailSubject
+            msg['From'] = self.mail_from
+            msg['To'] = self.mailTo
+            fp = open(self.mail_file, 'rb')
+            tar = MIMEApplication(fp.read(),'x-tar')
+            fp.close()
+            tar.add_header('Content-Disposition', 'attachment', filename=os.path.basename(self.mail_file))
+            msg.attach(tar)
+            return StringIO.StringIO(msg.as_string())
+
+        def sentMail(self, code, resp, numOk, addresses, log):
+            print 'Sent', numOk, 'messages'
+
+    class SMTPClientFactory(protocol.ClientFactory):
+        protocol = SMTPClient
+
+        def __init__(self, mail_from, mail_to, mail_subject, mail_file, *args, **kwargs):
+            self.mail_from = mail_from
+            self.mail_to = mail_to
+            self.mail_subject = mail_subject
+            self.mail_file = mail_file
+
+        def buildProtocol(self, addr):
+            return self.protocol(self.mail_from, self.mail_to,
+                                 self.mail_subject, self.mail_file,
+                                 secret=None, identity='localhost')
+
+except ImportError:
+    pass
 
 from twisted.internet import reactor, defer
 from twisted.web import client
@@ -35,62 +94,6 @@ from twisted.names import client as namesclient
 from twisted.names import dns
 
 from coherence.base import Coherence
-
-import StringIO
-
-class SMTPClient(smtp.ESMTPClient):
-
-    """ build an email message and send it to our googlemail account
-    """
-
-    def __init__(self, mail_from, mail_to, mail_subject, mail_file, *args, **kwargs):
-        smtp.ESMTPClient.__init__(self, *args, **kwargs)
-        self.mailFrom = mail_from
-        self.mailTo = mail_to
-        self.mailSubject = mail_subject
-        self.mail_file =  mail_file
-        self.mail_from =  mail_from
-
-    def getMailFrom(self):
-        result = self.mailFrom
-        self.mailFrom = None
-        return result
-
-    def getMailTo(self):
-        return [self.mailTo]
-
-    def getMailData(self):
-        from email.mime.application import MIMEApplication
-        from email.mime.multipart import MIMEMultipart
-
-        msg = MIMEMultipart()
-        msg['Subject'] = self.mailSubject
-        msg['From'] = self.mail_from
-        msg['To'] = self.mailTo
-        fp = open(self.mail_file, 'rb')
-        tar = MIMEApplication(fp.read(),'x-tar')
-        fp.close()
-        tar.add_header('Content-Disposition', 'attachment', filename=os.path.basename(self.mail_file))
-        msg.attach(tar)
-        return StringIO.StringIO(msg.as_string())
-
-    def sentMail(self, code, resp, numOk, addresses, log):
-        print 'Sent', numOk, 'messages'
-
-class SMTPClientFactory(protocol.ClientFactory):
-    protocol = SMTPClient
-
-    def __init__(self, mail_from, mail_to, mail_subject, mail_file, *args, **kwargs):
-        self.mail_from = mail_from
-        self.mail_to = mail_to
-        self.mail_subject = mail_subject
-        self.mail_file = mail_file
-
-    def buildProtocol(self, addr):
-        return self.protocol(self.mail_from, self.mail_to,
-                             self.mail_subject, self.mail_file,
-                             secret=None, identity='localhost')
-
 
 class UI(basic.LineReceiver):
     from os import linesep as delimiter
