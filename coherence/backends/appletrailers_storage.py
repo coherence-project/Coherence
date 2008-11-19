@@ -46,7 +46,7 @@ class Container(BackendItem):
         self.mimetype = 'directory'
         self.update_id = 0
         self.children = []
-        
+
         self.item = DIDLLite.Container(id, parent_id, self.name)
         self.item.childCount = None #self.get_child_count()
 
@@ -66,18 +66,18 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
-    
+
 class AppleTrailersStore(BackendStore):
-    
+
     logCategory = 'apple_trailers'
     implements = ['MediaServer']
-    
+
     def __init__(self, server, *args, **kwargs):
-        
+
         self.next_id = 1000
         self.name = kwargs.get('name','Apple Trailers')
         self.refresh = int(kwargs.get('refresh', 8)) * (60 *60)
-        
+
         self.server = server # the UPnP device that's hosting that backend
         self.update_id = 0
         self.trailers = []
@@ -93,7 +93,7 @@ class AppleTrailersStore(BackendStore):
     def queue_update(self, result):
         reactor.callLater(self.refresh, self.update_data)
         return result
-    
+
     def update_data(self):
         dfr = client.getPage(XML_URL)
         dfr.addCallback(parse_xml)
@@ -130,14 +130,24 @@ class AppleTrailersStore(BackendStore):
         res = DIDLLite.Resource(trailer.location, 'http-get:*:video/quicktime:*')
         trailer.item.res.append(res)
 
+        if self.server.coherence.config.get('transcoding', 'no') == 'yes':
+            dlna_pn = 'DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'
+            dlna_tags = DIDLLite.simple_dlna_tags[:]
+            dlna_tags[1] = 'DLNA.ORG_CI=1'
+            #dlna_tags[2] = 'DLNA.ORG_OP=00'
+            new_res = DIDLLite.Resource(trailer.location+'?transcoded=mp4',
+                'http-get:*:%s:%s' % ('video/mp4', ';'.join(dlna_tags+[dlna_pn])))
+            new_res.size = None
+            trailer.item.res.append(new_res)
+
         self.trailers.append(trailer)
-    
+
     def get_by_id(self, id):
         return self.container
 
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable( \
-                0, 'SourceProtocolInfo', ['http-get:*:video/mov:*',])
+                0, 'SourceProtocolInfo', ['http-get:*:video/quicktime:*','http-get:*:video/mp4:*'])
         self.container = Container(ROOT_ID, -1, self.name)
         self.container.children = self.trailers

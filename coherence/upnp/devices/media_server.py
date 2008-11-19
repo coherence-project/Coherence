@@ -96,13 +96,24 @@ class MSRoot(resource.Resource, log.Loggable):
             self.info("request transcoding to %r for id %s" % (request.args,path))
             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
                 ch = self.store.get_by_id(path)
-                try:
-                    from coherence.transcoder import PCMTranscoder
-                    return PCMTranscoder(ch.get_path())
-                except:
-                    self.debug(traceback.format_exc())
-                    request.setResponseCode(404)
-                    return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                #FIXME create a generic transcoder class and sort the details there
+                format = request.args['transcoded'][0]
+                if format == 'lpcm':
+                    try:
+                        from coherence.transcoder import PCMTranscoder
+                        return PCMTranscoder(ch.get_path())
+                    except:
+                        self.debug(traceback.format_exc())
+                        request.setResponseCode(404)
+                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                if format == 'mp4':
+                    try:
+                        from coherence.transcoder import MP4Transcoder
+                        return MP4Transcoder(ch.get_path())
+                    except:
+                        self.debug(traceback.format_exc())
+                        request.setResponseCode(404)
+                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
             request.setResponseCode(404)
             return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
 
