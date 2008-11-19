@@ -140,6 +140,7 @@ class PCMTranscoder(resource.Resource, log.Loggable):
             #from twisted.internet import reactor
             #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
             #reactor.callLater(0, self.pipeline.get_state)
+            gobject.idle_add(self.cleanup)
             return
 
         d = request.notifyFinish()
@@ -151,3 +152,66 @@ class PCMTranscoder(resource.Resource, log.Loggable):
         if 'audio' in name:
             if not self.__audioconvert_pad.is_linked(): # Only link once
                 pad.link(self.__audioconvert_pad)
+
+    def cleanup(self):
+        self.pipeline.set_state(gst.STATE_NULL)
+
+class MP4Transcoder(resource.Resource, log.Loggable):
+    # Only works if H264 inside Quicktime/MP4 container is input
+    logCategory = 'transcoder'
+    addSlash = True
+
+    def __init__(self,source,destination=None):
+        self.source = source
+        self.destination = destination
+        resource.Resource.__init__(self)
+
+    def getChild(self, name, request):
+        self.info('getChild %s, %s' % (name, request))
+        return self
+
+    def render_GET(self,request):
+        self.info('render GET %r' % (request))
+        request.setResponseCode(200)
+        request.setHeader('Content-Type', 'video/mp4')
+        request.write('')
+
+        headers = request.getAllHeaders()
+        if('connection' in headers and
+           headers['connection'] == 'close'):
+            return
+
+        self.start(request)
+        return server.NOT_DONE_YET
+
+    def render_HEAD(self,request):
+        self.info('render HEAD %r' % (request))
+        request.setResponseCode(200)
+        request.setHeader('Content-Type', 'video/mp4')
+        request.write('')
+
+    def start(self,request=None):
+        print "start", request
+        self.pipeline = gst.parse_launch(
+            "filesrc location=%s ! qtdemux name=d ! queue ! h264parse ! mp4mux name=mux d. ! queue ! mux." % self.source)
+        mux = self.pipeline.get_by_name('mux')
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
+        mux.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+        def requestFinished(result):
+            print "requestFinished", result
+            """ we need to find a way to destroy the pipeline here
+            """
+            #from twisted.internet import reactor
+            #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
+            #reactor.callLater(0, self.pipeline.get_state)
+            gobject.idle_add(self.cleanup)
+            return
+        
+        d = request.notifyFinish()
+        d.addBoth(requestFinished)
+
+    def cleanup(self):
+        self.pipeline.set_state(gst.STATE_NULL)
