@@ -142,7 +142,7 @@ class FSItem(BackendItem):
             if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
                 if self.mimetype in ('application/ogg','audio/ogg'):
                     dlna_pn = 'DLNA.ORG_PN=LPCM'
-                    dlna_tags = simple_dlna_tags
+                    dlna_tags = simple_dlna_tags[:]
                     dlna_tags[1] = 'DLNA.ORG_CI=1'
                     #dlna_tags[2] = 'DLNA.ORG_OP=00'
                     new_res = Resource(self.url+'?transcoded=lpcm',
