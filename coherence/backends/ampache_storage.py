@@ -11,19 +11,14 @@ try:
         m =hashlib.md5()
         m.update(s)
         return m.hexdigest()
-    def sha1(s):
-        m =hashlib.sha1()
+    def sha256(s):
+        m =hashlib.sha256()
         m.update(s)
         return m.hexdigest()
 except ImportError:
     import md5 as oldmd5
     def md5(s):
         m=oldmd5.new()
-        m.update(s)
-        return m.hexdigest()
-    import sha1 as oldsha1
-    def sha1(s):
-        m=oldsha1.new()
         m.update(s)
         return m.hexdigest()
 
@@ -573,7 +568,7 @@ class AmpacheStore(BackendStore):
         if self.api_version <= 350001:
             passphrase = md5('%d%s' % (timestamp, self.key))
         else:
-            passphrase = sha1('%d%s' % (timestamp, self.key))
+            passphrase = sha256('%d%s' % (timestamp, sha256(self.key)))
         request = ''.join((self.url, '?action=handshake&auth=%s&timestamp=%d' % (passphrase, timestamp)))
         if self.user != None:
             request = ''.join((request, '&user=%s' % self.user))
