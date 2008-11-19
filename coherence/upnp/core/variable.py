@@ -146,7 +146,11 @@ class StateVariable(log.Loggable):
             elif self.data_type == 'bin.base64':
                 new_value = value
             else:
-                new_value = int(value)
+                try:
+                    new_value = int(value)
+                except ValueError:
+                    new_value = 'Coherence_Value_Error'
+
 
         if new_value == 'Coherence_Value_Error':
             return
