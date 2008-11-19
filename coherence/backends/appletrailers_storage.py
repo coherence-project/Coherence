@@ -78,9 +78,13 @@ class AppleTrailersStore(BackendStore):
         self.name = kwargs.get('name','Apple Trailers')
         self.refresh = int(kwargs.get('refresh', 8)) * (60 *60)
 
+        self.urlbase = kwargs.get('urlbase','')
+        if self.urlbase[len(self.urlbase)-1] != '/':
+            self.urlbase += '/'
+
         self.server = server # the UPnP device that's hosting that backend
         self.update_id = 0
-        self.trailers = []
+        self.trailers = {}
 
         dfr = self.update_data()
         # first get the first bunch of data before sending init_completed
@@ -135,19 +139,25 @@ class AppleTrailersStore(BackendStore):
             dlna_tags = DIDLLite.simple_dlna_tags[:]
             dlna_tags[1] = 'DLNA.ORG_CI=1'
             #dlna_tags[2] = 'DLNA.ORG_OP=00'
-            new_res = DIDLLite.Resource(trailer.location+'?transcoded=mp4',
+            url = self.urlbase + str(trailer.id)+'?transcoded=mp4'
+            new_res = DIDLLite.Resource(url,
                 'http-get:*:%s:%s' % ('video/mp4', ';'.join(dlna_tags+[dlna_pn])))
             new_res.size = None
             trailer.item.res.append(new_res)
 
-        self.trailers.append(trailer)
+        self.trailers[trailer.id] = trailer
 
     def get_by_id(self, id):
-        return self.container
+        if int(id) == 0:
+            return self.container
+        else:
+            return self.trailers.get(id,None)
 
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable( \
                 0, 'SourceProtocolInfo', ['http-get:*:video/quicktime:*','http-get:*:video/mp4:*'])
         self.container = Container(ROOT_ID, -1, self.name)
-        self.container.children = self.trailers
+        trailers = self.trailers.values()
+        trailers.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
+        self.container.children = trailers
