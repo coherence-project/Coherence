@@ -158,6 +158,7 @@ class PCMTranscoder(resource.Resource, log.Loggable):
 
 class MP4Transcoder(resource.Resource, log.Loggable):
     # Only works if H264 inside Quicktime/MP4 container is input
+    # Source has to be a valid uri
     logCategory = 'transcoder'
     addSlash = True
 
@@ -193,7 +194,7 @@ class MP4Transcoder(resource.Resource, log.Loggable):
     def start(self,request=None):
         print "start", request
         self.pipeline = gst.parse_launch(
-            "filesrc location=%s ! qtdemux name=d ! queue ! h264parse ! mp4mux name=mux d. ! queue ! mux." % self.source)
+            "%s ! qtdemux name=d ! queue ! h264parse ! mp4mux name=mux d. ! queue ! mux." % self.source)
         mux = self.pipeline.get_by_name('mux')
         sink = DataSink(destination=self.destination,request=request)
         self.pipeline.add(sink)
