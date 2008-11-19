@@ -76,6 +76,7 @@ class MediaServerClient(log.Loggable):
         #del self
 
     def service_notified(self, service):
+        self.info('notified about %r' % service)
         if self.detection_completed == True:
             return
         if self.content_directory != None:
@@ -101,6 +102,7 @@ class MediaServerClient(log.Loggable):
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
                                client=self,udn=self.device.udn)
+        self.info('detection_completed for %r' % self)
 
     def state_variable_change( self, variable, usn):
         self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
