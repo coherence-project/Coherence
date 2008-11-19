@@ -57,7 +57,7 @@
         </stateVariable>
         <stateVariable>
             <sendEventsAttribute>no</sendEventsAttribute>
-            <name>RecordMediumWriteStatus </name>
+            <name>RecordMediumWriteStatus</name>
             <dataType>string</dataType>
          </stateVariable>
         <stateVariable>
