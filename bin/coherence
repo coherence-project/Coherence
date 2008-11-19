@@ -307,7 +307,7 @@ if __name__ == '__main__':
         if plugins is None:
             plugins = config.get('plugins',None)
         if plugins == None:
-            config.set('plugin',[])
+            config['plugin'] = []
             plugins = config['plugin']
 
         while len(options['plugins']) > 0:
