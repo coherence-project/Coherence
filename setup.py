@@ -80,7 +80,6 @@ New in this 0.5.8 - Trix and Flix - release
 
         [coherence.plugins.backend.dimmable_light]
         BetterLight = coherence.backends.light:BetterLight
-
     """,
 
     package_data = {
@@ -91,6 +90,6 @@ New in this 0.5.8 - Trix and Flix - release
                  'device icons/*.png'],
     },
     install_requires=[
-    'ConfigObj >= 4.3',
+    'ConfigObj >= 4.3'
     ],
 )
