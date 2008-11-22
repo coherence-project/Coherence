@@ -11,7 +11,14 @@ import gst
 import gobject
 gobject.threads_init ()
 
-class DataSink(gst.Element):
+from twisted.web import resource, server
+
+from coherence import log
+
+
+class DataSink(gst.Element, log.Loggable):
+
+    logCategory = 'transcoder_datasink'
 
     _sinkpadtemplate = gst.PadTemplate ("sinkpadtemplate",
                                         gst.PAD_SINK,
@@ -52,7 +59,6 @@ class DataSink(gst.Element):
         return gst.FLOW_OK
 
     def eventfunc(self, pad, event):
-        #print "eventfunc", event
         if event.type == gst.EVENT_NEWSEGMENT:
             if self.got_new_segment == False:
                 self.got_new_segment = True
@@ -65,18 +71,12 @@ class DataSink(gst.Element):
                 if len(self.buffer) > 0:
                     self.request.write(self.buffer)
                 self.request.finish()
-
-            print "finished", self.data_size
         return True
+
 
 gobject.type_register(DataSink)
 
-from twisted.web import resource, server
-
-from coherence import log
-
-
-class PCMTranscoder(resource.Resource, log.Loggable):
+class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
     addSlash = True
 
@@ -92,7 +92,8 @@ class PCMTranscoder(resource.Resource, log.Loggable):
     def render_GET(self,request):
         self.info('render GET %r' % (request))
         request.setResponseCode(200)
-        request.setHeader('Content-Type', 'audio/L16;rate=44100;channels=2')
+        if hasattr(self,'contentType'):
+            request.setHeader('Content-Type', self.contentType)
         request.write('')
 
         headers = request.getAllHeaders()
@@ -106,11 +107,18 @@ class PCMTranscoder(resource.Resource, log.Loggable):
     def render_HEAD(self,request):
         self.info('render HEAD %r' % (request))
         request.setResponseCode(200)
-        request.setHeader('Content-Type', 'audio/L16;rate=44100;channels=2')
+        request.setHeader('Content-Type', self.contentType)
         request.write('')
 
+    def cleanup(self):
+        self.pipeline.set_state(gst.STATE_NULL)
+
+
+class PCMTranscoder(BaseTranscoder):
+    contentType = 'audio/L16;rate=44100;channels=2'
+
     def start(self,request=None):
-        print "start", request
+        self.info("start %r" % request)
         src = gst.element_factory_make('filesrc')
         src.set_property('location', self.source)
         sink = DataSink(destination=self.destination,request=request)
@@ -134,7 +142,7 @@ class PCMTranscoder(resource.Resource, log.Loggable):
         self.pipeline.set_state(gst.STATE_PLAYING)
 
         def requestFinished(result):
-            print "requestFinished", result
+            self.info("requestFinished %r" % result)
             """ we need to find a way to destroy the pipeline here
             """
             #from twisted.internet import reactor
@@ -153,46 +161,15 @@ class PCMTranscoder(resource.Resource, log.Loggable):
             if not self.__audioconvert_pad.is_linked(): # Only link once
                 pad.link(self.__audioconvert_pad)
 
-    def cleanup(self):
-        self.pipeline.set_state(gst.STATE_NULL)
 
-class MP4Transcoder(resource.Resource, log.Loggable):
-    # Only works if H264 inside Quicktime/MP4 container is input
-    # Source has to be a valid uri
-    logCategory = 'transcoder'
-    addSlash = True
-
-    def __init__(self,source,destination=None):
-        self.source = source
-        self.destination = destination
-        resource.Resource.__init__(self)
-
-    def getChild(self, name, request):
-        self.info('getChild %s, %s' % (name, request))
-        return self
-
-    def render_GET(self,request):
-        self.info('render GET %r' % (request))
-        request.setResponseCode(200)
-        request.setHeader('Content-Type', 'video/mp4')
-        request.write('')
-
-        headers = request.getAllHeaders()
-        if('connection' in headers and
-           headers['connection'] == 'close'):
-            return
-
-        self.start(request)
-        return server.NOT_DONE_YET
-
-    def render_HEAD(self,request):
-        self.info('render HEAD %r' % (request))
-        request.setResponseCode(200)
-        request.setHeader('Content-Type', 'video/mp4')
-        request.write('')
+class MP4Transcoder(BaseTranscoder):
+    """ Only works if H264 inside Quicktime/MP4 container is input
+        Source has to be a valid uri
+    """
+    contentType = 'video/mp4'
 
     def start(self,request=None):
-        print "start", request
+        self.info("start %r", request)
         self.pipeline = gst.parse_launch(
             "%s ! qtdemux name=d ! queue ! h264parse ! mp4mux name=mux d. ! queue ! mux." % self.source)
         mux = self.pipeline.get_by_name('mux')
@@ -202,7 +179,7 @@ class MP4Transcoder(resource.Resource, log.Loggable):
         self.pipeline.set_state(gst.STATE_PLAYING)
 
         def requestFinished(result):
-            print "requestFinished", result
+            self.info("requestFinished %r" % result)
             """ we need to find a way to destroy the pipeline here
             """
             #from twisted.internet import reactor
@@ -210,9 +187,48 @@ class MP4Transcoder(resource.Resource, log.Loggable):
             #reactor.callLater(0, self.pipeline.get_state)
             gobject.idle_add(self.cleanup)
             return
-        
+
         d = request.notifyFinish()
         d.addBoth(requestFinished)
 
-    def cleanup(self):
-        self.pipeline.set_state(gst.STATE_NULL)
+
+class JPEGThumbTranscoder(BaseTranscoder):
+    """ should create a valid thumbnail according to the DLNA spec
+        neither width nor height must exceed 160px
+    """
+    contentType = 'image/jpeg'
+
+    def start(self,request=None):
+        self.info("start %r", request)
+        """ what we actually want here is a pipeline that calls
+            us when it knows about the size of the original image,
+            and allows us now to adjust the caps-filter with the
+            calculated values for width and height
+
+            if original_width > 160:
+                new_width = 160
+                new_heigth = int(float(original_height) * (160.0/float(original_width)))
+                if new_height > 160:
+                    new_height = 160
+                    new_width = int(float(new_width) * (160.0/float(new_height)))
+            elif original_height > 160:
+                new_height = 160
+                new_width = int(float(original_width) * (160.0/float(original_height)))
+        """
+        self.pipeline = gst.parse_launch(
+            "%s ! jpegdec ! videoscale ! video/x-raw-yuv,width=160,height=160 ! jpegenc name=enc" % self.source)
+        enc = self.pipeline.get_by_name('enc')
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
+        enc.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+        def requestFinished(result):
+            self.info("requestFinished %r" % result)
+            """ we need to find a way to destroy the pipeline here
+            """
+            gobject.idle_add(self.cleanup)
+            return
+
+        d = request.notifyFinish()
+        d.addBoth(requestFinished)

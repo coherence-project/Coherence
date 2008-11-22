@@ -86,7 +86,25 @@ class MSRoot(resource.Resource, log.Loggable):
                 self.info("request attachment %r for id %s" % (request.args,path))
                 ch = self.store.get_by_id(path)
                 try:
-                    return ch.item.attachments[request.args['attachment'][0]]
+                    #FIXME same as below
+                    if 'transcoded' in request.args:
+                        if self.server.coherence.config.get('transcoding', 'no') == 'yes':
+                            format = request.args['transcoded'][0]
+                            type = request.args['type'][0]
+                            self.info("request transcoding %r %r" % (format, type))
+                            if format == 'thumb' and type == 'jpeg':
+                                try:
+                                    from coherence.transcoder import JPEGThumbTranscoder
+                                    return JPEGThumbTranscoder(ch.item.attachments[request.args['attachment'][0]])
+                                except:
+                                    self.debug(traceback.format_exc())
+                            request.setResponseCode(404)
+                            return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                        else:
+                            request.setResponseCode(404)
+                            return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
+                    else:
+                        return ch.item.attachments[request.args['attachment'][0]]
                 except:
                     request.setResponseCode(404)
                     return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
@@ -114,6 +132,16 @@ class MSRoot(resource.Resource, log.Loggable):
                         self.debug(traceback.format_exc())
                         request.setResponseCode(404)
                         return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                if format == 'thumb':
+                    type = request.args['type'][0]
+                    if type == 'jpeg':
+                        try:
+                            from coherence.transcoder import JPEGThumbTranscoder
+                            return JPEGThumbTranscoder(ch.get_path())
+                        except:
+                            self.debug(traceback.format_exc())
+                            request.setResponseCode(404)
+                            return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
             request.setResponseCode(404)
             return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
 

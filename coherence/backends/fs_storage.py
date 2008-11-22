@@ -184,7 +184,7 @@ class FSItem(BackendItem):
                         else:
                             dlna_pn = 'DLNA.ORG_PN=PNG_TN'
 
-                        dlna_tags = simple_dlna_tags
+                        dlna_tags = simple_dlna_tags[:]
                         dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
 
                         hash_from_path = str(id(thumbnail))

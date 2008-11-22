@@ -132,6 +132,8 @@ class Resource:
         self.size = None
         self.duration = None
 
+        self.resolution = None
+
         self.importUri = None
 
         if self.protocolInfo is not None:
@@ -188,8 +190,12 @@ class Resource:
         if self.duration is not None:
             root.attrib['duration'] = self.duration
 
+        if self.resolution is not None:
+            root.attrib['resolution'] = self.resolution
+
         if self.importUri is not None:
             root.attrib['importUri'] = self.importUri
+
 
         return root
 
@@ -199,6 +205,7 @@ class Resource:
         self.bitrate = elt.attrib.get('bitrate')
         self.size = elt.attrib.get('size')
         self.duration = elt.attrib.get('duration',None)
+        self.resolution = elt.attrib.get('resolution',None)
         self.importUri = elt.attrib.get('importUri',None)
 
     def toString(self,**kwargs):

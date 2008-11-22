@@ -138,12 +138,25 @@ class AppleTrailersStore(BackendStore):
             dlna_pn = 'DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'
             dlna_tags = DIDLLite.simple_dlna_tags[:]
             dlna_tags[1] = 'DLNA.ORG_CI=1'
-            #dlna_tags[2] = 'DLNA.ORG_OP=00'
             url = self.urlbase + str(trailer.id)+'?transcoded=mp4'
             new_res = DIDLLite.Resource(url,
                 'http-get:*:%s:%s' % ('video/mp4', ';'.join(dlna_tags+[dlna_pn])))
             new_res.size = None
             trailer.item.res.append(new_res)
+
+            dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
+            dlna_tags = DIDLLite.simple_dlna_tags[:]
+            dlna_tags[1] = 'DLNA.ORG_CI=1'
+            dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
+            url = self.urlbase + str(trailer.id)+'?attachment=poster&transcoded=thumb&type=jpeg'
+            new_res = DIDLLite.Resource(url,
+                'http-get:*:%s:%s' % ('image/jpeg', 'DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_CI=0'))
+            new_res.size = None
+            new_res.resolution = "160x160"
+            trailer.item.res.append(new_res)
+            if not hasattr(trailer.item, 'attachments'):
+                trailer.item.attachments = {}
+            trailer.item.attachments['poster'] = data['cover']
 
         self.trailers[trailer.id] = trailer
 
