@@ -134,7 +134,7 @@ class FSItem(BackendItem):
                 for transcoding to wav this looks like that
 
                 res = Resource(url_for_transcoded audio,
-                        'http-get:*:audio/x-wav:%s'% ';'.join(simple_dlna_tags+('DLNA.ORG_PN=JPEG_TN',)))
+                        'http-get:*:audio/x-wav:%s'% ';'.join(['DLNA.ORG_PN=JPEG_TN']+simple_dlna_tags))
                 res.size = None
                 self.item.res.append(res)
             """
@@ -146,7 +146,7 @@ class FSItem(BackendItem):
                     dlna_tags[1] = 'DLNA.ORG_CI=1'
                     #dlna_tags[2] = 'DLNA.ORG_OP=00'
                     new_res = Resource(self.url+'?transcoded=lpcm',
-                        'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join(dlna_tags+[dlna_pn])))
+                        'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
                     new_res.size = None
                     self.item.res.append(new_res)
 
@@ -159,7 +159,7 @@ class FSItem(BackendItem):
                 for an JPG this looks like that
 
                 res = Resource(url_for_thumbnail,
-                        'http-get:*:image/jpg:%s'% ';'.join(simple_dlna_tags+['DLNA.ORG_PN=JPEG_TN']))
+                        'http-get:*:image/jpg:%s'% ';'.join(['DLNA.ORG_PN=JPEG_TN']+simple_dlna_tags))
                 res.size = size_of_thumbnail
                 self.item.res.append(res)
 
@@ -189,7 +189,7 @@ class FSItem(BackendItem):
 
                         hash_from_path = str(id(thumbnail))
                         new_res = Resource(self.url+'?attachment='+hash_from_path,
-                            'http-get:*:%s:%s' % (mimetype, ';'.join(dlna_tags+[dlna_pn])))
+                            'http-get:*:%s:%s' % (mimetype, ';'.join([dlna_pn]+dlna_tags)))
                         new_res.size = os.path.getsize(thumbnail)
                         self.item.res.append(new_res)
                         if not hasattr(self.item, 'attachments'):

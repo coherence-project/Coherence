@@ -205,14 +205,13 @@ class JPEGThumbTranscoder(BaseTranscoder):
             and allows us now to adjust the caps-filter with the
             calculated values for width and height
 
+            new_width = 160
+            new_height = 160
             if original_width > 160:
-                new_width = 160
                 new_heigth = int(float(original_height) * (160.0/float(original_width)))
                 if new_height > 160:
-                    new_height = 160
                     new_width = int(float(new_width) * (160.0/float(new_height)))
             elif original_height > 160:
-                new_height = 160
                 new_width = int(float(original_width) * (160.0/float(original_height)))
         """
         self.pipeline = gst.parse_launch(

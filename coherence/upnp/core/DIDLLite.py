@@ -140,28 +140,28 @@ class Resource:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if additional_info == '*':
                 if content_format == 'audio/mpeg':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MP3'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=MP3']+simple_dlna_tags)
                 if content_format == 'audio/x-wav':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=LPCM'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=LPCM']+simple_dlna_tags)
                 if content_format == 'image/jpeg':
-                    dlna_tags = simple_dlna_tags
+                    dlna_tags = simple_dlna_tags[:]
                     dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
-                    additional_info = ';'.join(dlna_tags+['DLNA.ORG_PN=JPEG_LRG'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=JPEG_LRG']+dlna_tags)
                 if content_format == 'image/png':
-                    dlna_tags = simple_dlna_tags
+                    dlna_tags = simple_dlna_tags[:]
                     dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=PNG_LRG'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=PNG_LRG']+simple_dlna_tags)
                 if content_format == 'video/mpeg':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MPEG_PS_PAL'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=MPEG_PS_PAL']+simple_dlna_tags)
                 if content_format == 'video/mpegts':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MPEG_TS_PAL'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=MPEG_TS_PAL']+simple_dlna_tags)
                     content_format = 'video/mpeg'
                 if content_format == 'video/mp4':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC']+simple_dlna_tags)
                 if content_format == 'video/x-msvideo':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC']+simple_dlna_tags)
                 if content_format == 'video/x-ms-wmv':
-                    additional_info = ';'.join(simple_dlna_tags+['DLNA.ORG_PN=WMV_BASE'])
+                    additional_info = ';'.join(['DLNA.ORG_PN=WMV_BASE']+simple_dlna_tags)
                 self.protocolInfo = ':'.join((protocol,network,content_format,additional_info))
 
     def toElement(self,**kwargs):
