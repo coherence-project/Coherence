@@ -421,6 +421,12 @@ class Item(Object):
         for child in elt.getchildren():
             if child.tag.endswith('refID'):
                 self.refID = child.text
+            elif child.tag.endswith('description'):
+                self.description = child.text
+            elif child.tag.endswith('longDescription'):
+                self.longDescription = child.text
+            elif child.tag.endswith('director'):
+                self.director = child.text
             elif child.tag.endswith('res'):
                 res = Resource.fromString(ET.tostring(child))
                 self.res.append(res)
