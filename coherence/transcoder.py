@@ -5,6 +5,13 @@
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
+""" transcoder classes to be used in combination with
+    a Coherence MediaServer
+
+    using GStreamer pipelines for the actually work
+    and feeding the output into a http response
+"""
+
 import pygst
 pygst.require('0.10')
 import gst

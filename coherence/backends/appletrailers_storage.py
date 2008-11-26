@@ -131,7 +131,39 @@ class AppleTrailersStore(BackendStore):
         data['location'] = item.find('./preview/large').text
 
         trailer = Trailer(ROOT_ID, **data)
+        duration = None
+        try:
+            hours = 0
+            minutes = 0
+            seconds = 0
+            duration = item.find('./info/runtime').text
+            try:
+                hours,minutes,seconds = duration.split(':')
+            except ValueError:
+                try:
+                    minutes,seconds = duration.split(':')
+                except ValueError:
+                    seconds = duration
+            duration = "%d:%02d:%02d" % (int(hours), int(minutes), int(seconds))
+        except:
+            pass
+
+        try:
+            trailer.item.director = item.find('./info/director').text
+        except:
+            pass
+
+        try:
+            trailer.item.description = item.find('./info/description').text
+        except:
+            pass
+
         res = DIDLLite.Resource(trailer.location, 'http-get:*:video/quicktime:*')
+        res.duration = duration
+        try:
+            res.size = item.find('./preview/large').get('filesize',None)
+        except:
+            pass
         trailer.item.res.append(res)
 
         if self.server.coherence.config.get('transcoding', 'no') == 'yes':
@@ -142,6 +174,7 @@ class AppleTrailersStore(BackendStore):
             new_res = DIDLLite.Resource(url,
                 'http-get:*:%s:%s' % ('video/mp4', ';'.join([dlna_pn]+dlna_tags)))
             new_res.size = None
+            res.duration = duration
             trailer.item.res.append(new_res)
 
             dlna_pn = 'DLNA.ORG_PN=JPEG_TN'

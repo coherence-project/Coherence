@@ -387,6 +387,10 @@ class Item(Object):
     elementName = 'item'
     refID = None
 
+    description = None
+    longDescription = None
+    director = None
+
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
         self.res = Resources()
@@ -394,6 +398,15 @@ class Item(Object):
     def toElement(self,**kwargs):
 
         root = Object.toElement(self,**kwargs)
+
+        if self.description is not None:
+            ET.SubElement(root, 'dc:description').text = self.description
+
+        if self.longDescription is not None:
+            ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
+
+        if self.director is not None:
+            ET.SubElement(root, 'upnp:director').text = self.director
 
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
@@ -415,8 +428,6 @@ class Item(Object):
 class ImageItem(Item):
     upnp_class = Item.upnp_class + '.imageItem'
 
-    description = None
-    longDescription = None
     rating = None
     storageMedium = None
     publisher = None
@@ -424,11 +435,6 @@ class ImageItem(Item):
 
     def toElement(self,**kwargs):
         root = Item.toElement(self,**kwargs)
-        if self.description is not None:
-            ET.SubElement(root, 'dc:description').text = self.description
-
-        if self.longDescription is not None:
-            ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
 
         if self.rating is not None:
             ET.SubElement(root, 'upnp:rating').text = str(self.rating)
@@ -460,8 +466,6 @@ class AudioItem(Item):
     upnp_class = Item.upnp_class + '.audioItem'
 
     genre = None
-    description = None
-    longDescription = None
     publisher = None
     language = None
     relation = None
@@ -477,13 +481,6 @@ class AudioItem(Item):
 
         if self.genre is not None:
             ET.SubElement(root, 'upnp:genre').text = self.genre
-
-        if self.description is not None:
-            ET.SubElement(root, 'dc:description').text = self.description
-
-        if self.longDescription is not None:
-            ET.SubElement(root, 'upnp:longDescription').text = \
-                             self.longDescription
 
         if self.publisher is not None:
             ET.SubElement(root, 'dc:publisher').text = self.publisher
