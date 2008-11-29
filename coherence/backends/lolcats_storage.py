@@ -10,7 +10,6 @@ This is a Media Backend that allows you to access the cool and cute pictures
 from lolcats.com. This is mainly meant as a Sample Media Backend to learn how to
 write a Media Backend.
 
-
 So. You are still reading which allows me to assume that you want to learn how
 to write a Media Backend for Coherence. NICE :) .
 
@@ -44,7 +43,7 @@ from coherence.backend import BackendItem
 # import
 from coherence.upnp.core import DIDLLite
 
-# Coherence relies on the TwistedBackend. I hope you are fimilar with the
+# Coherence relies on the TwistedBackend. I hope you are familar with the
 # concept of deferreds. If not please read:
 #       http://twistedmatrix.com/projects/core/documentation/howto/async.html
 #
@@ -88,9 +87,17 @@ class LolcatsImage(BackendItem):
 
 
         # Item.item is a special thing. This is used to explain the client what
-        # kind of data this is. For e.g. A VideoItem or a MusicTrack. In hour
+        # kind of data this is. For e.g. A VideoItem or a MusicTrack. In our
         # case, we have an image.
         self.item = DIDLLite.ImageItem(id, parent_id, self.name)
+
+        # each Item.item has to have one or more Resource objects
+        # these hold detailed information about the media data
+        # and can represent variants of it (different sizes, transcoded formats)
+        res = DIDLLite.Resource(self.location, 'http-get:*:image/jpeg:*')
+        res.size = None #FIXME: we should have a size here
+                        #       and a resolution entry would be nice too
+        self.item.res.append(res)
 
 
 class LolcatsContainer(BackendItem):
@@ -172,7 +179,7 @@ class LolcatsStore(BackendStore):
         # and allow some values to be set:
 
         # the name of the MediaServer as it appears in the network
-        self.name = kwargs.get('name', 'Lolcats') 
+        self.name = kwargs.get('name', 'Lolcats')
 
         # timeout between updates in hours:
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
@@ -215,8 +222,15 @@ class LolcatsStore(BackendStore):
         # after the signal was triggered, this method is called by coherence and
         # that allows us to specify our server options in more detail.
         if self.server:
+            # here we define what kind of media content we do provide
+            # mostly needed to make some naughty DLNA devices behave
+            # will probably move into Coherence internals one day
             self.server.connection_manager_server.set_variable( \
-                0, 'SourceProtocolInfo', ['http-get:*:image/jpeg:*'])
+                0, 'SourceProtocolInfo', ['http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                          'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                          'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                          'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                          'http-get:*:image/jpeg:*'])
 
     def update_data(self):
         # trigger an update of the data
@@ -245,7 +259,7 @@ class LolcatsStore(BackendStore):
         # from there, we look for the newest update and compare it with the one
         # we have saved. If they are the same, we don't need to go on:
         pub_date = root.find('./channel/pubDate').text
-        
+
         if pub_date == self.last_updated:
             return
 
@@ -277,10 +291,10 @@ class LolcatsStore(BackendStore):
             image = LolcatsImage(self.ROOT_ID, self.next_id, title, url)
             self.container.children.append(image)
             self.images[self.next_id] = image
-    
+
             # increase the next_id entry every time
             self.next_id += 1
-       
+
         # and increase the container update id so that the clients can refresh
         # with the new data
         self.container.update_id += 1
@@ -296,4 +310,3 @@ class LolcatsStore(BackendStore):
         # appear in the Network.
         louie.send('Coherence.UPnP.Backend.init_completed',
                 None, backend=self)
-
