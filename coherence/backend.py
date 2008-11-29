@@ -40,10 +40,21 @@ class Backend(log.Loggable,Plugin):
         self.server = server # the UPnP device that's hosting that backend
 
         """ do whatever is necessary with the stuff we can
-            extract from the config dict
-            and send out the signal when ready
+            extract from the config dict,
+            connect maybe to an external data-source and
+            start up the backend
+            after that's done, tell Coherence about it
         """
-        #louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        self.init_completed()
+
+    def init_completed(self, *args, **kwargs):
+        """ inform Coherence that this backend is ready for
+            announcement
+            this method just accepts any form of arguments
+            as we don't under which circumstances it is called
+        """
+        louie.send('Coherence.UPnP.Backend.init_completed',
+                None, backend=self)
 
     def upnp_init(self):
         """ this method gets called after the device is fired,

@@ -43,21 +43,18 @@ from coherence.backend import BackendItem
 # import
 from coherence.upnp.core import DIDLLite
 
-# Coherence relies on the TwistedBackend. I hope you are familar with the
+# Coherence relies on the Twisted backend. I hope you are familar with the
 # concept of deferreds. If not please read:
 #       http://twistedmatrix.com/projects/core/documentation/howto/async.html
 #
 # It is a basic concept that you need to understand to understand the following
-# code. But why am I talking about it? Oh, right, because we use the http-client
-# of the twisted.web module to do our requests
-from twisted.web import client
+# code. But why am I talking about it? Oh, right, because we use a http-client
+# based on the twisted.web.client module to do our requests.
+from coherence.upnp.core.utils import getPage
 
 # And we also import the reactor, that allows us to specify an action to happen
 # later
 from twisted.internet import reactor
-
-# Beside that, we also need louie (will be explained later):
-import coherence.extern.louie as louie
 
 # And to parse the RSS-Data (which is XML), we use the coherence helper
 from coherence.extern.et import parse_xml
@@ -204,12 +201,12 @@ class LolcatsStore(BackendStore):
         # and trigger an update of the data
         dfr = self.update_data()
 
-        # So. Even though the initialize is kind of done, Coherence does not yet
-        # show up our Media Server. It is using a signaling system, where we
-        # callback to it. For that it uses 'louie'. We don't want to show up the
-        # MediaServer as long as we don't have fetched the first data, so we
-        # delay this signaling after the update is done:
-        dfr.addCallback(self._send_init)
+        # So, even though the initialize is kind of done, Coherence does not yet
+        # announce our Media Server.
+        # Coherence does wait for signal send by us that we are ready now.
+        # And we don't want that to happen as long as we don't have succeeded
+        # in fetching some first data, so we delay this signaling after the update is done:
+        dfr.addCallback(self.init_completed)
 
     def get_by_id(self, id):
         print "asked for", id, type(id)
@@ -236,7 +233,7 @@ class LolcatsStore(BackendStore):
         # trigger an update of the data
 
         # fetch the rss
-        dfr = client.getPage(self.rss_url)
+        dfr = getPage(self.rss_url)
 
         # push it through our xml parser
         dfr.addCallback(parse_xml)
@@ -295,18 +292,18 @@ class LolcatsStore(BackendStore):
             # increase the next_id entry every time
             self.next_id += 1
 
-        # and increase the container update id so that the clients can refresh
-        # with the new data
+        # and increase the container update id and the system update id
+        # so that the clients can refresh with the new data
         self.container.update_id += 1
+        self.update_id += 1
+        # we need to inform Coherence about these changes
+        # again this is something that will probably move
+        # into Coherence internals one day
+        if self.server:
+            self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
+            value = (self.ROOT_ID,self.container.update_id)
+            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
     def queue_update(self, error_or_failure):
         # We use the reactor to queue another updating of our data
         reactor.callLater(self.refresh, self.update_data)
-
-    def _send_init(self, old_result=None):
-        # after we are done fetching and parsing the data the first time, we
-        # inform Coherence about the fact that our initialization is completed.
-        # As long as we don't do that, Coherence won't make our Media Server
-        # appear in the Network.
-        louie.send('Coherence.UPnP.Backend.init_completed',
-                None, backend=self)
