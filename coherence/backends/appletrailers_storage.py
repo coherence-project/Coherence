@@ -51,6 +51,10 @@ class Container(BackendItem):
         self.item.childCount = None #self.get_child_count()
 
     def get_children(self, start=0, end=0):
+        if(end - start > 25 or
+           start - end == start or
+           end - start == 0):
+            end = start+25
         if end != 0:
             return self.children[start:end]
         return self.children[start:]

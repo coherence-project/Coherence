@@ -12,9 +12,13 @@
 import os.path
 import urllib
 
+import traceback
+
+
 import pygtk
 pygtk.require("2.0")
 import gtk
+import gobject
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
@@ -38,6 +42,7 @@ UDN_COLUMN = 4
 SERVICE_COLUMN = 5
 ICON_COLUMN = 6
 DIDL_COLUMN = 7
+TOOLTIP_ICON_COLUMN = 8
 
 from pkg_resources import resource_filename
 
@@ -395,6 +400,7 @@ class TreeWidget(object):
                                    str,  # 5: service path, '' for a non container item
                                    gtk.gdk.Pixbuf,
                                    str,  # 7: DIDLLite fragment, '' for a non upnp item
+                                   gtk.gdk.Pixbuf
                                 )
 
         self.treeview = gtk.TreeView(self.store)
@@ -420,18 +426,51 @@ class TreeWidget(object):
         self.treeview.set_property("has-tooltip", True)
         self.treeview.connect("query-tooltip", self.show_tooltip)
 
+        self.tooltip_path = None
+
+        self.we_are_scrolling = None
+
+        def end_scrolling():
+            self.we_are_scrolling = None
+
+        def start_scrolling(w,e):
+            if self.we_are_scrolling != None:
+                gobject.source_remove(self.we_are_scrolling)
+            self.we_are_scrolling = gobject.timeout_add(800, end_scrolling)
+
+        self.treeview.connect('scroll-event', start_scrolling)
+
         self.window.add(self.treeview)
 
     def show_tooltip(self, widget, x, y, keyboard_mode, tooltip):
+        if self.we_are_scrolling != None:
+            return False
+        ret = False
         try:
             path = self.treeview.get_dest_row_at_pos(x, y)
             iter = self.store.get_iter(path[0])
             title,object_id,upnp_class,item = self.store.get(iter,NAME_COLUMN,ID_COLUMN,UPNP_CLASS_COLUMN,DIDL_COLUMN)
             from coherence.upnp.core import DIDLLite
             if upnp_class == 'object.item.videoItem':
-                #print didl
+                self.tooltip_path = object_id
                 item = DIDLLite.DIDLElement.fromString(item).getItems()[0]
-                tooltip.set_icon(self.video_icon)
+                tooltip_icon, = self.store.get(iter,TOOLTIP_ICON_COLUMN)
+                if tooltip_icon != None:
+                    tooltip.set_icon(tooltip_icon)
+                else:
+                    tooltip.set_icon(self.video_icon)
+                    for res in item.res:
+                        protocol,network,content_format,additional_info = res.protocolInfo.split(':')
+                        if(content_format == 'image/jpeg' and
+                           'DLNA.ORG_PN=JPEG_TN' in additional_info.split(';')):
+                            icon_loader = gtk.gdk.PixbufLoader()
+                            icon_loader.write(urllib.urlopen(str(res.data)).read())
+                            icon_loader.close()
+                            icon = icon_loader.get_pixbuf()
+                            tooltip.set_icon(icon)
+                            self.store.set_value(iter, TOOLTIP_ICON_COLUMN, icon)
+                            #print "got poster", icon
+                            break
                 title = title.replace('&','&amp;')
                 try:
                     director = item.director.replace('&','&amp;')
@@ -446,20 +485,16 @@ class TreeWidget(object):
                                    "<b>Description:</b> %s" % (title,
                                                                 director,
                                                                 description))
-                for res in item.res:
-                    protocol,network,content_format,additional_info = res.protocolInfo.split(':')
-                    if(content_format == 'image/jpeg' and
-                       'DLNA.ORG_PN=JPEG_TN' in additional_info.split(';')):
-                        icon_loader = gtk.gdk.PixbufLoader()
-                        icon_loader.write(urllib.urlopen(str(res.data)).read())
-                        icon_loader.close()
-                        icon = icon_loader.get_pixbuf()
-                        tooltip.set_icon(icon)
-                        break
-                return True
+                ret = True
+
         except TypeError:
-            return False
-        return False
+            #print traceback.format_exc()
+            pass
+        except Exception:
+            #print traceback.format_exc()
+            #print "something wrong"
+            pass
+        return ret
 
     def button_action(self, widget, event):
         #print "button_action", widget, event, event.button
@@ -549,8 +584,9 @@ class TreeWidget(object):
         self.store.set_value(item, UDN_COLUMN, str(device['udn']))
         self.store.set_value(item, ICON_COLUMN, self.device_icon)
         self.store.set_value(item, DIDL_COLUMN, '')
+        self.store.set_value(item, TOOLTIP_ICON_COLUMN, None)
 
-        self.store.append(item, ('...loading...','','placeholder',-1,'','',None,''))
+        self.store.append(item, ('...loading...','','placeholder',-1,'','',None,'',None))
 
         self.devices[str(device['udn'])] =  {'ContentDirectory':{}}
         for service in device['services']:
@@ -685,7 +721,7 @@ class TreeWidget(object):
 
                 stored_didl = DIDLLite.DIDLElement()
                 stored_didl.addItem(item)
-                new_iter = self.store.append(iter, (title,item.id,item.upnp_class,child_count,'',service,icon,stored_didl.toString()))
+                new_iter = self.store.append(iter, (title,item.id,item.upnp_class,child_count,'',service,icon,stored_didl.toString(),None))
                 if item.upnp_class.startswith('object.container'):
                     self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None,''))
 

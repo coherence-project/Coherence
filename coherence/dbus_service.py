@@ -115,28 +115,12 @@ class DBusService(dbus.service.Object,log.Loggable):
                 kwargs = {}
                 try:
                     for k,v in arguments.items():
-                        kwargs[str(k)] = str(v)
+                        kwargs[str(k)] = unicode(v)
                 except:
                     pass
                 d = func(**kwargs)
                 d.addCallback(reply)
                 d.addErrback(dbus_async_err_cb)
-        return ''
-
-    @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
-                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
-    def browse(self,arguments,dbus_async_cb,dbus_async_err_cb):
-
-        def reply(data):
-            dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
-
-        if self.service.client is not None:
-            kwargs = {}
-            for k,v in arguments.items():
-                kwargs[str(k)] = str(v)
-            d = self.service.client.browse(**kwargs)
-            d.addCallback(reply)
-            d.addErrback(dbus_async_err_cb)
         return ''
 
     @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
