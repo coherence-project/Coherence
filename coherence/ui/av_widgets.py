@@ -723,7 +723,7 @@ class TreeWidget(object):
                 stored_didl.addItem(item)
                 new_iter = self.store.append(iter, (title,item.id,item.upnp_class,child_count,'',service,icon,stored_didl.toString(),None))
                 if item.upnp_class.startswith('object.container'):
-                    self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None,''))
+                    self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None,'',None))
 
 
             if((int(r['TotalMatches']) > 0 and force==False) or
