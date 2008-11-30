@@ -403,7 +403,7 @@ class Coherence(log.Loggable):
                 return ""
 
         try:
-            del self.active_backends[plugin.uuid]
+            del self.active_backends[str(plugin.uuid)]
             self.info("removing plugin %r", plugin)
             plugin.unregister()
             return plugin.uuid
