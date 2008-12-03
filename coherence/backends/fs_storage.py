@@ -17,6 +17,7 @@ from sets import Set
 
 import mimetypes
 mimetypes.init()
+mimetypes.add_type('audio/x-m4a', '.m4a')
 mimetypes.add_type('video/mp4', '.mp4')
 mimetypes.add_type('video/mpegts', '.ts')
 mimetypes.add_type('video/divx', '.divx')
@@ -140,7 +141,10 @@ class FSItem(BackendItem):
             """
 
             if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
-                if self.mimetype in ('application/ogg','audio/ogg'):
+                if self.mimetype in ('audio/mpeg',
+                                     'application/ogg','audio/ogg',
+                                     'audio/x-m4a',
+                                     'application/x-flac'):
                     dlna_pn = 'DLNA.ORG_PN=LPCM'
                     dlna_tags = simple_dlna_tags[:]
                     dlna_tags[1] = 'DLNA.ORG_CI=1'

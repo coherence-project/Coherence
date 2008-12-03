@@ -114,6 +114,10 @@ def classChooser(mimetype, sub=None):
             if sub == 'music':       # FIXME: this is stupid
                 return MusicTrack
             return AudioItem
+        if mimetype == 'application/x-flac':
+            if sub == 'music':       # FIXME: this is stupid
+                return MusicTrack
+            return AudioItem
     return None
 
 simple_dlna_tags = ['DLNA.ORG.PS=1',       # play speed parameter
@@ -626,38 +630,68 @@ class Container(Object):
 class Person(Container):
     upnp_class = Container.upnp_class + '.person'
 
+
 class MusicArtist(Person):
     upnp_class = Person.upnp_class + '.musicArtist'
+
 
 class PlaylistContainer(Container):
     upnp_class = Container.upnp_class + '.playlistContainer'
 
+    def __init__(self, id=None, parentID=None, title=None,
+                 restricted = False, creator = None):
+        Container.__init__(self, id, parentID, title, restricted, creator)
+        self.res = Resources()
+
+    def toElement(self,**kwargs):
+        root = Container.toElement(self,**kwargs)
+        for res in self.res:
+            root.append(res.toElement(**kwargs))
+        return root
+
+    def fromElement(self, elt):
+        Container.fromElement(self, elt)
+        for child in elt.getchildren():
+            if child.tag.endswith('res'):
+                res = Resource.fromString(ET.tostring(child))
+                self.res.append(res)
+
+
 class Album(Container):
     upnp_class = Container.upnp_class + '.album'
+
 
 class MusicAlbum(Album):
     upnp_class = Album.upnp_class + '.musicAlbum'
 
+
 class PhotoAlbum(Album):
     upnp_class = Album.upnp_class + '.photoAlbum'
+
 
 class Genre(Container):
     upnp_class = Container.upnp_class + '.genre'
 
+
 class MusicGenre(Genre):
     upnp_class = Genre.upnp_class + '.musicGenre'
+
 
 class MovieGenre(Genre):
     upnp_class = Genre.upnp_class + '.movieGenre'
 
+
 class StorageSystem(Container):
     upnp_class = Container.upnp_class + '.storageSystem'
+
 
 class StorageVolume(Container):
     upnp_class = Container.upnp_class + '.storageVolume'
 
+
 class StorageFolder(Container):
     upnp_class = Container.upnp_class + '.storageFolder'
+
 
 class DIDLElement(ElementInterface,log.Loggable):
 
