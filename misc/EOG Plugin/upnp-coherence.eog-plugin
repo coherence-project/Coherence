@@ -1,0 +1,9 @@
+[Eog Plugin]
+Loader=python
+Module=upnp-coherence
+IAge=2
+Name=Coherence DLNA/UPnP Client
+Description=A DLNA/UPnP client for EOG powered by Coherence
+Authors=Frank Scholz <coherence@beebits.net>
+Copyright=Copyright © 2008 Frank Scholz
+Website=http://coherence.beebits.net/
