@@ -46,7 +46,8 @@ class BBCItem(BackendItem):
 
 class Container(BackendItem):
 
-    def __init__(self, id, parent_id, title):
+    def __init__(self, id, store, parent_id, title):
+        self.url = store.urlbase+str(id)
         self.parent_id = parent_id
         self.id = id
         self.name = title
@@ -82,6 +83,9 @@ class Container(BackendItem):
     def get_child_count(self):
         return len(self.children)
 
+    def get_path(self):
+        return self.url
+
     def get_item(self):
         return self.item
 
@@ -100,6 +104,10 @@ class BBCStore(BackendStore):
     def __init__(self, server, *args, **kwargs):
         self.name = kwargs.get('name', 'BBC')
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.urlbase = kwargs.get('urlbase','')
+        if( len(self.urlbase)>0 and
+            self.urlbase[len(self.urlbase)-1] != '/'):
+            self.urlbase += '/'
         self.server = server
         self.next_id = 1000
         self.update_id = 0
@@ -109,9 +117,8 @@ class BBCStore(BackendStore):
         d.addCallback(self.init_completed)
 
     def get_next_id(self):
-        id = self.next_id
         self.next_id += 1
-        return id
+        return self.next_id
 
     def get_by_id(self,id):
         #print "looking for id %r" % id
@@ -150,9 +157,9 @@ class BBCStore(BackendStore):
         self.store = {}
 
         self.store[ROOT_CONTAINER_ID] = \
-                        Container(ROOT_CONTAINER_ID,-1, self.name)
+                        Container(ROOT_CONTAINER_ID,self,-1, self.name)
         self.store[SERIES_CONTAINER_ID] = \
-                        Container(SERIES_CONTAINER_ID,ROOT_CONTAINER_ID, 'Series')
+                        Container(SERIES_CONTAINER_ID,self,ROOT_CONTAINER_ID, 'Series')
         self.store[ROOT_CONTAINER_ID].add_child(self.store[SERIES_CONTAINER_ID])
 
 
@@ -175,7 +182,7 @@ class BBCStore(BackendStore):
                             if first == None:
                                 id = self.get_next_id()
                                 self.store[id] = \
-                                        Container(id,SERIES_CONTAINER_ID, brand.find('./{http://purl.org/dc/elements/1.1/}title').text)
+                                        Container(id,self,SERIES_CONTAINER_ID,brand.find('./{http://purl.org/dc/elements/1.1/}title').text)
                                 self.store[SERIES_CONTAINER_ID].add_child(self.store[id])
                                 first = self.store[id]
 
