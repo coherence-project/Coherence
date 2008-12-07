@@ -238,6 +238,9 @@ class Object(log.Loggable):
     album = None
     originalTrackNumber=None
 
+    description = None
+    longDescription = None
+
     refID = None
     server_uuid = None
 
@@ -332,6 +335,12 @@ class Object(log.Loggable):
         if self.originalTrackNumber is not None:
             ET.SubElement(root, 'upnp:originalTrackNumber').text = str(self.originalTrackNumber)
 
+        if self.description is not None:
+            ET.SubElement(root, 'dc:description').text = self.description
+
+        if self.longDescription is not None:
+            ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
+
         if self.server_uuid is not None:
             ET.SubElement(root, 'upnp:server_uuid').text = self.server_uuid
 
@@ -364,6 +373,10 @@ class Object(log.Loggable):
                 self.albumArtURI = child.text
             elif child.tag.endswith('originalTrackNumber'):
                 self.originalTrackNumber = int(child.text)
+            elif child.tag.endswith('description'):
+                self.description = child.text
+            elif child.tag.endswith('longDescription'):
+                self.longDescription = child.text
             elif child.tag.endswith('artist'):
                 self.artist = child.text
             elif child.tag.endswith('album'):
@@ -391,8 +404,6 @@ class Item(Object):
     elementName = 'item'
     refID = None
 
-    description = None
-    longDescription = None
     director = None
 
     def __init__(self, *args, **kwargs):
@@ -402,12 +413,6 @@ class Item(Object):
     def toElement(self,**kwargs):
 
         root = Object.toElement(self,**kwargs)
-
-        if self.description is not None:
-            ET.SubElement(root, 'dc:description').text = self.description
-
-        if self.longDescription is not None:
-            ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
 
         if self.director is not None:
             ET.SubElement(root, 'upnp:director').text = self.director
@@ -425,10 +430,6 @@ class Item(Object):
         for child in elt.getchildren():
             if child.tag.endswith('refID'):
                 self.refID = child.text
-            elif child.tag.endswith('description'):
-                self.description = child.text
-            elif child.tag.endswith('longDescription'):
-                self.longDescription = child.text
             elif child.tag.endswith('director'):
                 self.director = child.text
             elif child.tag.endswith('res'):
