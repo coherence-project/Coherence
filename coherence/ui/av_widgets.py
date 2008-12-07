@@ -46,7 +46,30 @@ TOOLTIP_ICON_COLUMN = 8
 
 from pkg_resources import resource_filename
 
+class ControlPoint(object):
+
+    _instance_ = None  # Singleton
+
+    def __new__(cls, *args, **kwargs):
+        obj = getattr(cls, '_instance_', None)
+        if obj is not None:
+            return obj
+        else:
+            obj = super(ControlPoint, cls).__new__(cls, *args, **kwargs)
+            cls._instance_ = obj
+            obj._connect(*args, **kwargs)
+            return obj
+
+    def __init__(self):
+        pass
+
+    def _connect(self):
+        self.bus = dbus.SessionBus()
+        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+
+
 class DeviceExportWidget(object):
+
     def __init__(self,name='Nautilus',standalone=True,root=None):
         self.root=root
         self.uuid = None
@@ -62,7 +85,7 @@ class DeviceExportWidget(object):
 
         self.filestore = gtk.ListStore(str,gtk.gdk.Pixbuf)
 
-        self.init_controlpoint()
+        self.coherence = ControlPoint().coherence
 
     def build_ui(self,root=None):
         if root != None:
@@ -101,10 +124,6 @@ class DeviceExportWidget(object):
 
         self.window.pack_end(buttonbox,expand=False,fill=False)
         return self.window
-
-    def init_controlpoint(self):
-        self.bus = dbus.SessionBus()
-        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
 
     def share_cancel(self,button):
         for row in self.filestore:
@@ -311,8 +330,9 @@ class DeviceImportWidget(object):
                 self.media_server_found(device)
 
     def init_controlpoint(self):
-        self.bus = dbus.SessionBus()
-        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+        cp = ControlPoint()
+        self.bus = cp.bus
+        self.coherence = cp.coherence
 
         self.coherence.get_devices(dbus_interface=BUS_NAME,
                                    reply_handler=self.handle_devices_reply,
@@ -511,8 +531,9 @@ class TreeWidget(object):
                 self.media_server_found(device)
 
     def init_controlpoint(self):
-        self.bus = dbus.SessionBus()
-        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+        cp = ControlPoint()
+        self.bus = cp.bus
+        self.coherence = cp.coherence
 
         self.hostname = self.coherence.hostname(dbus_interface=BUS_NAME)
 
