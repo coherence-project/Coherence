@@ -29,7 +29,7 @@ class TedTalk(BackendItem):
 
         self.item = DIDLLite.VideoItem(id, parent_id, self.name)
 
-        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*')
+        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*') # FIXME should be video/x-m4a
         res.size = size
         res.duration = duration
         self.item.res.append(res)
@@ -44,7 +44,7 @@ class TEDStore(LolcatsStore):
 
     def __init__(self, server, *args, **kwargs):
 
-        self.name = kwargs.get('name', 'TED')
+        self.name = kwargs.get('name', 'TEDtalks')
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
         self.server = server
 
