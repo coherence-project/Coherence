@@ -70,6 +70,7 @@ New in this 0.5.8 - Trix and Flix - release
         DVBDStore = coherence.backends.dvbd_storage:DVBDStore
         AppleTrailersStore = coherence.backends.appletrailers_storage:AppleTrailersStore
         LolcatsStore = coherence.backends.lolcats_storage:LolcatsStore
+        TEDStore = coherence.backends.ted_storage:TEDStore
         BBCStore = coherence.backends.bbc_storage:BBCStore
         SWR3Store = coherence.backends.swr3_storage:SWR3Store
         Gallery2Store = coherence.backends.gallery2_storage:Gallery2Store
