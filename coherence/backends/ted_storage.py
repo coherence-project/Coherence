@@ -29,7 +29,7 @@ class TedTalk(BackendItem):
 
         self.item = DIDLLite.VideoItem(id, parent_id, self.name)
 
-        res = DIDLLite.Resource(self.location, 'http-get:*:video/x-m4a:*')
+        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*')
         res.size = size
         res.duration = duration
         self.item.res.append(res)
@@ -52,7 +52,7 @@ class TEDStore(LolcatsStore):
         if self.urlbase[len(self.urlbase)-1] != '/':
             self.urlbase += '/'
 
-        self.next_id = 1000
+        self.next_id = 1001
         self.last_updated = None
 
         self.container = Container(None, self.ROOT_ID, self.name)
@@ -71,7 +71,7 @@ class TEDStore(LolcatsStore):
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable( \
-                0, 'SourceProtocolInfo', ['http-get:*:video/-xm4a:*'])
+                0, 'SourceProtocolInfo', ['http-get:*:video/mp4:*'])
 
     def parse_data(self, xml_data):
 
