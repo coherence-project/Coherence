@@ -160,7 +160,7 @@ class Resource:
                 if content_format == 'video/mpegts':
                     additional_info = ';'.join(['DLNA.ORG_PN=MPEG_TS_PAL']+simple_dlna_tags)
                     content_format = 'video/mpeg'
-                if content_format == 'video/mp4':
+                if content_format in ['video/mp4','video/x-m4a']:
                     additional_info = ';'.join(['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC']+simple_dlna_tags)
                 if content_format == 'video/x-msvideo':
                     additional_info = ';'.join(['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC']+simple_dlna_tags)
