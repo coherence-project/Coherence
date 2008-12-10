@@ -180,7 +180,6 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
 
     def set_variable(self, instance, variable_name, value, default=False):
         if variable_name == 'SourceProtocolInfo':
-            print "ConnectionManager set_variable"
             if isinstance(value,basestring) and len(value) > 0:
                 value = [v.strip() for v in value.split(',')]
             without_dlna_tags = []
@@ -188,7 +187,6 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                 protocol,network,content_format,additional_info = v.split(':')
                 if additional_info == '*':
                     without_dlna_tags.append(v)
-            print "without_dlna_tags", without_dlna_tags
 
             def with_some_tag_already_there(protocolinfo):
                 protocol,network,content_format,additional_info = protocolinfo.split(':')
@@ -205,8 +203,6 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                 if with_some_tag_already_there(w) == False:
                     protocol,network,content_format,additional_info = w.split(':')
                     value.append(':'.join((protocol,network,content_format,build_dlna_additional_info(content_format))))
-
-            print "with_dlna_tags", value
 
         service.ServiceServer.set_variable(self,instance,variable_name,value,default=default)
 
