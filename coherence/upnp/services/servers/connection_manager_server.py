@@ -14,6 +14,9 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core import service
+
+from coherence.upnp.core.DIDLLite  import build_dlna_additional_info
+
 from coherence import log
 
 
@@ -175,6 +178,37 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
     def render(self,request):
         return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
+    def set_variable(self, instance, variable_name, value, default=False):
+        if variable_name == 'SourceProtocolInfo':
+            print "ConnectionManager set_variable"
+            if isinstance(value,basestring) and len(value) > 0:
+                value = [v.strip() for v in value.split(',')]
+            without_dlna_tags = []
+            for v in value:
+                protocol,network,content_format,additional_info = v.split(':')
+                if additional_info == '*':
+                    without_dlna_tags.append(v)
+            print "without_dlna_tags", without_dlna_tags
+
+            def with_some_tag_already_there(protocolinfo):
+                protocol,network,content_format,additional_info = protocolinfo.split(':')
+                for v in value:
+                    v_protocol,v_network,v_content_format,v_additional_info = v.split(':')
+                    if((protocol,network,content_format) ==
+                       (v_protocol,v_network,v_content_format) and
+                      v_additional_info != '*'):
+                        return True
+                return False
+
+
+            for w in without_dlna_tags:
+                if with_some_tag_already_there(w) == False:
+                    protocol,network,content_format,additional_info = w.split(':')
+                    value.append(':'.join((protocol,network,content_format,build_dlna_additional_info(content_format))))
+
+            print "with_dlna_tags", value
+
+        service.ServiceServer.set_variable(self,instance,variable_name,value,default=default)
 
     def upnp_PrepareForConnection(self, *args, **kwargs):
         self.info('upnp_PrepareForConnection')
