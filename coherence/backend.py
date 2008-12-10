@@ -11,6 +11,10 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+from coherence.upnp.core.utils import getPage
+from coherence.extern.et import parse_xml
+
+
 class Backend(log.Loggable,Plugin):
 
     """ the base class for all backends
@@ -267,3 +271,32 @@ class BackendItem(log.Loggable):
             an albumArtURI property that does point back to us
         """
         return self.cover
+
+
+class BackendRssMixin:
+
+    def update_data(self,rss_url,container=None,encoding="utf-8"):
+        """ creates a deferred chain to retrieve the rdf file,
+            parse and extract the metadata and reschedule itself
+        """
+
+        def fail(f):
+            self.info("fail %r", f)
+            return f
+
+        dfr = getPage(rss_url)
+        dfr.addCallback(parse_xml, encoding=encoding)
+        dfr.addErrback(fail)
+        dfr.addCallback(self.parse_data,container)
+        dfr.addErrback(fail)
+        dfr.addBoth(self.queue_update,rss_url,container)
+        return dfr
+
+    def parse_data(self,xml_data,container):
+        """ extract media info and create BackendItems
+        """
+        pass
+
+    def queue_update(self, error_or_failure,rss_url,container):
+        from twisted.internet import reactor
+        reactor.callLater(self.refresh, self.update_data,rss_url,container)

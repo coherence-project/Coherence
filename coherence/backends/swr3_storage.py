@@ -8,15 +8,11 @@
 from datetime import datetime
 from email.Utils import parsedate_tz
 
-from coherence.backend import BackendStore
+from coherence.backend import BackendStore,BackendRssMixin
 from coherence.backend import BackendItem
 from coherence.upnp.core import DIDLLite
-from coherence.upnp.core.utils import getPage
 
-from twisted.internet import reactor
 from twisted.python.util import OrderedDict
-
-from coherence.extern.et import parse_xml
 
 ROOT_CONTAINER_ID = 0
 
@@ -102,7 +98,7 @@ class Container(BackendItem):
         return self.id
 
 
-class SWR3Store(BackendStore):
+class SWR3Store(BackendStore,BackendRssMixin):
 
     implements = ['MediaServer']
 
@@ -124,17 +120,17 @@ class SWR3Store(BackendStore):
 
         self.init_completed()
 
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/marianne014.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/gedoens.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/bescheid.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/timtom.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/wwdtl.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/boersenman.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/gag.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/tt.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/evishow.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/reusch.xml.php",self.get_next_id())
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/taepo.xml.php",self.get_next_id())
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/marianne014.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/gedoens.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/bescheid.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/timtom.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/wwdtl.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/boersenman.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/gag.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/tt.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/evishow.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/reusch.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+        self.update_data("http://www.swr3.de/rdf-feed/podcast/taepo.xml.php",self.get_next_id(),encoding="ISO-8859-1")
 
     def get_next_id(self):
         self.next_id += 1
@@ -155,20 +151,6 @@ class SWR3Store(BackendStore):
             self.server.connection_manager_server.set_variable( \
                 0, 'SourceProtocolInfo', ['http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000',
                                           'http-get:*:audio/mpeg:*'])
-
-    def update_data(self,rss_url,container):
-
-        def fail(f):
-            print "fail", f
-            return f
-
-        dfr = getPage(rss_url)
-        dfr.addCallback(parse_xml, encoding="ISO-8859-1")
-        dfr.addErrback(fail)
-        dfr.addCallback(self.parse_data,container)
-        dfr.addErrback(fail)
-        dfr.addBoth(self.queue_update,rss_url,container)
-        return dfr
 
     def parse_data(self,xml_data,container):
         root = xml_data.getroot()
@@ -195,6 +177,3 @@ class SWR3Store(BackendStore):
         #    self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
         #    value = (ROOT_CONTAINER_ID,self.container.update_id)
         #    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
-
-    def queue_update(self, error_or_failure,rss_url,container):
-        reactor.callLater(self.refresh, self.update_data,rss_url,container)
