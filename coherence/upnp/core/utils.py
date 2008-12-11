@@ -118,7 +118,6 @@ def get_ip_address(ifname):
     except IOError:
         return '127.0.0.1'
 
-
 def get_host_address():
     """ try to get determine the interface used for
         the default route, as this is most likely
@@ -141,7 +140,7 @@ def get_host_address():
                     tmp = route.readline()
                     l = tmp.split('\t')
                     if (len(l) > 2):
-                        if l[2] != '00000000': #default gateway...
+                        if l[1] == '00000000': #default route...
                             route.close()
                             return get_ip_address(l[0])
         except IOError, msg:
