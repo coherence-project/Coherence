@@ -3,6 +3,8 @@
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
 
+from twisted.python import failure
+
 from coherence import log
 
 from coherence.extern.et import ET, namespace_map_update
@@ -54,10 +56,18 @@ class SOAPProxy(log.Loggable):
         self.info("callRemote soapaction: ", self.action,self.url)
         self.debug("callRemote payload: ", payload)
 
-        def gotError(failure, url):
+        def gotError(error, url):
             self.warning("error requesting url %r" % url)
-            self.debug(failure)
-            return failure
+            self.debug(error)
+            try:
+                tree = parse_xml(error.value.response)
+                body = tree.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
+                return failure.Failure("%s - %s" % (body.find('.//{urn:schemas-upnp-org:control-1-0}errorCode').text,
+                                                    body.find('.//{urn:schemas-upnp-org:control-1-0}errorDescription').text))
+            except:
+                import traceback
+                self.debug(traceback.format_exc())
+            return error
 
         return getPage(self.url, postdata=payload, method="POST",
                         headers=headers
