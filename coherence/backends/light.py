@@ -5,6 +5,8 @@
 
 import coherence.extern.louie as louie
 
+from coherence.upnp.core.utils import generalise_boolean
+
 from coherence.backend import Backend
 
 class SimpleLight(Backend):
@@ -34,7 +36,7 @@ class SimpleLight(Backend):
 
     def upnp_SetTarget(self,**kwargs):
         self.info('upnp_SetTarget %r', kwargs)
-        self.state = int(kwargs['NewTargetValue'])
+        self.state = int(generalise_boolean(kwargs['NewTargetValue']))
         if self.server:
             self.server.switch_power_server.set_variable(0, 'Target', self.state)
             self.server.switch_power_server.set_variable(0, 'Status', self.state)
@@ -64,7 +66,7 @@ class BetterLight(Backend):
 
     def upnp_SetTarget(self,**kwargs):
         self.info('upnp_SetTarget %r', kwargs)
-        self.state = int(kwargs['NewTargetValue'])
+        self.state = int(generalise_boolean(kwargs['NewTargetValue']))
         if self.server:
             self.server.switch_power_server.set_variable(0, 'Target', self.state)
             self.server.switch_power_server.set_variable(0, 'Status', self.state)
