@@ -62,8 +62,8 @@ class SOAPProxy(log.Loggable):
             try:
                 tree = parse_xml(error.value.response)
                 body = tree.find('{http://schemas.xmlsoap.org/soap/envelope/}Body')
-                return failure.Failure("%s - %s" % (body.find('.//{urn:schemas-upnp-org:control-1-0}errorCode').text,
-                                                    body.find('.//{urn:schemas-upnp-org:control-1-0}errorDescription').text))
+                return failure.Failure(Exception("%s - %s" % (body.find('.//{urn:schemas-upnp-org:control-1-0}errorCode').text,
+                                                    body.find('.//{urn:schemas-upnp-org:control-1-0}errorDescription').text)))
             except:
                 import traceback
                 self.debug(traceback.format_exc())
