@@ -291,13 +291,18 @@ class Service(log.Loggable):
                     {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
                     attibute there
                 """
-                #for allowed in var_node.findall('.//{%s}allowedValue' % ns):
-                #    values.append(allowed.text)
+                for allowed in var_node.findall('.//{%s}allowedValue' % ns):
+                    values.append(allowed.text)
                 instance = 0
                 self._variables.get(instance)[name] = variable.StateVariable(self, name,
                                                                'n/a',
                                                                instance, send_events,
                                                                data_type, values)
+                """ we need to do this here, as there we don't get there our
+                    {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
+                    attibute there
+                """
+                self._variables.get(instance)[name].has_vendor_values = True
 
 
             #print 'service parse:', self, self.device
