@@ -46,6 +46,18 @@ class StateVariable(log.Loggable):
             self.moderated = self.service.is_variable_moderated(name)
             self.updated = False
 
+    def as_tuples(self):
+        r = []
+        r.append(('Name',self.name))
+        if self.send_events:
+            r.append(('Evented','yes'))
+        else:
+            r.append(('Evented','no'))
+        r.append(('Data Type',self.data_type))
+        r.append(('Default Value',self.default_value))
+        r.append(('Current Value',unicode(self.value)))
+        return r
+
     def set_default_value(self, value):
         self.update(value)
         self.default_value = self.value

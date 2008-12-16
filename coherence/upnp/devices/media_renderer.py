@@ -97,6 +97,7 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
+                                    #presentation_url='/'+str(self.uuid)[5:],
                                     friendly_name=self.backend.name,
                                     model_description='Coherence UPnP A/V %s' % self.device_type,
                                     model_name='Coherence UPnP A/V %s' % self.device_type,

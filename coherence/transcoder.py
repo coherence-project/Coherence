@@ -22,6 +22,66 @@ from twisted.web import resource, server
 
 from coherence import log
 
+import struct
+
+class FakeTransformer(gst.Element, log.Loggable):
+    logCategory = 'faker_datasink'
+
+    _sinkpadtemplate = gst.PadTemplate ("sinkpadtemplate",
+                                        gst.PAD_SINK,
+                                        gst.PAD_ALWAYS,
+                                        gst.caps_new_any())
+
+    _srcpadtemplate =  gst.PadTemplate ("srcpadtemplate",
+                                        gst.PAD_SRC,
+                                        gst.PAD_ALWAYS,
+                                        gst.caps_new_any())
+
+    def __init__(self,destination=None,request=None):
+        gst.Element.__init__(self)
+        self.sinkpad = gst.Pad(self._sinkpadtemplate, "sink")
+        self.srcpad = gst.Pad(self._srcpadtemplate, "src")
+        self.add_pad(self.sinkpad)
+        self.add_pad(self.srcpad)
+
+        self.sinkpad.set_chain_function(self.chainfunc)
+
+        self.buffer = ''
+        self.buffer_size = 0
+        self.proxy = False
+        self.got_new_segment = False
+        self.closed = False
+
+    def get_fake_header(self):
+        return struct.pack(">L4s", 32, 'ftyp') + \
+            "mp42\x00\x00\x00\x00mp42mp41isomiso2"
+
+    def chainfunc(self, pad, buffer):
+        if self.proxy:
+            # we are in proxy mode already
+            self.srcpad.push(buffer)
+            return gst.FLOW_OK
+
+        self.buffer = self.buffer + buffer.data
+        if not self.buffer_size:
+            try:
+                self.buffer_size, a_type = struct.unpack(">L4s", self.buffer[:8])
+            except:
+                return gst.FLOW_OK
+
+        if len(self.buffer) < self.buffer_size:
+            # we need to buffer more
+            return gst.FLOW_OK
+
+        buffer = self.buffer[self.buffer_size:]
+        fake_header = self.get_fake_header()
+        n_buf = gst.Buffer(fake_header + buffer)
+        self.proxy = True
+        self.srcpad.push(n_buf)
+
+        return gst.FLOW_OK
+
+gobject.type_register(FakeTransformer)
 
 class DataSink(gst.Element, log.Loggable):
 

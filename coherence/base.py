@@ -577,6 +577,7 @@ class Coherence(log.Loggable):
             device.remove()
             if infos['ST'] == 'upnp:rootdevice':
                 louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
+                louie.send('Coherence.UPnP.RootDevice.removed', None, usn=infos['USN'])
                 self.callback("removed_device", infos['ST'], infos['USN'])
 
 

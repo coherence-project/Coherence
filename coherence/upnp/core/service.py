@@ -77,6 +77,31 @@ class Service(log.Loggable):
         self.parse_actions()
         self.info("%s %s %s initialized" % (self.device.friendly_name,self.service_type,self.id))
 
+    def as_tuples(self):
+        r = []
+
+        def append(attribute,name):
+            try:
+                if callable(attribute):
+                    v = attribute()
+                else:
+                    v = getattr(self,attribute)
+                if v not in [None,'None']:
+                    r.append((name,v))
+            except:
+                import traceback
+                self.debug(traceback.format_exc())
+
+        r.append(('Location',self.device.get_location()))
+        append(self.device.get_urlbase,'URL base')
+        r.append(('UDN',self.device.get_id()))
+        r.append(('Type',self.service_type))
+        r.append(('Service Description URL',self.scpd_url))
+        r.append(('Control URL',self.control_url))
+        r.append(('Event Subscription URL',self.event_sub_url))
+
+        return r
+
     def __repr__(self):
         return "Service %s %s" % (self.service_type,self.id)
 
@@ -215,7 +240,7 @@ class Service(log.Loggable):
         event.subscribe(self)
 
     def process_event(self,event):
-        self.info("process event %r" % self)
+        self.info("process event %r %r" % (self,event))
         for var_name, var_value  in event.items():
             if var_name == 'LastChange':
                 self.info("we have a LastChange event")
@@ -252,8 +277,10 @@ class Service(log.Loggable):
                                     #self.debug("%r update %r %r %r", self,namespace_uri, tag, var.attrib['val'])
                                     self.get_state_variable(tag, instance_id).update(var.attrib['val'])
                                     self.debug("updated 'attributed' var %r", var)
+                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value))
             else:
                 self.get_state_variable(var_name, 0).update(var_value)
+                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value))
         if self.last_time_updated == None:
             # The clients (e.g. media_server_client) check for last time to detect whether service detection is complete
             # so we need to set it here and now to avoid a potential race condition

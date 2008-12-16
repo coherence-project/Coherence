@@ -374,7 +374,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement(e, 'major').text = '1'
         ET.SubElement(e, 'minor').text = '0'
 
-        ET.SubElement(root, 'URLBase').text = urlbase
+        ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:]
 
         d = ET.SubElement(root, 'device')
         x = ET.SubElement(d, 'dlna:X_DLNADOC')
@@ -401,7 +401,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement(d, 'serialNumber').text = '0000001'
         ET.SubElement(d, 'UDN').text = uuid
         ET.SubElement(d, 'UPC').text = ''
-        ET.SubElement(d, 'presentationURL').text = ''
+        ET.SubElement(d, 'presentationURL').text = '/' + uuid[5:]
 
         if len(services):
             e = ET.SubElement(d, 'serviceList')

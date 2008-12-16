@@ -27,6 +27,14 @@ class Argument:
         return "Argument: %s, %s, %s" % (self.get_name(),
                                          self.get_direction(), self.get_state_variable())
 
+    def as_tuples(self):
+        r = []
+        r.append(('Name',self.name))
+        r.append(('Direction',self.direction))
+        r.append(('Related State Variable',self.state_variable))
+        return r
+
+
 class Action(log.Loggable):
     logCategory = 'action'
 
@@ -136,3 +144,10 @@ class Action(log.Loggable):
     def __repr__(self):
         return "Action: %s [%s], (%s args)" % (self.get_name(), self.get_implementation(),
                                          len(self.get_arguments_list()))
+
+    def as_tuples(self):
+        r = []
+        r.append(('Name',self.get_name()))
+        r.append(("Number of 'in' arguments",len(self.get_in_arguments())))
+        r.append(("Number of 'out' arguments",len(self.get_out_arguments())))
+        return r

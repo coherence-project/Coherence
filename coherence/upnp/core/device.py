@@ -142,6 +142,43 @@ class Device(log.Loggable):
         self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
         self.udn = d.findtext('.//{%s}UDN' % ns)
 
+        try:
+            self.manufacturer = d.findtext('.//{%s}manufacturer' % ns)
+        except:
+            pass
+        try:
+            self.manufacturer_url = d.findtext('.//{%s}manufacturerURL' % ns)
+        except:
+            pass
+        try:
+            self.model_name = d.findtext('.//{%s}modelName' % ns)
+        except:
+            pass
+        try:
+            self.model_description = d.findtext('.//{%s}modelDescription' % ns)
+        except:
+            pass
+        try:
+            self.model_number = d.findtext('.//{%s}modelNumber' % ns)
+        except:
+            pass
+        try:
+            self.model_url = d.findtext('.//{%s}modelURL' % ns)
+        except:
+            pass
+        try:
+            self.serial_number = d.findtext('.//{%s}serialNumber' % ns)
+        except:
+            pass
+        try:
+            self.upc = d.findtext('.//{%s}UPC' % ns)
+        except:
+            pass
+        try:
+            self.presentation_url = d.findtext('.//{%s}presentationURL' % ns)
+        except:
+            pass
+
         icon_list = d.find('./{%s}iconList' % ns)
         if icon_list is not None:
             import urllib2
@@ -202,6 +239,12 @@ class Device(log.Loggable):
     def get_usn(self):
         return self.parent.get_usn()
 
+    def get_upnp_version(self):
+        return self.parent.get_upnp_version()
+
+    def get_urlbase(self):
+        return self.parent.get_urlbase()
+
 
 class RootDevice(Device):
 
@@ -230,6 +273,12 @@ class RootDevice(Device):
 
     def get_location(self):
         return self.location
+
+    def get_upnp_version(self):
+        return self.upnp_version
+
+    def get_urlbase(self):
+        return self.urlbase
 
     def get_host(self):
         return self.host
@@ -279,6 +328,15 @@ class RootDevice(Device):
             data, headers = x
             tree = utils.parse_xml(data, 'utf-8').getroot()
 
+            major = tree.findtext('.//{%s}specVersion/{%s}major' % (ns,ns))
+            minor = tree.findtext('.//{%s}specVersion/{%s}minor' % (ns,ns))
+            self.upnp_version = '.'.join((major,minor))
+            try:
+                self.urlbase = tree.findtext('.//{%s}URLBase' % ns)
+            except:
+                import traceback
+                self.debug(traceback.format_exc())
+
             d = tree.find('.//{%s}device' % ns)
             if d is not None:
                 self.parse_device(d) # root device
@@ -288,3 +346,37 @@ class RootDevice(Device):
             self.info(failure)
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
+
+    def as_tuples(self):
+        r = []
+
+        def append(attribute,name):
+            try:
+                if callable(attribute):
+                    v = attribute()
+                else:
+                    v = getattr(self,attribute)
+                if v not in [None,'None']:
+                    r.append((name,v))
+            except:
+                import traceback
+                self.debug(traceback.format_exc())
+
+        r.append(('Location',self.get_location()))
+        append(self.get_urlbase,'URL base')
+        r.append(('UDN',self.get_id()))
+        r.append(('Type',self.device_type))
+        r.append(('UPnP Version',self.upnp_version))
+        r.append(('Friendly Name',self.friendly_name))
+
+        append('manufacturer', 'Manufacturer')
+        append('manufacturerURL', 'Manufacturer URL')
+        append('model_name', 'Model Name')
+        append('model_description', 'Model Description')
+        append('model_number', 'Model Number')
+        append('model_url', 'Model URL')
+        append('serial_number', 'Serial Number')
+        append('upc', 'UPC')
+        append('presentation_url', 'Presentation URL')
+
+        return r
