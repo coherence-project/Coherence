@@ -179,6 +179,27 @@ class Device(log.Loggable):
         except:
             pass
 
+        try:
+            for dlna_doc in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNADOC'):
+                try:
+                    self.dlna_dc.append(dlna_doc.text)
+                except AttributeError:
+                    self.dlna_dc = []
+                    self.dlna_dc.append(dlna_doc.text)
+        except:
+            pass
+
+        try:
+            for dlna_cap in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNACAP'):
+                for cap in dlna_cap.text.split(','):
+                    try:
+                        self.dlna_cap.append(cap)
+                    except AttributeError:
+                        self.dlna_cap = []
+                        self.dlna_cap.append(cap)
+        except:
+            pass
+
         icon_list = d.find('./{%s}iconList' % ns)
         if icon_list is not None:
             import urllib2
@@ -367,6 +388,14 @@ class RootDevice(Device):
         r.append(('UDN',self.get_id()))
         r.append(('Type',self.device_type))
         r.append(('UPnP Version',self.upnp_version))
+        try:
+            r.append(('DLNA Device Class',','.join(self.dlna_dc)))
+        except:
+            pass
+        try:
+            r.append(('DLNA Device Capability',','.join(self.dlna_cap)))
+        except:
+            pass
         r.append(('Friendly Name',self.friendly_name))
 
         append('manufacturer', 'Manufacturer')
