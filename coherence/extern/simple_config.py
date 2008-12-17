@@ -154,12 +154,13 @@ def _ConvertDictToXmlRecurse(parent, dictitem):
 
                 if tag in dictitem._attrs:
                     parent.set(tag, child)
-                else:
+                elif not callable(tag):
                     elem = ElementTree.Element(tag)
                     parent.append(elem)
                     _ConvertDictToXmlRecurse(elem, child)
     else:
-        parent.text = str(dictitem)
+        if not callable(tag):
+            parent.text = str(dictitem)
 
 def ConvertDictToXml(xmldict):
     roottag = xmldict.keys()[0]
