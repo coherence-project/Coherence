@@ -72,7 +72,7 @@ class RootDeviceXML(static.Data):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
-        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
+        _device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement( e, 'major').text = '1'
         ET.SubElement( e, 'minor').text = '0'
@@ -80,7 +80,23 @@ class RootDeviceXML(static.Data):
         ET.SubElement(root, 'URLBase').text = urlbase
 
         d = ET.SubElement(root, 'device')
-        ET.SubElement( d, 'deviceType').text = device_type
+
+        if device_type == 'MediaServer':
+            x = ET.SubElement(d, 'dlna:X_DLNADOC')
+            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.text = 'DMS-1.50'
+            x = ET.SubElement(d, 'dlna:X_DLNADOC')
+            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.text = 'M-DMS-1.50'
+        elif device_type == 'MediaRenderer':
+            x = ET.SubElement(d, 'dlna:X_DLNADOC')
+            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.text = 'DMR-1.50'
+            x = ET.SubElement(d, 'dlna:X_DLNADOC')
+            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.text = 'M-DMR-1.50'
+
+        ET.SubElement( d, 'deviceType').text = _device_type
         ET.SubElement( d, 'friendlyName').text = friendly_name
         ET.SubElement( d, 'manufacturer').text = 'beebits.net'
         ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
