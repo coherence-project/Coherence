@@ -294,7 +294,10 @@ class FlickrItem(log.Loggable):
         def process(result):
             for size in result.getiterator('size'):
                 #print size.get('label'), size.get('source')
-                if size.get('label') == 'Large':
+                if size.get('label') == 'Original':
+                    self.original_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.url = self.original_url[0]
+                elif size.get('label') == 'Large':
                     self.large_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
                     self.url = self.large_url[0]
                 elif size.get('label') == 'Medium':
@@ -308,7 +311,12 @@ class FlickrItem(log.Loggable):
             self.item.date = self.date
             dlna_tags = simple_dlna_tags[:]
             dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
-            if hasattr(self,'large_url'):
+            if hasattr(self,'original_url'):
+                dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
+                res = Resource(self.original_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res.resolution = self.original_url[1]
+                self.item.res.append(res)
+            elif hasattr(self,'large_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
                 res = Resource(self.large_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
                 res.resolution = self.large_url[1]
