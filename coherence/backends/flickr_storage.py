@@ -295,14 +295,14 @@ class FlickrItem(log.Loggable):
             for size in result.getiterator('size'):
                 #print size.get('label'), size.get('source')
                 if size.get('label') == 'Large':
-                    self.large_url = size.get('source')
-                    self.url = self.large_url
+                    self.large_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.url = self.large_url[0]
                 elif size.get('label') == 'Medium':
-                    self.medium_url = size.get('source')
+                    self.medium_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
                 elif size.get('label') == 'Small':
-                    self.small_url = size.get('source')
+                    self.small_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
                 elif size.get('label') == 'Thumbnail':
-                    self.thumb_url = size.get('source')
+                    self.thumb_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
 
             self.item = Photo(self.id,self.parent.get_id(),self.get_name())
             self.item.date = self.date
@@ -310,19 +310,23 @@ class FlickrItem(log.Loggable):
             dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
             if hasattr(self,'large_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
-                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res = Resource(self.large_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res.resolution = self.large_url[1]
                 self.item.res.append(res)
             if hasattr(self,'medium_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_MED'
-                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res = Resource(self.medium_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res.resolution = self.medium_url[1]
                 self.item.res.append(res)
             if hasattr(self,'small_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_SM'
-                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res = Resource(self.small_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res.resolution = self.small_url[1]
                 self.item.res.append(res)
             if hasattr(self,'thumb_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
-                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res = Resource(self.thumb_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                res.resolution = self.thumb_url[1]
                 self.item.res.append(res)
 
             return self.item
