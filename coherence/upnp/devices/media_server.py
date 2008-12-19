@@ -283,7 +283,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 uri += '/'
 
             def build_page(r,page):
-                print "build_page", r
+                #print "build_page", r
                 page += """<ul>"""
                 for c in r:
                     if hasattr(c,'get_url'):

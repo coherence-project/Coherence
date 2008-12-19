@@ -33,7 +33,8 @@ from twisted.python.filepath import FilePath
 
 from coherence.upnp.core.utils import parse_xml, ReverseProxyResource
 
-from coherence.upnp.core.DIDLLite import classChooser,Container,PhotoAlbum,ImageItem,Resource,DIDLElement
+from coherence.upnp.core.DIDLLite import classChooser,Container,PhotoAlbum,Photo,ImageItem,Resource,DIDLElement
+from coherence.upnp.core.DIDLLite import simple_dlna_tags
 from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 
@@ -104,10 +105,13 @@ class ProxyImage(ReverseProxyResource):
 class FlickrItem(log.Loggable):
     logCategory = 'flickr_storage'
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False,proxy=False):
+    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,store=None,update=False,proxy=False):
         self.id = id
         self.real_url = None
         self.obj = obj
+        self.store = store
+        self.item = None
+        self.date = None
 
         if isinstance(obj, str):
             self.name = obj
@@ -156,6 +160,17 @@ class FlickrItem(log.Loggable):
             self.location = None
         else:
             self.flickr_id = obj.get('id')
+
+            try:
+                datetaken = obj.get('datetaken')
+                date,time = datetaken.split(' ')
+                year,month,day = date.split('-')
+                hour,minute,second = time.split(':')
+                self.date = datetime(int(year),int(month),int(day),int(hour),int(minute),int(second))
+            except:
+                import traceback
+                self.debug(traceback.format_exc())
+
             self.real_url = "http://farm%s.static.flickr.com/%s/%s_%s.jpg" % (
                             obj.get('farm'),
                             obj.get('server'),
@@ -177,29 +192,14 @@ class FlickrItem(log.Loggable):
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(self.id, parent_id, self.get_name())
-        if isinstance(self.item, Container):
-            self.item.childCount = 0
-        self.child_count = 0
-        self.children = []
-
         if self.mimetype == 'directory':
+            self.item = UPnPClass(self.id, parent_id, self.get_name())
+            if isinstance(self.item, Container):
+                self.item.childCount = 0
+            self.child_count = 0
+            self.children = []
             self.update_id = 0
-        else:
-            res = Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
-            res.size = None
-            self.item.res.append(res)
-            if not (isinstance(self.id,basestring) and self.id.startswith('upload.')):
-                try:
-                    datetaken = obj.get('datetaken')
-                    date,time = datetaken.split(' ')
-                    year,month,day = date.split('-')
-                    hour,minute,second = time.split(':')
-                    self.item.date = datetime(int(year),int(month)-1,int(day),int(hour),int(minute),int(second))
-                except:
-                    import traceback
-                    self.debug(traceback.format_exc())
-                #self.set_item_size_and_date()
+
 
     def set_item_size_and_date(self):
 
@@ -286,13 +286,56 @@ class FlickrItem(log.Loggable):
         return self.parent
 
     def get_item(self):
+        if self.item == None:
+            return self.create_item()
         return self.item
+
+    def create_item(self):
+        def process(result):
+            for size in result.getiterator('size'):
+                #print size.get('label'), size.get('source')
+                if size.get('label') == 'Large':
+                    self.large_url = size.get('source')
+                    self.url = self.large_url
+                elif size.get('label') == 'Medium':
+                    self.medium_url = size.get('source')
+                elif size.get('label') == 'Small':
+                    self.small_url = size.get('source')
+                elif size.get('label') == 'Thumbnail':
+                    self.thumb_url = size.get('source')
+
+            self.item = Photo(self.id,self.parent.get_id(),self.get_name())
+            self.item.date = self.date
+            dlna_tags = simple_dlna_tags[:]
+            dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
+            if hasattr(self,'large_url'):
+                dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
+                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                self.item.res.append(res)
+            if hasattr(self,'medium_url'):
+                dlna_pn = 'DLNA.ORG_PN=JPEG_MED'
+                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                self.item.res.append(res)
+            if hasattr(self,'small_url'):
+                dlna_pn = 'DLNA.ORG_PN=JPEG_SM'
+                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                self.item.res.append(res)
+            if hasattr(self,'thumb_url'):
+                dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
+                res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                self.item.res.append(res)
+
+            return self.item
+
+        d = self.store.flickr_photos_getSizes(photo_id=self.flickr_id)
+        d.addCallback(process)
+        return d
 
     def get_xml(self):
         return self.item.toString()
 
     def __repr__(self):
-        return 'id: ' + str(self.id) + ' @ ' + self.url
+        return 'id: ' + str(self.id) + ' @ ' + str(self.url)
 
 
 class FlickrStore(log.Loggable, Plugin):
@@ -368,7 +411,8 @@ class FlickrStore(log.Loggable, Plugin):
             update = True
 
         self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
-                                        UPnPClass, update=update, proxy=self.proxy)
+                                        UPnPClass, store=self,
+                                        update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
@@ -404,7 +448,7 @@ class FlickrStore(log.Loggable, Plugin):
             update = True
 
         self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
-                                        UPnPClass, update=update, proxy=self.proxy)
+                                        UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
@@ -427,7 +471,7 @@ class FlickrStore(log.Loggable, Plugin):
             update = True
 
         self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
-                                        UPnPClass, update=update, proxy=self.proxy)
+                                        UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
@@ -459,7 +503,7 @@ class FlickrStore(log.Loggable, Plugin):
             update = True
 
         self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
-                                        UPnPClass, update=update, proxy=self.proxy)
+                                        UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
@@ -482,7 +526,7 @@ class FlickrStore(log.Loggable, Plugin):
             update = True
 
         self.store[id] = FlickrItem( id, obj, parent, 'contact', self.urlbase,
-                                        UPnPClass, update=update, proxy=self.proxy)
+                                        UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             if self.server:
@@ -693,6 +737,11 @@ class FlickrStore(log.Loggable, Plugin):
             d = self.flickr_call('flickr.photos.getInfo', photo_id=photo_id)
         return d
 
+    def flickr_photos_getSizes(self, photo_id=None):
+        d = self.flickr_call('flickr.photos.getSizes', photo_id=photo_id)
+        return d
+
+
     def flickr_interestingness(self, date=None, per_page=100):
         if date == None:
             date = time.strftime( "%Y-%m-%d", time.localtime(time.time()-86400))
@@ -834,17 +883,17 @@ class FlickrStore(log.Loggable, Plugin):
                                                                 default=True)
         self.store[ROOT_CONTAINER_ID] = FlickrItem( ROOT_CONTAINER_ID, 'Flickr', None,
                                                     'directory', self.urlbase,
-                                                    Container, update=True, proxy=self.proxy)
+                                                    Container,store=self,update=True, proxy=self.proxy)
 
         self.store[INTERESTINGNESS_CONTAINER_ID] = FlickrItem(INTERESTINGNESS_CONTAINER_ID, 'Most Wanted',
                                                               self.store[ROOT_CONTAINER_ID],
                                                     'directory', self.urlbase,
-                                                    PhotoAlbum, update=True, proxy=self.proxy)
+                                                    PhotoAlbum,store=self,update=True, proxy=self.proxy)
 
         self.store[RECENT_CONTAINER_ID] = FlickrItem(RECENT_CONTAINER_ID, 'Recent',
                                                         self.store[ROOT_CONTAINER_ID],
                                                         'directory', self.urlbase,
-                                                        PhotoAlbum, update=True, proxy=self.proxy)
+                                                        PhotoAlbum,store=self,update=True, proxy=self.proxy)
 
         self.most_wanted = self.store[INTERESTINGNESS_CONTAINER_ID]
         d = self.flickr_interestingness()
@@ -858,7 +907,7 @@ class FlickrStore(log.Loggable, Plugin):
             self.store[GALLERY_CONTAINER_ID] = FlickrItem(GALLERY_CONTAINER_ID, 'Gallery',
                                                         self.store[ROOT_CONTAINER_ID],
                                                         'directory', self.urlbase,
-                                                        PhotoAlbum, update=True, proxy=self.proxy)
+                                                        PhotoAlbum,store=self,update=True, proxy=self.proxy)
             self.photosets = self.store[GALLERY_CONTAINER_ID]
             d = self.flickr_photosets()
             d.addCallback(self.append_flickr_photoset_result, self.photosets)
@@ -866,7 +915,7 @@ class FlickrStore(log.Loggable, Plugin):
             self.store[UNSORTED_CONTAINER_ID] = FlickrItem(UNSORTED_CONTAINER_ID, 'Unsorted - Not in set',
                                                         self.store[GALLERY_CONTAINER_ID],
                                                         'directory', self.urlbase,
-                                                        PhotoAlbum, update=True, proxy=self.proxy)
+                                                        PhotoAlbum,store=self,update=True, proxy=self.proxy)
             self.notinset = self.store[UNSORTED_CONTAINER_ID]
             d = self.flickr_notInSet()
             d.addCallback(self.append_flickr_photo_result, self.notinset)
@@ -874,7 +923,7 @@ class FlickrStore(log.Loggable, Plugin):
             self.store[FAVORITES_CONTAINER_ID] = FlickrItem(FAVORITES_CONTAINER_ID, 'Favorites',
                                                         self.store[ROOT_CONTAINER_ID],
                                                         'directory', self.urlbase,
-                                                        PhotoAlbum, update=True, proxy=self.proxy)
+                                                        PhotoAlbum,store=self,update=True, proxy=self.proxy)
             self.favorites = self.store[FAVORITES_CONTAINER_ID]
             d = self.flickr_favorites()
             d.addCallback(self.append_flickr_photo_result, self.favorites)
@@ -882,7 +931,7 @@ class FlickrStore(log.Loggable, Plugin):
             self.store[CONTACTS_CONTAINER_ID] = FlickrItem(CONTACTS_CONTAINER_ID, 'Friends & Family',
                                                         self.store[ROOT_CONTAINER_ID],
                                                         'directory', self.urlbase,
-                                                        PhotoAlbum, update=True, proxy=self.proxy)
+                                                        PhotoAlbum,store=self,update=True, proxy=self.proxy)
             self.contacts = self.store[CONTACTS_CONTAINER_ID]
             d = self.flickr_contacts()
             d.addCallback(self.append_flickr_contact_result, self.contacts)
@@ -966,7 +1015,7 @@ class FlickrStore(log.Loggable, Plugin):
             title = item.title or 'unknown'
             mimetype = 'image/jpeg'
             self.uploads[new_id] = FlickrItem( new_id, title, self.store[UNSORTED_CONTAINER_ID], mimetype, self.urlbase,
-                                        ImageItem, update=False, proxy=self.proxy)
+                                        ImageItem,store=self,update=False, proxy=self.proxy)
 
             new_item = self.uploads[new_id]
             for res in new_item.item.res:
