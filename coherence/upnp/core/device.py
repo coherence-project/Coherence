@@ -368,12 +368,36 @@ class RootDevice(Device):
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 
+    def make_fullyqualified(self,url):
+        if url.startswith('http://'):
+            return url
+        import urlparse
+        try:
+            return urlparse.urljoin(self.get_urlbase(),url)
+        except AttributeError:
+            return urlparse.urljoin(self.get_location(),url)
+
     def as_tuples(self):
         r = []
 
-        def append(attribute,name):
+        def append(name,attribute):
             try:
-                if callable(attribute):
+                if isinstance(attribute,tuple):
+                    if callable(attribute[0]):
+                        v1 = attribute[0]()
+                    else:
+                        v1 = getattr(self,attribute[0])
+                    if v1 in [None,'None']:
+                        return
+                    if callable(attribute[1]):
+                        v2 = attribute[1]()
+                    else:
+                        v2 = getattr(self,attribute[1])
+                    if v2 in [None,'None']:
+                        return
+                    r.append((name,(v1,v2)))
+                    return
+                elif callable(attribute):
                     v = attribute()
                 else:
                     v = getattr(self,attribute)
@@ -383,8 +407,8 @@ class RootDevice(Device):
                 import traceback
                 self.debug(traceback.format_exc())
 
-        r.append(('Location',self.get_location()))
-        append(self.get_urlbase,'URL base')
+        r.append(('Location',(self.get_location(),self.get_location())))
+        append('URL base',self.get_urlbase)
         r.append(('UDN',self.get_id()))
         r.append(('Type',self.device_type))
         r.append(('UPnP Version',self.upnp_version))
@@ -398,14 +422,14 @@ class RootDevice(Device):
             pass
         r.append(('Friendly Name',self.friendly_name))
 
-        append('manufacturer', 'Manufacturer')
-        append('manufacturerURL', 'Manufacturer URL')
-        append('model_name', 'Model Name')
-        append('model_description', 'Model Description')
-        append('model_number', 'Model Number')
-        append('model_url', 'Model URL')
-        append('serial_number', 'Serial Number')
-        append('upc', 'UPC')
-        append('presentation_url', 'Presentation URL')
+        append('Manufacturer','manufacturer')
+        append('Manufacturer URL',('manufacturerURL','manufacturerURL'))
+        append('Model Name','model_name')
+        append('Model Description','model_description')
+        append('Model Number','model_number')
+        append('Model URL',('model_url','model_url'))
+        append('Serial Number','serial_number')
+        append('UPC','upc')
+        append('Presentation URL',('presentation_url',lambda: self.make_fullyqualified(getattr(self,'presentation_url'))))
 
         return r

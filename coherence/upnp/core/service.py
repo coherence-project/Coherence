@@ -80,25 +80,49 @@ class Service(log.Loggable):
     def as_tuples(self):
         r = []
 
-        def append(attribute,name):
+        def append(name,attribute):
             try:
-                if callable(attribute):
+                if isinstance(attribute,tuple):
+                    if callable(attribute[0]):
+                        v1 = attribute[0]()
+                    elif hasattr(self,attribute[0]):
+                        v1 = getattr(self,attribute[0])
+                    else:
+                        v1 = attribute[0]
+                    if v1 in [None,'None']:
+                        return
+                    if callable(attribute[1]):
+                        v2 = attribute[1]()
+                    elif hasattr(self,attribute[1]):
+                        v2 = getattr(self,attribute[1])
+                    else:
+                        v2 = attribute[1]
+                    if v2 in [None,'None']:
+                        return
+                    if len(attribute)> 2:
+                        r.append((name,(v1,v2,attribute[2])))
+                    else:
+                        r.append((name,(v1,v2)))
+                    return
+                elif callable(attribute):
                     v = attribute()
-                else:
+                elif hasattr(self,attribute):
                     v = getattr(self,attribute)
+                else:
+                    v = attribute
                 if v not in [None,'None']:
                     r.append((name,v))
             except:
                 import traceback
                 self.debug(traceback.format_exc())
 
-        r.append(('Location',self.device.get_location()))
-        append(self.device.get_urlbase,'URL base')
+        r.append(('Location',(self.device.get_location(),self.device.get_location())))
+        append('URL base',self.device.get_urlbase)
         r.append(('UDN',self.device.get_id()))
         r.append(('Type',self.service_type))
-        r.append(('Service Description URL',self.scpd_url))
-        r.append(('Control URL',self.control_url))
-        r.append(('Event Subscription URL',self.event_sub_url))
+        append('Service Description URL',(self.scpd_url,lambda: self.device.make_fullyqualified(self.scpd_url)))
+        append('Control URL',(self.control_url,lambda: self.device.make_fullyqualified(self.control_url),False))
+        append('Event Subscription URL',(self.event_sub_url,lambda: self.device.make_fullyqualified(self.event_sub_url),False))
 
         return r
 
