@@ -372,10 +372,13 @@ class RootDevice(Device):
         if url.startswith('http://'):
             return url
         import urlparse
-        try:
-            return urlparse.urljoin(self.get_urlbase(),url)
-        except AttributeError:
-            return urlparse.urljoin(self.get_location(),url)
+        base = self.get_urlbase()
+        if base != None:
+            r = urlparse.urljoin(base,url)
+        else:
+            r = urlparse.urljoin(self.get_location(),url)
+        return r
+
 
     def as_tuples(self):
         r = []
