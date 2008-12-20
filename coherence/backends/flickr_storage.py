@@ -395,7 +395,7 @@ class FlickrStore(log.Loggable, Plugin):
 
         self.flickr_userid = kwargs.get('userid',None)
         self.flickr_password = kwargs.get('password',None)
-        self.flickr_permisisons = kwargs.get('permissions','read')
+        self.flickr_permissions = kwargs.get('permissions','read')
 
         self.flickr_authtoken = kwargs.get('authtoken',None)
 
