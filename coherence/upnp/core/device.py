@@ -351,7 +351,10 @@ class RootDevice(Device):
 
             major = tree.findtext('.//{%s}specVersion/{%s}major' % (ns,ns))
             minor = tree.findtext('.//{%s}specVersion/{%s}minor' % (ns,ns))
-            self.upnp_version = '.'.join((major,minor))
+            try:
+                self.upnp_version = '.'.join((major,minor))
+            except:
+                self.upnp_version = 'n/a'
             try:
                 self.urlbase = tree.findtext('.//{%s}URLBase' % ns)
             except:
