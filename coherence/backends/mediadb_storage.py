@@ -190,15 +190,22 @@ class Artist(item.Item,BackendItem):
 
     get_path = None
 
+    def get_artist_all_tracks(self,start=0,request_count=0):
+        children = [x[1] for x in list(self.store.query((Album,Track),
+                            attributes.AND(Album.artist == self,
+                                           Track.album == Album.storeID),
+                            sort=(Track.title.ascending)
+                            ))]
+        if request_count == 0:
+            return children[start:]
+        else:
+            return children[start:request_count]
+
     def get_children(self,start=0,request_count=0):
         all_id = 'artist_all_tracks_%d' % (self.storeID+1000)
         self.store.containers[all_id] = \
                 Container( all_id, self.storeID+1000, 'All tracks of %s' % self.name,
-                          children_callback=lambda :[x[1] for x in list(self.store.query((Album,Track),
-                            attributes.AND(Album.artist == self,
-                                           Track.album == Album.storeID),
-                            sort=(Track.title.ascending)
-                            ))])
+                          children_callback=self.get_artist_all_tracks)
 
         children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self,sort=Album.title.ascending))
         if request_count == 0:

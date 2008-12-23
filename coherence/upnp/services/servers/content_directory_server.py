@@ -126,7 +126,11 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             return dl
 
         def proceed(result):
-            d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+            if(kwargs.get('X_UPnPClient', '') == 'XBox' and
+               hasattr(result, 'get_artist_all_tracks')):
+                d = defer.maybeDeferred( result.get_artist_all_tracks, StartingIndex, StartingIndex + RequestedCount)
+            else:
+                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
             d.addCallback(process_result,found_item=result)
             d.addErrback(got_error)
             return d
@@ -137,38 +141,39 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             pass
 
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
-        if(kwargs.get('X_UPnPClient', '') == 'XBox' and
-            wmc_mapping != None and
-            wmc_mapping.has_key(ContainerID)):
-            """ fake a Windows Media Connect Server
-            """
-            root_id = wmc_mapping[ContainerID]
-            if callable(root_id):
-                item = root_id()
-                if item  is not None:
-                    if isinstance(item, list):
-                        total = len(item)
-                        if int(RequestedCount) == 0:
-                            items = item[StartingIndex:]
+        if kwargs.get('X_UPnPClient', '') == 'XBox':
+            if(wmc_mapping != None and
+               wmc_mapping.has_key(ContainerID)):
+                """ fake a Windows Media Connect Server
+                """
+                root_id = wmc_mapping[ContainerID]
+                if callable(root_id):
+                    item = root_id()
+                    if item  is not None:
+                        if isinstance(item, list):
+                            total = len(item)
+                            if int(RequestedCount) == 0:
+                                items = item[StartingIndex:]
+                            else:
+                                items = item[StartingIndex:StartingIndex+RequestedCount]
+                            return process_result(items,total=total)
                         else:
-                            items = item[StartingIndex:StartingIndex+RequestedCount]
-                        return process_result(items,total=total)
-                    else:
-                        if isinstance(item,defer.Deferred):
-                            item.addCallback(proceed)
-                            return item
-                        else:
-                            return proceed(item)
+                            if isinstance(item,defer.Deferred):
+                                item.addCallback(proceed)
+                                return item
+                            else:
+                                return proceed(item)
 
-            item = self.backend.get_by_id(root_id)
-            if item == None:
-                return process_result([],total=0)
+                item = self.backend.get_by_id(root_id)
+                if item == None:
+                    return process_result([],total=0)
 
-            if isinstance(item,defer.Deferred):
-                item.addCallback(proceed)
-                return item
-            else:
-                return proceed(item)
+                if isinstance(item,defer.Deferred):
+                    item.addCallback(proceed)
+                    return item
+                else:
+                    return proceed(item)
+
 
         item = self.backend.get_by_id(root_id)
         if item == None:

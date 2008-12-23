@@ -272,6 +272,11 @@ class Object(log.Loggable):
             root.attrib['id'] = str(self.id)
             ET.SubElement(root, 'dc:title').text = self.title
 
+        #if self.title != None:
+        #    ET.SubElement(root, 'dc:title').text = self.title
+        #else:
+        #    ET.SubElement(root, 'dc:title').text = 'root'
+
         root.attrib['parentID'] = str(self.parentID)
 
         if(kwargs.get('upnp_client','') != 'XBox'):
@@ -305,10 +310,10 @@ class Object(log.Loggable):
                 else:
                     self.info("Changing ID from %r to %r, with parentID from %r to %r", self.id, root.attrib['id'], self.parentID, root.attrib['parentID'])
 
-        if(isinstance(self, Container) and kwargs.get('upnp_client','') == 'XBox'):
-            ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
-        else:
-            ET.SubElement(root, 'upnp:class').text = self.upnp_class
+        #if(isinstance(self, Container) and kwargs.get('upnp_client','') == 'XBox'):
+        #    ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+        #else:
+        ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
         if self.restricted:
             root.attrib['restricted'] = '1'
