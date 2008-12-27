@@ -44,6 +44,13 @@ import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 
+## Sorting helpers
+NUMS = re.compile('([0-9]+)')
+def _natural_key(s):
+    # strip the spaces
+    s = s.get_name().strip()
+    return [ part.isdigit() and int(part) or part.lower() for part in NUMS.split(s) ]
+
 class FSItem(BackendItem):
     logCategory = 'fs_item'
 
@@ -76,6 +83,7 @@ class FSItem(BackendItem):
             self.item.childCount = 0
         self.child_count = 0
         self.children = []
+        self.sorted = False
 
 
         if mimetype in ['directory','root']:
@@ -289,6 +297,7 @@ class FSItem(BackendItem):
             self.item.childCount += 1
         if update == True:
             self.update_id += 1
+        self.sorted = False
 
     def remove_child(self, child):
         #print "remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name())
@@ -298,8 +307,12 @@ class FSItem(BackendItem):
                 self.item.childCount -= 1
             self.children.remove(child)
             self.update_id += 1
+        self.sorted = False
 
     def get_children(self,start=0,request_count=0):
+        if self.sorted == False:
+            self.children.sort(key=_natural_key)
+            self.sorted = True
         if request_count == 0:
             return self.children[start:]
         else:
