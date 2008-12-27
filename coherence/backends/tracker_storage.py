@@ -140,20 +140,29 @@ class Artist(BackendItem):
         _,id = child.id.split('.')
         self.children[id] = child
 
-    def get_children(self,start=0,end=0):
-        children = []
-        if self.sorted_children != None:
-            for key in self.sorted_children:
-                children.append(self.children[key])
-        else:
+    def sort_children(self):
+        if self.sorted_children == None:
             def childs_sort(x,y):
                 r = cmp(self.children[x].name,self.children[y].name)
                 return r
 
             self.sorted_children = self.children.keys()
             self.sorted_children.sort(cmp=childs_sort)
-            for key in self.sorted_children:
-                children.append(self.children[key])
+        return self.sorted_children
+
+    def get_artist_all_tracks(self,start=0,request_count=0):
+        children = []
+        for album in self.sort_children():
+            children += album.get_children()
+        if request_count == 0:
+            return children[start:]
+        else:
+            return children[start:request_count]
+
+    def get_children(self,start=0,end=0):
+        children = []
+        for key in self.sort_children():
+            children.append(self.children[key])
 
         if end == 0:
             return children[start:]
@@ -308,6 +317,22 @@ class Track(BackendItem):
         if self.bitrate > 0:
             res.bitrate = str(bitrate)
         item.res.append(res)
+
+        if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+            if self.mimetype in ('audio/mpeg',
+                                 'application/ogg','audio/ogg',
+                                 'audio/x-m4a',
+                                 'application/x-flac'):
+                dlna_pn = 'DLNA.ORG_PN=LPCM'
+                dlna_tags = simple_dlna_tags[:]
+                dlna_tags[1] = 'DLNA.ORG_CI=1'
+                #dlna_tags[2] = 'DLNA.ORG_OP=00'
+                new_res = Resource(self.url+'?transcoded=lpcm',
+                    'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
+                new_res.size = None
+                if self.duration > 0:
+                    res.duration = str(self.duration)
+                item.res.append(new_res)
 
         return item
 
