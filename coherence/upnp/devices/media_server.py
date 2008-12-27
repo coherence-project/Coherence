@@ -116,10 +116,19 @@ class MSRoot(resource.Resource, log.Loggable):
                 ch = self.store.get_by_id(path)
                 #FIXME create a generic transcoder class and sort the details there
                 format = request.args['transcoded'][0]
+                uri = ch.get_path()
                 if format == 'lpcm':
                     try:
                         from coherence.transcoder import PCMTranscoder
-                        return PCMTranscoder(ch.get_path())
+                        return PCMTranscoder(uri)
+                    except:
+                        self.debug(traceback.format_exc())
+                        request.setResponseCode(404)
+                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                if format == 'wav':
+                    try:
+                        from coherence.transcoder import WAVTranscoder
+                        return WAVTranscoder(uri)
                     except:
                         self.debug(traceback.format_exc())
                         request.setResponseCode(404)
@@ -127,7 +136,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 if format == 'mp4':
                     try:
                         from coherence.transcoder import MP4Transcoder
-                        return MP4Transcoder(ch.get_path())
+                        return MP4Transcoder(uri)
                     except:
                         self.debug(traceback.format_exc())
                         request.setResponseCode(404)
@@ -137,7 +146,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     if type == 'jpeg':
                         try:
                             from coherence.transcoder import JPEGThumbTranscoder
-                            return JPEGThumbTranscoder(ch.get_path())
+                            return JPEGThumbTranscoder(uri)
                         except:
                             self.debug(traceback.format_exc())
                             request.setResponseCode(404)

@@ -345,11 +345,31 @@ class Track(item.Item,BackendItem):
             res.size = 0
         item.res.append(res)
 
+        if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+            if mimetype in ('audio/mpeg',
+                            'application/ogg','audio/ogg',
+                            'audio/x-m4a',
+                            'application/x-flac'):
+                dlna_pn = 'DLNA.ORG_PN=LPCM'
+                dlna_tags = simple_dlna_tags[:]
+                dlna_tags[1] = 'DLNA.ORG_CI=1'
+                #dlna_tags[2] = 'DLNA.ORG_OP=00'
+                new_res = Resource(url+'?transcoded=lpcm',
+                    'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
+                new_res.size = None
+                item.res.append(new_res)
+
+                new_res = Resource(url+'?transcoded=wav',
+                    'http-get:*:%s:*' % 'audio/x-wav')
+                new_res.size = None
+                item.res.append(new_res)
+
         try:
             # FIXME: getmtime is deprecated in Twisted 2.6
             item.date = datetime.fromtimestamp(statinfo.st_mtime)
         except:
             item.date = None
+
 
         return item
 

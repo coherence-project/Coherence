@@ -331,7 +331,14 @@ class Track(BackendItem):
                     'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
                 new_res.size = None
                 if self.duration > 0:
-                    res.duration = str(self.duration)
+                    new_res.duration = str(self.duration)
+                item.res.append(new_res)
+
+                new_res = Resource(self.url+'?transcoded=wav',
+                    'http-get:*:%s:*' % 'audio/x-wav')
+                new_res.size = None
+                if self.duration > 0:
+                    new_res.duration = str(self.duration)
                 item.res.append(new_res)
 
         return item

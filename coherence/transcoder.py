@@ -18,6 +18,8 @@ import gst
 import gobject
 gobject.threads_init ()
 
+import urllib
+
 from twisted.web import resource, server
 
 from coherence import log
@@ -147,8 +149,10 @@ class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
     addSlash = True
 
-    def __init__(self,source,destination=None):
-        self.source = source
+    def __init__(self,uri,destination=None):
+        if uri[:7] not in ['file://','http://']:
+            uri = 'file://' + urllib.quote(uri)   #FIXME
+        self.source = uri
         self.destination = destination
         resource.Resource.__init__(self)
 
@@ -227,6 +231,29 @@ class PCMTranscoder(BaseTranscoder):
         if 'audio' in name:
             if not self.__audioconvert_pad.is_linked(): # Only link once
                 pad.link(self.__audioconvert_pad)
+
+
+class WAVTranscoder(BaseTranscoder):
+
+    contentType = 'audio/x-wav'
+
+    def start(self,request=None):
+        self.info("start %r", request)
+        self.pipeline = gst.parse_launch(
+            "%s ! decodebin ! audioconvert ! wavenc name=enc" % self.source)
+        enc = self.pipeline.get_by_name('enc')
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
+        enc.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+        def requestFinished(result):
+            self.info("requestFinished %r" % result)
+            gobject.idle_add(self.cleanup)
+            return
+
+        d = request.notifyFinish()
+        d.addBoth(requestFinished)
 
 
 class MP4Transcoder(BaseTranscoder):
