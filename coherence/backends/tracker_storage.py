@@ -324,7 +324,7 @@ class Track(BackendItem):
                                  'audio/x-m4a',
                                  'application/x-flac'):
                 dlna_pn = 'DLNA.ORG_PN=LPCM'
-                dlna_tags = simple_dlna_tags[:]
+                dlna_tags = DIDLLite.simple_dlna_tags[:]
                 dlna_tags[1] = 'DLNA.ORG_CI=1'
                 #dlna_tags[2] = 'DLNA.ORG_OP=00'
                 new_res = Resource(self.url+'?transcoded=lpcm',

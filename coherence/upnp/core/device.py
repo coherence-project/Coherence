@@ -85,6 +85,12 @@ class Device(log.Loggable):
     def get_services(self):
         return self.services
 
+    def get_service_by_type(self,type):
+        for service in self.services:
+            _,_,_,service_class,version = service.service_type.split(':')
+            if service_class == type:
+                return service
+
     def add_service(self, service):
         self.debug("add_service %r", service)
         self.services.append(service)
