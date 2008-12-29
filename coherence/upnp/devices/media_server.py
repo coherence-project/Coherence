@@ -133,6 +133,14 @@ class MSRoot(resource.Resource, log.Loggable):
                         self.debug(traceback.format_exc())
                         request.setResponseCode(404)
                         return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                if format == 'mp3':
+                    try:
+                        from coherence.transcoder import MP3Transcoder
+                        return MP3Transcoder(uri)
+                    except:
+                        self.debug(traceback.format_exc())
+                        request.setResponseCode(404)
+                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
                 if format == 'mp4':
                     try:
                         from coherence.transcoder import MP4Transcoder

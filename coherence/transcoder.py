@@ -181,6 +181,24 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         request.setHeader('Content-Type', self.contentType)
         request.write('')
 
+    def requestFinished(self,result):
+        self.info("requestFinished %r" % result)
+        """ we need to find a way to destroy the pipeline here
+        """
+        #from twisted.internet import reactor
+        #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
+        gobject.idle_add(self.cleanup)
+
+    def on_message(self,bus,message):
+        t = message.type
+        print "on_message", t
+        if t == gst.MESSAGE_ERROR:
+            #err, debug = message.parse_error()
+            #print "Error: %s" % err, debug
+            self.cleanup()
+        elif t == gst.MESSAGE_EOS:
+            self.cleanup()
+
     def cleanup(self):
         self.pipeline.set_state(gst.STATE_NULL)
 
@@ -212,18 +230,8 @@ class PCMTranscoder(BaseTranscoder):
         filter.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
-        def requestFinished(result):
-            self.info("requestFinished %r" % result)
-            """ we need to find a way to destroy the pipeline here
-            """
-            #from twisted.internet import reactor
-            #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
-            #reactor.callLater(0, self.pipeline.get_state)
-            gobject.idle_add(self.cleanup)
-            return
-
         d = request.notifyFinish()
-        d.addBoth(requestFinished)
+        d.addBoth(self.requestFinished)
 
     def __on_new_decoded_pad(self, element, pad, last):
         caps = pad.get_caps()
@@ -245,15 +253,30 @@ class WAVTranscoder(BaseTranscoder):
         sink = DataSink(destination=self.destination,request=request)
         self.pipeline.add(sink)
         enc.link(sink)
+        #bus = self.pipeline.get_bus()
+        #bus.connect('message', self.on_message)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
-        def requestFinished(result):
-            self.info("requestFinished %r" % result)
-            gobject.idle_add(self.cleanup)
-            return
+        d = request.notifyFinish()
+        d.addBoth(self.requestFinished)
+
+
+class MP3Transcoder(BaseTranscoder):
+
+    contentType = 'audio/mpeg'
+
+    def start(self,request=None):
+        self.info("start %r", request)
+        self.pipeline = gst.parse_launch(
+            "%s ! decodebin ! audioconvert ! lame name=enc" % self.source)
+        enc = self.pipeline.get_by_name('enc')
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
+        enc.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
 
         d = request.notifyFinish()
-        d.addBoth(requestFinished)
+        d.addBoth(self.requestFinished)
 
 
 class MP4Transcoder(BaseTranscoder):
@@ -272,18 +295,8 @@ class MP4Transcoder(BaseTranscoder):
         mux.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
-        def requestFinished(result):
-            self.info("requestFinished %r" % result)
-            """ we need to find a way to destroy the pipeline here
-            """
-            #from twisted.internet import reactor
-            #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
-            #reactor.callLater(0, self.pipeline.get_state)
-            gobject.idle_add(self.cleanup)
-            return
-
         d = request.notifyFinish()
-        d.addBoth(requestFinished)
+        d.addBoth(self.requestFinished)
 
 
 class JPEGThumbTranscoder(BaseTranscoder):
@@ -316,12 +329,5 @@ class JPEGThumbTranscoder(BaseTranscoder):
         enc.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
-        def requestFinished(result):
-            self.info("requestFinished %r" % result)
-            """ we need to find a way to destroy the pipeline here
-            """
-            gobject.idle_add(self.cleanup)
-            return
-
         d = request.notifyFinish()
-        d.addBoth(requestFinished)
+        d.addBoth(self.requestFinished)

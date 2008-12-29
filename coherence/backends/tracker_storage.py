@@ -327,19 +327,20 @@ class Track(BackendItem):
                 dlna_tags = DIDLLite.simple_dlna_tags[:]
                 dlna_tags[1] = 'DLNA.ORG_CI=1'
                 #dlna_tags[2] = 'DLNA.ORG_OP=00'
-                new_res = Resource(self.url+'?transcoded=lpcm',
+                new_res = DIDLLite.Resource(self.url+'?transcoded=lpcm',
                     'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
                 new_res.size = None
                 if self.duration > 0:
                     new_res.duration = str(self.duration)
                 item.res.append(new_res)
 
-                new_res = Resource(self.url+'?transcoded=wav',
-                    'http-get:*:%s:*' % 'audio/x-wav')
-                new_res.size = None
-                if self.duration > 0:
-                    new_res.duration = str(self.duration)
-                item.res.append(new_res)
+                if self.mimetype != 'audio/mpeg':
+                    new_res = DIDLLite.Resource(self.url+'?transcoded=mp3',
+                        'http-get:*:%s:*' % 'audio/mpeg')
+                    new_res.size = None
+                    if self.duration > 0:
+                        new_res.duration = str(self.duration)
+                    item.res.append(new_res)
 
         return item
 

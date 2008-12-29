@@ -162,10 +162,11 @@ class FSItem(BackendItem):
                     new_res.size = None
                     self.item.res.append(new_res)
 
-                    new_res = Resource(self.url+'?transcoded=wav',
-                        'http-get:*:%s:*' % 'audio/x-wav')
-                    new_res.size = None
-                    self.item.res.append(new_res)
+                    if self.mimetype  != 'audio/mpeg':
+                        new_res = Resource(self.url+'?transcoded=mp3',
+                            'http-get:*:%s:*' % 'audio/mpeg')
+                        new_res.size = None
+                        self.item.res.append(new_res)
 
             """ if this item is an image and we want to add a thumbnail for it
                 we have to follow these rules:

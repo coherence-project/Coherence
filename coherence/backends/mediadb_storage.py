@@ -354,15 +354,16 @@ class Track(item.Item,BackendItem):
                 dlna_tags = DIDLLite.simple_dlna_tags[:]
                 dlna_tags[1] = 'DLNA.ORG_CI=1'
                 #dlna_tags[2] = 'DLNA.ORG_OP=00'
-                new_res = Resource(url+'?transcoded=lpcm',
+                new_res = DIDLLite.Resource(url+'?transcoded=lpcm',
                     'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
                 new_res.size = None
                 item.res.append(new_res)
 
-                new_res = Resource(url+'?transcoded=wav',
-                    'http-get:*:%s:*' % 'audio/x-wav')
-                new_res.size = None
-                item.res.append(new_res)
+                if mimetype != 'audio/mpeg':
+                    new_res = DIDLLite.Resource(url+'?transcoded=mp3',
+                        'http-get:*:%s:*' % 'audio/mpeg')
+                    new_res.size = None
+                    item.res.append(new_res)
 
         try:
             # FIXME: getmtime is deprecated in Twisted 2.6
