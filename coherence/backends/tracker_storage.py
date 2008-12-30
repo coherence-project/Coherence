@@ -259,6 +259,7 @@ class Track(BackendItem):
         self.path = unicode(file)
 
         duration = str(duration).strip()
+        duration = duration.split('.')[0]
         if len(duration) == 0:
             duration = 0
         seconds = int(duration)
@@ -374,6 +375,7 @@ class Video(BackendItem):
         self.path = unicode(file)
 
         duration = str(duration).strip()
+        duration = duration.split('.')[0]
         if len(duration) == 0:
             duration = 0
         seconds = int(duration)
@@ -605,6 +607,7 @@ class TrackerStore(BackendStore):
     def get_videos(self):
 
         def handle_error(error):
+            print error
             return error
 
         def parse_videos_query_result(resultlist):
@@ -656,6 +659,7 @@ class TrackerStore(BackendStore):
             return error
 
         def parse_images_query_result(resultlist):
+            print "images", resultlist
             images = []
             for image in resultlist:
                 file,_,title,album,\
