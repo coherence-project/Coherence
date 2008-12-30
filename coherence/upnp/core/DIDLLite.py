@@ -129,8 +129,6 @@ def build_dlna_additional_info(content_format):
     additional_info = '*'
     if content_format == 'audio/mpeg':
         additional_info = ';'.join(['DLNA.ORG_PN=MP3']+simple_dlna_tags)
-    if content_format == 'audio/x-wav':
-        additional_info = ';'.join(['DLNA.ORG_PN=LPCM']+simple_dlna_tags)
     if content_format == 'audio/ms-wma':
         additional_info = ';'.join(['DLNA.ORG_PN=WMABASE']+simple_dlna_tags)
     if content_format == 'image/jpeg':
@@ -181,6 +179,8 @@ class Resource:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format == 'video/x-msvideo':
                 content_format = 'video/avi'
+            if content_format == 'audio/x-wav':
+                content_format = 'audio/wav'
             if kwargs.get('upnp_client','') == 'XBox':
                 """ we don't need the DLNA tags there,
                     and maybe it irritates that poor thing anyway
