@@ -149,8 +149,7 @@ class SWR3Store(BackendStore,BackendRssMixin):
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable( \
-                0, 'SourceProtocolInfo', ['http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=11;DLNA.ORG_FLAGS=01700000000000000000000000000000',
-                                          'http-get:*:audio/mpeg:*'])
+                0, 'SourceProtocolInfo', ['http-get:*:audio/mpeg:*'])
 
     def parse_data(self,xml_data,container):
         root = xml_data.getroot()

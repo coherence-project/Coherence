@@ -60,7 +60,6 @@ class TEDStore(LolcatsStore):
         self.videos = {}
 
         dfr = self.update_data()
-
         dfr.addCallback(self.init_completed)
 
     def get_by_id(self, id):
