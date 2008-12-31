@@ -26,6 +26,21 @@ from coherence.upnp.core import dlna
 
 from coherence import log
 
+
+def is_audio(mimetype):
+    """ checks for type audio,
+        expects a mimetype or an UPnP
+        protocolInfo
+    """
+    test = mimetype.split(':')
+    if len(test) == 4:
+        mimetype = test[2]
+    if mimetype == 'application/ogg':
+        return True
+    if mimetype.startswith('audio/'):
+        return True
+    return False
+
 class Resources(list):
 
     """ a list of resources, always sorted after an append """
@@ -69,6 +84,8 @@ class Resources(list):
         if not isinstance(local_protocol_infos, list):
             local_protocol_infos = [local_protocol_infos]
         for res in self:
+            if res.importUri != None:
+                continue
             #print "res", res.protocolInfo, res.data
             remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
             #print "remote", remote_protocol,remote_network,remote_content_format
@@ -228,6 +245,32 @@ class Resource:
         #elt = ElementTree(elt)
         instance.fromElement(elt.getroot())
         return instance
+
+    def transcoded(self,format):
+        protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+        dlna_tags = simple_dlna_tags[:]
+        dlna_tags[1] = 'DLNA.ORG_CI=1'
+        #dlna_tags[2] = 'DLNA.ORG_OP=00'
+        if format == 'mp3':
+            if content_format == 'audio/mpeg':
+                return None
+            content_format='audio/mpeg'
+            dlna_pn = 'DLNA.ORG_PN=MP3'
+        elif format == 'lpcm':
+            dlna_pn = 'DLNA.ORG_PN=LPCM'
+            content_format='audio/L16;rate=44100;channels=2'
+        else:
+            return None
+
+        additional_info = ';'.join([dlna_pn]+dlna_tags)
+        new_protocol_info = ':'.join((protocol,network,content_format,additional_info))
+
+        new_res = Resource(self.data+'/transcoded/%s' % format,
+                        new_protocol_info)
+        new_res.size = None
+        new_res.duration = self.duration
+        new_res.resolution = self.resolution
+        return new_res
 
 class Object(log.Loggable):
     """The root class of the entire content directory class heirachy."""
@@ -431,8 +474,28 @@ class Item(Object):
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
 
-        for res in self.res:
-            root.append(res.toElement(**kwargs))
+        if kwargs.get('transcoding',False) == True:
+            res = self.res.get_matching(['*:*:*:*'], protocol_type='http-get')
+            if len(res) > 0 and is_audio(res[0].protocolInfo):
+                old_res = res[0]
+                if(kwargs.get('upnp_client','') == 'XBox'):
+                    transcoded_res = old_res.transcoded('mp3')
+                    if transcoded_res != None:
+                        root.append(transcoded_res.toElement(**kwargs))
+                    else:
+                        root.append(old_res.toElement(**kwargs))
+                else:
+                    for res in self.res:
+                        root.append(res.toElement(**kwargs))
+                    transcoded_res = old_res.transcoded('lpcm')
+                    if transcoded_res != None:
+                        root.append(transcoded_res.toElement(**kwargs))
+            else:
+                for res in self.res:
+                    root.append(res.toElement(**kwargs))
+        else:
+            for res in self.res:
+                root.append(res.toElement(**kwargs))
 
         return root
 
@@ -709,7 +772,9 @@ class DIDLElement(ElementInterface,log.Loggable):
 
     logCategory = 'didllite'
 
-    def __init__(self, upnp_client='', parent_container=None, requested_id=None):
+    def __init__(self, upnp_client='',
+                 parent_container=None,requested_id=None,
+                 transcoding=False):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
         self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
@@ -720,6 +785,7 @@ class DIDLElement(ElementInterface,log.Loggable):
         self.upnp_client = upnp_client
         self.parent_container = parent_container
         self.requested_id = requested_id
+        self.transcoding = transcoding
 
 
     def addContainer(self, id, parentID, title, restricted = False):
@@ -729,7 +795,8 @@ class DIDLElement(ElementInterface,log.Loggable):
     def addItem(self, item):
         self.append(item.toElement(upnp_client=self.upnp_client,
                                    parent_container=self.parent_container,
-                                   requested_id=self.requested_id))
+                                   requested_id=self.requested_id,
+                                   transcoding=self.transcoding))
         self._items.append(item)
 
     def numItems(self):

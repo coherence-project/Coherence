@@ -121,6 +121,16 @@ class FSItem(BackendItem):
             except:
                 size = 0
 
+            if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+                if self.mimetype in ('application/ogg','audio/ogg',
+                                     'audio/x-wav',
+                                     'audio/x-m4a',
+                                     'application/x-flac'):
+                    new_res = Resource(self.url+'/transcoded.mp3',
+                        'http-get:*:%s:*' % 'audio/mpeg')
+                    new_res.size = None
+                    #self.item.res.append(new_res)
+
             if mimetype != 'item':
                 res = Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
                 res.size = size
@@ -151,6 +161,7 @@ class FSItem(BackendItem):
             if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
                 if self.mimetype in ('audio/mpeg',
                                      'application/ogg','audio/ogg',
+                                     'audio/x-wav',
                                      'audio/x-m4a',
                                      'application/x-flac'):
                     dlna_pn = 'DLNA.ORG_PN=LPCM'
@@ -160,13 +171,13 @@ class FSItem(BackendItem):
                     new_res = Resource(self.url+'?transcoded=lpcm',
                         'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
                     new_res.size = None
-                    self.item.res.append(new_res)
+                    #self.item.res.append(new_res)
 
                     if self.mimetype  != 'audio/mpeg':
                         new_res = Resource(self.url+'?transcoded=mp3',
                             'http-get:*:%s:*' % 'audio/mpeg')
                         new_res.size = None
-                        self.item.res.append(new_res)
+                        #self.item.res.append(new_res)
 
             """ if this item is an image and we want to add a thumbnail for it
                 we have to follow these rules:

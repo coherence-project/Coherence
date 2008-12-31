@@ -194,7 +194,7 @@ class Artist(item.Item,BackendItem):
         children = [x[1] for x in list(self.store.query((Album,Track),
                             attributes.AND(Album.artist == self,
                                            Track.album == Album.storeID),
-                            sort=(Track.title.ascending)
+                            sort=(Album.title.ascending,Track.track_nr.ascending)
                             ))]
         if request_count == 0:
             return children[start:]
@@ -345,25 +345,25 @@ class Track(item.Item,BackendItem):
             res.size = 0
         item.res.append(res)
 
-        if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
-            if mimetype in ('audio/mpeg',
-                            'application/ogg','audio/ogg',
-                            'audio/x-m4a',
-                            'application/x-flac'):
-                dlna_pn = 'DLNA.ORG_PN=LPCM'
-                dlna_tags = DIDLLite.simple_dlna_tags[:]
-                dlna_tags[1] = 'DLNA.ORG_CI=1'
-                #dlna_tags[2] = 'DLNA.ORG_OP=00'
-                new_res = DIDLLite.Resource(url+'?transcoded=lpcm',
-                    'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
-                new_res.size = None
-                item.res.append(new_res)
-
-                if mimetype != 'audio/mpeg':
-                    new_res = DIDLLite.Resource(url+'?transcoded=mp3',
-                        'http-get:*:%s:*' % 'audio/mpeg')
-                    new_res.size = None
-                    item.res.append(new_res)
+        #if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+        #    if mimetype in ('audio/mpeg',
+        #                    'application/ogg','audio/ogg',
+        #                    'audio/x-m4a',
+        #                    'application/x-flac'):
+        #        dlna_pn = 'DLNA.ORG_PN=LPCM'
+        #        dlna_tags = DIDLLite.simple_dlna_tags[:]
+        #        dlna_tags[1] = 'DLNA.ORG_CI=1'
+        #        #dlna_tags[2] = 'DLNA.ORG_OP=00'
+        #        new_res = DIDLLite.Resource(url+'?transcoded=lpcm',
+        #            'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
+        #        new_res.size = None
+        #        item.res.append(new_res)
+        #
+        #        if mimetype != 'audio/mpeg':
+        #            new_res = DIDLLite.Resource(url+'?transcoded=mp3',
+        #                'http-get:*:%s:*' % 'audio/mpeg')
+        #            new_res.size = None
+        #            item.res.append(new_res)
 
         try:
             # FIXME: getmtime is deprecated in Twisted 2.6

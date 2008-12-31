@@ -40,8 +40,7 @@ COVER_REQUEST_INDICATOR = re.compile(".*?cover\.[A-Z|a-z]{3,4}$")
 
 ATTACHMENT_REQUEST_INDICATOR = re.compile(".*?attachment=.*$")
 
-TRANSCODED_REQUEST_INDICATOR = re.compile(".*?transcoded=.*$")
-
+TRANSCODED_REQUEST_INDICATOR = re.compile(".*/transcoded/.*$")
 
 class MSRoot(resource.Resource, log.Loggable):
     logCategory = 'mediaserver'
@@ -109,13 +108,22 @@ class MSRoot(resource.Resource, log.Loggable):
                     request.setResponseCode(404)
                     return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
 
+        #if(request.method in ('GET','HEAD') and
+        #   XBOX_TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
+        #    if self.server.coherence.config.get('transcoding', 'no') == 'yes':
+        #        id = path[:-15].split('/')[-1]
+        #        self.info("request transcoding to %r for id %s" % (request.args,id))
+        #        ch = self.store.get_by_id(id)
+        #        uri = ch.get_path()
+        #        return MP3Transcoder(uri)
+
         if(request.method in ('GET','HEAD') and
            TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
             self.info("request transcoding to %r for id %s" % (request.args,path))
             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
                 ch = self.store.get_by_id(path)
                 #FIXME create a generic transcoder class and sort the details there
-                format = request.args['transcoded'][0]
+                format = request.uri.split('/')[-1] #request.args['transcoded'][0]
                 uri = ch.get_path()
                 if format == 'lpcm':
                     try:
@@ -511,7 +519,10 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             raise LookupError,msg
 
         try:
-            self.content_directory_server = ContentDirectoryServer(self)
+            transcoding = False
+            if self.coherence.config.get('transcoding', 'no') == 'yes':
+                transcoding = True
+            self.content_directory_server = ContentDirectoryServer(self,transcoding=transcoding)
             self._services.append(self.content_directory_server)
         except LookupError,msg:
             self.warning( 'ContentDirectoryServer', msg)

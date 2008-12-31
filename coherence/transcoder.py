@@ -207,9 +207,12 @@ class PCMTranscoder(BaseTranscoder):
     contentType = 'audio/L16;rate=44100;channels=2'
 
     def start(self,request=None):
-        self.info("start %r" % request)
+        self.info("PCMTranscoder start %r %r" % (request,self.source))
         src = gst.element_factory_make('filesrc')
-        src.set_property('location', self.source)
+        if self.source.startswith('file://'):
+            src.set_property('location', self.source[7:])
+        else:
+            src.set_property('location', self.source)
         sink = DataSink(destination=self.destination,request=request)
 
         decodebin = gst.element_factory_make('decodebin')

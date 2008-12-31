@@ -32,8 +32,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                              log.Loggable):
     logCategory = 'content_directory_server'
 
-    def __init__(self, device, backend=None):
+    def __init__(self, device, backend=None,transcoding=False):
         self.device = device
+        self.transcoding=transcoding
         if backend == None:
             backend = self.device.backend
         resource.Resource.__init__(self)
@@ -71,7 +72,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         parent_container = str(ContainerID)
 
         didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
-                           parent_container=parent_container)
+                           parent_container=parent_container,
+                           transcoding=self.transcoding)
 
         def build_response(tm):
             r = {'Result': didl.toString(), 'TotalMatches': tm,
@@ -216,7 +218,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
         didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
                            requested_id=requested_id,
-                           parent_container=parent_container)
+                           parent_container=parent_container,
+                           transcoding=self.transcoding)
 
         def got_error(r):
             return r
