@@ -1,3 +1,693 @@
+2008-12-27 10:41  dev
+
+	* coherence/backends/tracker_storage.py: adding transcoding and
+	  XBox helper method to the audio part of the Tracker backend
+
+2008-12-23 19:19  dev
+
+	* coherence/backends/mediadb_storage.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/services/servers/content_directory_server.py: more
+	  adjustments for the XBox 360
+
+2008-12-22 17:07  dev
+
+	* misc/org.Coherence.service: seems the -d [daemonize] option is
+	  causing trouble on Ubuntu intrepid
+
+2008-12-22 11:34  dev
+
+	* coherence/upnp/core/device.py: we shouldn't have to do that
+
+2008-12-20 23:16  dev
+
+	* coherence/upnp/core/device.py: once more
+
+2008-12-20 18:33  dev
+
+	* coherence/backends/flickr_storage.py: fixing a stupid typo
+
+2008-12-20 18:01  dev
+
+	* coherence/upnp/core/device.py, coherence/upnp/core/service.py:
+	  making the Inspectors day
+
+2008-12-19 16:33  dev
+
+	* coherence/backends/flickr_storage.py: now with the 'Original'
+	  photo too
+
+2008-12-19 15:50  dev
+
+	* coherence/backends/flickr_storage.py: get the right url and set
+	  the resolution
+
+2008-12-19 15:03  dev
+
+	* coherence/backends/flickr_storage.py,
+	  coherence/upnp/devices/media_server.py: when a photo is requested
+	  find out about its available sizes and add the best one as the
+	  first resource, original size not yet considered
+
+2008-12-18 14:26  dev
+
+	* coherence/backends/flickr_storage.py: * a 'not-so-clean' addition
+	  of 'Friends & Families' photosets
+	  * get the "photo taken" date from the ''extras'' attribute, this
+	  removes the need for http HEAD requests, but implies we don't get
+	  the image size anymore
+
+2008-12-18 14:22  dev
+
+	* coherence/upnp/devices/basics.py: add generic DLNA device class
+	  and capabilites in device description xml
+
+2008-12-18 13:30  dev
+
+	* coherence/extern/simple_config.py: right this time?
+
+2008-12-17 19:59  dev
+
+	* coherence/extern/simple_config.py: ignore our ''save'' method
+
+2008-12-17 19:56  dev
+
+	* coherence/upnp/core/device.py: keep track of DLNA device class
+	  and device capabilies information
+
+2008-12-16 14:48  dev
+
+	* coherence/base.py, coherence/transcoder.py,
+	  coherence/upnp/core/action.py, coherence/upnp/core/device.py,
+	  coherence/upnp/core/service.py, coherence/upnp/core/variable.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: * helper methods for the
+	  Inspector
+	  * some corrections
+
+2008-12-14 16:52  dev
+
+	* coherence/upnp/core/soap_proxy.py: pass it as expected nowdays
+
+2008-12-14 16:09  dev
+
+	* coherence/upnp/core/service.py: the Inspector demands them
+
+2008-12-14 16:08  dev
+
+	* coherence/upnp/core/soap_proxy.py: extract the proper UPnP error
+	  code and description and pass it upwards
+
+2008-12-14 16:05  dev
+
+	* coherence/backends/light.py: treat a boolean argument the right
+	  way
+
+2008-12-11 21:29  dev
+
+	* coherence/upnp/core/utils.py: applying patch from trickie, thx!
+	  
+	  closes #159
+
+2008-12-10 19:00  dev
+
+	* coherence/upnp/services/servers/connection_manager_server.py:
+	  remove unnecessary print statements
+
+2008-12-10 17:04  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/services/servers/connection_manager_server.py: a
+	  more generic dlna-related SourceProtocolInfo populating
+
+2008-12-10 11:27  dev
+
+	* coherence/backend.py, coherence/backends/swr3_storage.py: a
+	  BackendRssMixin to simplify the creation of rss-based MediaServer
+	  backends
+
+2008-12-09 21:21  dev
+
+	* coherence/upnp/core/DIDLLite.py: react on the 'video/x-m4a'
+	  mimetype too
+
+2008-12-09 21:20  dev
+
+	* coherence/backends/ted_storage.py: another minor adjustment
+
+2008-12-09 20:56  dev
+
+	* coherence/backends/ted_storage.py: mimetype and next_id fix
+
+2008-12-09 18:17  lightyear
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/ted_storage.py, setup.py: Adding initial
+	  version of TEDtalks Backend
+
+2008-12-09 13:45  dev
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/gallery2_storage.py,
+	  coherence/extern/galleryremote,
+	  coherence/extern/galleryremote/__init__.py,
+	  coherence/extern/galleryremote/gallery.py, setup.py: a new
+	  [http://gallery.menalto.com/ Gallery2] MediaServer backend from
+	  jmsizun, connecting to a Gallery2 server via a slightly modified
+	  [http://www.fprimex.com/programming/galleryremote galleryremote
+	  module]
+	  
+	  * activate like this: coherence
+	  --plugin=backend:Gallery2Store,server_url:http://something,username:yours,password:hidden
+	  
+	  * public - no username and password needed - Gallery2 servers for
+	  example use are:
+	  * coherence
+	  --plugin=backend:Gallery2Store,server_url:http://www.digital-images.co.nz/gallery
+	  * coherence
+	  --plugin=backend:Gallery2Store,server_url:http://ckdake.com/gallery
+	  
+	  closes #160
+
+2008-12-08 17:35  dev
+
+	* coherence/backends/swr3_storage.py: some cleanups and album-art
+	  support
+
+2008-12-07 22:32  dev
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/swr3_storage.py, setup.py: another new
+	  RSS-based backend, presenting the podcasts of the German
+	  radiostation [http://www.swr3.de SWR3]
+
+2008-12-07 22:30  dev
+
+	* coherence/backends/bbc_storage.py: some small fixes for the
+	  BBCStore, make it work in the WebUI too
+
+2008-12-07 22:29  dev
+
+	* coherence/upnp/core/DIDLLite.py: move the description attributes
+	  into the Object, so they are inherited to the Containers too
+
+2008-12-07 22:27  dev
+
+	* coherence/ui/av_widgets.py: make the DBus ControlPoint class a
+	  singleton, so it is shared over several instances - primary for
+	  use in the Nautilus plugins
+
+2008-12-06 21:01  dev
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/bbc_storage.py, setup.py: initial version of
+	  the BBC [http://open.bbc.co.uk/rad/uriplay/availablecontent open
+	  content] MediaServer
+
+2008-12-05 14:15  dev
+
+	* misc/EOG Plugin, misc/EOG Plugin/upnp-coherence.eog-plugin,
+	  misc/EOG Plugin/upnp-coherence.py: new EOG plugin
+
+2008-12-03 19:44  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py: * enabling transcoding for m4a
+	  and flac
+	  * add Resources to a PlaylistContainer
+
+2008-11-30 19:03  dev
+
+	* coherence/ui/av_widgets.py: uups
+
+2008-11-30 17:31  dev
+
+	* coherence/base.py: little fix
+
+2008-11-29 18:07  dev
+
+	* coherence/backend.py, coherence/backends/lolcats_storage.py: *
+	  moving that single louie signal out of the public backend area
+	  * add some more expanation to the LolcatsStore
+
+2008-11-29 16:35  dev
+
+	* coherence/backends/lolcats_storage.py: some small adjustments to
+	  the LolcatsStore
+
+2008-11-29 16:00  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/dbus_service.py, coherence/ui/av_widgets.py: * limit
+	  the result per each Browse request to 25 items
+	  * don't let tooltips show up while scrolling and some more
+	  optimizations
+	  * fix for transfering non-ascii chars via dbus, closes #172
+
+2008-11-29 14:35  lightyear
+
+	* Coherence.egg-info/entry_points.txt, setup.py: Egg info for
+	  lolcats plguin
+
+2008-11-29 14:35  lightyear
+
+	* coherence/backends/lolcats_storage.py: Adding the exmple Lolcats
+	  storage backend
+
+2008-11-26 13:23  dev
+
+	* coherence/ui/av_widgets.py, coherence/upnp/core/DIDLLite.py:
+	  adding preliminary support for tooltips in the treeview, mainly
+	  atm to have the poster and other data of the AppleTrailers store
+	  displayed in the Totem plugin
+
+2008-11-26 10:19  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/transcoder.py, coherence/upnp/core/DIDLLite.py: some
+	  more details - size, duration, director and description - for the
+	  AppleTrailers item
+
+2008-11-23 11:44  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/backends/fs_storage.py, coherence/transcoder.py,
+	  coherence/upnp/core/DIDLLite.py: * rearrangement of the DLNA
+	  profile parts
+	  * removing the 'wrong' resolution attribute for the AppleTrailers
+	  poster, as we don't know that yet
+
+2008-11-22 22:39  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/backends/fs_storage.py, coherence/transcoder.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/devices/media_server.py: * refactoring the
+	  transcoder classes a bit
+	  * adding a transcoder for JPEG thumbnails
+	  * adding poster to thumbnails support in the AppleTrailers
+	  backend
+	  * supporting item attachments with a transcoding option
+
+2008-11-22 11:14  dev
+
+	* coherence/backends/gstreamer_audio_player.py,
+	  coherence/backends/gstreamer_renderer.py, setup.py: rename the
+	  GStreamer MediaRenderer from the misleading
+	  'gstreamer_audio_player' to just 'gstreamer_renderer'
+
+2008-11-19 19:15  dev
+
+	* coherence/backends/appletrailers_storage.py: one step closer to
+	  the AppleTrailers on the PS3
+
+2008-11-19 16:42  dev
+
+	* coherence/upnp/devices/media_server_client.py: some more logging
+
+2008-11-19 16:39  dev
+
+	* coherence/upnp/core/xml-service-descriptions/AVTransport1.xml:
+	  remove a trailing blank
+
+2008-11-19 16:38  dev
+
+	* coherence/upnp/core/variable.py: don't fail on a wrong variable
+	  content
+
+2008-11-19 16:37  dev
+
+	* coherence/base.py: remove a print
+
+2008-11-19 16:36  dev
+
+	* coherence/backends/ampache_storage.py: move to sha256 for the
+	  ampache xml api
+
+2008-11-19 16:29  dev
+
+	* coherence/backends/fs_storage.py: make a copy, don't work on the
+	  real thing
+
+2008-11-19 16:29  dev
+
+	* bin/coherence: fix re the new config
+
+2008-11-19 15:47  zaheerm
+
+	* coherence/transcoder.py: Replace filesrc with just a uri
+
+2008-11-19 14:58  zaheerm
+
+	* coherence/transcoder.py: Added a transcoder (untested) to do a
+	  passthrough to MP4 (H264/aac)
+
+2008-11-19 13:00  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/upnp/devices/media_server.py: enable transcoding to mp4
+	  in the AppleTrailers backend, needs a new transcoder class
+	  MP4Transcoder
+
+2008-11-18 20:55  dev
+
+	* misc/upnp-tester.py: and now the twisted.names dependency
+
+2008-11-18 20:52  dev
+
+	* misc/upnp-tester.py: get rid of the twisted.mail dependency
+
+2008-11-16 13:04  lightyear
+
+	* Coherence.egg-info/PKG-INFO, Coherence.egg-info/entry_points.txt,
+	  setup.py: Update Egg Info
+
+2008-11-16 13:04  lightyear
+
+	* coherence/backends/appletrailers_storage.py: Adding
+	  AppleTrailersStorage Backend
+
+2008-11-09 18:17  dev
+
+	* coherence/base.py, coherence/upnp/core/utils.py,
+	  coherence/upnp/devices/basics.py: * fixes regarding interface
+	  definition in the config
+	  * catch an exception when trying to remove a backend from the
+	  internal activated list before it is actually appended there
+
+2008-11-03 21:28  dev
+
+	* bin/coherence, coherence/base.py: fixes for startup with no
+	  config-file
+
+2008-11-03 20:44  dev
+
+	* coherence/backends/fs_storage.py, coherence/transcoder.py,
+	  coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/devices/media_server.py: * transcoding - first
+	  version, not seekable yet, tested with the PS3
+	  * add a transcoded resource to ogg-items in the FSStore
+
+2008-11-03 20:40  dev
+
+	* coherence/dbus_service.py, coherence/ui/av_widgets.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_renderer.py: * new dbus helper
+	  method
+	  * wrapper methods in the Coherence and the ControlPoint class to
+	  hide the louie methods
+
+2008-11-03 20:37  dev
+
+	* bin/coherence, coherence/backends/flickr_storage.py,
+	  coherence/base.py, coherence/extern/simple_config.py,
+	  coherence/upnp/devices/basics.py: * better version of the xml
+	  config handler, but resulting in some changes to the proposed
+	  wiki:XMLConfig format - all xml-configs in use need to be
+	  adjusted
+	  * necessary adjustments all over the place
+
+2008-10-22 21:51  dev
+
+	* coherence/dbus_service.py, coherence/ui/av_widgets.py,
+	  misc/Nautilus/coherence_upnp_export_extension.py,
+	  misc/Nautilus/coherence_upnp_upload_extension.py: extensions to
+	  the dbus service
+
+2008-10-22 21:51  dev
+
+	* coherence/base.py: serve `out-of-band` resources
+
+2008-10-22 21:50  dev
+
+	* coherence/backends/fs_storage.py: little helper method
+
+2008-10-22 21:49  dev
+
+	* misc/Nautilus/coherence_upnp_play_extension.py: new extension to
+	  play a file on a MediaRenderer
+
+2008-10-22 21:48  dev
+
+	* misc/Rhythmbox Plugin/upnp_coherence/MediaPlayer.py: small fix
+	  for SetAVTransportURI whe no CurrentURIMetaData is present
+
+2008-10-21 21:55  dev
+
+	* coherence/base.py: it was too much in a hurry -/
+
+2008-10-20 21:15  dev
+
+	* coherence/base.py, coherence/upnp/core/ssdp.py,
+	  coherence/upnp/core/test/test_didl.py: make the unit tests work
+	  again
+
+2008-10-20 20:39  dev
+
+	* coherence/backends/fs_storage.py, coherence/ui/av_widgets.py,
+	  misc/Nautilus/coherence_upnp_export_extension.py: * fixes for the
+	  FSStore and its import method
+	  * activate the Nautilus MS with an 'import folder', hardcoded to
+	  '/tmp/UPnP Imports' for now
+	  * cosmetic changes
+
+2008-10-20 13:54  dev
+
+	* coherence/backends/fs_storage.py, coherence/dbus_service.py:
+	  adjustments to allow the new Nautilus extensions to work
+
+2008-10-20 13:52  dev
+
+	* misc/Nautilus, misc/Nautilus/coherence_upnp_export_extension.py,
+	  misc/Nautilus/coherence_upnp_upload_extension.py: first versions
+	  of the extensions/scripts for Nautilus, making use of the a/v ui
+	  widgets
+
+2008-10-20 13:50  dev
+
+	* coherence/ui/av_widgets.py, coherence/ui/icons/emblem-new.png,
+	  coherence/ui/icons/emblem-shared.png,
+	  coherence/ui/icons/emblem-unreadable.png: two new widgets:
+	  
+	  * DeviceExport - creates an UPnP A/V MediaServer with a FSStore
+	  backend and shares folders over it
+	  * DeviceImport - upload selected files to an UPnP A/V MediaServer
+	  which has CreateObject and ImportResource actions, does work atm
+	  only with parentID=DLNA.ORG_AnyContainer
+
+2008-10-19 18:51  dev
+
+	* coherence/dbus_service.py,
+	  coherence/upnp/devices/control_point.py: extending the DBUS
+	  service with exported create_object, import_resource and
+	  put_resource methods
+
+2008-10-19 18:49  dev
+
+	* coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py: small DLNA related adjustments
+
+2008-10-19 18:47  dev
+
+	* MANIFEST.in, coherence/upnp/devices/media_server.py, misc/device
+	  icons, misc/device icons/ampache-icon.png, misc/device
+	  icons/coherence-icon.png, misc/device icons/elisa-icon.png,
+	  misc/device icons/flickr-icon.png, setup.py: extend the handling
+	  of device icons, the icon url now can be either:
+	  
+	  * a file:// uri
+	  * the string ''.face''
+	  * one of the icons in
+	  ''http://coherence.beebits.net/browser/trunk/misc/device icons'',
+	  e.g. just the string ''coherence-icon.png''
+
+2008-10-19 16:08  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py: testing some DLNA tag
+	  adjustments
+
+2008-10-17 19:16  dev
+
+	* coherence/backends/flickr_storage.py,
+	  coherence/upnp/core/utils.py: * added ImportResource
+
+2008-10-15 19:03  dev
+
+	* coherence/backends/flickr_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/upnp/devices/media_server.py: * move the import method
+	  out of the MediaServer into a ''backend_import'' named method
+	  inside the backend
+	  * adjustment of the FSStore backend
+	  * ''CreateObject'' method for the Flickr backend, with a direct
+	  upload to the Flickr service, stored for the moment in the
+	  ''Unsorted'' container
+	  * should get extended to allow a direct upload to a PhotoSet
+	  * creation of an object.container should result in a PhotoSet
+	  creation
+	  * needs probably a lot more error checks
+
+2008-10-13 13:53  dev
+
+	* coherence/backends/flickr_storage.py: another little adjustment
+
+2008-10-13 13:41  dev
+
+	* coherence/backends/flickr_storage.py: little fix
+
+2008-10-13 13:05  dev
+
+	* coherence/backends/flickr_storage.py: cleaning up some code
+
+2008-10-13 12:57  dev
+
+	* coherence/backends/flickr_storage.py: * adding access to user
+	  specific content
+	  This needs
+	  * the new XMLConfig
+	  * userid/password in the plugin configuration
+	  * ''python-mechanize'' installed to handle the application
+	  authentication
+	  
+	  * first merge of jmsizun proposed changes
+
+2008-10-13 12:53  dev
+
+	* coherence/__init__.py, coherence/base.py,
+	  coherence/extern/config.py, coherence/upnp/devices/basics.py,
+	  coherence/upnp/devices/binary_light.py,
+	  coherence/upnp/devices/dimmable_light.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: * simplifying the device
+	  classes
+	  * enable '''permanent''' UUIDs
+	  * adding a ''simple'' method to store a plugins configuration
+	  data
+
+2008-10-13 12:47  dev
+
+	* coherence/extern/inotify.py: disabling a babbling print
+
+2008-09-18 19:26  dev
+
+	* coherence/upnp/core/utils.py: two new methods to standardize the
+	  handling of boolean values
+
+2008-09-18 19:25  dev
+
+	* coherence/upnp/core/variable.py: standardize handling of boolean
+	  values, closes #151
+
+2008-09-17 16:22  dev
+
+	* coherence/backends/ampache_storage.py: little test to see if we
+	  do the renegotiation with Ampache right
+
+2008-09-17 13:20  dev
+
+	* coherence/extern/inotify.py: fix for not reacting on events for
+	  monitored ''files'' - thx philn for spotting this
+
+2008-08-06 19:47  dev
+
+	* coherence/upnp/devices/dimmable_light_client.py: fixing a cut and
+	  paste error, thx hugolp for spotting this
+
+2008-07-14 14:08  dev
+
+	* misc/Rhythmbox Plugin/upnp_coherence/MediaPlayer.py,
+	  misc/Rhythmbox Plugin/upnp_coherence/MediaStore.py,
+	  misc/Rhythmbox Plugin/upnp_coherence/__init__.py: * use the
+	  included louie module
+	  * race-condition fix
+
+2008-07-13 09:51  dev
+
+	* coherence/upnp/core/service.py: prevent a race condition, thx
+	  Lawrence - closes #149
+
+2008-07-09 14:19  dev
+
+	* coherence/upnp/core/utils.py: do a bit better error catching,
+	  when interface detection on win32 fails
+
+2008-07-09 09:53  dev
+
+	* coherence/upnp/core/utils.py: typo fix, thx philn
+
+2008-07-08 18:51  dev
+
+	* coherence/upnp/core/DIDLLite.py: fix for change in PlayStation 3
+	  firmware 2.41
+
+2008-07-06 11:59  dev
+
+	* coherence/base.py: catching pkg_resources.ResolutionError on
+	  entrypoint loading, closes #146
+
+2008-07-01 20:00  dev
+
+	* coherence/backends/dvbd_storage.py, coherence/ui/av_widgets.py:
+	  fixes regarding ContainerUpdates
+
+2008-07-01 16:24  dev
+
+	* coherence/backends/gstreamer_audio_player.py,
+	  coherence/upnp/core/xml-service-descriptions/AVTransport1.xml: *
+	  accepting more media for playback
+	  * adjustments to the version 1 AVTransport xml file, so the
+	  GStreamerPlayer works now with version == 1 too
+
+2008-07-01 16:22  dev
+
+	* coherence/extern/louie/__init__.py,
+	  coherence/extern/louie/dispatcher.py,
+	  coherence/extern/louie/plugin.py: adjustments for the local louie
+	  module - this can't be the final solution
+
+2008-06-30 21:26  dev
+
+	* ChangeLog, NEWS, setup.py: 0.5.8 - Trix and Flix - release
+	  
+	  * a MediaServer backend for DVB-Daemon
+	  (http://www.k-d-w.org/node/42)
+	  * exporting atm the stored recordings
+	  * allowing to delete recordings from within a UPnP client, when
+	  enabled on the backend
+	  * will export EPG data and allow scheduling via UPnP in the
+	  future
+	  * client device and service implementations for BinaryLight and
+	  DimmableLight devices
+	  * rework of the D-Bus support
+	  * should now be usable from other languages (C,Perl,..) too
+	  * support for activating/deactivation a backend via D-Bus,
+	  allowing for instance to start a MediaServer backend via D-Bus
+	  * a plugin for Totem (http://www.gnome.org/projects/totem/)
+	  * enabling Totem to detect and browse UPnP A/V MediaServers
+	  * using only D-Bus to communicate with a Coherence instance
+	  * a basic reusable PyGTK based UPnP A/V ControlPoint widget, used
+	  in the Totem plugin
+	  * rework (again) of the XBox 360 support - getting closer
+	  * our first set of unit tests
+	  * include a copy of Louie (http://pylouie.org) to solve a
+	  setuptools runtime dependency issue and make the life of
+	  distribution packagers a bit easier
+	  * and the usual bugfixes and enhancements
+
+2008-06-30 20:26  dev
+
+	* coherence/__init__.py, misc/Rhythmbox Plugin, misc/Rhythmbox
+	  Plugin/Makefile.am, misc/Rhythmbox Plugin/coherence.rb-plugin.in,
+	  misc/Rhythmbox Plugin/upnp_coherence, misc/Rhythmbox
+	  Plugin/upnp_coherence/Makefile.am, misc/Rhythmbox
+	  Plugin/upnp_coherence/MediaPlayer.py, misc/Rhythmbox
+	  Plugin/upnp_coherence/MediaStore.py, misc/Rhythmbox
+	  Plugin/upnp_coherence/UpnpSource.py, misc/Rhythmbox
+	  Plugin/upnp_coherence/__init__.py: a 'up to date' version of the
+	  Rhythmbox UPnP plugin
+
 2008-06-30 19:11  dev
 
 	* coherence/backends/dvbd_storage.py: fixing Vala capitalizing

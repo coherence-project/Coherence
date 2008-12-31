@@ -1,3 +1,26 @@
+0.6.0 - The late Pumpkin - 20081231
+
+ * new MediaServer backends that allow access to
+   * movie trailers from the Apple HD trailers site (http://www.apple.com/trailers)
+   * images hosted at a Gallery site - an open source web based photo album organizer (http://gallery.menalto.com)
+   * Lolcats images from http://icanhascheezburger.com
+   * podcasts from the BBC (http://open.bbc.co.uk/labs/)
+   * videos from TED (http://www.ted.com)
+ * an extended Flickr MediaServer backend
+   * enables user-authenticated access to your Flickr account
+   * access to your images and the one of your frieds via an UPnP device
+   * upload an image directly from an UPnP device to your Flickr account
+ * transcoding of audio files based on GStreamer for DLNA devices like the PS3, and even XBox 360
+ * several plugins for the Nautlilus filemanager (http://www.gnome.org/projects/nautilus)
+   * sharing folders from within Nautilus
+   * upload files from Nautilus to UPnP A/V MediaServers
+   * play files from Nautilus on an UPnP A/V MediaRenderer
+ * an experimental plugin for EOG - the Gnome Image Viewer (http://projects.gnome.org/eog/)
+ * greatly improved XBox 360 support, including audio transcoding
+ * and the usual bugfixes and enhancements
+   Kudos go especially to jmsizun, lightyear, superdump for their work
+   on the backends and their patient debugging sessions!
+
 0.5.8 - Trix and Flix - 20080630
 
  * a MediaServer backend for DVB-Daemon (http://www.k-d-w.org/node/42)

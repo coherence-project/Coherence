@@ -19,24 +19,29 @@ digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this 0.5.8 - Trix and Flix - release
+New in this 0.6.0 - The late Pumpkin - release
 
- * a MediaServer backend for DVB-Daemon (http://www.k-d-w.org/node/42)
-   * exporting atm the stored recordings
-   * allowing to delete recordings from within a UPnP client, when enabled on the backend
-   * will export EPG data and allow scheduling via UPnP in the future
- * client device and service implementations for BinaryLight and DimmableLight devices
- * rework of the D-Bus support
-   * should now be usable from other languages (C,Perl,..) too
-   * support for activating/deactivation a backend via D-Bus, allowing for instance to start a MediaServer backend via D-Bus
- * a plugin for Totem (http://www.gnome.org/projects/totem/)
-   * enabling Totem to detect and browse UPnP A/V MediaServers
-   * using only D-Bus to communicate with a Coherence instance
- * a basic reusable PyGTK based UPnP A/V ControlPoint widget, used in the Totem plugin
- * rework (again) of the XBox 360 support - getting closer
- * our first set of unit tests
- * include a copy of Louie (http://pylouie.org) to solve a setuptools runtime dependency issue and make the life of distribution packagers a bit easier
+ * new MediaServer backends that allow access to
+   * movie trailers from the Apple HD trailers site (http://www.apple.com/trailers)
+   * images hosted at a Gallery site - an open source web based photo album organizer (http://gallery.menalto.com)
+   * Lolcats images from http://icanhascheezburger.com
+   * podcasts from the BBC (http://open.bbc.co.uk/labs/)
+   * videos from TED (http://www.ted.com)
+ * an extended Flickr MediaServer backend
+   * enables user-authenticated access to your Flickr account
+   * access to your images and the one of your frieds via an UPnP device
+   * upload an image directly from an UPnP device to your Flickr account
+ * transcoding of audio files based on GStreamer for DLNA devices like the PS3, and even XBox 360
+ * several plugins for the Nautlilus filemanager (http://www.gnome.org/projects/nautilus)
+   * sharing folders from within Nautilus
+   * upload files from Nautilus to UPnP A/V MediaServers
+   * play files from Nautilus on an UPnP A/V MediaRenderer
+ * an experimental plugin for EOG - the Gnome Image Viewer (http://projects.gnome.org/eog/)
+ * greatly improved XBox 360 support, including audio transcoding
  * and the usual bugfixes and enhancements
+
+Kudos go especially to jmsizun, lightyear, superdump for their work
+on the backends and their patient debugging sessions!
 
 """,
     author="Frank Scholz",
