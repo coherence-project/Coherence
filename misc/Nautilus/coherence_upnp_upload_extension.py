@@ -49,18 +49,52 @@ def show_upload_widget(files,standalone=True):
 try:
     import nautilus
     from urllib import unquote
+    import dbus
+    from dbus.mainloop.glib import DBusGMainLoop
+    DBusGMainLoop(set_as_default=True)
+    import dbus.service
+
+    # dbus defines
+    BUS_NAME = 'org.Coherence'
+    OBJECT_PATH = '/org/Coherence'
+
+
+    def log(t):
+	return
+        f = open('/tmp/coherence.log','a')
+        f.write(t+'\n')
+        f.close()
+
 
     class CoherenceUploadExtension(nautilus.MenuProvider):
 
         def __init__(self):
             print "CoherenceUploadExtension", os.getpid()
-            pass
+            log("CoherenceUploadExtension %r" % os.getpid())
+            self.coherence = None
+            try:
+                self.init_controlpoint()
+            except:
+                import traceback
+                log("can't setup %r" % traceback.format_exc())
+                print "can't setup Coherence connection"
 
+        def init_controlpoint(self):
+            self.bus = dbus.SessionBus()
+            self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+        
         def get_file_items(self, window, files):
+            log("get_file_items")
+            log("coherence %r" % self.coherence)
+            if self.coherence == None:
+                return
+            log("files %d" % len(files))
             if len(files) == 0:
                 return
 
+            log("get_file_items 2")
             for file in files:
+                log("get_file_items 3 %r" % file)
                 if file.is_directory() or file.get_uri_scheme() != 'file':
                     return
 

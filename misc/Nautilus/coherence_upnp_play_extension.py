@@ -36,13 +36,19 @@ class CoherencePlayExtension(nautilus.MenuProvider):
 
     def __init__(self):
         print "CoherencePlayExtension", os.getpid()
-        self.init_controlpoint()
+        self.coherence = None
+        try:
+            self.init_controlpoint()
+        except:
+            print "can't setup Coherence connection"
 
     def init_controlpoint(self):
         self.bus = dbus.SessionBus()
         self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
 
     def get_file_items(self, window, files):
+        if self.coherence == None:
+            return
         if len(files) == 0:
             return
 

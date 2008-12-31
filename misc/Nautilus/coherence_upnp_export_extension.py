@@ -58,9 +58,13 @@ try:
 
         def __init__(self):
             print "CoherenceExportExtension", os.getpid()
-            from coherence.ui.av_widgets import DeviceExportWidget
-            self.ui = DeviceExportWidget(standalone=False)
-            self.ui_create()
+            try:
+                from coherence.ui.av_widgets import DeviceExportWidget
+                self.ui = DeviceExportWidget(standalone=False)
+                self.ui_create()
+            except:
+                print "can't setup Coherence connection"
+                self.ui = None
 
         def ui_destroy(self,*args):
             self.window = None
@@ -79,6 +83,8 @@ try:
             self.window.add(self.ui.build_ui(root=self.window))
 
         def get_file_items(self, window, files):
+            if self.ui == None:
+                return
             if len(files) == 0:
                 return
 
@@ -96,6 +102,8 @@ try:
         def export_resources(self, menu, files):
             if len(files) == 0:
                 return
+
+            self.build()
 
             if self.window == None:
                 self.ui_create()
