@@ -565,7 +565,7 @@ class AmpacheStore(BackendStore):
     def get_token(self,renegotiate=False):
         """ ask Ampache for the authorization token """
         timestamp = int(time.time())
-        if self.api_version <= 350001:
+        if self.api_version < 350001:
             passphrase = md5('%d%s' % (timestamp, self.key))
         else:
             passphrase = sha256('%d%s' % (timestamp, sha256(self.key)))
