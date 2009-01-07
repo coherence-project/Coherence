@@ -137,7 +137,7 @@ def classChooser(mimetype, sub=None):
             return AudioItem
     return None
 
-simple_dlna_tags = ['DLNA.ORG.PS=1',       # play speed parameter
+simple_dlna_tags = ['DLNA.ORG_PS=1',       # play speed parameter
                     'DLNA.ORG_CI=0',       # transcoded parameter
                     'DLNA.ORG_OP=01',      # operations parameter
                     'DLNA.ORG_FLAGS=01700000000000000000000000000000']
