@@ -847,6 +847,7 @@ class scpdXML(static.Data):
         self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
+from twisted.python.util import OrderedDict
 
 class ServiceControl:
 
@@ -879,8 +880,14 @@ class ServiceControl:
                     #print "r", r
             self.service.propagate_notification(notify)
         #r= { '%sResponse'%action.name: r}
-        self.info( 'action_results', action.name, r)
-        return r
+        self.info( 'action_results unsorted', action.name, r)
+        if len(r) == 0:
+            return r
+        ordered_result = OrderedDict()
+        for argument in action.get_out_arguments():
+            ordered_result[argument.name] = r[argument.name]
+        self.info( 'action_results sorted', action.name, ordered_result)
+        return ordered_result
 
     def soap__generic(self, *args, **kwargs):
         """ generic UPnP service control method,

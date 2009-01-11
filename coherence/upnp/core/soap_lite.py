@@ -10,6 +10,7 @@
 
     inspired by ElementSOAP.py
 """
+from twisted.python.util import OrderedDict
 
 from coherence.extern.et import ET
 
@@ -80,7 +81,7 @@ def build_soap_call(method, arguments, is_response=False,
         re = body
 
     # append the arguments
-    if isinstance(arguments,dict):
+    if isinstance(arguments,(dict,OrderedDict)) :
         type_map = {str: 'xsd:string',
                     unicode: 'xsd:string',
                     int: 'xsd:int',
