@@ -68,6 +68,10 @@ class MSRoot(resource.Resource, log.Loggable):
         headers = request.getAllHeaders()
         self.msg( request.getAllHeaders())
 
+        try:
+            request._dlna_transfermode = headers['transfermode.dlna.org']
+        except KeyError:
+            request._dlna_transfermode = 'Streaming'
         if request.method == 'GET':
             if COVER_REQUEST_INDICATOR.match(request.uri):
                 self.info("request cover for id %s" % path)
@@ -245,7 +249,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     self.info("startup, add %d to connection table" % new_id)
                     d = request.notifyFinish()
                     d.addBoth(self.requestFinished, new_id, request)
-                    request.setHeader('transferMode.dlna.org', 'Streaming')
+                    request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
                     if hasattr(ch,'item') and hasattr(ch.item, 'res'):
                         if ch.item.res[0].protocolInfo is not None:
                             _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
@@ -269,7 +273,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 self.info("startup, add %d to connection table" % new_id)
                 d = request.notifyFinish()
                 d.addBoth(self.requestFinished, new_id, request)
-                request.setHeader('transferMode.dlna.org', 'Streaming')
+                request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
                 if hasattr(ch, 'item') and hasattr(ch.item, 'res'):
                     if ch.item.res[0].protocolInfo is not None:
                         _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')

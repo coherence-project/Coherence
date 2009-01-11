@@ -146,7 +146,7 @@ class ControlPoint(log.Loggable):
         client.remove()
 
     def propagate(self, event):
-        #print 'propagate:', event
+        self.info('propagate: %r', event)
         if event.get_sid() in service.subscribers.keys():
             try:
                 service.subscribers[event.get_sid()].process_event(event)
