@@ -428,7 +428,8 @@ class FSStore(BackendStore):
 
         try:
             self.inotify = INotify()
-        except:
+        except Exception,msg:
+            self.info("%s" %msg)
             self.inotify = None
 
         if kwargs.get('enable_destroy','no') == 'yes':

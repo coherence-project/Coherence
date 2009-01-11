@@ -140,6 +140,8 @@ class INotify(FileDescriptor, object):
                 obj.inotify_rm_watch = obj.libc_inotify_rm_watch
             except:
                 import platform
+                if platform.system != 'Linux':
+                    raise SystemError, "unknown system '%r', INotify support disabled" % platform.uname()
                 machine = platform.machine()
                 try:
                     obj._init_syscall_id = _inotify_syscalls[machine][0]
