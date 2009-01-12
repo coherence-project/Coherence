@@ -137,9 +137,9 @@ def classChooser(mimetype, sub=None):
             return AudioItem
     return None
 
-simple_dlna_tags = ['DLNA.ORG_PS=1',       # play speed parameter
+simple_dlna_tags = ['DLNA.ORG_OP=01',      # operations parameter
+                    'DLNA.ORG_PS=1',       # play speed parameter
                     'DLNA.ORG_CI=0',       # transcoded parameter
-                    'DLNA.ORG_OP=01',      # operations parameter
                     'DLNA.ORG_FLAGS=01700000000000000000000000000000']
 
 def build_dlna_additional_info(content_format):
@@ -190,9 +190,8 @@ class Resource:
                 self.protocolInfo = ':'.join((protocol,network,content_format,build_dlna_additional_info(content_format)))
 
     def toElement(self,**kwargs):
-
         root = ET.Element('res')
-        if kwargs.get('upnp_client','') in ('XBox'):
+        if kwargs.get('upnp_client','') in ('XBox',):
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format == 'video/x-msvideo':
                 content_format = 'video/avi'
@@ -206,6 +205,13 @@ class Resource:
             root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
         else:
             root.attrib['protocolInfo'] = self.protocolInfo
+            #test for dlink
+            #protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+            #pn = additional_info.split(';')[0]
+            #additional_info = pn + ';DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=9C100000000000000000000000000000'
+            #root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
+
+
         root.text = self.data
 
         if self.bitrate is not None:
@@ -249,8 +255,8 @@ class Resource:
     def transcoded(self,format):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
         dlna_tags = simple_dlna_tags[:]
-        dlna_tags[1] = 'DLNA.ORG_CI=1'
-        #dlna_tags[2] = 'DLNA.ORG_OP=00'
+        #dlna_tags[1] = 'DLNA.ORG_OP=00'
+        dlna_tags[2] = 'DLNA.ORG_CI=1'
         if format == 'mp3':
             if content_format == 'audio/mpeg':
                 return None
