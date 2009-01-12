@@ -72,7 +72,7 @@ class MSRoot(resource.Resource, log.Loggable):
             request._dlna_transfermode = headers['transfermode.dlna.org']
         except KeyError:
             request._dlna_transfermode = 'Streaming'
-        if request.method == 'GET':
+        if request.method in ('GET','HEAD'):
             if COVER_REQUEST_INDICATOR.match(request.uri):
                 self.info("request cover for id %s" % path)
                 ch = self.store.get_by_id(path)
@@ -436,6 +436,8 @@ class RootDeviceXML(static.Data):
             e = ET.SubElement(d, 'serviceList')
             for service in services:
                 id = service.get_id()
+                if xbox_hack == False and id == 'X_MS_MediaReceiverRegistrar':
+                    continue
                 s = ET.SubElement(e, 'service')
                 try:
                     namespace = service.namespace
@@ -571,7 +573,8 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
-        self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
+        if hasattr(self,"media_receiver_registrar_server"):
+            self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
 
         for icon in self.icons:
             if icon.has_key('url'):
