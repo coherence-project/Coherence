@@ -31,7 +31,7 @@ class DeviceQuery(object):
         self.fired = False
         self.timeout = timeout
         self.oneshot = oneshot
-        if self.type == 'uuid':
+        if self.type == 'uuid' and self.pattern.startswith('uuid:'):
             self.pattern = self.pattern[5:]
 
     def fire(self, device):
