@@ -95,7 +95,7 @@ _inotify_syscalls = { 'i386': (291,292,293),  # FIXME, there has to be a better 
                       'ppc': (275,276,277),                # PPC, like PS3
                       }
 
-def flagToHuman(mask):
+def flag_to_human(mask):
     """
     Auxiliary function that converts an hexadecimal mask into a series
     of human readable flags.
@@ -285,7 +285,7 @@ class INotify(FileDescriptor, object):
         A simple callback that you can use for tests
         """
         print "event %s on %s %s" % (
-            ', '.join(flagToHuman(mask)), iwp.path, filename)
+            ', '.join(flag_to_human(mask)), iwp.path, filename)
 
     def doRead(self):
         """

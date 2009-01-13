@@ -153,11 +153,11 @@ class TestINotify(unittest.TestCase):
         Test the helper function
         """
         for mask, value in inotify._FLAG_TO_HUMAN.iteritems():
-            self.assert_(inotify.flagToHuman(mask)[0], value)
+            self.assert_(inotify.flag_to_human(mask)[0], value)
 
         checkMask = inotify.IN_CLOSE_WRITE|inotify.IN_ACCESS|inotify.IN_OPEN
         self.assert_(
-            len(inotify.flagToHuman(checkMask)),
+            len(inotify.flag_to_human(checkMask)),
             3
         )
 
