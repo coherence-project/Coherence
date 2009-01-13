@@ -140,7 +140,12 @@ class Watch(object):
         """
         for callback in self.callbacks:
             if callback is not None:
-                callback[0](self, filename, events, callback[1])
+                #wrap that so our loop isn't aborted by a faulty callback
+                try:
+                    callback[0](self, filename, events, callback[1])
+                except:
+                    import traceback
+                    traceback.print_exc()
 
 
 class INotify(FileDescriptor, object):
