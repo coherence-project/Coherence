@@ -63,7 +63,10 @@ class EventServer(resource.Resource, log.Loggable):
                 for var in prop.getchildren():
                     tag = var.tag
                     idx = tag.find('}') + 1
-                    event.update({tag[idx:]: var.text})
+                    value = var.text
+                    if value == None:
+                        value = ''
+                    event.update({tag[idx:]: value})
             self.control_point.propagate(event)
         return ""
 
