@@ -448,11 +448,11 @@ class FSStore(BackendStore):
            utils.means_true(kwargs.get('create_root',False)) or
            self.import_folder != None):
             UPnPClass = classChooser('root')
-            id = self.getnextID()
+            id = str(self.getnextID())
             parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True,store=self)
 
         if self.import_folder != None:
-            id = self.getnextID()
+            id = str(self.getnextID())
             self.store[id] = FSItem( id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True,store=self)
             self.import_folder_id = id
 
@@ -482,28 +482,32 @@ class FSStore(BackendStore):
         return len(self.store)
 
     def get_by_id(self,id):
+        #print "get_by_id", id, type(id)
         # we have referenced ids here when we are in WMC mapping mode
         if isinstance(id, basestring):
             id = id.split('@',1)
             id = id[0]
-        try:
-            id = int(id)
-        except ValueError:
-            id = 1000
+        #try:
+        #    id = int(id)
+        #except ValueError:
+        #    id = 1000
 
-        if id == 0:
-            id = 1000
+        if id == '0':
+            id = '1000'
+        #print "get_by_id 2", id
         try:
-            return self.store[id]
+            r = self.store[id]
         except:
-            return None
+            r = None
+        #print "get_by_id 3", r
+        return r
 
-    def get_id_by_name(self, parent=0, name=''):
+    def get_id_by_name(self, parent='0', name=''):
         #print 'get_id_by_name', parent, name
         try:
             name = os.path.abspath(name)
             #print name
-            parent = self.store[int(parent)]
+            parent = self.store[parent]
             for child in parent.children:
                 if not isinstance(name, unicode):
                     name = name.decode("utf8")
@@ -515,7 +519,7 @@ class FSStore(BackendStore):
 
         return None
 
-    def get_url_by_name(self,parent=0,name=''):
+    def get_url_by_name(self,parent='0',name=''):
         #print 'get_url_by_name', parent, name
         id = self.get_id_by_name(parent,name)
         #print 'get_url_by_name', id
@@ -542,12 +546,12 @@ class FSStore(BackendStore):
         path = os.path.abspath(path)
         if path not in self.content:
             self.content.add(path)
-            self.walk(path, self.store[1000], self.ignore_file_pattern)
+            self.walk(path, self.store['1000'], self.ignore_file_pattern)
 
     def remove_content_folder(self,path):
         path = os.path.abspath(path)
         if path in self.content:
-            id = self.get_id_by_name(1000, path)
+            id = self.get_id_by_name('1000', path)
             self.remove(id)
             self.content.remove(path)
 
@@ -575,6 +579,11 @@ class FSStore(BackendStore):
             return None
 
         id = self.getnextID()
+        if mimetype in ('root','directory'):
+            id = str(id)
+        else:
+            _,ext =  os.path.splitext(path)
+            id = str(id) + ext.lower()
         update = False
         if hasattr(self, 'update_id'):
             update = True
@@ -620,10 +629,10 @@ class FSStore(BackendStore):
     def remove(self, id):
         print 'FSSTore remove id', id
         try:
-            item = self.store[int(id)]
+            item = self.store[id]
             parent = item.get_parent()
             item.remove()
-            del self.store[int(id)]
+            del self.store[id]
             if hasattr(self, 'update_id'):
                 self.update_id += 1
                 if self.server:
