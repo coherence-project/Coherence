@@ -61,6 +61,13 @@ from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence.backend import BackendItem, BackendStore
 
+KNOWN_AUDIO_TYPES = {'.mp3':'audio/mpeg',
+                     '.ogg':'application/ogg',
+                     '.mpc':'audio/x-musepack',
+                     '.flac':'audio/x-wavpack',
+                     '.wv':'audio/x-wavpack',
+                     '.m4a':'audio/mp4',}
+
 
 def _dict_from_tags(tag):
     tags = {}
@@ -322,9 +329,11 @@ class Track(item.Item,BackendItem):
             host = host_port
 
         _,ext =  os.path.splitext(self.location)
-        if ext == '.ogg':
-            mimetype = 'application/ogg'
-        else:
+        ext = ext.lower()
+
+        try:
+            mimetype = KNOWN_AUDIO_TYPES[ext]
+        except KeyError:
             mimetype = 'audio/mpeg'
 
         statinfo = os.stat(self.location)
@@ -457,7 +466,7 @@ class MediaStore(BackendStore):
                     self.walk(os.path.join(path,filename))
                 else:
                     _,ext =  os.path.splitext(filename)
-                    if ext.lower()[1:] in ['mp3','ogg']:
+                    if ext.lower() in KNOWN_AUDIO_TYPES:
                         self.filelist.append(os.path.join(path,filename))
 
     def get_music_files(self, musiclocation):
