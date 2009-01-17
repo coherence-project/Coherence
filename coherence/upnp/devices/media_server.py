@@ -252,7 +252,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
                     if hasattr(ch,'item') and hasattr(ch.item, 'res'):
                         if ch.item.res[0].protocolInfo is not None:
-                            _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
+                            additional_info = ch.item.res[0].get_additional_info()
                             if additional_info != '*':
                                 request.setHeader('contentFeatures.dlna.org', additional_info)
                     return ch.location
@@ -276,7 +276,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
                 if hasattr(ch, 'item') and hasattr(ch.item, 'res'):
                     if ch.item.res[0].protocolInfo is not None:
-                        _,_,_,additional_info = ch.item.res[0].protocolInfo.split(':')
+                        additional_info = ch.item.res[0].get_additional_info()
                         if additional_info != '*':
                             request.setHeader('contentFeatures.dlna.org', additional_info)
                 ch = StaticFile(p)

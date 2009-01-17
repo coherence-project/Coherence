@@ -140,7 +140,7 @@ def classChooser(mimetype, sub=None):
 simple_dlna_tags = ['DLNA.ORG_OP=01',      # operations parameter
                     'DLNA.ORG_PS=1',       # play speed parameter
                     'DLNA.ORG_CI=0',       # transcoded parameter
-                    'DLNA.ORG_FLAGS=01700000000000000000000000000000']
+                    'DLNA.ORG_FLAGS=01100000000000000000000000000000']
 
 def build_dlna_additional_info(content_format):
     additional_info = '*'
@@ -150,12 +150,12 @@ def build_dlna_additional_info(content_format):
         additional_info = ';'.join(['DLNA.ORG_PN=WMABASE']+simple_dlna_tags)
     if content_format == 'image/jpeg':
         dlna_tags = simple_dlna_tags[:]
-        dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
+        dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
         additional_info = ';'.join(['DLNA.ORG_PN=JPEG_LRG']+dlna_tags)
     if content_format == 'image/png':
         dlna_tags = simple_dlna_tags[:]
-        dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
-        additional_info = ';'.join(['DLNA.ORG_PN=PNG_LRG']+simple_dlna_tags)
+        dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
+        additional_info = ';'.join(['DLNA.ORG_PN=PNG_LRG']+dlna_tags)
     if content_format == 'video/mpeg':
         additional_info = ';'.join(['DLNA.ORG_PN=MPEG_PS_PAL']+simple_dlna_tags)
     if content_format == 'video/mpegts':
@@ -189,6 +189,22 @@ class Resource:
             if additional_info == '*':
                 self.protocolInfo = ':'.join((protocol,network,content_format,build_dlna_additional_info(content_format)))
 
+    def get_additional_info(self,upnp_client=''):
+        protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+        if upnp_client  == 'XBox':
+            """ we don't need the DLNA tags there,
+                and maybe it irritates that poor thing anyway
+            """
+            additional_info = '*'
+        else:
+            a_list = additional_info.split(';')
+            for part in a_list:
+                if part == 'DLNA.ORG_PS=1':
+                    a_list.remove(part)
+                    break
+            additional_info = ';'.join(a_list)
+        return additional_info
+
     def toElement(self,**kwargs):
         root = ET.Element('res')
         if kwargs.get('upnp_client','') in ('XBox',):
@@ -197,20 +213,12 @@ class Resource:
                 content_format = 'video/avi'
             if content_format == 'audio/x-wav':
                 content_format = 'audio/wav'
-            if kwargs.get('upnp_client','') == 'XBox':
-                """ we don't need the DLNA tags there,
-                    and maybe it irritates that poor thing anyway
-                """
-                additional_info = '*'
+            additional_info = self.get_additional_info(upnp_client=kwargs.get('upnp_client',''))
             root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
         else:
-            root.attrib['protocolInfo'] = self.protocolInfo
-            #test for dlink
-            #protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-            #pn = additional_info.split(';')[0]
-            #additional_info = pn + ';DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=9C100000000000000000000000000000'
-            #root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
-
+            protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+            additional_info = self.get_additional_info(upnp_client=kwargs.get('upnp_client',''))
+            root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
 
         root.text = self.data
 
