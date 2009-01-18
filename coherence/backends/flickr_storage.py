@@ -355,7 +355,7 @@ class FlickrStore(log.Loggable, Plugin):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'16': 1000}
+    wmc_mapping = {'16': 0}
 
     def __init__(self, server, **kwargs):
         self.next_id = 10000
