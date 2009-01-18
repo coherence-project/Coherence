@@ -347,6 +347,9 @@ class Object(log.Loggable):
                 root.attrib['refID'] = str(self.refID)
 
         if kwargs.get('requested_id',None):
+            if kwargs.get('requested_id') == '0':
+                t = root.find('dc:title')
+                t.text = 'root'
             if kwargs.get('requested_id') != '0' and kwargs.get('requested_id') != root.attrib['id']:
                 if(kwargs.get('upnp_client','') != 'XBox'):
                     root.attrib['refID'] = root.attrib['id']
@@ -373,14 +376,16 @@ class Object(log.Loggable):
                 else:
                     self.info("Changing ID from %r to %r, with parentID from %r to %r", self.id, root.attrib['id'], self.parentID, root.attrib['parentID'])
 
+        ET.SubElement(root, 'upnp:class').text = self.upnp_class
+
         if kwargs.get('upnp_client','') == 'XBox':
-            if self.upnp_class == 'object.container':
-                ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+            u = root.find('upnp:class')
             if kwargs.get('parent_container',None):
                 if kwargs.get('parent_container') in ('14','15','16'):
-                    ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
-        else:
-            ET.SubElement(root, 'upnp:class').text = self.upnp_class
+                    u.text = 'object.container.storageFolder'
+            if self.upnp_class == 'object.container':
+                u.text = 'object.container.storageFolder'
+
 
         if self.restricted:
             root.attrib['restricted'] = '1'
