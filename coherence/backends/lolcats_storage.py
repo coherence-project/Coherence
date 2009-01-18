@@ -170,6 +170,8 @@ class LolcatsStore(BackendStore):
     # define the first (the root) item:
     ROOT_ID = 0
 
+    wmc_mapping = {'16': 0}
+
     def __init__(self, server, *args, **kwargs):
         # When a Backend is initialized, the configuration is given as keyword
         # arguments to the initialization. We receive it here as a dicitonary

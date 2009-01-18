@@ -76,6 +76,9 @@ class AppleTrailersStore(BackendStore):
     logCategory = 'apple_trailers'
     implements = ['MediaServer']
 
+    wmc_mapping = {'15': 0}
+
+
     def __init__(self, server, *args, **kwargs):
 
         self.next_id = 1000
