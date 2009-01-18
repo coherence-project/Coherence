@@ -376,8 +376,9 @@ class Object(log.Loggable):
         if kwargs.get('upnp_client','') == 'XBox':
             if self.upnp_class == 'object.container':
                 ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
-            if str(self.parentID) in ('14','15','16'):
-                ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+            if kwargs.get('parent_container',None):
+                if kwargs.get('parent_container') in ('14','15','16'):
+                    ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
         else:
             ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
