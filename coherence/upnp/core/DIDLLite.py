@@ -325,12 +325,15 @@ class Object(log.Loggable):
 
         root = ET.Element(self.elementName)
 
-        if self.id == 1000:
-            root.attrib['id'] = '0'
-            ET.SubElement(root, 'dc:title').text = 'root'
-        else:
-            root.attrib['id'] = str(self.id)
-            ET.SubElement(root, 'dc:title').text = self.title
+        #if self.id == 1000:
+        #    root.attrib['id'] = '0'
+        #    ET.SubElement(root, 'dc:title').text = 'root'
+        #else:
+        #    root.attrib['id'] = str(self.id)
+        #    ET.SubElement(root, 'dc:title').text = self.title
+
+        root.attrib['id'] = str(self.id)
+        ET.SubElement(root, 'dc:title').text = self.title
 
         #if self.title != None:
         #    ET.SubElement(root, 'dc:title').text = self.title
@@ -344,7 +347,7 @@ class Object(log.Loggable):
                 root.attrib['refID'] = str(self.refID)
 
         if kwargs.get('requested_id',None):
-            if kwargs.get('requested_id') != root.attrib['id']:
+            if kwargs.get('requested_id') != '0' and kwargs.get('requested_id') != root.attrib['id']:
                 if(kwargs.get('upnp_client','') != 'XBox'):
                     root.attrib['refID'] = root.attrib['id']
                 r_id = kwargs.get('requested_id')
