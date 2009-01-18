@@ -373,8 +373,11 @@ class Object(log.Loggable):
                 else:
                     self.info("Changing ID from %r to %r, with parentID from %r to %r", self.id, root.attrib['id'], self.parentID, root.attrib['parentID'])
 
-        if(self.upnp_class == 'object.container' and kwargs.get('upnp_client','') == 'XBox'):
-            ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+        if kwargs.get('upnp_client','') == 'XBox':
+            if self.upnp_class == 'object.container':
+                ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
+            if str(self.parentID) in ('14','15','16'):
+                ET.SubElement(root, 'upnp:class').text = 'object.container.storageFolder'
         else:
             ET.SubElement(root, 'upnp:class').text = self.upnp_class
 
