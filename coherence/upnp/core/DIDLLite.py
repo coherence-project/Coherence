@@ -350,7 +350,8 @@ class Object(log.Loggable):
             if kwargs.get('requested_id') == '0':
                 t = root.find('dc:title')
                 t.text = 'root'
-            if kwargs.get('requested_id') != '0' and kwargs.get('requested_id') != root.attrib['id']:
+            #if kwargs.get('requested_id') != '0' and kwargs.get('requested_id') != root.attrib['id']:
+            if kwargs.get('requested_id') != root.attrib['id']:
                 if(kwargs.get('upnp_client','') != 'XBox'):
                     root.attrib['refID'] = root.attrib['id']
                 r_id = kwargs.get('requested_id')
