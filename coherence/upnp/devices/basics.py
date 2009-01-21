@@ -243,10 +243,14 @@ class BasicDeviceMixin(object):
                 except:
                     namespace = 'schemas-upnp-org'
 
+                device_description_tmpl = 'description-%d.xml'  % device_version
+                if hasattr(service,'device_description_tmpl'):
+                    device_description_tmpl = service.device_description_tmpl
+
                 s.register('local',
                             '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, service_version),
                             'urn:%s:service:%s:%d' % (namespace,service.id, service_version),
-                            self.coherence.urlbase + uuid[5:] + '/' + 'description-%d.xml' % device_version,
+                            self.coherence.urlbase + uuid[5:] + '/' + device_description_tmpl,
                             silent=silent,
                             host=host)
 

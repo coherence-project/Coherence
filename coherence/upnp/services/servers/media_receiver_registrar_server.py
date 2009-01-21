@@ -47,6 +47,7 @@ class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
         self.namespace = 'microsoft.com'
         self.id_namespace = 'microsoft.com'
         service.ServiceServer.__init__(self, 'X_MS_MediaReceiverRegistrar', self.version, backend)
+        self.device_description_tmpl = 'xbox-description-1.xml'
 
         self.control = MediaReceiverRegistrarControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
