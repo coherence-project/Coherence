@@ -213,6 +213,9 @@ class LolcatsStore(BackendStore):
     def get_by_id(self, id):
         print "asked for", id, type(id)
         # what ever we are asked for, we want to return the container only
+        if isinstance(id, basestring):
+            id = id.split('@',1)
+            id = id[0]
         if int(id) == self.ROOT_ID:
             return self.container
         return self.images.get(int(id), None)
