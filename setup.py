@@ -100,6 +100,7 @@ on the backends and their patient debugging sessions!
                  'device icons/*.png'],
     },
     install_requires=[
-    'ConfigObj >= 4.3'
+    'ConfigObj >= 4.3',
+    'Twisted >= 2.5.0',
     ],
 )
