@@ -381,7 +381,8 @@ class Object(log.Loggable):
 
         if kwargs.get('upnp_client','') == 'XBox':
             u = root.find('upnp:class')
-            if kwargs.get('parent_container',None):
+            if(kwargs.get('parent_container',None) != None and
+                u.text.startswith('object.container')):
                 if kwargs.get('parent_container') in ('14','15','16'):
                     u.text = 'object.container.storageFolder'
             if self.upnp_class == 'object.container':
