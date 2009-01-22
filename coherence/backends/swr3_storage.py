@@ -14,6 +14,9 @@ from coherence.upnp.core import DIDLLite
 
 from twisted.python.util import OrderedDict
 
+from coherence.upnp.core.utils import getPage
+from coherence.extern.et import parse_xml
+
 ROOT_CONTAINER_ID = 0
 
 class Item(BackendItem):
@@ -104,6 +107,8 @@ class SWR3Store(BackendStore,BackendRssMixin):
 
     def __init__(self, server, *args, **kwargs):
         self.name = kwargs.get('name', 'SWR3')
+        self.opml = kwargs.get('opml', 'http://www.swr3.de/rdf-feed/podcast/')
+        self.encoding = kwargs.get('encoding', "ISO-8859-1")
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
@@ -118,19 +123,28 @@ class SWR3Store(BackendStore,BackendRssMixin):
         self.store[ROOT_CONTAINER_ID] = \
                         Container(ROOT_CONTAINER_ID,self,-1, self.name)
 
+        self.parse_opml()
         self.init_completed()
 
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/marianne014.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/gedoens.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/bescheid.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/timtom.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/wwdtl.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/boersenman.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/gag.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/tt.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/evishow.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/reusch.xml.php",self.get_next_id(),encoding="ISO-8859-1")
-        self.update_data("http://www.swr3.de/rdf-feed/podcast/taepo.xml.php",self.get_next_id(),encoding="ISO-8859-1")
+    def parse_opml(self):
+        def fail(f):
+            self.info("fail %r", f)
+            return f
+
+        def create_containers(data):
+            feeds = []
+            for feed in data.findall('body/outline'):
+                #print feed.attrib['type'],feed.attrib['url']
+                if(feed.attrib['type'] == 'link' and
+                   feed.attrib['url'] not in feeds):
+                    feeds.append(feed.attrib['url'])
+                    self.update_data(feed.attrib['url'],self.get_next_id(),encoding=self.encoding)
+
+        dfr = getPage(self.opml)
+        dfr.addCallback(parse_xml,encoding=self.encoding)
+        dfr.addErrback(fail)
+        dfr.addCallback(create_containers)
+        dfr.addErrback(fail)
 
     def get_next_id(self):
         self.next_id += 1
@@ -154,20 +168,30 @@ class SWR3Store(BackendStore,BackendRssMixin):
     def parse_data(self,xml_data,container):
         root = xml_data.getroot()
 
+        title = root.find("./channel/title").text
+        title = title.encode(self.encoding).decode('utf-8')
         self.store[container] = \
-                        Container(container,self,ROOT_CONTAINER_ID, unicode(root.find("./channel/title").text))
-        self.store[container].description = unicode(root.find("./channel/description").text)
+                        Container(container,self,ROOT_CONTAINER_ID, title)
+        description = root.find("./channel/description").text
+        description = description.encode(self.encoding).decode('utf-8')
+        self.store[container].description = description
         self.store[container].cover = root.find("./channel/image/url").text
         self.store[ROOT_CONTAINER_ID].add_child(self.store[container])
 
         for podcast in root.findall("./channel/item"):
-            item = Item(self.store[container], self.get_next_id(), unicode(podcast.find("./title").text), podcast.find("./link").text)
-            self.store[container].add_child(item)
-            item.description = unicode(podcast.find("./description").text)
-            #item.date = datetime(*parsedate_tz(podcast.find("./pubDate").text)[0:6])
             enclosure = podcast.find("./enclosure")
+            title = podcast.find("./title").text
+            title = title.encode(self.encoding).decode('utf-8')
+            item = Item(self.store[container], self.get_next_id(), title, enclosure.attrib['url'])
             item.size = int(enclosure.attrib['length'])
             item.mimetype = enclosure.attrib['type']
+            self.store[container].add_child(item)
+            description = podcast.find("./description")
+            if description != None:
+                description = description.text
+                item.description = description.encode(self.encoding).decode('utf-8')
+            #item.date = datetime(*parsedate_tz(podcast.find("./pubDate").text)[0:6])
+
             #item.date = podcast.find("./pubDate")
 
 

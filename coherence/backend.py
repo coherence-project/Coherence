@@ -282,6 +282,7 @@ class BackendRssMixin:
 
         def fail(f):
             self.info("fail %r", f)
+            self.debug(f.getTraceback())
             return f
 
         dfr = getPage(rss_url)
