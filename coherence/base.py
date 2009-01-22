@@ -189,7 +189,7 @@ class Coherence(log.Loggable):
             cls._incarnations_ += 1
             return obj
         else:
-            obj = super(Coherence, cls).__new__(cls, *args, **kwargs)
+            obj = super(Coherence, cls).__new__(cls)
             cls._instance_ = obj
             cls._incarnations_ = 1
             obj.setup(*args, **kwargs)
@@ -251,7 +251,11 @@ class Coherence(log.Loggable):
             _debug = ','.join(_debug)
         else:
             _debug = '*:%d' % log.human2level(logmode)
-        log.init(config.get('logfile', None), _debug)
+        try:
+            logfile = config.get('logging').get('logfile','None')
+        except (KeyError,AttributeError,TypeError):
+            logfile = config.get('logfile', None)
+        log.init(logfile, _debug)
 
         self.louieplugin = louie.TwistedDispatchPlugin()
         try:
@@ -341,7 +345,6 @@ class Coherence(log.Loggable):
                         arguments = copy.copy(plugin)
                         del arguments['backend']
                         backend = self.add_plugin(backend, **arguments)
-                        from coherence.extern.simple_config import ConfigItem
                         if self.writeable_config() == True:
                             if 'uuid' not in plugin:
                                 plugin['uuid'] = str(backend.uuid)[5:]

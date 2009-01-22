@@ -20,7 +20,7 @@ from twisted.python import usage, text
 
 from coherence import __version__
 
-from coherence.extern.simple_config import Config
+from coherence.extern.simple_config import Config,ConfigItem
 
 """
  thankfully taken from twisted.scripts._twistd_unix.py
@@ -284,11 +284,20 @@ if __name__ == '__main__':
     for k,v in options['options'].items():
         config[k] = v
 
-    config['logfile'] = options['logfile']
+
+    if options['logfile'] != None:
+        if isinstance(config,ConfigItem):
+            config['logging'] = {}
+            config['logging']['logfile'] = options['logfile']
+        else:
+            config['logfile'] = options['logfile']
 
     if options['daemon'] == 1:
         if options['logfile'] == None:
-            config.set('logmode','none')
+            if isinstance(config,ConfigItem):
+                config.get('logging').get('level','none')
+            else:
+                config.set('logmode','none')
 
     #print config
 

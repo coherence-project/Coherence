@@ -38,7 +38,6 @@ class Config(ConfigItem):
         return xml
 
     def save(self, new_filename=None):
-        print "self.save"
         if new_filename != None:
             self.filename = new_filename
         xml = self.tostring()
