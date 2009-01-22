@@ -252,7 +252,7 @@ class Coherence(log.Loggable):
         else:
             _debug = '*:%d' % log.human2level(logmode)
         try:
-            logfile = config.get('logging').get('logfile','None')
+            logfile = config.get('logging').get('logfile',None)
         except (KeyError,AttributeError,TypeError):
             logfile = config.get('logfile', None)
         log.init(logfile, _debug)
