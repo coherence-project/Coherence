@@ -169,14 +169,20 @@ class Plugins(log.Loggable):
                         self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                         self.info(traceback.format_exc())
         except ImportError:
-            self.info("plugin reception activated, no pkg_resources")
-            from coherence.extern.simple_plugin import Reception
-            reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
-            self.info(reception.guestlist())
-            for cls in reception.guestlist():
-                self._plugins[cls.__name__.split('.')[-1]] = cls
+            self.info("no pkg_resources, fallback to simple plugin handling")
+
         except Exception, msg:
             self.warning(msg)
+
+        if len(self._plugins) == 0:
+            self._collect_from_module()
+
+    def _collect_from_module(self):
+        from coherence.extern.simple_plugin import Reception
+        reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
+        self.info(reception.guestlist())
+        for cls in reception.guestlist():
+            self._plugins[cls.__name__.split('.')[-1]] = cls
 
 
 class Coherence(log.Loggable):
