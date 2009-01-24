@@ -167,6 +167,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         else:
             self.warning('Unknown subtype %s for notification type %s' %
                     (headers['nts'], headers['nt']))
+        louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'Notify %s for %s' % (headers['nts'], headers['usn']))
+
 
     def send_it(self,response,destination,delay,usn):
         self.info('send discovery response delayed by %ds for %s to %r' % (delay,usn,destination))
@@ -181,6 +183,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('Discovery request from (%s,%d) for %s' % (host, port, headers['st']))
         self.info('Discovery request for %s' % headers['st'])
+
+        louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'M-Search for %s' % headers['st'])
 
         # Do we know about this service?
         for i in self.known.values():

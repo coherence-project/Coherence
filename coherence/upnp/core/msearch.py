@@ -33,8 +33,8 @@ class MSearch(DatagramProtocol, log.Loggable):
 
     def datagramReceived(self, data, (host, port)):
         cmd, headers = utils.parse_http_response(data)
-        self.info('datagramReceived from %s:%d, code %s' % (host, port, cmd[1]))
-        if cmd[0] == 'HTTP/1.1' and cmd[1] == '200':
+        self.info('datagramReceived from %s:%d, protocol %s code %s' % (host, port, cmd[0], cmd[1]))
+        if cmd[0].startswith('HTTP/1.') and cmd[1] == '200':
             self.msg('for %r', headers['usn'])
             if not self.ssdp_server.isKnown(headers['usn']):
                 self.info('register as remote %s, %s, %s' % (headers['usn'], headers['st'], headers['location']))
