@@ -299,7 +299,7 @@ class YouTubeStore(BackendStore):
         self.appendFeed('Most Linked', standardfeeds_uri % 'most_linked', rootItem)
         self.appendFeed('Most Responded', standardfeeds_uri % 'most_responded', rootItem)
         self.appendFeed('Most Recent', standardfeeds_uri % 'most_recent', rootItem)
-        if len(self.login) == 0:
+        if len(self.login) > 0:
             self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
             self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)
 
@@ -361,7 +361,7 @@ class YouTubeStore(BackendStore):
         self.yt_service.email = self.login
         self.yt_service.password = self.password
         self.yt_service.source = 'Coherence UPnP backend'
-        if len(self.login) != 0:
+        if len(self.login) > 0:
             d = threads.deferToThread(self.yt_service.ProgrammaticLogin)
 
 
