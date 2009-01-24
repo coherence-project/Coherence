@@ -98,6 +98,7 @@ if haz_setuptools == True:
         BBCStore = coherence.backends.bbc_storage:BBCStore
         SWR3Store = coherence.backends.swr3_storage:SWR3Store
         Gallery2Store = coherence.backends.gallery2_storage:Gallery2Store
+        YouTubeStore = coherence.backends.youtube_storage:YouTubeStore
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer

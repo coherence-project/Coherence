@@ -388,6 +388,11 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.reactor.connectTCP(self.host, self.port, clientFactory)
         return server.NOT_DONE_YET
 
+    def resetTarget(self,host,port,path):
+        self.host = host
+        self.port = port
+        self.path = path
+
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 
