@@ -273,7 +273,7 @@ class YouTubeStore(BackendStore):
         self.config = kwargs
         self.name = kwargs.get('name','YouTube')
 
-        self.login = kwargs.get('login','')
+        self.login = kwargs.get('userid',kwargs.get('login',''))
         self.password = kwargs.get('password','')
 
         self.urlbase = kwargs.get('urlbase','')
