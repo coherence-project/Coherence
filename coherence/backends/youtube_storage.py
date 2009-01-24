@@ -59,7 +59,7 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
         print "ProxyStream requestFinished"
-        if hasattr(self,'conenction'):
+        if hasattr(self,'connection'):
             self.connection.transport.loseConnection()
 
     def render(self, request):
