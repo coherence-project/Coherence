@@ -594,7 +594,11 @@ class Coherence(log.Loggable):
         self.children[name] = sub
 
     def remove_web_resource(self, name):
-        del self.children[name]
+        try:
+            del self.children[name]
+        except KeyError:
+            """ probably the backend init failed """
+            pass
 
     def connect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.connect
