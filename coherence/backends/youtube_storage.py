@@ -295,7 +295,7 @@ class YouTubeStore(BackendStore):
         self.appendFeed('Recently Featured', standardfeeds_uri % 'recently_featured', rootItem)
         self.appendFeed('Watch On Mobile', standardfeeds_uri % 'watch_on_mobile', rootItem)
         self.appendFeed('Most Discussed', standardfeeds_uri % 'most_discussed', rootItem)
-        self.appendFeed('Top Favorites', standardfeeds_uri % 'op_favorites', rootItem)
+        self.appendFeed('Top Favorites', standardfeeds_uri % 'top_favorites', rootItem)
         self.appendFeed('Most Linked', standardfeeds_uri % 'most_linked', rootItem)
         self.appendFeed('Most Responded', standardfeeds_uri % 'most_responded', rootItem)
         self.appendFeed('Most Recent', standardfeeds_uri % 'most_recent', rootItem)
