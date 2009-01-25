@@ -192,11 +192,14 @@ class Resource:
 
     def get_additional_info(self,upnp_client=''):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-        if upnp_client  == 'XBox':
+        if upnp_client  in ('XBox'):
             """ we don't need the DLNA tags there,
                 and maybe it irritates that poor thing anyway
             """
             additional_info = '*'
+        elif upnp_client  in ('PLAYSTATION3',):
+            if content_format.startswith('video/'):
+                additional_info = '*'
         else:
             a_list = additional_info.split(';')
             for part in a_list:
