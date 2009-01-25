@@ -4,6 +4,8 @@
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
 
 import time
+import mimetypes
+mimetypes.init()
 
 try:
     import hashlib
@@ -381,9 +383,13 @@ class Track(BackendItem):
             self.cover = element.find('art').text
         except:
             self.cover = None
+
+        self.mimetype = None
         try:
             self.mimetype = element.find('mimetype').text
         except:
+            self.mimetype,_ = mimetypes.guess_type(self.url, strict=False)
+        if self.mimetype == None:
             self.mimetype = "audio/mpeg"
         try:
             self.size = int(element.find('size').text)
