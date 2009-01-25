@@ -386,7 +386,7 @@ class Track(BackendItem):
 
         self.mimetype = None
         try:
-            self.mimetype = element.find('mimetype').text
+            self.mimetype = element.find('mime').text
         except:
             self.mimetype,_ = mimetypes.guess_type(self.url, strict=False)
         if self.mimetype == None:
