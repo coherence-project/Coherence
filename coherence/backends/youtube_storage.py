@@ -7,20 +7,15 @@
 from twisted.internet import reactor, threads
 
 from twisted.web import server
+from twisted.web.error import PageRedirect
 
 from coherence.upnp.core import utils
-
 from coherence.upnp.core import DIDLLite
-
 from coherence.backend import BackendStore,BackendItem
 
 from urlparse import urlsplit
 
-#import gdata.service
 from gdata.youtube.service import YouTubeService
-from gdata.youtube.service import YOUTUBE_SERVER,YOUTUBE_SERVICE,YOUTUBE_CLIENTLOGIN_AUTHENTICATION_URL
-
-from atom.http import HttpClient
 from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,YoutubePlaylistIE
 
 ROOT_CONTAINER_ID = 0
@@ -30,7 +25,8 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
     def __init__(self, uri, entry, store):
         self.youtube_entry = entry
         self.uri = uri
-        self.stream_url = None
+        self.video_url = None # the url we get from the youtube page
+        self.stream_url = None # the real video stream, cached somewhere
         self.store = store
         host,port,path,params =  self.splitUri(uri)
         utils.ReverseProxyResource.__init__(self, host, port, '%s?%s' % (path, params))
@@ -64,7 +60,7 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
 
     def render(self, request):
 
-        print "YoutubeVideoProxy render", request, self.stream_url
+        print "YoutubeVideoProxy render", request, self.stream_url, self.video_url
 
         if self.stream_url is None:
 
@@ -74,7 +70,7 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
                 'forceurl': True,
                 'forcetitle': False,
                 'simulate': True,
-                #'format': '18',  #XXX breaks video item dl here
+                'format': '18',  #XXX breaks video item dl here
                 'outtmpl': u'%(id)s.%(ext)s',
                 'ignoreerrors': True,
                 'ratelimit': None,
@@ -109,27 +105,38 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
                 self.resetUri(self.stream_url)
                 request.uri = self.stream_url
                 print "Video URL: %s" % self.stream_url
-                self.redirect(request)
-                #return self.render(request)
+                self.video_url = self.stream_url[:]
+                self.followRedirects(request)
 
             d = fd.get_real_urls([web_url])
             d.addCallback(got_real_urls, self.youtube_entry)
-
             return server.NOT_DONE_YET
 
-        #if request.clientproto == 'HTTP/1.1':
-        #    connection = request.getHeader('connection')
-        #    if connection:
-        #        tokens = map(str.lower, connection.split(' '))
-        #        if 'close' in tokens:
-        #            d = request.notifyFinish()
-        #            d.addBoth(self.requestFinished)
-        #else:
-        #    d = request.notifyFinish()
-        #    d.addBoth(self.requestFinished)
         reactor.callLater(0.1,self.redirect,request)
         return server.NOT_DONE_YET
-        #return utils.ReverseProxyResource.render(self, request)
+
+    def followRedirects(self,request):
+        print "HTTP redirect", request, self.stream_url
+        d = utils.getPage(self.stream_url, method="HEAD", followRedirect=0)
+
+        def gotHeader(result,request):
+            data,header = result
+            self.redirect(request)
+
+        def gotError(error,request):
+            print "HTTP redirect gotError", error
+            # error should be a "Failure" instance at this point
+            error_value = error.value
+            if (isinstance(error_value,PageRedirect)):
+                self.stream_url = error_value.location
+                self.resetUri(self.stream_url)
+                request.uri = self.stream_url
+                self.followRedirects(request)
+            else:
+                print "Unable to retrieve page header for URI %s" % self.stream_url
+
+        d.addCallback(gotHeader,request)
+        d.addErrback(gotError,request)
 
     def redirect(self,request):
         print "YoutubeVideoProxy redirect", request, self.stream_url
