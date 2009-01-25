@@ -208,40 +208,23 @@ class PCMTranscoder(BaseTranscoder):
 
     def start(self,request=None):
         self.info("PCMTranscoder start %r %r" % (request,self.source))
-        src = gst.element_factory_make('filesrc')
-        if self.source.startswith('file://'):
-            src.set_property('location', self.source[7:])
-        else:
-            src.set_property('location', self.source)
-        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline = gst.parse_launch(
+            "%s ! decodebin ! audioconvert name=conv" % self.source)
 
-        decodebin = gst.element_factory_make('decodebin')
-        decodebin.connect('new-decoded-pad', self.__on_new_decoded_pad)
-        audioconvert = gst.element_factory_make('audioconvert')
-
-        self.__audioconvert_pad = audioconvert.get_pad('sink')
-
+        conv = self.pipeline.get_by_name('conv')
         caps = gst.Caps("audio/x-raw-int,rate=44100,endianness=4321,channels=2,width=16,depth=16,signed=true")
         filter = gst.element_factory_make("capsfilter", "filter")
         filter.set_property("caps", caps)
+        self.pipeline.add(filter)
+        conv.link(filter)
 
-        self.pipeline = gst.Pipeline()
-        self.pipeline.add(src, decodebin, audioconvert, filter, sink)
-
-        src.link(decodebin)
-        audioconvert.link(filter)
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
         filter.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
         d = request.notifyFinish()
         d.addBoth(self.requestFinished)
-
-    def __on_new_decoded_pad(self, element, pad, last):
-        caps = pad.get_caps()
-        name = caps[0].get_name()
-        if 'audio' in name:
-            if not self.__audioconvert_pad.is_linked(): # Only link once
-                pad.link(self.__audioconvert_pad)
 
 
 class WAVTranscoder(BaseTranscoder):
