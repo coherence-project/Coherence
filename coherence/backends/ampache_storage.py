@@ -595,9 +595,9 @@ class AmpacheStore(BackendStore):
         response = utils.parse_xml(response, encoding='utf-8')
         items = []
         try:
-            error = response.find('error').text
-            self.warning('error on token request %r', error)
-            if error == '401': # session error, we need to renegotiate our session
+            error = response.find('error')
+            self.warning('error on token request %r %r' % (error.attrib['code'], error.text))
+            if error.attrib['code'] == '401': # session error, we need to renegotiate our session
                 d = self.get_token(renegotiate=True)
 
                 def resend_request(result, old_request):
