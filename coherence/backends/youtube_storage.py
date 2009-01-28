@@ -224,6 +224,8 @@ class Container(BackendItem):
         return self.children[start:]
 
     def get_child_count(self):
+        if self.children is None:
+            return 0
         return len(self.children)
 
     def get_path(self):
