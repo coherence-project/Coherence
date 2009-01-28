@@ -605,6 +605,9 @@ class FSStore(BackendStore):
 
     def append(self,path,parent):
         #print "append", path, type(path), parent
+        if os.path.exists(path) == False:
+            self.warning("path %r not available - ignored", path)
+            return None
         try:
             mimetype,_ = mimetypes.guess_type(path, strict=False)
             if mimetype == None:
