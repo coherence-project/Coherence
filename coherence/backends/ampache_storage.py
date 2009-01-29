@@ -602,14 +602,14 @@ class AmpacheStore(BackendStore):
 
                 def resend_request(result, old_request):
                     # exchange the auth token in the resending request
-                    request = old_request.split('&')
-                    for part in request:
+                    new_request = old_request.split('&')
+                    for part in new_request:
                         if part.startswith('auth='):
-                            r[r.index(part)] = 'auth=%s' % self.token
+                            new_request[new_request.index(part)] = 'auth=%s' % self.token
                             break
-                    request = '&'.join(request)
-                    self.info("ampache_query %r", request)
-                    return utils.getPage(request)
+                    new_request = '&'.join(new_request)
+                    self.info("ampache_query %r", new_request)
+                    return utils.getPage(new_request)
 
                 d.addCallback(resend_request, request)
                 d.addErrBack(self.got_error)
