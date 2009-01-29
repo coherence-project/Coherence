@@ -363,6 +363,9 @@ class FlickrStore(log.Loggable, Plugin):
         self.proxy = kwargs.get('proxy','false')
         self.refresh = int(kwargs.get('refresh',60))*60
 
+        self.limit = int(kwargs.get('limit',100))
+
+
         self.flickr_userid = kwargs.get('userid',None)
         self.flickr_password = kwargs.get('password',None)
         self.flickr_permissions = kwargs.get('permissions',None)
@@ -587,7 +590,7 @@ class FlickrStore(log.Loggable, Plugin):
         photoset_count = 0
         for photoset in result.getiterator('photoset'):
             photoset = self.appendPhotoset(photoset, parent)
-            d = self.flickr_photoset(photoset)
+            d = self.flickr_photoset(photoset,per_page=self.limit)
             d.addCallback(self.append_flickr_photo_result, photoset)
             photoset_count += 1
 
@@ -673,7 +676,7 @@ class FlickrStore(log.Loggable, Plugin):
             for child in parent.get_children():
                 if child.id == UNSORTED_CONTAINER_ID:
                     continue
-                d = self.flickr_photoset(child)
+                d = self.flickr_photoset(child,per_page=self.limit)
                 d.addCallback(self.update_flickr_result, child)
                 d.addErrback(self.got_error)
 
@@ -908,11 +911,11 @@ class FlickrStore(log.Loggable, Plugin):
                                                         PhotoAlbum,store=self,update=True, proxy=self.proxy)
 
         self.most_wanted = self.store[INTERESTINGNESS_CONTAINER_ID]
-        d = self.flickr_interestingness()
+        d = self.flickr_interestingness(per_page=self.limit)
         d.addCallback(self.append_flickr_result, self.most_wanted)
 
         self.recent = self.store[RECENT_CONTAINER_ID]
-        d = self.flickr_recent()
+        d = self.flickr_recent(per_page=self.limit)
         d.addCallback(self.append_flickr_photo_result, self.recent)
 
         if self.flickr_authtoken != None:
@@ -929,7 +932,7 @@ class FlickrStore(log.Loggable, Plugin):
                                                         'directory', self.urlbase,
                                                         PhotoAlbum,store=self,update=True, proxy=self.proxy)
             self.notinset = self.store[UNSORTED_CONTAINER_ID]
-            d = self.flickr_notInSet()
+            d = self.flickr_notInSet(per_page=self.limit)
             d.addCallback(self.append_flickr_photo_result, self.notinset)
 
             self.store[FAVORITES_CONTAINER_ID] = FlickrItem(FAVORITES_CONTAINER_ID, 'Favorites',
@@ -937,7 +940,7 @@ class FlickrStore(log.Loggable, Plugin):
                                                         'directory', self.urlbase,
                                                         PhotoAlbum,store=self,update=True, proxy=self.proxy)
             self.favorites = self.store[FAVORITES_CONTAINER_ID]
-            d = self.flickr_favorites()
+            d = self.flickr_favorites(per_page=self.limit)
             d.addCallback(self.append_flickr_photo_result, self.favorites)
 
             self.store[CONTACTS_CONTAINER_ID] = FlickrItem(CONTACTS_CONTAINER_ID, 'Friends & Family',
