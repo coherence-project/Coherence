@@ -19,6 +19,8 @@ from gdata.youtube.service import YouTubeService
 from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,YoutubePlaylistIE
 
 ROOT_CONTAINER_ID = 0
+MY_PLAYLISTS_CONTAINER_ID = 100
+MY_SUBSCRIPTIONS_CONTAINER_ID = 101
 
 class YoutubeVideoProxy(utils.ReverseProxyResource):
 
@@ -90,14 +92,6 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
 
             def got_real_urls(real_urls, entry):
                 self.stream_url = real_urls[0]
-                #FIXME:
-                # we get several (3) redirects from that url
-                # we should follow them and keep the real one
-                #
-                # and maybe instead of routing the traffic through
-                # us we should send a redirect anyway
-                # or proxy only for devices that can handle the redirect
-                #
                 if self.stream_url is None:
                     print 'Error to retrieve video URL - inconsistent web page'
                     return requestFinished(result) #FIXME
@@ -241,15 +235,15 @@ class Container(BackendItem):
         return self.id
 
 
-class YoutubeFeed(Container):
+class LazyContainer(Container):
 
-    def __init__(self, id, store, parent_id, title, feed_uri):
-        self.mimetype = 'directory'
-        self.feed_uri = feed_uri
+    def __init__(self, id, store, parent_id, title):
         Container.__init__(self, id, store, parent_id, title)
         self.children = None
 
-
+    def retrieve_children(self):
+        return None
+    
     def get_children(self,start=0,request_count=0):
 
         def process_items(result = None):
@@ -261,13 +255,48 @@ class YoutubeFeed(Container):
                 return self.children[start:request_count]
 
         if (self.children == None):
-            d = self.store.retrieveFeedItems (self, self.feed_uri)
-            d.addCallback(process_items)
+            d = self.retrieve_children()
+            if d is not None:
+                d.addCallback(process_items)
             return d
         else:
             return process_items()
+   
 
+class YoutubeFeed(LazyContainer):
+    def __init__(self, id, store, parent_id, title, feed_uri):
+        LazyContainer.__init__(self, id, store, parent_id, title)
+        self.feed_uri = feed_uri
+    def retrieve_children(self):
+        return self.store.retrieveFeedItems (self, self.feed_uri)
+    
+class YoutubePlaylistContainer(LazyContainer):
+    def __init__(self, id, store, parent_id, title):
+        LazyContainer.__init__(self, id, store, parent_id, title)
+    def retrieve_children(self):
+        return self.store.retrievePlaylistFeeds (self)
 
+class YoutubeSubscriptionContainer(LazyContainer):
+    def __init__(self, id, store, parent_id, title):
+        LazyContainer.__init__(self, id, store, parent_id, title)
+    def retrieve_children(self):
+        return self.store.retrieveSubscriptionFeeds (self)
+
+class YoutubePlaylistFeed(LazyContainer):
+    def __init__(self, id, store, parent_id, title, playlist_feed_id):
+        LazyContainer.__init__(self, id, store, parent_id, title)
+        self.playlist_feed_id = playlist_feed_id       
+    def retrieve_children(self):
+        return self.store.retrievePlaylistFeedItems (self, self.playlist_feed_id)
+
+class YoutubeSubscriptionFeed(LazyContainer):
+    def __init__(self, id, store, parent_id, title, subscription_feed_id):
+        LazyContainer.__init__(self, id, store, parent_id, title)
+        self.subscription_feed_id = subscription_feed_id       
+    def retrieve_children(self):
+        return self.store.retrieveSubscriptionFeedItems (self, self.subscription_feed_id)
+
+ 
 class YouTubeStore(BackendStore):
 
     logCategory = 'youtube_store'
@@ -276,7 +305,6 @@ class YouTubeStore(BackendStore):
 
     wmc_mapping = {'4': 1000}
 
-
     def __init__(self, server, **kwargs):
         self.next_id = 1000
         self.config = kwargs
@@ -284,7 +312,8 @@ class YouTubeStore(BackendStore):
 
         self.login = kwargs.get('userid',kwargs.get('login',''))
         self.password = kwargs.get('password','')
-
+        self.locale = kwargs.get('locale', None)
+        
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
             self.urlbase[len(self.urlbase)-1] != '/'):
@@ -298,7 +327,12 @@ class YouTubeStore(BackendStore):
         self.store[ROOT_CONTAINER_ID] = rootItem
 
         userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
-        standardfeeds_uri = 'http://gdata.youtube.com/feeds/api/standardfeeds/%s'
+        
+        standardfeeds_uri = 'http://gdata.youtube.com/feeds/api/standardfeeds'
+        if self.locale is not None:
+            standardfeeds_uri += "/%s" % self.locale
+        standardfeeds_uri += "/%s"
+        
         self.appendFeed('Most Viewed', standardfeeds_uri % 'most_viewed', rootItem)
         self.appendFeed('Top Rated', standardfeeds_uri % 'top_rated', rootItem)
         self.appendFeed('Recently Featured', standardfeeds_uri % 'recently_featured', rootItem)
@@ -310,32 +344,37 @@ class YouTubeStore(BackendStore):
         self.appendFeed('Most Recent', standardfeeds_uri % 'most_recent', rootItem)
         if len(self.login) > 0:
             self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
-            self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)
-
+            self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)           
+            playlistsItem = YoutubePlaylistContainer(MY_PLAYLISTS_CONTAINER_ID, self, rootItem.get_id(), 'My Playlists')
+            self.storeItem(rootItem, playlistsItem, MY_PLAYLISTS_CONTAINER_ID)
+            subscriptionsItem = YoutubeSubscriptionContainer(MY_SUBSCRIPTIONS_CONTAINER_ID, self, rootItem.get_id(), 'My Subscriptions')
+            self.storeItem(rootItem, subscriptionsItem, MY_SUBSCRIPTIONS_CONTAINER_ID)
+                      
         self.init_completed()
 
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def appendFeed( self, name, feed_uri, parent):
-        id = self.getnextID()
-        update = False
-        item = YoutubeFeed(id, self, parent.get_id(), name, feed_uri)
+
+    def storeItem(self, parent, item, id):
         self.store[id] = item
         parent.add_child(item)
-        return item
 
-    def appendVideoEntry( self, entry, parent):
+
+    def appendFeed( self, name, feed_uri, parent):
         id = self.getnextID()
-        update = False
+        item = YoutubeFeed(id, self, parent.get_id(), name, feed_uri)
+        self.storeItem(parent, item, id)
+
+
+    def appendVideoEntry(self, entry, parent):
+        id = self.getnextID()
         title = entry.media.title.text
         url = entry.media.player.url
         mimetype = 'video/mp4'
         item = YoutubeVideoItem (self, parent, id, title, url, mimetype, entry)
-        self.store[id] = item
-        parent.add_child(item)
-        return item
+        self.storeItem(parent, item, id)
 
     def len(self):
         return len(self.store)
@@ -363,7 +402,6 @@ class YouTubeStore(BackendStore):
                                                                     ['http-get:*:video/mp4:*'],
                                                                     default=True)
 
-        #self.yt_service = YouTubeService(http_client = CustomHttpClient())
         self.yt_service = YouTubeService()
         self.yt_service.client_id = 'ytapi-JeanMichelSizun-youtubebackendpl-ruabstu7-0'
         self.yt_service.developer_key = 'AI39si7dv2WWffH-s3pfvmw8fTND-cPWeqF1DOcZ8rwTgTPi4fheX7jjQXpn7SG61Ido0Zm_9gYR52TcGog9Pt3iG9Sa88-1yg'
@@ -389,3 +427,77 @@ class YouTubeStore(BackendStore):
 
         feed.addCallbacks(gotFeed, gotError)
         return feed
+
+    def retrievePlaylistFeedItems (self, parent, playlist_id):
+              
+        feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistVideoFeed,playlist_id=playlist_id)       
+        def gotFeed(feed):
+           if feed is None:
+               print "Unable to retrieve playlist items %s" % feed_uri
+               return
+           for entry in feed.entry:
+               self.appendVideoEntry(entry, parent)
+
+        def gotError(error):
+            print "ERROR: %s" % error
+
+        feed.addCallbacks(gotFeed, gotError)
+        return feed
+
+    def retrieveSubscriptionFeedItems (self, parent, uri):              
+        entry = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionEntry,uri)
+
+        def gotEntry(entry):
+           if entry is None:
+               print "Unable to retrieve subscription items %s" % uri
+               return
+           feed_uri = entry.feed_link[0].href
+           return self.retrieveFeedItems(parent, feed_uri)
+
+        def gotError(error):
+            print "ERROR: %s" % error
+        entry.addCallbacks(gotEntry, gotError)
+        return entry
+
+    def retrievePlaylistFeeds(self, parent):
+        playlists_feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistFeed, username=self.login)
+
+        def gotPlaylists(playlist_video_feed):
+           if playlist_video_feed is None:
+               print "Unable to retrieve playlists feed"
+               return
+           for playlist_video_entry in playlist_video_feed.entry:
+               title = playlist_video_entry.title.text
+               playlist_id = playlist_video_entry.id.text.split("/")[-1] # FIXME find better way to retrieve the playlist ID
+               id = self.getnextID()
+               item = YoutubePlaylistFeed(id, self, parent.get_id(), title, playlist_id)
+               self.storeItem(parent, item, id)               
+
+        def gotError(error):
+            print "ERROR: %s" % error
+
+        playlists_feed.addCallbacks(gotPlaylists, gotError)
+        return playlists_feed
+
+
+    def retrieveSubscriptionFeeds(self, parent):
+        playlists_feed = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionFeed, username=self.login)
+ 
+        def gotPlaylists(playlist_video_feed):
+           if playlist_video_feed is None:
+               print "Unable to retrieve subscriptions feed"
+               return
+           for entry in playlist_video_feed.entry:
+               type = entry.GetSubscriptionType()
+               title = entry.title.text
+               uri = entry.id.text
+               name = "[%s] %s" % (type,title)
+               id = self.getnextID()
+               item = YoutubeSubscriptionFeed(id, self, parent.get_id(), name, uri)
+               self.storeItem(parent, item, id)              
+
+        def gotError(error):
+            print "ERROR: %s" % error
+
+        playlists_feed.addCallbacks(gotPlaylists, gotError)
+        return playlists_feed
