@@ -503,24 +503,25 @@ class FSStore(BackendStore):
         return r
 
     def get_id_by_name(self, parent='0', name=''):
-        #print 'get_id_by_name', parent, name
+        self.info('get_id_by_name %r (%r) %r' % (parent, type(parent), name))
         try:
-            name = os.path.abspath(name)
-            #print name
             parent = self.store[parent]
+            self.debug("%r %d" % (parent,len(parent.children)))
             for child in parent.children:
-                if not isinstance(name, unicode):
-                    name = name.decode("utf8")
-                #print child.get_name(),child.get_realpath(), name == child.get_path()
+                #if not isinstance(name, unicode):
+                #    name = name.decode("utf8")
+                self.debug("%r %r %r" % (child.get_name(),child.get_realpath(), name == child.get_realpath()))
                 if name == child.get_realpath():
                     return child.id
         except:
-            pass
+            import traceback
+            self.info(traceback.format_exc())
+        self.debug('get_id_by_name not found')
 
         return None
 
     def get_url_by_name(self,parent='0',name=''):
-        #print 'get_url_by_name', parent, name
+        self.info('get_url_by_name %r %r' % (parent, name))
         id = self.get_id_by_name(parent,name)
         #print 'get_url_by_name', id
         if id == None:
@@ -650,8 +651,8 @@ class FSStore(BackendStore):
 
 
     def notify(self, iwp, filename, mask, parameter=None):
-        #print "Event %s on %s %s - id %d" % (
-        #    ', '.join(self.inotify.flag_to_human(mask)), iwp.path, filename, parameter)
+        self.info("Event %s on %s %s - parameter %r" % (
+                    ', '.join(self.inotify.flag_to_human(mask)), iwp.path, filename, parameter))
 
         path = iwp.path
         if filename:
@@ -663,15 +664,15 @@ class FSStore(BackendStore):
             pass
 
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
-            #print '%s was deleted, parent %d (%s)' % (path, parameter, iwp.path)
-            id = self.get_id_by_name(parameter,filename)
+            self.info('%s was deleted, parent %r (%s)' % (path, parameter, iwp.path))
+            id = self.get_id_by_name(parameter,os.path.join(iwp.path,filename))
             self.remove(id)
         if(mask & IN_CREATE or mask & IN_MOVED_TO):
-            #if mask & IN_ISDIR:
-            #    print 'directory %s was created, parent %d (%s)' % (path, parameter, iwp.path)
-            #else:
-            #    print 'file %s was created, parent %d (%s)' % (path, parameter, iwp.path)
-            if self.get_id_by_name(parameter,filename) is None:
+            if mask & IN_ISDIR:
+                self.info('directory %s was created, parent %r (%s)' % (path, parameter, iwp.path))
+            else:
+                self.info('file %s was created, parent %r (%s)' % (path, parameter, iwp.path))
+            if self.get_id_by_name(parameter,os.path.join(iwp.path,filename)) is None:
                 if os.path.isdir(path):
                     self.walk(path, self.get_by_id(parameter), self.ignore_file_pattern)
                 else:
