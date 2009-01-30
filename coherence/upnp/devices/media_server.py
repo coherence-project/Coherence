@@ -314,34 +314,35 @@ class MSRoot(resource.Resource, log.Loggable):
             def build_page(r,page):
                 #print "build_page", r
                 page += """<ul>"""
-                for c in r:
-                    if hasattr(c,'get_url'):
-                        path = c.get_url()
-                        self.debug('has get_url', path)
-                    elif hasattr(c,'get_path') and c.get_path != None:
-                        #path = c.get_path().encode('utf-8').encode('string_escape')
-                        path = c.get_path()
-                        if isinstance(path,unicode):
-                            path = path.encode('ascii','xmlcharrefreplace')
+                if r is not None:
+                    for c in r:
+                        if hasattr(c,'get_url'):
+                            path = c.get_url()
+                            self.debug('has get_url', path)
+                        elif hasattr(c,'get_path') and c.get_path != None:
+                            #path = c.get_path().encode('utf-8').encode('string_escape')
+                            path = c.get_path()
+                            if isinstance(path,unicode):
+                                path = path.encode('ascii','xmlcharrefreplace')
+                            else:
+                                path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
+                            self.debug('has get_path', path)
                         else:
-                            path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
-                        self.debug('has get_path', path)
-                    else:
-                        path = request.uri.split('/')
-                        path[-1] = str(c.get_id())
-                        path = '/'.join(path)
-                        self.debug('got path', path)
-                    title = c.get_name()
-                    self.debug( 'title is:', type(title))
-                    try:
-                        if isinstance(title,unicode):
-                            title = title.encode('ascii','xmlcharrefreplace')
-                        else:
-                            title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
-                    except (UnicodeEncodeError,UnicodeDecodeError):
-                        title = c.get_name().encode('utf-8').encode('string_escape')
-                    page += '<li><a href="%s">%s</a></li>' % \
-                                        (path, title)
+                            path = request.uri.split('/')
+                            path[-1] = str(c.get_id())
+                            path = '/'.join(path)
+                            self.debug('got path', path)
+                        title = c.get_name()
+                        self.debug( 'title is:', type(title))
+                        try:
+                            if isinstance(title,unicode):
+                                title = title.encode('ascii','xmlcharrefreplace')
+                            else:
+                                title = title.decode('utf-8').encode('ascii','xmlcharrefreplace')
+                        except (UnicodeEncodeError,UnicodeDecodeError):
+                            title = c.get_name().encode('utf-8').encode('string_escape')
+                        page += '<li><a href="%s">%s</a></li>' % \
+                                            (path, title)
                 page += """</ul>"""
                 page += """</body></html>"""
                 return static.Data(page,'text/html')
