@@ -204,12 +204,13 @@ def setConfigFile():
 class Options(usage.Options):
 
     optFlags = [['daemon','d', 'daemonize'],
+                ['noconfig', None, 'ignore any configfile found'],
                 ['version','v', 'print out version']
                 ]
     optParameters = [['configfile', 'c', setConfigFile(), 'configfile'],
                      ['logfile', 'l', None, 'logfile'],
                      ['option', 'o', None, 'activate option'],
-                     ['plugin', 'p', None, 'activate plugin']
+                     ['plugin', 'p', None, 'activate plugin'],
                     ]
 
     def __init__(self):
@@ -266,20 +267,21 @@ if __name__ == '__main__':
 
     config = {}
 
-    try:
-        config = Config(options['configfile'],root='config').config
-    except SyntaxError:
-        import traceback
-        #print traceback.format_exc()
+    if options['noconfig'] != 1:
         try:
-            from configobj import ConfigObj
-            config = ConfigObj(options['configfile'])
-        except:
-            print "hmm, seems we are in trouble reading in any sort of config file"
-            print traceback.format_exc()
-    except IOError:
-        print "no config file %r found" % options['configfile']
-        pass
+            config = Config(options['configfile'],root='config').config
+        except SyntaxError:
+            import traceback
+            #print traceback.format_exc()
+            try:
+                from configobj import ConfigObj
+                config = ConfigObj(options['configfile'])
+            except:
+                print "hmm, seems we are in trouble reading in any sort of config file"
+                print traceback.format_exc()
+        except IOError:
+            print "no config file %r found" % options['configfile']
+            pass
 
     for k,v in options['options'].items():
         config[k] = v
