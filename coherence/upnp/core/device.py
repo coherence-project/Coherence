@@ -383,6 +383,8 @@ class RootDevice(Device):
         import urlparse
         base = self.get_urlbase()
         if base != None:
+            if base[-1] != '/':
+                base += '/'
             r = urlparse.urljoin(base,url)
         else:
             r = urlparse.urljoin(self.get_location(),url)

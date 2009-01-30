@@ -43,14 +43,14 @@ class Service(log.Loggable):
 
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
-        if not control_url.startswith('/'):
-            control_url = "/%s" % control_url
-        if not event_sub_url.startswith('/'):
-            event_sub_url = "/%s" % event_sub_url
-        if presentation_url and not presentation_url.startswith('/'):
-            presentation_url = "/%s" % presentation_url
-        if not scpd_url.startswith('/'):
-            scpd_url = "/%s" % scpd_url
+        #if not control_url.startswith('/'):
+        #    control_url = "/%s" % control_url
+        #if not event_sub_url.startswith('/'):
+        #    event_sub_url = "/%s" % event_sub_url
+        #if presentation_url and not presentation_url.startswith('/'):
+        #    presentation_url = "/%s" % presentation_url
+        #if not scpd_url.startswith('/'):
+        #    scpd_url = "/%s" % scpd_url
 
         self.service_type = service_type
         self.detection_completed = False
@@ -212,20 +212,19 @@ class Service(log.Loggable):
         return self._variables.get(int(instance)).get(name)
 
     def get_control_url(self):
-        return self.url_base + self.control_url
+        return self.device.make_fullyqualified(self.control_url)
 
     def get_event_sub_url(self):
-        #return self.url_base + self.event_sub_url
-        return self.event_sub_url
+        return self.device.make_fullyqualified(self.event_sub_url)
 
     def get_presentation_url(self):
-        return self.url_base + self.presentation_url
+        return self.device.make_fullyqualified(self.presentation_url)
 
     def get_scpd_url(self):
-        return self.url_base + self.scpd_url
+        return self.device.make_fullyqualified(self.scpd_url)
 
     def get_base_url(self):
-        return self.url_base
+        return self.device.make_fullyqualified('.')
 
     def subscribe(self):
         self.debug("subscribe %s", self.id)

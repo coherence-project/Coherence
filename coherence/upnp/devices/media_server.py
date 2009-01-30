@@ -403,7 +403,7 @@ class RootDeviceXML(static.Data):
         ET.SubElement(e, 'major').text = '1'
         ET.SubElement(e, 'minor').text = '0'
 
-        ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:]
+        #ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
 
         d = ET.SubElement(root, 'device')
         x = ET.SubElement(d, 'dlna:X_DLNADOC')
@@ -454,9 +454,13 @@ class RootDeviceXML(static.Data):
                 except:
                     namespace = 'upnp-org'
                 ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                #ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                #ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                #ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+
+                ET.SubElement(s, 'SCPDURL').text = id + '/' + service.scpd_url
+                ET.SubElement(s, 'controlURL').text = id + '/' + service.control_url
+                ET.SubElement(s, 'eventSubURL').text = id + '/' + service.subscription_url
 
         if len(devices):
             e = ET.SubElement(d, 'deviceList')
