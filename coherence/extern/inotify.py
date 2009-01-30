@@ -451,6 +451,9 @@ class INotify(FileDescriptor, object):
             path = path.encode('utf-8')
         return self._watchpaths.get(path, False)
 
+    def flag_to_human(self,mask):
+        return flag_to_human(mask)
+
 if __name__ == '__main__':
 
     i = INotify()
