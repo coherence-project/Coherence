@@ -345,7 +345,7 @@ class Track(item.Item,BackendItem):
             res.size = 0
         item.res.append(res)
 
-        url = self.store.urlbase + str(self.storeID+1000)
+        url = self.store.urlbase + str(self.storeID+1000) + ext
 
         res = DIDLLite.Resource(url, 'http-get:*:%s:*' % mimetype)
         try:
@@ -606,7 +606,7 @@ class MediaStore(BackendStore):
         self.info("get_by_id %s" % id)
         if isinstance(id, basestring):
             id = id.split('@',1)
-            id = id[0]
+            id = id[0].split('.')[0]
         if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
             try:
                 return self.containers[id]
