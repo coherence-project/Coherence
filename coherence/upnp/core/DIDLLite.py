@@ -192,7 +192,7 @@ class Resource:
 
     def get_additional_info(self,upnp_client=''):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-        if upnp_client  in ('XBox'):
+        if upnp_client  in ('XBox',):
             """ we don't need the DLNA tags there,
                 and maybe it irritates that poor thing anyway
             """
@@ -630,7 +630,6 @@ class MusicTrack(AudioItem):
     upnp_class = AudioItem.upnp_class + '.musicTrack'
 
     album = None
-    originalTrackNumber = None
     playlist = None
     storageMedium = None
     contributor = None
@@ -641,10 +640,6 @@ class MusicTrack(AudioItem):
 
         if self.album is not None:
             ET.SubElement(root, 'upnp:album').text = self.album
-
-        if self.originalTrackNumber is not None:
-            ET.SubElement(root, 'upnp:originalTrackNumber').text = \
-                             str(self.originalTrackNumber)
 
         if self.playlist is not None:
             ET.SubElement(root, 'upnp:playlist').text = self.playlist
