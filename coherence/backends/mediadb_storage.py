@@ -384,7 +384,7 @@ class Track(item.Item,BackendItem):
         return item
 
     def get_path(self):
-        return self.location
+        return self.location.encode('utf-8')
 
     def get_id(self):
         return self.storeID + 1000
