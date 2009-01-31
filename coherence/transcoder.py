@@ -170,7 +170,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         headers = request.getAllHeaders()
         if('connection' in headers and
            headers['connection'] == 'close'):
-            return
+            pass
 
         self.start(request)
         return server.NOT_DONE_YET
