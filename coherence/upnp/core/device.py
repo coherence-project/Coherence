@@ -272,6 +272,9 @@ class Device(log.Loggable):
     def get_urlbase(self):
         return self.parent.get_urlbase()
 
+    def make_fullyqualified(self,url):
+        return self.parent.make_fullyqualified(url)
+
 
 class RootDevice(Device):
 
