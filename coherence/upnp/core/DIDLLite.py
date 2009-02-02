@@ -192,21 +192,21 @@ class Resource:
 
     def get_additional_info(self,upnp_client=''):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-        if upnp_client  in ('XBox',):
+        if upnp_client  in ('XBox','Philips-TV',):
             """ we don't need the DLNA tags there,
-                and maybe it irritates that poor thing anyway
+                and maybe they irritates these poor things anyway
             """
             additional_info = '*'
         elif upnp_client  in ('PLAYSTATION3',):
             if content_format.startswith('video/'):
                 additional_info = '*'
-        else:
-            a_list = additional_info.split(';')
-            for part in a_list:
-                if part == 'DLNA.ORG_PS=1':
-                    a_list.remove(part)
-                    break
-            additional_info = ';'.join(a_list)
+
+        a_list = additional_info.split(';')
+        for part in a_list:
+            if part == 'DLNA.ORG_PS=1':
+                a_list.remove(part)
+                break
+        additional_info = ';'.join(a_list)
         return additional_info
 
     def toElement(self,**kwargs):
