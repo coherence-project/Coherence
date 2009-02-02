@@ -18,7 +18,7 @@ from urllib import urlencode
 from coherence.upnp.core.utils import getPage
 
 std_headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.1) Gecko/2008070208 Firefox/3.0.1',
+	'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.5) Gecko/2008120122 Firefox/3.0.5',
     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
     'Accept': 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
     'Accept-Language': 'en-us,en;q=0.5',
@@ -433,13 +433,18 @@ class YoutubeIE(InfoExtractor):
     """Information extractor for youtube.com."""
 
     _VALID_URL = r'^((?:http://)?(?:\w+\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.+&)?v=)))?([0-9A-Za-z_-]+)(?(1).+)?$'
-    _LOGIN_URL = 'http://uk.youtube.com/login?next=/'
-    _AGE_URL = 'http://uk.youtube.com/verify_age?next_url=/'
+    _LANG_URL = r'http://uk.youtube.com/?hl=en&persist_hl=1&gl=US&persist_gl=1&opt_out_ackd=1'
+    _LOGIN_URL = 'http://www.youtube.com/signup?next=/&gl=US&hl=en'
+    _AGE_URL = 'http://www.youtube.com/verify_age?next_url=/&gl=US&hl=en'
     _NETRC_MACHINE = 'youtube'
 
     @staticmethod
     def suitable(url):
         return (re.match(YoutubeIE._VALID_URL, url) is not None)
+
+	def report_lang(self):
+		"""Report attempt to set language."""
+		self.to_stdout(u'[youtube] Setting language')
 
     def report_login(self):
         """Report attempt to log in."""
@@ -517,7 +522,8 @@ class YoutubeIE(InfoExtractor):
             return
 
         # Log in
-        login_form = {'current_form': 'loginForm',
+        login_form = {
+				'current_form': 'loginForm',
                 'next':		'/',
                 'action_login':	'Log In',
                 'username':	username,
@@ -542,18 +548,28 @@ class YoutubeIE(InfoExtractor):
         if self._downloader is not None:
             params = self._downloader.get_params()
             format_param = params.get('format', None)
-
+         
         # Extension
-        video_extension = {'18': 'mp4', '17': '3gp'}.get(format_param, 'flv')
+        video_extension = {'18': 'mp4', '17': '3gp', '22': 'mp4'}.get(format_param, 'flv')
 
         # Normalize URL, including format
-        normalized_url = 'http://uk.youtube.com/watch?v=%s' % video_id
+        normalized_url = 'http://www.youtube.com/watch?v=%s' % video_id
         if format_param is not None:
             normalized_url = '%s&fmt=%s' % (normalized_url, format_param)
 
-        def gotPage(result):
+        def gotPage(result, format_param):
             video_webpage,headers = result
-
+            
+            # check format
+            if (format_param == '22'):
+                print "Check if HD video exists..."
+                mobj = re.search(r'var isHDAvailable = true;', video_webpage)
+                if mobj is None:
+                    print "No HD video -> switch back to SD"
+                    format_param = '18'
+                else:
+                    print "...HD video OK!"
+            
             # "t" param
             mobj = re.search(r', "t": "([^"]+)"', video_webpage)
             if mobj is None:
@@ -599,7 +615,8 @@ class YoutubeIE(InfoExtractor):
             return [None]
 
         d = getPage(normalized_url, headers=std_headers)
-        d.addCallbacks(gotPage, gotError)
+        d.addCallback(gotPage, format_param)
+        d.addErrback(gotError)
         return d
 
 
@@ -670,7 +687,7 @@ class MetacafeIE(InfoExtractor):
         # Check if video comes from YouTube
         mobj2 = re.match(r'^yt-(.*)$', video_id)
         if mobj2 is not None:
-            return self._youtube_ie.extract('http://uk.youtube.com/watch?v=%s' % mobj2.group(1))
+            return self._youtube_ie.extract('http://www.youtube.com/watch?v=%s' % mobj2.group(1))
 
         simple_title = mobj.group(2).decode('utf-8')
         video_extension = 'flv'
@@ -726,7 +743,7 @@ class YoutubePlaylistIE(InfoExtractor):
     """Information Extractor for YouTube playlists."""
 
     _VALID_URL = r'(?:http://)?(?:\w+\.)?youtube.com/view_play_list\?p=(.+)'
-    _TEMPLATE_URL = 'http://uk.youtube.com/view_play_list?p=%s&page=%s'
+    _TEMPLATE_URL = 'http://www.youtube.com/view_play_list?p=%s&page=%s&gl=US&hl=en'
     _VIDEO_INDICATOR = r'/watch\?v=(.+?)&'
     _MORE_PAGES_INDICATOR = r'/view_play_list?p=%s&amp;page=%s'
     _youtube_ie = None
@@ -780,7 +797,7 @@ class YoutubePlaylistIE(InfoExtractor):
 
         information = []
         for id in video_ids:
-            information.extend(self._youtube_ie.extract('http://uk.youtube.com/watch?v=%s' % id))
+            information.extend(self._youtube_ie.extract('http://www.youtube.com/watch?v=%s' % id))
         return information
 
 class PostProcessor(object):
@@ -853,7 +870,7 @@ if __name__ == '__main__':
         # Parse command line
         parser = optparse.OptionParser(
                 usage='Usage: %prog [options] url...',
-                version='2008.11.01',
+                version='2009.01.31',
                 conflict_handler='resolve',
                 )
         parser.add_option('-h', '--help',
@@ -890,10 +907,21 @@ if __name__ == '__main__':
                 action='store_true', dest='ignoreerrors', help='continue on download errors', default=False)
         parser.add_option('-r', '--rate-limit',
                 dest='ratelimit', metavar='L', help='download rate limit (e.g. 50k or 44.6m)')
+        parser.add_option('-a', '--batch-file',
+				dest='batchfile', metavar='F', help='file containing URLs to download')
         (opts, args) = parser.parse_args()
 
-        # Conflicting, missing and erroneous options
-        if len(args) < 1:
+		# Batch file verification
+        batchurls = []
+        if opts.batchfile is not None:
+			try:
+				batchurls = [line.strip() for line in open(opts.batchfile, 'r')]
+			except IOError:
+				sys.exit(u'ERROR: batch file could not be read')
+        all_urls = batchurls + args
+
+		# Conflicting, missing and erroneous options
+        if len(all_urls) < 1:
             sys.exit(u'ERROR: you must provide at least one URL')
         if opts.usenetrc and (opts.username is not None or opts.password is not None):
             sys.exit(u'ERROR: using .netrc conflicts with giving username/password')
@@ -939,7 +967,7 @@ if __name__ == '__main__':
         fd.add_info_extractor(youtube_pl_ie)
         fd.add_info_extractor(metacafe_ie)
         fd.add_info_extractor(youtube_ie)
-        retcode = fd.download(args)
+        retcode = fd.download(all_urls)
         sys.exit(retcode)
 
     except DownloadError:

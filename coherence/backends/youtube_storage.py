@@ -65,14 +65,19 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
         print "YoutubeVideoProxy render", request, self.stream_url, self.video_url
 
         if self.stream_url is None:
-
+            
+            if (self.store.quality == 'hd'):
+                format = '22'
+            else:
+                format = '18'
+                
             kwargs = {
                 'usenetrc': False,
                 'quiet': True,
                 'forceurl': True,
                 'forcetitle': False,
                 'simulate': True,
-                'format': '18',  #XXX breaks video item dl here
+                'format': format,
                 'outtmpl': u'%(id)s.%(ext)s',
                 'ignoreerrors': True,
                 'ratelimit': None,
@@ -313,6 +318,7 @@ class YouTubeStore(BackendStore):
         self.login = kwargs.get('userid',kwargs.get('login',''))
         self.password = kwargs.get('password','')
         self.locale = kwargs.get('locale', None)
+        self.quality = kwargs.get('quality','sd')
         
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
