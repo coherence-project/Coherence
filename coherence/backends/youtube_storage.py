@@ -22,14 +22,14 @@ ROOT_CONTAINER_ID = 0
 MY_PLAYLISTS_CONTAINER_ID = 100
 MY_SUBSCRIPTIONS_CONTAINER_ID = 101
 
-class YoutubeVideoProxy(utils.ReverseProxyResource):
+class VideoProxy(utils.ReverseProxyResource):
 
-    def __init__(self, uri, entry, store):
-        self.youtube_entry = entry
+    def __init__(self, uri, fct, **kwargs):
         self.uri = uri
         self.video_url = None # the url we get from the youtube page
         self.stream_url = None # the real video stream, cached somewhere
-        self.store = store
+        self.url_extractor_fct = fct
+        self.url_extractor_params = kwargs
         host,port,path,params =  self.splitUri(uri)
         utils.ReverseProxyResource.__init__(self, host, port, '%s?%s' % (path, params))
 
@@ -59,46 +59,21 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
         print "ProxyStream requestFinished"
         if hasattr(self,'connection'):
             self.connection.transport.loseConnection()
-
+    
+            
     def render(self, request):
 
-        print "YoutubeVideoProxy render", request, self.stream_url, self.video_url
+        print "VideoProxy render", request, self.stream_url, self.video_url
 
         if self.stream_url is None:
-            
-            if (self.store.quality == 'hd'):
-                format = '22'
-            else:
-                format = '18'
-                
-            kwargs = {
-                'usenetrc': False,
-                'quiet': True,
-                'forceurl': True,
-                'forcetitle': False,
-                'simulate': True,
-                'format': format,
-                'outtmpl': u'%(id)s.%(ext)s',
-                'ignoreerrors': True,
-                'ratelimit': None,
-                }
-            if len(self.store.login) > 0:
-                kwargs['username'] = self.store.login
-                kwargs['password'] = self.store.password
-            fd = FileDownloader(kwargs)
-
-            youtube_ie = YoutubeIE()
-            fd.add_info_extractor(YoutubePlaylistIE(youtube_ie))
-            fd.add_info_extractor(MetacafeIE(youtube_ie))
-            fd.add_info_extractor(youtube_ie)
 
             web_url = "http://%s%s" % (self.host,self.path)
             print "web_url", web_url
 
-            def got_real_urls(real_urls, entry):
+            def got_real_urls(real_urls):
                 self.stream_url = real_urls[0]
                 if self.stream_url is None:
-                    print 'Error to retrieve video URL - inconsistent web page'
+                    print 'Error to retrieve URL - inconsistent web page'
                     return requestFinished(result) #FIXME
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
@@ -107,8 +82,8 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
                 self.video_url = self.stream_url[:]
                 self.followRedirects(request)
 
-            d = fd.get_real_urls([web_url])
-            d.addCallback(got_real_urls, self.youtube_entry)
+            d = self.url_extractor_fct(web_url, **self.url_extractor_params)
+            d.addCallback(got_real_urls)
             return server.NOT_DONE_YET
 
         reactor.callLater(0.1,self.redirect,request)
@@ -133,12 +108,13 @@ class YoutubeVideoProxy(utils.ReverseProxyResource):
                 self.followRedirects(request)
             else:
                 print "Unable to retrieve page header for URI %s" % self.stream_url
-
+                return requestFinished(result) #FIXME
+            
         d.addCallback(gotHeader,request)
         d.addErrback(gotError,request)
 
     def redirect(self,request):
-        print "YoutubeVideoProxy redirect", request, self.stream_url
+        print "Proxy redirect", request, self.stream_url
         request.redirect(self.stream_url)
         request.finish()
 
@@ -161,7 +137,39 @@ class YoutubeVideoItem(BackendItem):
 
         self.store = store
         self.url = self.store.urlbase + str(self.id)
-        self.location = YoutubeVideoProxy(url, entry, store)
+        
+        def extractDataURL(url, quality):
+            print quality
+            if (quality == 'hd'):
+                format = '22'
+            else:
+                format = '18'
+                    
+            kwargs = {
+                'usenetrc': False,
+                'quiet': True,
+                'forceurl': True,
+                'forcetitle': False,
+                'simulate': True,
+                'format': format,
+                'outtmpl': u'%(id)s.%(ext)s',
+                'ignoreerrors': True,
+                'ratelimit': None,
+                }
+            if len(self.store.login) > 0:
+                kwargs['username'] = self.store.login
+                kwargs['password'] = self.store.password
+            fd = FileDownloader(kwargs)
+    
+            youtube_ie = YoutubeIE()
+            fd.add_info_extractor(YoutubePlaylistIE(youtube_ie))
+            fd.add_info_extractor(MetacafeIE(youtube_ie))
+            fd.add_info_extractor(youtube_ie)
+            
+            deferred = fd.get_real_urls([url])
+            return deferred
+        
+        self.location = VideoProxy(url, extractDataURL, quality=self.store.quality)
 
 
     def get_item(self):
