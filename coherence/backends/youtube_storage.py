@@ -24,8 +24,9 @@ MY_SUBSCRIPTIONS_CONTAINER_ID = 101
 
 class VideoProxy(utils.ReverseProxyResource):
 
-    def __init__(self, uri, fct, **kwargs):
+    def __init__(self, uri, proxy_mode, fct, **kwargs):
         self.uri = uri
+        self.proxy_mode = proxy_mode
         self.video_url = None # the url we get from the youtube page
         self.stream_url = None # the real video stream, cached somewhere
         self.url_extractor_fct = fct
@@ -95,8 +96,12 @@ class VideoProxy(utils.ReverseProxyResource):
 
         def gotHeader(result,request):
             data,header = result
-            self.redirect(request)
-
+            if self.proxy_mode == 'redirect':
+                self.redirect(request)
+            else:
+                print "Unsuported Proxy Mode: %s" % self.proxy_mode
+                return requestFinished(result)
+            
         def gotError(error,request):
             print "HTTP redirect gotError", error
             # error should be a "Failure" instance at this point
@@ -125,16 +130,13 @@ class YoutubeVideoItem(BackendItem):
     def __init__(self, store, parent, id, title, url, mimetype, entry):
         self.parent = parent
         self.id = id
-        self.location = url
         self.name = title
         self.duration = None
         self.size = None
         self.mimetype = mimetype
         self.description = None
         self.date = None
-
         self.item = None
-
         self.store = store
         self.url = self.store.urlbase + str(self.id)
         
@@ -169,7 +171,7 @@ class YoutubeVideoItem(BackendItem):
             deferred = fd.get_real_urls([url])
             return deferred
         
-        self.location = VideoProxy(url, extractDataURL, quality=self.store.quality)
+        self.location = VideoProxy(url, store.proxy_mode, extractDataURL, quality=self.store.quality)
 
 
     def get_item(self):
@@ -327,7 +329,7 @@ class YouTubeStore(BackendStore):
         self.password = kwargs.get('password','')
         self.locale = kwargs.get('locale', None)
         self.quality = kwargs.get('quality','sd')
-        
+        self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
             self.urlbase[len(self.urlbase)-1] != '/'):
