@@ -123,7 +123,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
         if(request.method in ('GET','HEAD') and
            TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
-            self.info("request transcoding to %r for id %s" % (request.args,path))
+            self.info("request transcoding to %s for id %s" % (request.uri.split('/')[-1],path))
             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
                 ch = self.store.get_by_id(path)
                 #FIXME create a generic transcoder class and sort the details there
