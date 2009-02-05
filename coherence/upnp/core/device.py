@@ -217,6 +217,7 @@ class Device(log.Loggable):
                     i['width'] = icon.find('./{%s}width' % ns).text
                     i['height'] = icon.find('./{%s}height' % ns).text
                     i['depth'] = icon.find('./{%s}depth' % ns).text
+                    i['realurl'] = icon.find('./{%s}url' % ns).text
                     i['url'] = icon.find('./{%s}url' % ns).text
                     if i['url'].startswith('/'):
                         i['url'] = ''.join((url_base,i['url']))
@@ -448,5 +449,13 @@ class RootDevice(Device):
         append('Serial Number','serial_number')
         append('UPC','upc')
         append('Presentation URL',('presentation_url',lambda: self.make_fullyqualified(getattr(self,'presentation_url'))))
+
+        for icon in self.icons:
+            r.append(('Icon', (icon['realurl'],
+                               self.make_fullyqualified(icon['realurl']),
+                               {'Mimetype': icon['mimetype'],
+                                'Width':icon['width'],
+                                'Height':icon['height'],
+                                'Depth':icon['depth']})))
 
         return r
