@@ -88,7 +88,7 @@ class Action(log.Loggable):
                 self.error("argument %s not valid for action %s" % (arg_name,self.name))
                 return
             if arg_name == 'InstanceID':
-                instance_id = arg
+                instance_id = int(arg)
         if len(in_arguments) > 0:
             self.error("argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],self.name))
             return
@@ -123,6 +123,7 @@ class Action(log.Loggable):
         return d
 
     def got_results( self, results, instance_id, name):
+        instance_id = int(instance_id)
         out_arguments = self.get_out_arguments()
         self.info( "call %s (instance %d) returns %d arguments: %r" % (name,
                                                                     instance_id,
