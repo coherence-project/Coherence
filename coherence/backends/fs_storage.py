@@ -34,9 +34,14 @@ from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core import utils
 
-from coherence.extern.inotify import INotify
-from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
-from coherence.extern.inotify import IN_CHANGED
+try:
+    from coherence.extern.inotify import INotify
+    from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
+    from coherence.extern.inotify import IN_CHANGED
+    haz_inotify = True
+except Exception,msg:
+    haz_inotify = False
+    no_inotify_reason = msg
 
 from coherence.extern.xdg import xdg_content
 
@@ -421,16 +426,20 @@ class FSStore(BackendStore):
         self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])
 
-        if self.urlbase[len(self.urlbase)-1] != '/':
+        if not self.urlbase.endswith('/'):
             self.urlbase += '/'
         self.server = server
         self.store = {}
 
-        try:
-            self.inotify = INotify()
-        except Exception,msg:
-            self.info("%s" %msg)
-            self.inotify = None
+        self.inotify = None
+
+        if haz_inotify == True:
+            try:
+                self.inotify = INotify()
+            except Exception,msg:
+                self.info("%s" %msg)
+        else:
+            self.info("%s" %no_inotify_reason)
 
         if kwargs.get('enable_destroy','no') == 'yes':
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
