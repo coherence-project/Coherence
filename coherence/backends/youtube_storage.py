@@ -4,9 +4,11 @@
 # Copyright 2009, Jean-Michel Sizun
 # Copyright 2009 Frank Scholz <coherence@beebits.net>
 
+import os.path
+
 from twisted.internet import reactor, threads
 
-from twisted.web import server
+from twisted.web import server, static
 from twisted.web.error import PageRedirect
 
 from coherence.upnp.core import utils
@@ -21,14 +23,25 @@ from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,Youtu
 ROOT_CONTAINER_ID = 0
 MY_PLAYLISTS_CONTAINER_ID = 100
 MY_SUBSCRIPTIONS_CONTAINER_ID = 101
+MPEG4_MIMETYPE = 'video/mp4'
 
 class VideoProxy(utils.ReverseProxyResource):
 
-    def __init__(self, uri, proxy_mode, fct, **kwargs):
+    def __init__(self, uri, id, proxy_mode, 
+                 cache_directory, cache_maxsize=100000000, buffer_size=2000000, 
+                 fct=None, **kwargs):
         self.uri = uri
+        self.id = id
         self.proxy_mode = proxy_mode
         self.video_url = None # the url we get from the youtube page
         self.stream_url = None # the real video stream, cached somewhere
+        self.mimetype = None
+        self.filesize = 0
+        self.file_in_cache = False
+        self.cache_directory = cache_directory
+        self.cache_maxsize = int(cache_maxsize)
+        self.buffer_size = int(buffer_size)
+        self.downloader = None
         self.url_extractor_fct = fct
         self.url_extractor_params = kwargs
         host,port,path,params =  self.splitUri(uri)
@@ -78,58 +91,163 @@ class VideoProxy(utils.ReverseProxyResource):
                     return requestFinished(result) #FIXME
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
-                request.uri = self.stream_url
                 print "Video URL: %s" % self.stream_url
                 self.video_url = self.stream_url[:]
-                self.followRedirects(request)
+                self.followRedirects(request, self.proxyURL, request)
 
             d = self.url_extractor_fct(web_url, **self.url_extractor_params)
             d.addCallback(got_real_urls)
             return server.NOT_DONE_YET
 
-        reactor.callLater(0.1,self.redirect,request)
+        reactor.callLater(0.1,self.proxyURL,request)
         return server.NOT_DONE_YET
 
-    def followRedirects(self,request):
+    def followRedirects(self, request, callback, *args):
         print "HTTP redirect", request, self.stream_url
         d = utils.getPage(self.stream_url, method="HEAD", followRedirect=0)
 
-        def gotHeader(result,request):
+        def gotHeader(result,request, callback, *args):
             data,header = result
-            if self.proxy_mode == 'redirect':
-                self.redirect(request)
-            else:
-                print "Unsuported Proxy Mode: %s" % self.proxy_mode
-                return requestFinished(result)
+            self.filesize = int(header['content-length'][0])
+            self.mimetype = header['content-type'][0]
+            callback(*args)
             
         def gotError(error,request):
-            print "HTTP redirect gotError", error
             # error should be a "Failure" instance at this point
             error_value = error.value
             if (isinstance(error_value,PageRedirect)):
                 self.stream_url = error_value.location
                 self.resetUri(self.stream_url)
-                request.uri = self.stream_url
-                self.followRedirects(request)
+                self.followRedirects(request, callback, *args)
             else:
-                print "Unable to retrieve page header for URI %s" % self.stream_url
+                print "Error while retrieving page header for URI ", self.stream_url, error
                 return requestFinished(result) #FIXME
             
-        d.addCallback(gotHeader,request)
+        d.addCallback(gotHeader,request, callback, *args)
         d.addErrback(gotError,request)
 
-    def redirect(self,request):
-        print "Proxy redirect", request, self.stream_url
-        request.redirect(self.stream_url)
-        request.finish()
+    
+    def proxyURL(self, request):
+        print "proxy_mode: %s" % self.proxy_mode
+        
+        if self.proxy_mode == 'redirect':
+            # send stream url to client for redirection
+            request.redirect(self.stream_url)
+            request.finish()
+            
+        elif self.proxy_mode == 'cache':
+            # downloaded stream to cache,
+            # and then send it to the client
+            filepath = '%s/%s' % (self.cache_directory, self.id)
+            if (os.path.exists(filepath) 
+                and os.path.getsize(filepath) == self.filesize):
+                self.renderFile(None, request, filepath)
+            else:
+                self.downloadFile(request, filepath, self.renderFile)
+                
+        elif self.proxy_mode == 'buffered':
+            # download stream to cache,
+            # and send it to the client in // after X bytes
+            filepath = '%s/%s' % (self.cache_directory, self.id)           
+            file_is_already_available = False
+            if (os.path.exists(filepath) 
+                and os.path.getsize(filepath) == self.filesize):
+                self.renderFile(None, request, filepath)
+            else:
+                self.downloadFile(request, filepath, None)
+                self.renderBufferFile (request, filepath, self.buffer_size)
+                
+        else:
+            print "Unsupported Proxy Mode: %s" % self.proxy_mode
+            return requestFinished(result)        
+     
+    def renderFile(self, result, request, filepath):
+        print 'Cache file available'
+        downloadedFile = utils.StaticFile(filepath, self.mimetype)
+        res = downloadedFile.render(request)
+        
 
+    def renderBufferFile (self, request, filepath, buffer_size):
+        # Try to render file(if we have enough data)
+        print "renderBufferFile %s" % filepath
+        rendering = False
+        if os.path.exists(filepath) is True:
+            print "file exist!"
+            filesize = os.path.getsize(filepath)
+            if ((filesize >= buffer_size) or (filesize == self.filesize)):
+                rendering = True
+                print "Render file", filepath, self.filesize, filesize, buffer_size 
+                bufferFile = utils.BufferFile(filepath, self.filesize, MPEG4_MIMETYPE)
+                try:
+                    res = bufferFile.render(request)
+                except Exception,error:
+                    print error
+
+        # if unsucessfull, we will retry later
+        if (rendering is False):
+            print 'Will retry later to render buffer file'
+            reactor.callLater(5.0, self.renderBufferFile, request, filepath, self.buffer_size)
+        
+        return rendering
+ 
+    def downloadFinished(self, result):
+        print 'Download finished!'
+        self.downloader = None
+
+    def gotDownloadError(self, error, request):
+        print "Unable to download stream to file: %s" % self.stream_url
+        print request
+        print error  
+        
+    def downloadFile(self, request, filepath, callback, *args):       
+        if (self.downloader is None):
+            print "Proxy: download data to cache file %s" % filepath
+            self.checkCacheSize()
+            self.downloader = utils.downloadPage(self.stream_url, filepath, supportPartial=1)
+            self.downloader.addCallback(self.downloadFinished)
+        if(callback is not None):
+            self.downloader.addCallback(callback, request, filepath, *args)
+        self.downloader.addErrback(self.gotDownloadError, request)
+        return self.downloader
+
+
+    def checkCacheSize(self):
+        cache_listdir = os.listdir(self.cache_directory)
+        
+        cache_size = 0
+        for filename in cache_listdir:
+            path = "%s%s%s" % (self.cache_directory, os.sep, filename)
+            statinfo = os.stat(path)
+            cache_size += statinfo.st_size
+        print "Cache size: %d (max is %s)" % (cache_size, self.cache_maxsize)
+        
+        if (cache_size > self.cache_maxsize):
+            print "Cache above max size!"
+             
+            def compare_atime(filename1, filename2):
+                path1 = "%s%s%s" % (self.cache_directory, os.sep, filename1)
+                path2 = "%s%s%s" % (self.cache_directory, os.sep, filename2)
+                cmp = int(os.stat(path2).st_atime - os.stat(path1).st_atime)
+                return cmp
+            cache_listdir = sorted(cache_listdir,compare_atime)
+            
+            while (cache_size > self.cache_maxsize):
+                filename = cache_listdir.pop(0)
+                path = "%s%s%s" % (self.cache_directory, os.sep, filename)
+                cache_size -= os.stat(path).st_size
+                os.remove(path)
+                print "removed %s" % filename
+                
+            print "new cache size is %d" % cache_size
+            
 
 
 class YoutubeVideoItem(BackendItem):
 
-    def __init__(self, store, parent, id, title, url, mimetype, entry):
+    def __init__(self, store, parent, id, external_id, title, url, mimetype, entry):
         self.parent = parent
         self.id = id
+        self.external_id = external_id
         self.name = title
         self.duration = None
         self.size = None
@@ -141,7 +259,6 @@ class YoutubeVideoItem(BackendItem):
         self.url = self.store.urlbase + str(self.id)
         
         def extractDataURL(url, quality):
-            print quality
             if (quality == 'hd'):
                 format = '22'
             else:
@@ -171,7 +288,10 @@ class YoutubeVideoItem(BackendItem):
             deferred = fd.get_real_urls([url])
             return deferred
         
-        self.location = VideoProxy(url, store.proxy_mode, extractDataURL, quality=self.store.quality)
+        self.location = VideoProxy(url, self.external_id, 
+                                   store.proxy_mode, 
+                                   store.cache_directory, store.cache_maxsize, store.buffer_size,
+                                   extractDataURL, quality=self.store.quality)
 
 
     def get_item(self):
@@ -330,6 +450,10 @@ class YouTubeStore(BackendStore):
         self.locale = kwargs.get('locale', None)
         self.quality = kwargs.get('quality','sd')
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
+        self.cache_directory = kwargs.get('cache_directory', None)
+        self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
+        self.buffer_size = kwargs.get('buffer_size', 2000000)
+        
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
             self.urlbase[len(self.urlbase)-1] != '/'):
@@ -386,10 +510,11 @@ class YouTubeStore(BackendStore):
 
     def appendVideoEntry(self, entry, parent):
         id = self.getnextID()
+        external_id = entry.id.text.split('/')[-1]
         title = entry.media.title.text
         url = entry.media.player.url
-        mimetype = 'video/mp4'
-        item = YoutubeVideoItem (self, parent, id, title, url, mimetype, entry)
+        mimetype = MPEG4_MIMETYPE
+        item = YoutubeVideoItem (self, parent, id, external_id, title, url, mimetype, entry)
         self.storeItem(parent, item, id)
 
     def len(self):
@@ -415,7 +540,7 @@ class YouTubeStore(BackendStore):
 
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                    ['http-get:*:video/mp4:*'],
+                                                                    ['http-get:*:%s:*' % MPEG4_MIMETYPE],
                                                                     default=True)
 
         self.yt_service = YouTubeService()
