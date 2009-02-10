@@ -14,7 +14,7 @@ from coherence import SERVER_ID
 from twisted.web import server, http, static
 from twisted.web import client, error
 from twisted.web import proxy, resource, server
-from twisted.internet import reactor,protocol,defer
+from twisted.internet import reactor,protocol,defer,abstract
 from twisted.python import failure
 
 try:
@@ -219,7 +219,7 @@ class Request(server.Request):
             if isinstance(resrc, defer.Deferred):
                 resrc.addCallback(deferred_rendering)
                 resrc.addErrback(self.processingFailed)
-             else:
+            else:
                 self.render(resrc)
         except:
             self.processingFailed(failure.Failure())
@@ -701,8 +701,35 @@ class BufferFile(static.File):
         #print "StaticFile out", request.headers, request.code
 
         # return data
-        # size is the byte position to stop sending, not how many bytes to send       
-        static.BufferFileTransfer(f, size, request)
+        # size is the byte position to stop sending, not how many bytes to send
+        
+        def transferBufferFile(file, remaining, request):
+            #print file,remaining
+            if not request:
+                return
+    
+            if remaining == 0:
+                print "close request"
+                request.finish()
+                return
+            
+            data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
+            while data:
+                #print "%d (%d)" % (f.tell(), len(data)) 
+                remaining -= len(data)
+                request.write(data)
+                if request:
+                    data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
+                else:
+                    data = False               
+                #transferBufferFile(file, remaining - len(data), request)
+
+            #print "%d (No data available)" % remaining
+            if request and remaining > 0:
+                reactor.callLater(0.2,transferBufferFile, file, remaining, request)
+                
+                
+        transferBufferFile(f, size - f.tell(), request)
         # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
