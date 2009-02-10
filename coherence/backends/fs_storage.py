@@ -470,7 +470,12 @@ class FSStore(BackendStore):
                 path = path[0]
             if self.ignore_file_pattern.match(path):
                 continue
-            self.walk(path, parent, self.ignore_file_pattern)
+            try:
+                self.walk(path, parent, self.ignore_file_pattern)
+            except Exception,msg:
+                self.warning('on walk of %r: %r' % (path,msg))
+                import traceback
+                self.debug(traceback.format_exc())
 
         self.wmc_mapping.update({'14': '0',
                                  '15': '0',
@@ -566,6 +571,7 @@ class FSStore(BackendStore):
             self.content.remove(path)
 
     def walk(self, path, parent=None, ignore_file_pattern=''):
+        self.debug("walk %r" % path)
         containers = []
         parent = self.append(path,parent)
         if parent != None:
@@ -573,6 +579,7 @@ class FSStore(BackendStore):
         while len(containers)>0:
             container = containers.pop()
             try:
+                self.debug('adding %r' % container.location)
                 for child in container.location.children():
                     if ignore_file_pattern.match(child.basename()) != None:
                         continue
@@ -583,7 +590,7 @@ class FSStore(BackendStore):
                 self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.get_path())
 
     def create(self, mimetype, path, parent):
-        #print "create", mimetype, path, type(path), parent
+        self.debug("create ", mimetype, path, type(path), parent)
         UPnPClass = classChooser(mimetype)
         if UPnPClass == None:
             return None
@@ -614,7 +621,7 @@ class FSStore(BackendStore):
         return id
 
     def append(self,path,parent):
-        #print "append", path, type(path), parent
+        self.debug("append ", path, type(path), parent)
         if os.path.exists(path) == False:
             self.warning("path %r not available - ignored", path)
             return None
