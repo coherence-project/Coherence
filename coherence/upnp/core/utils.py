@@ -607,6 +607,11 @@ class BufferFile(static.File):
         #print "StaticFile", request
         #print "StaticFile in", request.received_headers
 
+        # FIXME detect when request is REALLY finished
+        if request is None or request.finished :
+            print "No request to render!"
+            return 0
+
         """You know what you doing."""
         self.restat()
 
@@ -656,12 +661,20 @@ class BufferFile(static.File):
         if range is not None:
             # This is a request for partial data...
             bytesrange = range.split('=')
-            print bytesrange
             assert bytesrange[0] == 'bytes',\
                    "Syntactically invalid http range header!"
             start, end = bytesrange[1].split('-', 1)
             if start:
-                f.seek(int(start))
+                start = int(start)
+                # Are we requesting something beyond the current size of the file?
+                if (start >= self.getFileSize()):
+                    # Retry later!
+                    print bytesrange
+                    print "Requesting data beyond current scope -> postpone rendering!"
+                    reactor.callLater(2.0, self.render, request)                   
+                    return server.NOT_DONE_YET
+                
+                f.seek(start)
                 if end:
                     print ":%s" % end
                     end = int(end)
@@ -705,11 +718,11 @@ class BufferFile(static.File):
         
         def transferBufferFile(file, remaining, request):
             #print file,remaining
-            if not request:
+            if not request or request.finished:
                 return
     
             if remaining == 0:
-                print "close request"
+                #print "close request"
                 request.finish()
                 return
             
@@ -721,8 +734,7 @@ class BufferFile(static.File):
                 if request:
                     data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
                 else:
-                    data = False               
-                #transferBufferFile(file, remaining - len(data), request)
+                    data = False
 
             #print "%d (No data available)" % remaining
             if request and remaining > 0:
