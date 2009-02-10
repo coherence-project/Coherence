@@ -118,6 +118,7 @@ def get_ip_address(ifname):
     except IOError:
         return '127.0.0.1'
 
+
 def get_host_address():
     """ try to get determine the interface used for
         the default route, as this is most likely
@@ -218,7 +219,7 @@ class Request(server.Request):
             if isinstance(resrc, defer.Deferred):
                 resrc.addCallback(deferred_rendering)
                 resrc.addErrback(self.processingFailed)
-            else:
+             else:
                 self.render(resrc)
         except:
             self.processingFailed(failure.Failure())
@@ -361,7 +362,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.port = port
         self.path = path
         self.reactor = reactor
-
+        
     def getChild(self, path, request):
         return ReverseProxyResource(
             self.host, self.port, self.path + '/' + path)
@@ -393,7 +394,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.port = port
         self.path = path
 
-
+       
 class myHTTPPageGetter(client.HTTPPageGetter):
 
     def handleResponse(self, response):
@@ -531,10 +532,8 @@ class StaticFile(static.File):
                 return error.ForbiddenResource().render(request)
             else:
                 raise
-
         if request.setLastModified(self.getmtime()) is http.CACHED:
             return ''
-
         trans = True
 
         range = request.getHeader('range')
@@ -593,6 +592,119 @@ class StaticFile(static.File):
         # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
+class BufferFile(static.File):
+    """ taken from twisted.web.static and modified
+        accordingly to the patch by John-Mark Gurney
+        http://resnet.uoregon.edu/~gurney_j/jmpc/dist/twisted.web.static.patch
+    """
+
+    def __init__(self, path, target_size=0, *args):
+        static.File.__init__(self, path, *args)
+        self.target_size = target_size
+        
+    def render(self, request):
+        #print ""
+        #print "StaticFile", request
+        #print "StaticFile in", request.received_headers
+
+        """You know what you doing."""
+        self.restat()
+
+        if self.type is None:
+            self.type, self.encoding = static.getTypeAndEncoding(self.basename(),
+                                                          self.contentTypes,
+                                                          self.contentEncodings,
+                                                          self.defaultType)
+
+        if not self.exists():
+            return self.childNotFound.render(request)
+
+        if self.isdir():
+            return self.redirect(request)
+
+        #for content-length
+        if (self.target_size > 0):
+            fsize = size = int(self.target_size)
+        else:
+            fsize = size = int(self.getFileSize())
+
+        print fsize
+
+        request.setHeader('accept-ranges','bytes')
+
+        if self.type:
+            request.setHeader('content-type', self.type)
+        if self.encoding:
+            request.setHeader('content-encoding', self.encoding)
+
+        try:
+            f = self.openForReading()
+        except IOError, e:
+            import errno
+            if e[0] == errno.EACCES:
+                return error.ForbiddenResource().render(request)
+            else:
+                raise
+        if request.setLastModified(self.getmtime()) is http.CACHED:
+            return ''
+        trans = True
+
+        range = request.getHeader('range')
+        #print "StaticFile", range
+
+        tsize = size
+        if range is not None:
+            # This is a request for partial data...
+            bytesrange = range.split('=')
+            print bytesrange
+            assert bytesrange[0] == 'bytes',\
+                   "Syntactically invalid http range header!"
+            start, end = bytesrange[1].split('-', 1)
+            if start:
+                f.seek(int(start))
+                if end:
+                    print ":%s" % end
+                    end = int(end)
+                else:
+                    end = size - 1
+            else:
+                lastbytes = int(end)
+                if size < lastbytes:
+                    lastbytes = size
+                start = size - lastbytes
+                f.seek(start)
+                fsize = lastbytes
+                end = size - 1
+            size = end + 1
+            fsize = end - int(start) + 1
+            # start is the byte offset to begin, and end is the byte offset
+            # to end..  fsize is size to send, tsize is the real size of
+            # the file, and size is the byte position to stop sending.
+            if fsize <= 0:
+                request.setResponseCode(http.REQUESTED_RANGE_NOT_SATISFIABLE)
+                fsize = tsize
+                trans = False
+            else:
+                request.setResponseCode(http.PARTIAL_CONTENT)
+                request.setHeader('content-range',"bytes %s-%s/%s " % (
+                    str(start), str(end), str(tsize)))
+                #print "StaticFile", start, end, tsize
+            
+        request.setHeader('content-length', str(fsize))
+
+        if request.method == 'HEAD' or trans == False:
+            # pretend we're a HEAD request, so content-length
+            # won't be overwritten.
+            request.method = 'HEAD'
+            return ''
+
+        #print "StaticFile out", request.headers, request.code
+
+        # return data
+        # size is the byte position to stop sending, not how many bytes to send       
+        static.BufferFileTransfer(f, size, request)
+        # and make sure the connection doesn't get closed
+        return server.NOT_DONE_YET
 
 from datetime import datetime, tzinfo, timedelta
 import random
