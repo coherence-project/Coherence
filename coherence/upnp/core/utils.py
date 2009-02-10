@@ -91,7 +91,7 @@ def get_ip_address(ifname):
         if have_netifaces:
             if ifname in netifaces.interfaces():
                 iface = netifaces.ifaddresses(ifname)
-                ifaceadr = iface(netifaces.AF_INET)
+                ifaceadr = iface[netifaces.AF_INET]
                 # we now have a list of address dictionaries, there may be multiple addresses bound
                 return ifaceadr[0]['addr']
         return '127.0.0.1'
