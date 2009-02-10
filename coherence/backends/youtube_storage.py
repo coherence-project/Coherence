@@ -172,7 +172,6 @@ class VideoProxy(utils.ReverseProxyResource):
         print "renderBufferFile %s" % filepath
         rendering = False
         if os.path.exists(filepath) is True:
-            print "file exist!"
             filesize = os.path.getsize(filepath)
             if ((filesize >= buffer_size) or (filesize == self.filesize)):
                 rendering = True
@@ -222,7 +221,8 @@ class VideoProxy(utils.ReverseProxyResource):
         print "Cache size: %d (max is %s)" % (cache_size, self.cache_maxsize)
         
         if (cache_size > self.cache_maxsize):
-            print "Cache above max size!"
+            cache_targetsize = self.cache_maxsize * 2/3
+            print "Cache above max size: Reducing to %d" % cache_targetsize
              
             def compare_atime(filename1, filename2):
                 path1 = "%s%s%s" % (self.cache_directory, os.sep, filename1)
@@ -231,7 +231,8 @@ class VideoProxy(utils.ReverseProxyResource):
                 return cmp
             cache_listdir = sorted(cache_listdir,compare_atime)
             
-            while (cache_size > self.cache_maxsize):
+
+            while (cache_size > cache_targetsize):
                 filename = cache_listdir.pop(0)
                 path = "%s%s%s" % (self.cache_directory, os.sep, filename)
                 cache_size -= os.stat(path).st_size
@@ -449,6 +450,7 @@ class YouTubeStore(BackendStore):
         self.password = kwargs.get('password','')
         self.locale = kwargs.get('locale', None)
         self.quality = kwargs.get('quality','sd')
+        self.showStandardFeeds = (kwargs.get('standard_feeds','True') in ['Yes','yes','true','True','1'])
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', None)
         self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
@@ -466,23 +468,25 @@ class YouTubeStore(BackendStore):
         rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
         self.store[ROOT_CONTAINER_ID] = rootItem
 
-        userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
+
         
-        standardfeeds_uri = 'http://gdata.youtube.com/feeds/api/standardfeeds'
-        if self.locale is not None:
-            standardfeeds_uri += "/%s" % self.locale
-        standardfeeds_uri += "/%s"
-        
-        self.appendFeed('Most Viewed', standardfeeds_uri % 'most_viewed', rootItem)
-        self.appendFeed('Top Rated', standardfeeds_uri % 'top_rated', rootItem)
-        self.appendFeed('Recently Featured', standardfeeds_uri % 'recently_featured', rootItem)
-        self.appendFeed('Watch On Mobile', standardfeeds_uri % 'watch_on_mobile', rootItem)
-        self.appendFeed('Most Discussed', standardfeeds_uri % 'most_discussed', rootItem)
-        self.appendFeed('Top Favorites', standardfeeds_uri % 'top_favorites', rootItem)
-        self.appendFeed('Most Linked', standardfeeds_uri % 'most_linked', rootItem)
-        self.appendFeed('Most Responded', standardfeeds_uri % 'most_responded', rootItem)
-        self.appendFeed('Most Recent', standardfeeds_uri % 'most_recent', rootItem)
+        if (self.showStandardFeeds):
+            standardfeeds_uri = 'http://gdata.youtube.com/feeds/api/standardfeeds'
+            if self.locale is not None:
+                standardfeeds_uri += "/%s" % self.locale
+            standardfeeds_uri += "/%s"        
+            self.appendFeed('Most Viewed', standardfeeds_uri % 'most_viewed', rootItem)
+            self.appendFeed('Top Rated', standardfeeds_uri % 'top_rated', rootItem)
+            self.appendFeed('Recently Featured', standardfeeds_uri % 'recently_featured', rootItem)
+            self.appendFeed('Watch On Mobile', standardfeeds_uri % 'watch_on_mobile', rootItem)
+            self.appendFeed('Most Discussed', standardfeeds_uri % 'most_discussed', rootItem)
+            self.appendFeed('Top Favorites', standardfeeds_uri % 'top_favorites', rootItem)
+            self.appendFeed('Most Linked', standardfeeds_uri % 'most_linked', rootItem)
+            self.appendFeed('Most Responded', standardfeeds_uri % 'most_responded', rootItem)
+            self.appendFeed('Most Recent', standardfeeds_uri % 'most_recent', rootItem)
+
         if len(self.login) > 0:
+            userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
             self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
             self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)           
             playlistsItem = YoutubePlaylistContainer(MY_PLAYLISTS_CONTAINER_ID, self, rootItem.get_id(), 'My Playlists')
