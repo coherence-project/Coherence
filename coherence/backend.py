@@ -121,7 +121,7 @@ class BackendStore(Backend):
 
 
     def _get_all_items(self,id):
-        """ a helper method for to get all items as a response
+        """ a helper method to get all items as a response
             to some XBox 360 UPnP Search action
             probably never be used as the backend will overwrite
             the wmc_mapping with more appropriate methods
@@ -171,7 +171,6 @@ class BackendStore(Backend):
         """
 
         return None
-
 
 class BackendItem(log.Loggable):
 
