@@ -45,7 +45,11 @@ class VideoProxy(utils.ReverseProxyResource):
         self.url_extractor_fct = fct
         self.url_extractor_params = kwargs
         host,port,path,params =  self.splitUri(uri)
-        utils.ReverseProxyResource.__init__(self, host, port, '%s?%s' % (path, params))
+        if params == '':
+            rest = path
+        else:
+            rest = '%s?%s' % (path, params)  
+        utils.ReverseProxyResource.__init__(self, host, port, rest)
 
     def splitUri (self, uri):
         _,host_port,path,params,_ = urlsplit(uri)
@@ -85,7 +89,11 @@ class VideoProxy(utils.ReverseProxyResource):
             print "web_url", web_url
 
             def got_real_urls(real_urls):
-                self.stream_url = real_urls[0]
+                got_real_url(real_urls[0])
+
+            def got_real_url(real_url):
+                print "Real URL is %s" % real_url
+                self.stream_url = real_url
                 if self.stream_url is None:
                     print 'Error to retrieve URL - inconsistent web page'
                     return requestFinished(result) #FIXME
@@ -95,8 +103,11 @@ class VideoProxy(utils.ReverseProxyResource):
                 self.video_url = self.stream_url[:]
                 self.followRedirects(request, self.proxyURL, request)
 
-            d = self.url_extractor_fct(web_url, **self.url_extractor_params)
-            d.addCallback(got_real_urls)
+            if self.url_extractor_fct is not None:
+                d = self.url_extractor_fct(web_url, **self.url_extractor_params)
+                d.addCallback(got_real_urls)
+            else:
+                got_real_url(web_url)
             return server.NOT_DONE_YET
 
         reactor.callLater(0.1,self.proxyURL,request)
