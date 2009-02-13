@@ -8,7 +8,22 @@ try:
     haz_setuptools = True
 except:
     from distutils.core import setup
-    packages = ['coherence']
+
+    import os
+
+    packages = []
+
+    def find_packages(path):
+        for f in os.listdir(path):
+            if f[0] == '.':
+                continue
+            if os.path.isdir(os.path.join(path,f)) == True:
+                next_path = os.path.join(path,f)
+                if '__init__.py' in os.listdir(next_path):
+                    packages.append(next_path.replace(os.sep,'.'))
+                find_packages(next_path)
+
+    find_packages('coherence')
     haz_setuptools = False
 
 packages.append('misc')
@@ -111,5 +126,6 @@ if haz_setuptools == True:
         [coherence.plugins.backend.dimmable_light]
         BetterLight = coherence.backends.light:BetterLight
     """
+
 
 setup(**setup_args)
