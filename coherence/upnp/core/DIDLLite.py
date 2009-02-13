@@ -591,7 +591,7 @@ class AudioItem(Item):
     rights = None
 
     valid_keys = ['genre', 'description', 'longDescription', 'publisher',
-                  'langugage', 'relation', 'rights', 'albumArtURI']
+                  'language', 'relation', 'rights', 'albumArtURI']
 
     #@dlna.AudioItem
     def toElement(self,**kwargs):
