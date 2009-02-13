@@ -239,7 +239,7 @@ class VideoProxy(utils.ReverseProxyResource):
             def compare_atime(filename1, filename2):
                 path1 = "%s%s%s" % (self.cache_directory, os.sep, filename1)
                 path2 = "%s%s%s" % (self.cache_directory, os.sep, filename2)
-                cmp = int(os.stat(path2).st_atime - os.stat(path1).st_atime)
+                cmp = int(os.stat(path1).st_atime - os.stat(path2).st_atime)
                 return cmp
             cache_listdir = sorted(cache_listdir,compare_atime)
 
