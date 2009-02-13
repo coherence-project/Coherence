@@ -24,6 +24,7 @@ ROOT_CONTAINER_ID = 0
 MY_PLAYLISTS_CONTAINER_ID = 100
 MY_SUBSCRIPTIONS_CONTAINER_ID = 101
 MPEG4_MIMETYPE = 'video/mp4'
+MPEG4_EXTENSION = 'mp4'
 
 class VideoProxy(utils.ReverseProxyResource):
 
@@ -82,7 +83,7 @@ class VideoProxy(utils.ReverseProxyResource):
     def render(self, request):
 
         print "VideoProxy render", request, self.stream_url, self.video_url
-
+        
         if self.stream_url is None:
 
             web_url = "http://%s%s" % (self.host,self.path)
@@ -134,7 +135,7 @@ class VideoProxy(utils.ReverseProxyResource):
                 print "Error while retrieving page header for URI ", self.stream_url, error
                 return requestFinished(result) #FIXME
             
-        d.addCallback(gotHeader,request, callback, *args)
+        d.addCallback(gotHeader, request, callback, *args)
         d.addErrback(gotError,request)
 
     
@@ -241,7 +242,6 @@ class VideoProxy(utils.ReverseProxyResource):
                 cmp = int(os.stat(path2).st_atime - os.stat(path1).st_atime)
                 return cmp
             cache_listdir = sorted(cache_listdir,compare_atime)
-            
 
             while (cache_size > cache_targetsize):
                 filename = cache_listdir.pop(0)
@@ -268,7 +268,7 @@ class YoutubeVideoItem(BackendItem):
         self.date = None
         self.item = None
         self.store = store
-        self.url = self.store.urlbase + str(self.id)
+        self.url = self.store.urlbase + str(self.id) + "." + MPEG4_EXTENSION
         
         def extractDataURL(url, quality):
             if (quality == 'hd'):
@@ -538,7 +538,7 @@ class YouTubeStore(BackendStore):
     def get_by_id(self,id):
         if isinstance(id, basestring):
             id = id.split('@',1)
-            id = id[0]
+            id = id[0].split('.')[0]
         try:
             return self.store[int(id)]
         except (ValueError,KeyError):
