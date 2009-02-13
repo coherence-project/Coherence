@@ -115,7 +115,8 @@ if haz_setuptools == True:
         Gallery2Store = coherence.backends.gallery2_storage:Gallery2Store
         YouTubeStore = coherence.backends.youtube_storage:YouTubeStore
         MiroStore = coherence.backends.miro_storage:MiroStore
-
+        ITVStore = coherence.backends.itv_storage:ITVStore
+ 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
         GStreamerPlayer = coherence.backends.gstreamer_renderer:GStreamerPlayer
