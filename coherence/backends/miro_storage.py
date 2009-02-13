@@ -2,7 +2,7 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Coherence backend presenting the content of the MIRO Guide catalog for on-line videos
-# 
+#
 # The APi is described on page:
 # https://develop.participatoryculture.org/trac/democracy/wiki/MiroGuideApi
 
@@ -13,7 +13,7 @@ from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore,BackendItem
 
-from coherence.backends.youtube_storage import Container, LazyContainer, VideoProxy 
+from coherence.backends.youtube_storage import Container, LazyContainer, VideoProxy
 
 ROOT_CONTAINER_ID = 0
 CATEGORIES_CONTAINER_ID = 101
@@ -35,8 +35,8 @@ class VideoItem(BackendItem):
         self.item = None
         self.store = store
         self.url = self.store.urlbase + str(self.id)
-        self.location = VideoProxy(url, hash(url), 
-                                   store.proxy_mode, 
+        self.location = VideoProxy(url, hash(url),
+                                   store.proxy_mode,
                                    store.cache_directory, store.cache_maxsize, store.buffer_size
                                    )
 
@@ -47,7 +47,7 @@ class VideoItem(BackendItem):
             self.item.description = self.description
             self.item.date = self.date
             if self.thumbnail_url is not None:
-                self.item.icon = thumbnail_url
+                self.item.icon = self.thumbnail_url
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             res.duration = self.duration
             res.size = self.size
@@ -72,7 +72,7 @@ class MiroLanguage(LazyContainer):
         self.language_id = language_id
     def retrieve_children(self):
         return self.store.retrieveChannels (self, "language", self.language_id)
-    
+
 class MiroChannel(LazyContainer):
     def __init__(self, id, store, parent_id, title, channel_id):
         LazyContainer.__init__(self, id, store, parent_id, title)
@@ -81,7 +81,7 @@ class MiroChannel(LazyContainer):
         return self.store.retrieveChannelItems (self, self.channel_id)
 
 
- 
+
 class MiroStore(BackendStore):
 
     logCategory = 'miro_store'
@@ -99,7 +99,7 @@ class MiroStore(BackendStore):
         self.cache_directory = kwargs.get('cache_directory', None)
         self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
         self.buffer_size = kwargs.get('buffer_size', 2000000)
-        
+
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
             self.urlbase[len(self.urlbase)-1] != '/'):
@@ -115,7 +115,7 @@ class MiroStore(BackendStore):
         self.storeItem(rootItem, categoriesItem, CATEGORIES_CONTAINER_ID)
         languagesItems = Container(LANGUAGES_CONTAINER_ID,self,-1, "Channels by language")
         self.storeItem(rootItem, languagesItems, LANGUAGES_CONTAINER_ID)
-        
+
         def gotError(error):
             print "ERROR: %s" % error
 
@@ -129,7 +129,7 @@ class MiroStore(BackendStore):
                 name = category['name'].encode('ascii', 'strict')
                 category_url = category['url'].encode('ascii', 'strict')
                 self.appendCategory(name, name, categoriesItem)
-                        
+
         categories_url = "https://www.miroguide.com/api/list_categories"
         d1 = utils.getPage(categories_url)
         d1.addCallbacks(gotCategories, gotError)
@@ -148,9 +148,9 @@ class MiroStore(BackendStore):
         languages_url = "https://www.miroguide.com/api/list_languages"
         d2 = utils.getPage(languages_url)
         d2.addCallbacks(gotLanguages, gotError)
-        
+
         self.init_completed()
-            
+
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -231,7 +231,7 @@ class MiroStore(BackendStore):
                website_url = channel['website_url']
                name = channel['name']
                self.appendChannel(name, id, parent)
-           
+
         def gotError(error):
             print "ERROR: %s" % error
 
@@ -261,10 +261,9 @@ class MiroStore(BackendStore):
                    thumbnail_url = channel['thumbnail_url']
                #size = size['size']
                self.appendVideoEntry(name, description, url, thumbnail_url, parent)
-           
+
         def gotError(error):
             print "ERROR: %s" % error
 
         d.addCallbacks(gotItems, gotError)
         return d
-
