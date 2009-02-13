@@ -114,6 +114,7 @@ if haz_setuptools == True:
         SWR3Store = coherence.backends.swr3_storage:SWR3Store
         Gallery2Store = coherence.backends.gallery2_storage:Gallery2Store
         YouTubeStore = coherence.backends.youtube_storage:YouTubeStore
+        MiroStore = coherence.backends.miro_storage:MiroStore
 
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
