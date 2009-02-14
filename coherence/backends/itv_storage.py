@@ -13,8 +13,6 @@ from coherence.upnp.core import utils
 
 from coherence.upnp.core import DIDLLite
 
-import coherence.extern.louie as louie
-
 from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
@@ -53,7 +51,7 @@ class ProxyStream(utils.ReverseProxyResource):
         if path == '':
             path = '/'
         return host, port, path, params
-    
+
     def resetUri (self, uri):
         host,port,path,params =  self.splitUri(uri)
         self.uri = uri
@@ -88,16 +86,16 @@ class ProxyStream(utils.ReverseProxyResource):
                 self.resetUri(self.stream_url)
                 request.uri = self.stream_url
                 return self.render(request)
-            
+
             def got_error(result):
                 print error
                 return None
-                
-            playlist_url = "http://%s:%s/%s" % (self.host,self.port,self.path)            
+
+            playlist_url = "http://%s:%s/%s" % (self.host,self.port,self.path)
             d = utils.getPage(playlist_url, timeout=20)
             d.addCallbacks(got_playlist, got_error)
             return server.NOT_DONE_YET
-        
+
         if request.clientproto == 'HTTP/1.1':
             connection = request.getHeader('connection')
             if connection:
@@ -110,7 +108,7 @@ class ProxyStream(utils.ReverseProxyResource):
             d.addBoth(self.requestFinished)
         return utils.ReverseProxyResource.render(self, request)
 
-    
+
 class ITVItem(BackendItem):
     def __init__(self, store, id, obj, parent):
         self.parent = parent
@@ -120,6 +118,7 @@ class ITVItem(BackendItem):
         self.description = None
         self.date = None
         self.item = None
+        self.duration = None
         self.store = store
         self.url = self.store.urlbase + str(self.id)
         self.location = ProxyStream(obj.get('url'))
@@ -139,7 +138,7 @@ class ITVItem(BackendItem):
         return self.url
 
 
- 
+
 
 class ITVStore(BackendStore):
 
@@ -167,7 +166,7 @@ class ITVStore(BackendStore):
 
         self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
 
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        self.init_completed()
 
 
     def __repr__(self):
@@ -188,7 +187,7 @@ class ITVStore(BackendStore):
         item = ITVItem(self, id, obj, parent)
         self.storeItem(parent, item, id)
         return item
-    
+
 
     def len(self):
         return len(self.store)
@@ -219,14 +218,14 @@ class ITVStore(BackendStore):
         rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
         self.store[ROOT_CONTAINER_ID] = rootItem
         self.retrieveList(rootItem)
-        
+
     def retrieveList(self, parent):
 
         def got_page(result):
             print "connection to ShoutCast service successful for TV listing"
             result = result[0]
             result = utils.parse_xml(result, encoding='utf-8')
-            
+
             genres = []
             stations = {}
             for stationResult in result.findall('station'):
@@ -237,13 +236,13 @@ class ITVStore(BackendStore):
                 name = stationResult.get('name').encode('utf-8')
                 genre = stationResult.get('genre')
                 url = SHOUTCAST_TUNEIN_URL % (station_id)
-                
+
                 if genres.count(genre) == 0:
                     genres.append(genre)
-                    
+
                 sameStation = stations.get(name)
                 if sameStation == None or bitrate>sameStation['bitrate']:
-                    station = {'name':name,                                               
+                    station = {'name':name,
                                'station_id':station_id,
                                'mimetype':mimetype,
                                'id':station_id,
@@ -252,17 +251,17 @@ class ITVStore(BackendStore):
                                'rating':rating,
                                'genre':genre }
                     stations[name] = station
-            
-          
+
+
             genreItems = {}
             for genre in genres:
                 genreItem = self.appendGenre(genre, parent)
                 genreItems[genre] = genreItem
-            
+
             for station in stations.values():
                 genre = station.get('genre')
                 parentItem = genreItems[genre]
-                self.appendFeed({'name':station.get('name'),                                               
+                self.appendFeed({'name':station.get('name'),
                                     'mimetype':station['mimetype'],
                                     'id':station.get('station_id'),
                                     'url':station.get('url')},
@@ -272,7 +271,6 @@ class ITVStore(BackendStore):
         def got_error(error):
             print ("connection to ShoutCast service failed! %r" % error)
             self.debug("%r", error.getTraceback())
-            
+
         d = utils.getPage(self.shoutcast_ws_url)
         d.addCallbacks(got_page, got_error)
-
