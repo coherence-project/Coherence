@@ -361,8 +361,9 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.host = host
         self.port = port
         self.path = path
+        self.qs = ''
         self.reactor = reactor
-        
+
     def getChild(self, path, request):
         return ReverseProxyResource(
             self.host, self.port, self.path + '/' + path)
@@ -379,6 +380,8 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
             request.received_headers['host'] = "%s:%d" % (self.host, self.port)
         request.content.seek(0, 0)
         qs = urlparse.urlparse(request.uri)[4]
+        if qs == '':
+            qs = self.qs
         if qs:
             rest = self.path + '?' + qs
         else:
@@ -389,12 +392,13 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.reactor.connectTCP(self.host, self.port, clientFactory)
         return server.NOT_DONE_YET
 
-    def resetTarget(self,host,port,path):
+    def resetTarget(self,host,port,path,qs=''):
         self.host = host
         self.port = port
         self.path = path
+        self.qs = qs
 
-       
+
 class myHTTPPageGetter(client.HTTPPageGetter):
 
     def handleResponse(self, response):
@@ -581,6 +585,7 @@ class StaticFile(static.File):
         if request.method == 'HEAD' or trans == False:
             # pretend we're a HEAD request, so content-length
             # won't be overwritten.
+            print "HEAD request"
             request.method = 'HEAD'
             return ''
 
@@ -601,16 +606,15 @@ class BufferFile(static.File):
     def __init__(self, path, target_size=0, *args):
         static.File.__init__(self, path, *args)
         self.target_size = target_size
-        
+
     def render(self, request):
         #print ""
-        #print "StaticFile", request
-        #print "StaticFile in", request.received_headers
+        #print "BufferFile", request
 
         # FIXME detect when request is REALLY finished
         if request is None or request.finished :
             print "No request to render!"
-            return 0
+            return ''
 
         """You know what you doing."""
         self.restat()
@@ -633,9 +637,10 @@ class BufferFile(static.File):
         else:
             fsize = size = int(self.getFileSize())
 
-        print fsize
+        #print fsize
 
-        request.setHeader('accept-ranges','bytes')
+        if size == int(self.getFileSize()):
+            request.setHeader('accept-ranges','bytes')
 
         if self.type:
             request.setHeader('content-type', self.type)
@@ -671,9 +676,9 @@ class BufferFile(static.File):
                     # Retry later!
                     print bytesrange
                     print "Requesting data beyond current scope -> postpone rendering!"
-                    reactor.callLater(2.0, self.render, request)                   
+                    reactor.callLater(1.0, self.render, request)
                     return server.NOT_DONE_YET
-                
+
                 f.seek(start)
                 if end:
                     print ":%s" % end
@@ -702,7 +707,7 @@ class BufferFile(static.File):
                 request.setHeader('content-range',"bytes %s-%s/%s " % (
                     str(start), str(end), str(tsize)))
                 #print "StaticFile", start, end, tsize
-            
+
         request.setHeader('content-length', str(fsize))
 
         if request.method == 'HEAD' or trans == False:
@@ -715,20 +720,20 @@ class BufferFile(static.File):
 
         # return data
         # size is the byte position to stop sending, not how many bytes to send
-        
+
         def transferBufferFile(file, remaining, request):
-            #print file,remaining
+            #print "transferBufferFile",file,remaining
             if not request or request.finished:
                 return
-    
+
             if remaining == 0:
                 #print "close request"
                 request.finish()
                 return
-            
+
             data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
             while data:
-                #print "%d (%d)" % (f.tell(), len(data)) 
+                #print "%d (%d)" % (f.tell(), len(data))
                 remaining -= len(data)
                 request.write(data)
                 if request:
@@ -739,8 +744,8 @@ class BufferFile(static.File):
             #print "%d (No data available)" % remaining
             if request and remaining > 0:
                 reactor.callLater(0.2,transferBufferFile, file, remaining, request)
-                
-                
+
+
         transferBufferFile(f, size - f.tell(), request)
         # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
