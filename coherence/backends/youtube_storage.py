@@ -74,10 +74,6 @@ class TestVideoProxy(utils.ReverseProxyResource):
     def resetUri (self, uri):
         host,port,path,params =  self.splitUri(uri)
         self.uri = uri
-        if params != '':
-            self.rest = '%s?%s' % (path, params)
-        else:
-            self.rest = path
         self.resetTarget(host, port, path,qs=params)
 
     def requestFinished(self, result):
@@ -723,7 +719,7 @@ class YouTubeStore(BackendStore):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4': 1000}
+    wmc_mapping = {'15': ROOT_CONTAINER_ID}
 
     def __init__(self, server, **kwargs):
         self.next_id = 1000
