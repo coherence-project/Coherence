@@ -69,7 +69,7 @@ on the backends and their patient debugging sessions!
     'author_email':'coherence@beebits.net',
     'license' : "MIT",
     'packages':packages,
-    'scripts' : ['bin/coherence','misc/Desktop Applet/applet-coherence'],
+    'scripts' : ['bin/coherence','misc/Desktop-Applet/applet-coherence'],
     'url' : "http://coherence.beebits.net",
     'download_url' : 'http://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
     'keywords':['UPnP', 'DLNA', 'multimedia', 'gstreamer'],
@@ -84,8 +84,8 @@ on the backends and their patient debugging sessions!
         'coherence': ['upnp/core/xml-service-descriptions/*.xml',
                       'ui/icons/*.png',
                       'web/static/*.css','web/static/*.js'],
-        'misc': ['Desktop Applet/*.png',
-                 'device icons/*.png'],
+        'misc': ['Desktop-Applet/*.png',
+                 'device-icons/*.png'],
     },
 }
 
