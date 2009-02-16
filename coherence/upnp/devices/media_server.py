@@ -593,7 +593,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                         self.web_resource.putChild('face-icon.png',StaticFile(face_path))
                 else:
                     from pkg_resources import resource_filename
-                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device icons',icon['url'])))
+                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
                     if os.path.exists(icon_path):
                         self.web_resource.putChild(icon['url'],StaticFile(icon_path))
 
