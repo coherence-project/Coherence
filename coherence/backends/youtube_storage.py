@@ -78,7 +78,7 @@ class TestVideoProxy(utils.ReverseProxyResource):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        print "ProxyStream requestFinished"
+        print "ProxyStream requestFinished",result
         if hasattr(self,'connection'):
             self.connection.transport.loseConnection()
 
@@ -87,6 +87,25 @@ class TestVideoProxy(utils.ReverseProxyResource):
 
         print "VideoProxy render", request, self.stream_url, self.video_url
         print "VideoProxy headers:", request.getAllHeaders()
+        print "VideoProxy id:", self.id
+
+        if hasattr(request,'upnp_item') == True:
+            print "VideoProxy item:", request.upnp_item
+        else:
+            print "VideoProxy item: None"
+            request.upnp_item = self.id
+
+        if self.proxy_mode in ('proxy','buffer'):
+            if request.clientproto == 'HTTP/1.1':
+                connection = request.getHeader('connection')
+                if connection:
+                    tokens = map(str.lower, connection.split(' '))
+                    if 'close' in tokens:
+                        d = request.notifyFinish()
+                        d.addBoth(self.requestFinished)
+            else:
+                d = request.notifyFinish()
+                d.addBoth(self.requestFinished)
 
         if self.stream_url is None:
 
@@ -148,13 +167,18 @@ class TestVideoProxy(utils.ReverseProxyResource):
         return d
 
     def proxyURL(self, request):
-        #print "proxy_mode: %s, request %s" % (self.proxy_mode,request.method)
+        print "proxy_mode: %s, request %s" % (self.proxy_mode,request.method)
 
         if self.proxy_mode == 'redirect':
             # send stream url to client for redirection
             request.redirect(self.stream_url)
             request.finish()
-
+        elif self.proxy_mode in ('proxy',):
+            res = utils.ReverseProxyResource.render(self,request)
+            if isinstance(res,int):
+                return res
+            request.write(res)
+            return
         elif self.proxy_mode in ('buffer','buffered'):
             # download stream to cache,
             # and send it to the client in // after X bytes
@@ -166,6 +190,7 @@ class TestVideoProxy(utils.ReverseProxyResource):
                 if isinstance(res,int):
                     return res
                 request.write(res)
+                request.finish()
             else:
                 if request.method != 'HEAD':
                     self.downloadFile(request, filepath, None)
@@ -184,7 +209,11 @@ class TestVideoProxy(utils.ReverseProxyResource):
                             else:
                                 end = self.filesize -1
                             # Are we requesting something beyond the current size of the file?
-                            if (start >= os.path.getsize(filepath) and
+                            try:
+                                size = os.path.getsize(filepath)
+                            except OSError:
+                                size = 0
+                            if (start >= size and
                                 end+10 > self.filesize and
                                 end-start < 200000):
                                 print "let's hand that through, it is probably a mp4 index request"
@@ -250,9 +279,9 @@ class TestVideoProxy(utils.ReverseProxyResource):
             self.checkCacheSize()
             self.downloader = utils.downloadPage(self.stream_url, filepath, supportPartial=1)
             self.downloader.addCallback(self.downloadFinished)
+            self.downloader.addErrback(self.gotDownloadError, request)
         if(callback is not None):
             self.downloader.addCallback(callback, request, filepath, *args)
-        self.downloader.addErrback(self.gotDownloadError, request)
         return self.downloader
 
 

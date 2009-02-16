@@ -722,7 +722,7 @@ class BufferFile(static.File):
         # size is the byte position to stop sending, not how many bytes to send
 
         def transferBufferFile(file, remaining, request):
-            #print "transferBufferFile",file,remaining
+            #print "transferBufferFile",file,remaining,abstract.FileDescriptor.bufferSize
             if not request or request.finished:
                 return
 
@@ -743,7 +743,10 @@ class BufferFile(static.File):
 
             #print "%d (No data available)" % remaining
             if request and remaining > 0:
-                reactor.callLater(0.2,transferBufferFile, file, remaining, request)
+                reactor.callLater(0.3,transferBufferFile, file, remaining, request)
+            else:
+                request.finish()
+                return
 
 
         transferBufferFile(f, size - f.tell(), request)
