@@ -606,6 +606,7 @@ class BufferFile(static.File):
     def __init__(self, path, target_size=0, *args):
         static.File.__init__(self, path, *args)
         self.target_size = target_size
+        self.upnp_retry = None
 
     def render(self, request):
         #print ""
@@ -676,7 +677,7 @@ class BufferFile(static.File):
                     # Retry later!
                     print bytesrange
                     print "Requesting data beyond current scope -> postpone rendering!"
-                    reactor.callLater(1.0, self.render, request)
+                    self.upnp_retry = reactor.callLater(1.0, self.render, request)
                     return server.NOT_DONE_YET
 
                 f.seek(start)
@@ -721,7 +722,7 @@ class BufferFile(static.File):
         # return data
         # size is the byte position to stop sending, not how many bytes to send
 
-        def transferBufferFile(file, remaining, request):
+        def transferBufferFile(file, remaining):#, request):
             #print "transferBufferFile",file,remaining,abstract.FileDescriptor.bufferSize
             if not request or request.finished:
                 return
@@ -733,7 +734,7 @@ class BufferFile(static.File):
 
             data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
             while data:
-                #print "%d (%d)" % (f.tell(), len(data))
+                print "%d (%d)" % (f.tell(), len(data))
                 remaining -= len(data)
                 request.write(data)
                 if request:
@@ -741,15 +742,15 @@ class BufferFile(static.File):
                 else:
                     data = False
 
-            #print "%d (No data available)" % remaining
             if request and remaining > 0:
-                reactor.callLater(0.3,transferBufferFile, file, remaining, request)
+                self.upnp_retry = reactor.callLater(0.3,transferBufferFile, file, remaining)# request)
+                print "%d (No data available) %r" % (remaining,self.upnp_retry)
             else:
                 request.finish()
                 return
 
 
-        transferBufferFile(f, size - f.tell(), request)
+        transferBufferFile(f, size - f.tell())#, request)
         # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
