@@ -43,8 +43,6 @@ class TestVideoProxy(utils.ReverseProxyResource):
         self.buffer_size = int(buffer_size)
         self.downloader = None
 
-        self.bufferFile = None
-
         self.video_url = None # the url we get from the youtube page
         self.stream_url = None # the real video stream, cached somewhere
         self.mimetype = None
@@ -81,13 +79,6 @@ class TestVideoProxy(utils.ReverseProxyResource):
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
         print "ProxyStream requestFinished",result
-        if self.bufferFile != None:
-            print "ProxyStream requestFinished", self.bufferFile, self.bufferFile.upnp_retry
-            if self.bufferFile.upnp_retry != None:
-                self.bufferFile.upnp_retry.cancel()
-                self.bufferFile.upnp_retry = None
-                self.bufferFile = None
-                print "ProxyStream cancel retry cancelled"
         if hasattr(self,'connection'):
             self.connection.transport.loseConnection()
 
@@ -97,12 +88,6 @@ class TestVideoProxy(utils.ReverseProxyResource):
         print "VideoProxy render", request, self.stream_url, self.video_url
         print "VideoProxy headers:", request.getAllHeaders()
         print "VideoProxy id:", self.id
-
-        if hasattr(request,'upnp_item') == True:
-            print "VideoProxy item:", request.upnp_item
-        else:
-            print "VideoProxy item: None"
-            request.upnp_item = self.id
 
         d = request.notifyFinish()
         d.addBoth(self.requestFinished)
@@ -226,9 +211,10 @@ class TestVideoProxy(utils.ReverseProxyResource):
                 res = self.renderBufferFile (request, filepath, self.buffer_size)
                 if res == '' and request.method != 'HEAD':
                     return server.NOT_DONE_YET
-                if isinstance(res,int):
-                    return res
-                request.write(res)
+                if not isinstance(res,int):
+                    request.write(res)
+                if request.method == 'HEAD':
+                    request.finish()
 
         else:
             print "Unsupported Proxy Mode: %s" % self.proxy_mode
@@ -255,9 +241,6 @@ class TestVideoProxy(utils.ReverseProxyResource):
                 bufferFile.type = MPEG4_MIMETYPE
                 #bufferFile.type = 'video/mpeg'
                 bufferFile.encoding = None
-                if request.method == 'GET':
-                    self.bufferFile = bufferFile
-                print "bufferFile",self.bufferFile
                 try:
                     return bufferFile.render(request)
                 except Exception,error:

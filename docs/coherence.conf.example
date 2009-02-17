@@ -73,8 +73,8 @@ web-ui = no                               # set this to yes to enable some inter
     #[[IRadioStore]]
     #    name = iRadio
 
-    #[[FlickrStore]]
-    #    name = Flickr Images
+    [[FlickrStore]]
+        name = Flickr Images
     #    refresh = 60                      # check every 60 minutes with Flickr for new images in the set
     #    proxy = yes                       # if set to yes coherence will fetch the images
     #                                      # from Flickr for your client

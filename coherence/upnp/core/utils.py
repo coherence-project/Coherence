@@ -722,37 +722,49 @@ class BufferFile(static.File):
         # return data
         # size is the byte position to stop sending, not how many bytes to send
 
-        def transferBufferFile(file, remaining):#, request):
-            #print "transferBufferFile",file,remaining,abstract.FileDescriptor.bufferSize
-            if not request or request.finished:
-                return
-
-            if remaining == 0:
-                #print "close request"
-                request.finish()
-                return
-
-            data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
-            while data:
-                print "%d (%d)" % (f.tell(), len(data))
-                remaining -= len(data)
-                request.write(data)
-                if request:
-                    data = file.read(min(abstract.FileDescriptor.bufferSize, remaining))
-                else:
-                    data = False
-
-            if request and remaining > 0:
-                self.upnp_retry = reactor.callLater(0.3,transferBufferFile, file, remaining)# request)
-                print "%d (No data available) %r" % (remaining,self.upnp_retry)
-            else:
-                request.finish()
-                return
-
-
-        transferBufferFile(f, size - f.tell())#, request)
+        BufferFileTransfer(f, size - f.tell(), request)
         # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
+
+
+class BufferFileTransfer(object):
+    """
+    A class to represent the transfer of a file over the network.
+    """
+    request = None
+
+    def __init__(self, file, size, request):
+        self.file = file
+        self.size = size
+        self.request = request
+        self.written = self.file.tell()
+        request.registerProducer(self, 0)
+
+    def resumeProducing(self):
+        print "resumeProducing", self.request,self.size,self.written
+        if not self.request:
+            return
+        data = self.file.read(min(abstract.FileDescriptor.bufferSize, self.size - self.written))
+        if data:
+            self.written += len(data)
+            # this .write will spin the reactor, calling .doWrite and then
+            # .resumeProducing again, so be prepared for a re-entrant call
+            self.request.write(data)
+        if self.request and self.file.tell() == self.size:
+            self.request.unregisterProducer()
+            self.request.finish()
+            self.request = None
+
+    def pauseProducing(self):
+        pass
+
+    def stopProducing(self):
+        print "stopProducing",self.request
+        self.request.unregisterProducer()
+        self.file.close()
+        self.request.finish()
+        self.request = None
+
 
 from datetime import datetime, tzinfo, timedelta
 import random
