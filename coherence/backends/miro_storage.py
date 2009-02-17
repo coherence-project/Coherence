@@ -9,6 +9,8 @@
 # Copyright 2009, Jean-Michel Sizun
 # Copyright 2009 Frank Scholz <coherence@beebits.net>
 
+import urllib
+
 from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore,BackendItem
@@ -210,6 +212,7 @@ class MiroStore(BackendStore):
 
 
     def retrieveChannels (self, parent, filter, filter_value):
+        filter_value = urllib.quote(filter_value.encode("utf-8"))
         uri = "https://www.miroguide.com/api/get_channels?limit=100&filter=%s&filter_value=%s" % (filter, filter_value)
         print uri
         d = utils.getPage(uri)
