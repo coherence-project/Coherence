@@ -61,29 +61,6 @@ class VideoItem(BackendItem):
 
 
 
-class MiroCategory(LazyContainer):
-    def __init__(self, id, store, parent_id, title, category_id):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-        self.category_id = category_id
-    def retrieve_children(self):
-        return self.store.retrieveChannels (self, "category", self.category_id)
-
-class MiroLanguage(LazyContainer):
-    def __init__(self, id, store, parent_id, title, language_id):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-        self.language_id = language_id
-    def retrieve_children(self):
-        return self.store.retrieveChannels (self, "language", self.language_id)
-
-class MiroChannel(LazyContainer):
-    def __init__(self, id, store, parent_id, title, channel_id):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-        self.channel_id = channel_id
-    def retrieve_children(self):
-        return self.store.retrieveChannelItems (self, self.channel_id)
-
-
-
 class MiroStore(BackendStore):
 
     logCategory = 'miro_store'
@@ -165,17 +142,17 @@ class MiroStore(BackendStore):
 
     def appendCategory( self, name, category_id, parent):
         id = self.getnextID()
-        item = MiroCategory(id, self, parent.get_id(), name, category_id)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="category", filter_value=category_id)
         self.storeItem(parent, item, id)
 
     def appendLanguage( self, name, language_id, parent):
         id = self.getnextID()
-        item = MiroLanguage(id, self, parent.get_id(), name, language_id)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="language", filter_value=language_id)
         self.storeItem(parent, item, id)
 
     def appendChannel(self, name, channel_id, parent):
         id = self.getnextID()
-        item = MiroChannel(id, self, parent.get_id(), name, channel_id)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannelItems, channel_id=channel_id)
         self.storeItem(parent, item, id)
 
     def appendVideoEntry(self, name, description, url, thumbnail_url, parent):

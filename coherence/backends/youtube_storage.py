@@ -669,13 +669,13 @@ class Container(BackendItem):
 
 class LazyContainer(Container):
 
-    def __init__(self, id, store, parent_id, title):
+    def __init__(self, id, store, parent_id, title, childrenRetriever=None, **kwargs):
         Container.__init__(self, id, store, parent_id, title)
         self.children = None
-
-    def retrieve_children(self):
-        return None
-
+        self.childrenRetriever = childrenRetriever
+        self.childrenRetriever_params = kwargs
+        self.childrenRetriever_params['parent']=self
+        
     def get_children(self,start=0,request_count=0):
 
         def process_items(result = None):
@@ -687,46 +687,14 @@ class LazyContainer(Container):
                 return self.children[start:request_count]
 
         if (self.children == None):
-            d = self.retrieve_children()
+            d = None
+            if self.childrenRetriever is not None:
+                d = self.childrenRetriever(**self.childrenRetriever_params)
             if d is not None:
                 d.addCallback(process_items)
             return d
         else:
             return process_items()
-
-
-class YoutubeFeed(LazyContainer):
-    def __init__(self, id, store, parent_id, title, feed_uri):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-        self.feed_uri = feed_uri
-    def retrieve_children(self):
-        return self.store.retrieveFeedItems (self, self.feed_uri)
-
-class YoutubePlaylistContainer(LazyContainer):
-    def __init__(self, id, store, parent_id, title):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-    def retrieve_children(self):
-        return self.store.retrievePlaylistFeeds (self)
-
-class YoutubeSubscriptionContainer(LazyContainer):
-    def __init__(self, id, store, parent_id, title):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-    def retrieve_children(self):
-        return self.store.retrieveSubscriptionFeeds (self)
-
-class YoutubePlaylistFeed(LazyContainer):
-    def __init__(self, id, store, parent_id, title, playlist_feed_id):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-        self.playlist_feed_id = playlist_feed_id
-    def retrieve_children(self):
-        return self.store.retrievePlaylistFeedItems (self, self.playlist_feed_id)
-
-class YoutubeSubscriptionFeed(LazyContainer):
-    def __init__(self, id, store, parent_id, title, subscription_feed_id):
-        LazyContainer.__init__(self, id, store, parent_id, title)
-        self.subscription_feed_id = subscription_feed_id
-    def retrieve_children(self):
-        return self.store.retrieveSubscriptionFeedItems (self, self.subscription_feed_id)
 
 
 class YouTubeStore(BackendStore):
@@ -790,9 +758,9 @@ class YouTubeStore(BackendStore):
             userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
             self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
             self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)
-            playlistsItem = YoutubePlaylistContainer(MY_PLAYLISTS_CONTAINER_ID, self, rootItem.get_id(), 'My Playlists')
+            playlistsItem = LazyContainer(MY_PLAYLISTS_CONTAINER_ID, self, rootItem.get_id(), 'My Playlists', self.retrievePlaylistFeeds)
             self.storeItem(rootItem, playlistsItem, MY_PLAYLISTS_CONTAINER_ID)
-            subscriptionsItem = YoutubeSubscriptionContainer(MY_SUBSCRIPTIONS_CONTAINER_ID, self, rootItem.get_id(), 'My Subscriptions')
+            subscriptionsItem = LazyContainer(MY_SUBSCRIPTIONS_CONTAINER_ID, self, rootItem.get_id(), 'My Subscriptions', self.retrieveSubscriptionFeeds)
             self.storeItem(rootItem, subscriptionsItem, MY_SUBSCRIPTIONS_CONTAINER_ID)
 
         self.init_completed()
@@ -809,7 +777,7 @@ class YouTubeStore(BackendStore):
 
     def appendFeed( self, name, feed_uri, parent):
         id = self.getnextID()
-        item = YoutubeFeed(id, self, parent.get_id(), name, feed_uri)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveFeedItems, feed_uri=feed_uri)
         self.storeItem(parent, item, id)
 
 
@@ -859,8 +827,8 @@ class YouTubeStore(BackendStore):
             d = threads.deferToThread(self.yt_service.ProgrammaticLogin)
 
 
-    def retrieveFeedItems (self, parent, feed_uri):
-        feed = threads.deferToThread(self.yt_service.GetYouTubeVideoFeed,feed_uri)
+    def retrieveFeedItems (self, parent=None, feed_uri=''):
+        feed = threads.deferToThread(self.yt_service.GetYouTubeVideoFeed, feed_uri)
 
         def gotFeed(feed):
            if feed is None:
@@ -917,7 +885,7 @@ class YouTubeStore(BackendStore):
                title = playlist_video_entry.title.text
                playlist_id = playlist_video_entry.id.text.split("/")[-1] # FIXME find better way to retrieve the playlist ID
                id = self.getnextID()
-               item = YoutubePlaylistFeed(id, self, parent.get_id(), title, playlist_id)
+               item = LazyContainer(id, self, parent.get_id(), title, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
                self.storeItem(parent, item, id)
 
         def gotError(error):
@@ -940,7 +908,7 @@ class YouTubeStore(BackendStore):
                uri = entry.id.text
                name = "[%s] %s" % (type,title)
                id = self.getnextID()
-               item = YoutubeSubscriptionFeed(id, self, parent.get_id(), name, uri)
+               item = LazyContainer(id, self, parent.get_id(), name, self.retrieveSubscriptionFeedItems, uri=uri)
                self.storeItem(parent, item, id)
 
         def gotError(error):
