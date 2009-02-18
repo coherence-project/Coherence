@@ -36,6 +36,8 @@ class TestVideoProxy(utils.ReverseProxyResource):
                  fct=None, **kwargs):
         self.uri = uri
         self.id = id
+        if isinstance(self.id,int):
+            self.id = '%d' % self.id
         self.proxy_mode = proxy_mode
 
         self.cache_directory = cache_directory
@@ -168,6 +170,7 @@ class TestVideoProxy(utils.ReverseProxyResource):
             # download stream to cache,
             # and send it to the client in // after X bytes
             filepath = os.path.join(self.cache_directory, self.id)
+            
             file_is_already_available = False
             if (os.path.exists(filepath)
                 and os.path.getsize(filepath) == self.filesize):

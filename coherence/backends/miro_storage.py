@@ -15,7 +15,7 @@ from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore,BackendItem
 
-from coherence.backends.youtube_storage import Container, LazyContainer, VideoProxy
+from coherence.backends.youtube_storage import Container, LazyContainer, TestVideoProxy
 
 ROOT_CONTAINER_ID = 0
 CATEGORIES_CONTAINER_ID = 101
@@ -37,11 +37,14 @@ class VideoItem(BackendItem):
         self.item = None
         self.store = store
         self.url = self.store.urlbase + str(self.id)
-        self.location = VideoProxy(url, hash(url),
+        #self.location = VideoProxy(url, hash(url),
+        #                           store.proxy_mode,
+        #                           store.cache_directory, store.cache_maxsize, store.buffer_size
+        #                           )
+        self.location = TestVideoProxy(url, hash(url),
                                    store.proxy_mode,
-                                   store.cache_directory, store.cache_maxsize, store.buffer_size
+                                   store.cache_directory, store.cache_maxsize,store.buffer_size
                                    )
-
 
     def get_item(self):
         if self.item == None:
@@ -75,9 +78,14 @@ class MiroStore(BackendStore):
         self.name = kwargs.get('name','MiroGuide')
 
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
-        self.cache_directory = kwargs.get('cache_directory', None)
+        self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
+        try:
+            if self.proxy_mode != 'redirect':
+                os.mkdir(self.cache_directory)
+        except:
+            pass
         self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
-        self.buffer_size = kwargs.get('buffer_size', 2000000)
+        self.buffer_size = kwargs.get('buffer_size', 750000)
 
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
