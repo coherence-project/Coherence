@@ -671,30 +671,49 @@ class LazyContainer(Container):
 
     def __init__(self, id, store, parent_id, title, childrenRetriever=None, **kwargs):
         Container.__init__(self, id, store, parent_id, title)
-        self.children = None
+        self.children = []
+        
+        self.childrenRetrievingNeeded = True       
+        self.childrenRetrievingOffset = 0
+        self.childrenRetrievingDeferred = None
         self.childrenRetriever = childrenRetriever
         self.childrenRetriever_params = kwargs
         self.childrenRetriever_params['parent']=self
-        
-    def get_children(self,start=0,request_count=0):
-
-        def process_items(result = None):
-            if self.children == None:
-                return  []
-            if request_count == 0:
-                return self.children[start:]
-            else:
-                return self.children[start:request_count]
-
-        if (self.children == None):
-            d = None
-            if self.childrenRetriever is not None:
-                d = self.childrenRetriever(**self.childrenRetriever_params)
-            if d is not None:
-                d.addCallback(process_items)
-            return d
+        self.has_pages = (self.childrenRetriever_params.has_key('per_page'))
+                    
+    def return_items(self, start, request_count):
+        if self.children == None:
+            return  []
+        if request_count == 0:
+            return self.children[start:]
         else:
-            return process_items()
+            return self.children[start:request_count]
+    
+    def get_children(self,start=0,request_count=0, previous_deferred=None):
+
+        def items_retrieved(result, source_deferred):
+            self.childrenRetrievingOffset = len(self.children)
+            if self.childrenRetrievingNeeded is True:
+                return self.get_children(self.childrenRetrievingOffset, request_count)
+            return []
+        
+        def all_items_retrieved (result):
+            #print "All items retrieved!"
+            return Container.get_children(self, start, request_count)
+
+        if self.childrenRetrievingNeeded is True:
+            #print "children Retrieving IS Needed (offset is %d)" % start
+            if self.childrenRetriever is not None:
+                if self.has_pages is True:
+                    self.childrenRetriever_params['offset'] = start
+                d = self.childrenRetriever(**self.childrenRetriever_params)
+                self.childrenRetrievingNeeded = False
+                d.addCallback(items_retrieved, d)
+                if start == 0:
+                    d.addCallback(all_items_retrieved)
+                return d
+
+        return Container.get_children(self, start, request_count)
 
 
 class YouTubeStore(BackendStore):

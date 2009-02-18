@@ -142,12 +142,12 @@ class MiroStore(BackendStore):
 
     def appendCategory( self, name, category_id, parent):
         id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="category", filter_value=category_id)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
         self.storeItem(parent, item, id)
 
     def appendLanguage( self, name, language_id, parent):
         id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="language", filter_value=language_id)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="language", filter_value=language_id, per_page=100)
         self.storeItem(parent, item, id)
 
     def appendChannel(self, name, channel_id, parent):
@@ -188,10 +188,10 @@ class MiroStore(BackendStore):
                default=True)
 
 
-    def retrieveChannels (self, parent, filter, filter_value):
+    def retrieveChannels (self, parent, filter, filter_value, per_page=100, offset=0):
         filter_value = urllib.quote(filter_value.encode("utf-8"))
-        uri = "https://www.miroguide.com/api/get_channels?limit=100&filter=%s&filter_value=%s" % (filter, filter_value)
-        print uri
+        uri = "https://www.miroguide.com/api/get_channels?limit=%d&offset=%d&filter=%s&filter_value=%s" % (per_page, offset, filter, filter_value)
+        #print uri
         d = utils.getPage(uri)
 
         def gotChannels(result):
@@ -211,7 +211,10 @@ class MiroStore(BackendStore):
                website_url = channel['website_url']
                name = channel['name']
                self.appendChannel(name, id, parent)
-
+           if (len(channels) >= per_page):
+               #print "reached page limit (%d)" % len(channels)
+               parent.childrenRetrievingNeeded = True
+                
         def gotError(error):
             print "ERROR: %s" % error
 
