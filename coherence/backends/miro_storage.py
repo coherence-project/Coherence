@@ -20,7 +20,9 @@ from coherence.backends.youtube_storage import Container, LazyContainer, TestVid
 ROOT_CONTAINER_ID = 0
 CATEGORIES_CONTAINER_ID = 101
 LANGUAGES_CONTAINER_ID = 102
-
+RECENT_CONTAINER_ID = 103
+TOP_RATED_CONTAINER_ID = 104
+MOST_POPULAR_CONTAINER_ID = 105
 
 class VideoItem(BackendItem):
 
@@ -30,7 +32,7 @@ class VideoItem(BackendItem):
         self.name = name
         self.duration = None
         self.size = None
-        self.mimetype = None
+        self.mimetype = "video"
         self.thumbnail_url = thumbnail_url
         self.description = None
         self.date = None
@@ -77,6 +79,8 @@ class MiroStore(BackendStore):
         self.config = kwargs
         self.name = kwargs.get('name','MiroGuide')
 
+        self.language = kwargs.get('language','English')
+
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
         try:
@@ -98,11 +102,16 @@ class MiroStore(BackendStore):
 
         rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
         self.store[ROOT_CONTAINER_ID] = rootItem
-        categoriesItem = Container(CATEGORIES_CONTAINER_ID,self,-1, "Channels by category")
+        categoriesItem = Container(CATEGORIES_CONTAINER_ID,self,-1, "All by Categories")
         self.storeItem(rootItem, categoriesItem, CATEGORIES_CONTAINER_ID)
-        languagesItems = Container(LANGUAGES_CONTAINER_ID,self,-1, "Channels by language")
+        languagesItems = Container(LANGUAGES_CONTAINER_ID,self,-1, "All by Languages")
         self.storeItem(rootItem, languagesItems, LANGUAGES_CONTAINER_ID)
+        
+        self.appendLanguage("Recent Videos", self.language, rootItem, sort='-age', count=15)
+        self.appendLanguage("Top Rated", self.language, rootItem, sort='rating', count=15)
+        self.appendLanguage("Most Popular", self.language, rootItem, sort='-popular', count=15)
 
+        
         def gotError(error):
             print "ERROR: %s" % error
 
@@ -153,9 +162,9 @@ class MiroStore(BackendStore):
         item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
         self.storeItem(parent, item, id)
 
-    def appendLanguage( self, name, language_id, parent):
+    def appendLanguage( self, name, language_id, parent, sort='name', count=0):
         id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="language", filter_value=language_id, per_page=100)
+        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="language", filter_value=language_id, per_page=100, sort=sort, count=count)
         self.storeItem(parent, item, id)
 
     def appendChannel(self, name, channel_id, parent):
@@ -196,9 +205,13 @@ class MiroStore(BackendStore):
                default=True)
 
 
-    def retrieveChannels (self, parent, filter, filter_value, per_page=100, offset=0):
+    def retrieveChannels (self, parent, filter, filter_value, per_page=100, offset=0, count=0, sort='name'):
         filter_value = urllib.quote(filter_value.encode("utf-8"))
-        uri = "https://www.miroguide.com/api/get_channels?limit=%d&offset=%d&filter=%s&filter_value=%s" % (per_page, offset, filter, filter_value)
+        
+        limit = count
+        if (count == 0):
+            limit = per_page
+        uri = "https://www.miroguide.com/api/get_channels?limit=%d&offset=%d&filter=%s&filter_value=%s&sort=%s" % (limit, offset, filter, filter_value, sort)
         #print uri
         d = utils.getPage(uri)
 
@@ -219,7 +232,7 @@ class MiroStore(BackendStore):
                website_url = channel['website_url']
                name = channel['name']
                self.appendChannel(name, id, parent)
-           if (len(channels) >= per_page):
+           if ((count == 0) and (len(channels) >= per_page)):
                #print "reached page limit (%d)" % len(channels)
                parent.childrenRetrievingNeeded = True
                 
@@ -249,6 +262,7 @@ class MiroStore(BackendStore):
                name = item['name']
                thumbnail_url = None
                if (channel.has_key('thumbnail_url')):
+                   #print "Thumbnail:", channel['thumbnail_url']
                    thumbnail_url = channel['thumbnail_url']
                #size = size['size']
                self.appendVideoEntry(name, description, url, thumbnail_url, parent)
