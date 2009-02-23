@@ -517,7 +517,7 @@ class YoutubeIE(InfoExtractor):
 
 
         def gotError(error):
-            print "Unable to process Youtube request: %s" % url
+            print "Unable to process Youtube request: %s" % self._LOGIN_URL
             print "Error: %s" % error
             return
 
@@ -548,7 +548,7 @@ class YoutubeIE(InfoExtractor):
         if self._downloader is not None:
             params = self._downloader.get_params()
             format_param = params.get('format', None)
-         
+
         # Extension
         video_extension = {'18': 'mp4', '17': '3gp', '22': 'mp4'}.get(format_param, 'flv')
 
@@ -559,7 +559,7 @@ class YoutubeIE(InfoExtractor):
 
         def gotPage(result, format_param):
             video_webpage,headers = result
-            
+
             # check format
             if (format_param == '22'):
                 print "Check if HD video exists..."
@@ -569,7 +569,7 @@ class YoutubeIE(InfoExtractor):
                     format_param = '18'
                 else:
                     print "...HD video OK!"
-            
+
             # "t" param
             mobj = re.search(r', "t": "([^"]+)"', video_webpage)
             if mobj is None:

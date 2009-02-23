@@ -17,6 +17,9 @@ from twisted.web import proxy, resource, server
 from twisted.internet import reactor,protocol,defer,abstract
 from twisted.python import failure
 
+from twisted.python.util import InsensitiveDict
+
+
 try:
     from twisted.protocols._c_urlarg import unquote
 except ImportError:
@@ -246,9 +249,9 @@ class ProxyClient(http.HTTPClient):
             del headers["proxy-connection"]
         #headers["connection"] = "close"
         self.headers = headers
-        print "command", command
-        print "rest", rest
-        print "headers", headers
+        #print "command", command
+        #print "rest", rest
+        #print "headers", headers
         self.data = data
         self.send_data = 0
 
@@ -267,13 +270,13 @@ class ProxyClient(http.HTTPClient):
 
         if version == 'ICY':
             version = 'HTTP/1.1'
-        print "ProxyClient handleStatus", version, code, message
+        #print "ProxyClient handleStatus", version, code, message
         self.father.transport.write("%s %s %s\r\n" % (version, code, message))
 
     def handleHeader(self, key, value):
         #print "ProxyClient handleHeader", key, value
         if not key.startswith('icy-'):
-            print "ProxyClient handleHeader", key, value
+            #print "ProxyClient handleHeader", key, value
             self.father.transport.write("%s: %s\r\n" % (key, value))
 
     def handleEndHeaders(self):
@@ -401,6 +404,32 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 
+    followRedirect = True
+
+    def connectionMade(self):
+        method = getattr(self, 'method', 'GET')
+        #print "myHTTPPageGetter", method, self.factory.path
+        self.sendCommand(method, self.factory.path)
+        self.sendHeader('Host', self.factory.headers.get("host", self.factory.host))
+        self.sendHeader('User-Agent', self.factory.agent)
+        if self.factory.cookies:
+            l=[]
+            for cookie, cookval in self.factory.cookies.items():
+                l.append('%s=%s' % (cookie, cookval))
+            self.sendHeader('Cookie', '; '.join(l))
+        data = getattr(self.factory, 'postdata', None)
+        if data is not None:
+            self.sendHeader("Content-Length", str(len(data)))
+        for (key, value) in self.factory.headers.items():
+            if key.lower() != "content-length":
+                # we calculated it on our own
+                self.sendHeader(key, value)
+        self.endHeaders()
+        self.headers = {}
+
+        if data is not None:
+            self.transport.write(data)
+
     def handleResponse(self, response):
         if self.quietLoss:
             return
@@ -429,6 +458,44 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
 
     protocol = myHTTPPageGetter
     noisy = False
+
+    def __init__(self, url, method='GET', postdata=None, headers=None,
+                 agent="Twisted PageGetter", timeout=0, cookies=None,
+                 followRedirect=True, redirectLimit=20):
+        self.followRedirect = followRedirect
+        self.redirectLimit = redirectLimit
+        self._redirectCount = 0
+        self.timeout = timeout
+        self.agent = agent
+
+        if cookies is None:
+            cookies = {}
+        self.cookies = cookies
+        if headers is not None:
+            self.headers = InsensitiveDict(headers)
+        else:
+            self.headers = InsensitiveDict()
+        if postdata is not None:
+            self.headers.setdefault('Content-Length', len(postdata))
+            # just in case a broken http/1.1 decides to keep connection alive
+            self.headers.setdefault("connection", "close")
+        self.postdata = postdata
+        self.method = method
+
+        self.setURL(url)
+
+        self.waiting = 1
+        self.deferred = defer.Deferred()
+        self.response_headers = None
+
+    def buildProtocol(self, addr):
+        p = protocol.ClientFactory.buildProtocol(self, addr)
+        p.method = self.method
+        p.followRedirect = self.followRedirect
+        if self.timeout:
+            timeoutCall = reactor.callLater(self.timeout, p.timeout)
+            self.deferred.addBoth(self._cancelTimeout, timeoutCall)
+        return p
 
     def page(self, page):
         if self.waiting:
@@ -585,7 +652,7 @@ class StaticFile(static.File):
         if request.method == 'HEAD' or trans == False:
             # pretend we're a HEAD request, so content-length
             # won't be overwritten.
-            print "HEAD request"
+            #print "HEAD request"
             request.method = 'HEAD'
             return ''
 
@@ -682,7 +749,7 @@ class BufferFile(static.File):
 
                 f.seek(start)
                 if end:
-                    print ":%s" % end
+                    #print ":%s" % end
                     end = int(end)
                 else:
                     end = size - 1
@@ -741,7 +808,7 @@ class BufferFileTransfer(object):
         request.registerProducer(self, 0)
 
     def resumeProducing(self):
-        print "resumeProducing", self.request,self.size,self.written
+        #print "resumeProducing", self.request,self.size,self.written
         if not self.request:
             return
         data = self.file.read(min(abstract.FileDescriptor.bufferSize, self.size - self.written))
@@ -759,7 +826,7 @@ class BufferFileTransfer(object):
         pass
 
     def stopProducing(self):
-        print "stopProducing",self.request
+        #print "stopProducing",self.request
         self.request.unregisterProducer()
         self.file.close()
         self.request.finish()
