@@ -1,3 +1,18 @@
+0.6.2 - Rosenmontag - 20090223
+
+ * new MediaServer backends that allow access to
+   * YouTube videos (http://youtube.com)
+   * the MiroGuide for online videos (https://www.miroguide.com)
+   * the videos provided by Shoutcast TV (http://www.shoutcast.com)
+   * the SWR3 podcasts, a German radio station (http://swr3.de)
+ * adjustments to the Ampache backend to work with newer Ampache versions (http://ampache.org)
+ * a lot of 'compatibility' enhancements for different devices
+ * a 'port' to the OpenEmbedded platform (http://www.openembedded.org/),
+   bringing Coherence to the BeagleBoard (http://beagleboard.org/)
+ * and - as every time - the usual bugfixes and enhancements
+
+   Kudos go especially to jmsizun for his work on the new backends!
+
 0.6.0 - The late Pumpkin - 20081231
 
  * new MediaServer backends that allow access to

@@ -1,3 +1,552 @@
+2009-02-23 19:54  dev
+
+	* coherence/backends/axiscam_storage.py,
+	  coherence/backends/swr3_storage.py: some minor adjustments
+
+2009-02-23 19:52  dev
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/extern/youtubedl/youtubedl.py,
+	  coherence/upnp/core/utils.py: * some last-minute YouTube related
+	  fixes, where we had GET instead of HEAD requests :-/
+	  * changing prints to log-output
+
+2009-02-19 21:06  jmsizun
+
+	* coherence/backends/miro_storage.py: MiroGuide: added new
+	  directories (Top Rated, Most Popular, Recent Videos)
+
+2009-02-18 23:44  jmsizun
+
+	* coherence/backends/miro_storage.py,
+	  coherence/backends/youtube_storage.py: connect Miro backend to
+	  correct proxy class
+
+2009-02-18 21:34  jmsizun
+
+	* coherence/backends/miro_storage.py,
+	  coherence/backends/youtube_storage.py: LazyContainer/MiroGuide:
+	  allow retrieving full listings instead of only first page
+
+2009-02-18 19:28  jmsizun
+
+	* coherence/backends/miro_storage.py,
+	  coherence/backends/youtube_storage.py: Removed children classes
+	  from LazyContainer
+
+2009-02-17 23:12  jmsizun
+
+	* coherence/backends/miro_storage.py: MiroGuide: correctly retrieve
+	  list of channels for categories with space and other special
+	  characters
+
+2009-02-17 14:27  dev
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/upnp/core/utils.py, docs/coherence.conf.example: * more
+	  cleanups, seems to work now in 'buffer' mode with Totem and the
+	  PS3
+	  * there are probably still some unnecessary code pieces in there,
+	  need to get rid of them in the next step
+
+2009-02-16 21:36  dev
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/upnp/core/utils.py: some more cleanups
+
+2009-02-16 20:30  dev
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/upnp/core/utils.py: cleaning up things a bit
+
+2009-02-16 17:35  dev
+
+	* MANIFEST.in, setup.py: and the corresponding changes in the
+	  setup/dist related files, re #190
+
+2009-02-16 17:31  dev
+
+	* coherence/upnp/devices/media_server.py, misc/Desktop Applet,
+	  misc/Desktop-Applet, misc/EOG Plugin, misc/EOG-Plugin,
+	  misc/Rhythmbox Plugin, misc/Rhythmbox-Plugin, misc/Totem Plugin,
+	  misc/Totem-Plugin, misc/device icons, misc/device-icons: replace
+	  'space' characters in folder names with dashes, addresses #190
+
+2009-02-15 14:29  dev
+
+	* coherence/backends/youtube_storage.py: making the YouTubeStore a
+	  bit more XBox friendly
+
+2009-02-15 11:57  dev
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/upnp/core/utils.py: rework of the YouTube
+	  VideoProxyItem, now works with the PS3 but we seem to have some
+	  severe memory leakage
+
+2009-02-14 12:04  dev
+
+	* coherence/backends/itv_storage.py: fixing some UPnP related
+	  lapses
+
+2009-02-13 23:25  jmsizun
+
+	* coherence/backends/youtube_storage.py: Corrected cache purge
+	  method (took most recent files first)
+
+2009-02-13 23:24  jmsizun
+
+	* coherence/backends/youtube_storage.py: Youtube entries: Add mp4
+	  extension to URL
+
+2009-02-13 22:58  jmsizun
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/itv_storage.py, setup.py: Added new backend
+	  (ITVStore) to stream Shoutcast TV
+
+2009-02-13 22:57  jmsizun
+
+	* coherence/upnp/core/DIDLLite.py: Corrected syntax for AudioItem
+	  parameter
+
+2009-02-13 20:44  dev
+
+	* coherence/backends/miro_storage.py: minor fix
+
+2009-02-13 20:40  dev
+
+	* Coherence.egg-info/entry_points.txt, setup.py: putting the
+	  MiroStore entrypoint at the right place
+
+2009-02-13 20:35  dev
+
+	* setup.py: fixing not-having-setuptools, this time hopefully for
+	  real
+
+2009-02-13 17:40  jmsizun
+
+	* Coherence.egg-info/entry_points.txt: removed erroneous "w"
+	  character
+
+2009-02-12 22:18  jmsizun
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/miro_storage.py: New media backend: MIRO Guide
+	  Catalog for on-line videos
+
+2009-02-12 22:16  jmsizun
+
+	* coherence/backends/youtube_storage.py: minor corrections to Proxy
+	  class
+
+2009-02-12 22:14  jmsizun
+
+	* coherence/backend.py: small syntax correction in commentary
+	  message
+
+2009-02-10 23:36  jmsizun
+
+	* coherence/backends/youtube_storage.py: Added new option
+	  "standard_feeds" to show/hide standard feeds
+
+2009-02-10 23:30  jmsizun
+
+	* coherence/upnp/core/utils.py: Avoid error in Windows as iface is
+	  actually a dict object
+
+2009-02-10 23:28  jmsizun
+
+	* coherence/upnp/core/utils.py: postpone seek beyond current size
+	  of the buffer file
+
+2009-02-10 19:02  jmsizun
+
+	* coherence/upnp/core/utils.py: Oups: missing class again (edited
+	  directly in Twisted)
+
+2009-02-10 17:34  dev
+
+	* coherence/backends/fs_storage.py: more debug output to catch
+	  issues during folder walk
+
+2009-02-10 07:27  jmsizun
+
+	* coherence/upnp/core/utils.py: Missing file for "youtube proxy:
+	  manage file download to cache & buffering"
+
+2009-02-09 21:18  jmsizun
+
+	* coherence/backends/youtube_storage.py: youtube proxy: manage file
+	  download to cache & buffering
+
+2009-02-09 20:30  dev
+
+	* coherence/backends/fs_storage.py: cushion the non-existence of
+	  ctypes
+
+2009-02-06 10:48  dev
+
+	* coherence/upnp/core/action.py: be sure our InstanceID is an int
+
+2009-02-05 16:05  dev
+
+	* coherence/transcoder.py, coherence/upnp/devices/media_server.py:
+	  a little more of logging
+
+2009-02-05 16:04  dev
+
+	* coherence/upnp/core/device.py: prepare device icons for the
+	  inspector
+
+2009-02-03 18:21  jmsizun
+
+	* coherence/backends/youtube_storage.py: Added param "proxy-mode":
+	  foreseen values are redirect, cache, buffered-cache, ...
+
+2009-02-02 23:59  jmsizun
+
+	* coherence/backends/youtube_storage.py: Moved Youtube specific
+	  code (extraction of video from web page) out of Proxy class (to
+	  get a generic Proxy class)
+
+2009-02-02 10:16  dev
+
+	* coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/core/soap_service.py: treat the Philips-TV a
+	  little bit different
+
+2009-02-02 00:11  jmsizun
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/extern/youtubedl/youtubedl.py: Youtube: added support
+	  for HD video + merged youtube-dl version 09.01.31
+
+2009-01-31 13:58  dev
+
+	* coherence/backends/mediadb_storage.py: return path as utf-8
+
+2009-01-31 12:35  dev
+
+	* coherence/backends/mediadb_storage.py: appending the extension to
+	  the url
+
+2009-01-31 12:34  dev
+
+	* coherence/upnp/core/DIDLLite.py: removing duplicate element and
+	  fixing DLNA flags bug
+
+2009-01-31 12:27  dev
+
+	* coherence/transcoder.py: don't just stop without a reason
+
+2009-01-31 11:03  dev
+
+	* coherence/upnp/core/device.py,
+	  coherence/upnp/devices/media_server.py: more url related
+	  corrections
+
+2009-01-30 23:30  jmsizun
+
+	* coherence/backends/youtube_storage.py: Youtube: added support for
+	  playlists, subscriptions and localisation of standard feeds.
+
+2009-01-30 22:29  jmsizun
+
+	* coherence/upnp/devices/media_server.py: small protection when an
+	  item children list is None
+
+2009-01-30 21:43  dev
+
+	* coherence/upnp/core/device.py, coherence/upnp/core/service.py,
+	  coherence/upnp/devices/basics.py,
+	  coherence/upnp/devices/media_server.py: cleaning up some url
+	  issues
+
+2009-01-30 20:06  dev
+
+	* coherence/backends/fs_storage.py: fixing reaction upon inotify
+	  re-/moves
+
+2009-01-30 20:05  dev
+
+	* coherence/extern/inotify.py: just for convenience
+
+2009-01-30 20:03  dev
+
+	* bin/coherence: ignore any config file when called with the new
+	  '--noconfig' option
+
+2009-01-29 20:44  dev
+
+	* coherence/backends/flickr_storage.py: adding a 'limit' option for
+	  images per folder, 100 is the default
+
+2009-01-29 16:52  dev
+
+	* coherence/backends/ampache_storage.py: fixing cut 'n paste error,
+	  new try
+
+2009-01-28 21:55  dev
+
+	* coherence/extern/youtubedl/__init__.py,
+	  coherence/extern/youtubedl/youtubedl.py: missing files
+
+2009-01-28 21:29  dev
+
+	* coherence/backends/ampache_storage.py: using the proper element
+	  attribute
+
+2009-01-28 09:16  dev
+
+	* coherence/backends/youtube_storage.py: fix for empty containers
+
+2009-01-28 09:16  dev
+
+	* coherence/backends/fs_storage.py: warn about having a
+	  non-existent content path
+
+2009-01-25 18:13  dev
+
+	* coherence/backends/ampache_storage.py: get the mimetype from
+	  ampache when provided
+
+2009-01-25 17:23  dev
+
+	* misc/device icons/youtube-icon.png: a device-icon for the new
+	  YouTube backend
+
+2009-01-25 15:38  dev
+
+	* coherence/backends/ampache_storage.py: try a bit harder for the
+	  proper mimetype
+
+2009-01-25 12:39  dev
+
+	* coherence/upnp/core/DIDLLite.py: let's remove the irritating DLNA
+	  tags for 'video/*'
+
+2009-01-25 11:37  dev
+
+	* coherence/backends/youtube_storage.py: do the YouTube redirect
+	  retrieval now on our side and cache the final location
+
+2009-01-25 11:34  dev
+
+	* coherence/transcoder.py: make the lpcm transcoder read from an
+	  http uri to
+
+2009-01-24 22:06  dev
+
+	* coherence/backends/youtube_storage.py: 'userid' or 'login' - we
+	  need to find a consistent language
+
+2009-01-24 21:21  dev
+
+	* coherence/backends/youtube_storage.py: one more typo
+
+2009-01-24 20:30  dev
+
+	* coherence/backends/youtube_storage.py: typo fix
+
+2009-01-24 18:38  dev
+
+	* coherence/backends/youtube_storage.py: proper
+	  'we-have-a-user-login' detection
+
+2009-01-24 16:23  dev
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/youtube_storage.py,
+	  coherence/extern/youtubedl, coherence/upnp/core/utils.py,
+	  setup.py: a modified version of [ticket:173 jmsizuns YouTube
+	  backend], only partial working atm
+	  
+	  needs a current version of
+	  [http://code.google.com/p/gdata-python-client Google Data APIs
+	  Python Client Library]
+
+2009-01-24 16:18  dev
+
+	* coherence/upnp/core/msearch.py, coherence/upnp/core/ssdp.py:
+	  something for the Inspector
+
+2009-01-24 16:18  dev
+
+	* coherence/base.py: precaution
+
+2009-01-24 16:16  dev
+
+	* bin/coherence, misc/Desktop Applet/applet-coherence: fix
+	  regarding distutils/setuptools
+
+2009-01-23 17:29  dev
+
+	* bin/coherence, coherence/base.py, misc/Desktop
+	  Applet/applet-coherence, setup.py: enable installation without
+	  setuptools again
+
+2009-01-23 13:26  dev
+
+	* coherence/backends/axiscam_storage.py: bug-fix - thx tororo
+
+2009-01-22 13:41  dev
+
+	* coherence/backend.py, coherence/backends/swr3_storage.py: updated
+	  version of the SWR3Store
+
+2009-01-22 11:43  dev
+
+	* coherence/base.py: a stupid one
+
+2009-01-22 10:08  dev
+
+	* bin/coherence, coherence/base.py,
+	  coherence/extern/simple_config.py: solving improper placement of
+	  logging related options in the new XMLConfig
+
+2009-01-21 18:12  dev
+
+	* coherence/upnp/core/DIDLLite.py: of course _only_ for containers
+
+2009-01-21 18:09  dev
+
+	* coherence/backends/lolcats_storage.py: fixing id extraction when
+	  called from the XBox
+
+2009-01-21 16:17  dev
+
+	* Coherence.egg-info/requires.txt, setup.py: adding Twisted to the
+	  dependencies in setup.py, it will be now downloaded automatically
+	  from pypi.python.org
+
+2009-01-21 16:12  dev
+
+	* coherence/upnp/devices/basics.py,
+	  coherence/upnp/services/servers/media_receiver_registrar_server.py:
+	  hiding the MediaReceiverRegistrar a bit more
+
+2009-01-21 16:11  dev
+
+	* coherence/upnp/core/DIDLLite.py: this does look better
+
+2009-01-18 13:16  dev
+
+	* coherence/upnp/core/DIDLLite.py: and again
+
+2009-01-18 12:44  dev
+
+	* coherence/upnp/core/DIDLLite.py: and again one for the XBox
+
+2009-01-18 12:36  dev
+
+	* coherence/backends/fs_storage.py: once more the wmc-hints
+
+2009-01-18 12:19  dev
+
+	* coherence/upnp/core/DIDLLite.py: more XBox adjustments
+
+2009-01-18 12:07  dev
+
+	* coherence/backends/flickr_storage.py: adjusting wrong wmc-hint
+
+2009-01-18 11:22  dev
+
+	* coherence/upnp/core/DIDLLite.py: fixing inconsistency re
+	  root-container id
+
+2009-01-18 11:21  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/backends/lolcats_storage.py: adding wmc-hints
+
+2009-01-17 14:41  dev
+
+	* coherence/upnp/core/DIDLLite.py: more DLNA related cleanups
+
+2009-01-17 14:01  dev
+
+	* coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/devices/media_server.py: more DLNA flag related
+	  adjustments
+
+2009-01-16 21:01  dev
+
+	* coherence/backends/mediadb_storage.py: react on more filetypes
+	  and put them at one place
+
+2009-01-15 09:30  dev
+
+	* coherence/backends/fs_storage.py: adding the filename extension
+	  to the resource data to test some client behaviour
+
+2009-01-14 20:04  dev
+
+	* coherence/upnp/core/event.py: apply the 'right' empty value to an
+	  evented StateVariable - thx hugolp for spotting this
+
+2009-01-13 19:22  dev
+
+	* coherence/extern/inotify.py, coherence/extern/test_inotify.py:
+	  revert 'flag_to_human' change that broke the API
+
+2009-01-13 15:42  dev
+
+	* coherence/extern/test_inotify.py: the trial tests for inotify.py
+
+2009-01-13 15:40  dev
+
+	* coherence/extern/inotify.py: wrap the callback loop in a
+	  try-except clause, so it isn't aborted by a faulty callback
+
+2009-01-13 15:36  dev
+
+	* coherence/extern/inotify.py: incorporating dialtones changes and
+	  tests - thx!
+	  
+	  Closes #180
+
+2009-01-13 15:33  dev
+
+	* coherence/upnp/devices/control_point.py: just for safety reasons
+
+2009-01-12 10:59  dev
+
+	* coherence/upnp/devices/media_server.py: only add the
+	  'X_MS_MediaReceiverRegistrar' to the device description.xml when
+	  we talk to an XBox
+
+2009-01-12 10:57  dev
+
+	* coherence/backends/appletrailers_storage.py,
+	  coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py: more 'ordering' related fixes
+
+2009-01-11 16:42  dev
+
+	* coherence/extern/inotify.py: missing '()'s
+
+2009-01-11 16:38  dev
+
+	* coherence/backends/fs_storage.py, coherence/extern/inotify.py:
+	  only use fallback of inotify system-call when we are on a Linux
+	  kernel
+
+2009-01-11 14:27  dev
+
+	* Coherence.egg-info/PKG-INFO, coherence/__init__.py,
+	  coherence/upnp/core/DIDLLite.py, coherence/upnp/core/service.py,
+	  coherence/upnp/core/soap_lite.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/media_server.py: * merging all
+	  Coherence-Samsung changes 1073:1081 back into trunk
+
+2009-01-04 13:03  dev
+
+	* ., ChangeLog, Coherence.egg-info, LICENCE, MANIFEST.in, NEWS,
+	  README, bin, coherence, docs, misc, setup.py, tests: rearranging
+	  layout
+
 2008-12-27 10:41  dev
 
 	* coherence/backends/tracker_storage.py: adding transcoding and

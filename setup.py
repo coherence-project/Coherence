@@ -40,31 +40,22 @@ digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this 0.6.0 - The late Pumpkin - release
+New in this %s - Rosenmontag - release
 
  * new MediaServer backends that allow access to
-   * movie trailers from the Apple HD trailers site (http://www.apple.com/trailers)
-   * images hosted at a Gallery site - an open source web based photo album organizer (http://gallery.menalto.com)
-   * Lolcats images from http://icanhascheezburger.com
-   * podcasts from the BBC (http://open.bbc.co.uk/labs/)
-   * videos from TED (http://www.ted.com)
- * an extended Flickr MediaServer backend
-   * enables user-authenticated access to your Flickr account
-   * access to your images and the one of your frieds via an UPnP device
-   * upload an image directly from an UPnP device to your Flickr account
- * transcoding of audio files based on GStreamer for DLNA devices like the PS3, and even XBox 360
- * several plugins for the Nautlilus filemanager (http://www.gnome.org/projects/nautilus)
-   * sharing folders from within Nautilus
-   * upload files from Nautilus to UPnP A/V MediaServers
-   * play files from Nautilus on an UPnP A/V MediaRenderer
- * an experimental plugin for EOG - the Gnome Image Viewer (http://projects.gnome.org/eog/)
- * greatly improved XBox 360 support, including audio transcoding
- * and the usual bugfixes and enhancements
+   * YouTube videos (http://youtube.com)
+   * the MiroGuide for online videos (https://www.miroguide.com)
+   * the videos provided by Shoutcast TV (http://www.shoutcast.com)
+   * the SWR3 podcasts, a German radio station (http://swr3.de)
+ * adjustments to the Ampache backend to work with newer Ampache versions (http://ampache.org)
+ * a lot of 'compatibility' enhancements for different devices
+ * a 'port' to the OpenEmbedded platform (http://www.openembedded.org/),
+   bringing Coherence to the BeagleBoard (http://beagleboard.org/)
+ * and - as every time - the usual bugfixes and enhancements
 
-Kudos go especially to jmsizun, lightyear, superdump for their work
-on the backends and their patient debugging sessions!
+Kudos go especially to jmsizun for his work on the new backends!
 
-""",
+""" % __version__,
     'author':"Frank Scholz",
     'author_email':'coherence@beebits.net',
     'license' : "MIT",
@@ -116,7 +107,7 @@ if haz_setuptools == True:
         YouTubeStore = coherence.backends.youtube_storage:YouTubeStore
         MiroStore = coherence.backends.miro_storage:MiroStore
         ITVStore = coherence.backends.itv_storage:ITVStore
- 
+
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
         GStreamerPlayer = coherence.backends.gstreamer_renderer:GStreamerPlayer
