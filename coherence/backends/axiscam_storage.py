@@ -11,13 +11,9 @@ from sets import Set
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
-import coherence.extern.louie as louie
+from coherence.backend import BackendStore,BackendItem
 
-from coherence.extern.simple_plugin import Plugin
-
-from coherence import log
-
-class AxisCamItem(log.Loggable):
+class AxisCamItem(BackendItem):
     logCategory = 'axis_cam_item'
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
@@ -41,7 +37,6 @@ class AxisCamItem(log.Loggable):
         self.item = UPnPClass(id, parent_id, self.name)
         if isinstance(self.item, Container):
             self.item.childCount = 0
-        self.child_count = 0
         self.children = []
 
         if( len(urlbase) and urlbase[-1] != '/'):
@@ -73,7 +68,6 @@ class AxisCamItem(log.Loggable):
 
     def add_child(self, child, update=False):
         self.children.append(child)
-        self.child_count += 1
         if isinstance(self.item, Container):
             self.item.childCount += 1
         if update == True:
@@ -83,7 +77,6 @@ class AxisCamItem(log.Loggable):
     def remove_child(self, child):
         self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
-            self.child_count -= 1
             if isinstance(self.item, Container):
                 self.item.childCount -= 1
             self.children.remove(child)
@@ -94,6 +87,9 @@ class AxisCamItem(log.Loggable):
             return self.children[start:]
         else:
             return self.children[start:request_count]
+
+    def get_child_count(self):
+        return len(self.children)
 
     def get_id(self):
         return self.id
@@ -122,7 +118,8 @@ class AxisCamItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url
 
-class AxisCamStore(log.Loggable,Plugin):
+
+class AxisCamStore(BackendStore):
 
     logCategory = 'axis_cam_store'
 
@@ -144,8 +141,7 @@ class AxisCamStore(log.Loggable,Plugin):
         self.update_id = 0
         self.store = {}
 
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-
+        self.init_completed()
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]

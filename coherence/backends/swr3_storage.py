@@ -3,7 +3,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2008 Frank Scholz <coherence@beebits.net>
+# Copyright 2008,2009 Frank Scholz <coherence@beebits.net>
 
 from datetime import datetime
 from email.Utils import parsedate_tz
