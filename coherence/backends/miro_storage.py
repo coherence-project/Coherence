@@ -20,13 +20,11 @@ from coherence.backends.youtube_storage import Container, LazyContainer, TestVid
 ROOT_CONTAINER_ID = 0
 CATEGORIES_CONTAINER_ID = 101
 LANGUAGES_CONTAINER_ID = 102
-RECENT_CONTAINER_ID = 103
-TOP_RATED_CONTAINER_ID = 104
-MOST_POPULAR_CONTAINER_ID = 105
+
 
 class VideoItem(BackendItem):
 
-    def __init__(self, store, id, name, description, url, thumbnail_url, parent): #parent, id, external_id, title, url, mimetype, entry):
+    def __init__(self, store, id, name, description, url, thumbnail_url, parent): 
         self.parent = parent
         self.id = id
         self.name = name
@@ -72,7 +70,7 @@ class MiroStore(BackendStore):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4': 1000}
+    wmc_mapping = {'15': ROOT_CONTAINER_ID}
 
     def __init__(self, server, **kwargs):
         self.next_id = 1000
