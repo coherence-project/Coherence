@@ -15,33 +15,25 @@ from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore,BackendItem
 
-from coherence.backends.youtube_storage import Container, LazyContainer, TestVideoProxy
+from coherence.backends.youtube_storage import TestVideoProxy
+from coherence.backends.picasa_storage import Container, LazyContainer
 
 ROOT_CONTAINER_ID = 0
-CATEGORIES_CONTAINER_ID = 101
-LANGUAGES_CONTAINER_ID = 102
-
 
 class VideoItem(BackendItem):
 
-    def __init__(self, store, id, name, description, url, thumbnail_url, parent): 
-        self.parent = parent
-        self.id = id
+    def __init__(self, name, description, url, thumbnail_url, store): 
         self.name = name
         self.duration = None
         self.size = None
         self.mimetype = "video"
+        self.video_url = url
         self.thumbnail_url = thumbnail_url
-        self.description = None
+        self.description = description
         self.date = None
         self.item = None
         self.store = store
-        self.url = self.store.urlbase + str(self.id)
-        #self.location = VideoProxy(url, hash(url),
-        #                           store.proxy_mode,
-        #                           store.cache_directory, store.cache_maxsize, store.buffer_size
-        #                           )
-        self.location = TestVideoProxy(url, hash(url),
+        self.location = TestVideoProxy(self.video_url, hash(self.video_url),
                                    store.proxy_mode,
                                    store.cache_directory, store.cache_maxsize,store.buffer_size
                                    )
@@ -60,9 +52,12 @@ class VideoItem(BackendItem):
         return self.item
 
     def get_path(self):
-        return self.url
+    	url = self.parent.store.urlbase + str(self.storage_id)
+        return url
 
-
+    def get_id(self):
+        return self.storage_id
+    
 
 class MiroStore(BackendStore):
 
@@ -78,6 +73,8 @@ class MiroStore(BackendStore):
         self.name = kwargs.get('name','MiroGuide')
 
         self.language = kwargs.get('language','English')
+
+        self.refresh = int(kwargs.get('refresh',60))*60
 
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
@@ -98,12 +95,13 @@ class MiroStore(BackendStore):
         self.update_id = 0
         self.store = {}
 
-        rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
-        self.store[ROOT_CONTAINER_ID] = rootItem
-        categoriesItem = Container(CATEGORIES_CONTAINER_ID,self,-1, "All by Categories")
-        self.storeItem(rootItem, categoriesItem, CATEGORIES_CONTAINER_ID)
-        languagesItems = Container(LANGUAGES_CONTAINER_ID,self,-1, "All by Languages")
-        self.storeItem(rootItem, languagesItems, LANGUAGES_CONTAINER_ID)
+        rootItem = Container(None, self.name, force_store=self, force_id = ROOT_CONTAINER_ID)
+        self.set_root_item(rootItem)
+
+        categoriesItem = Container(rootItem, "All by Categories")
+        rootItem.add_child(categoriesItem)
+        languagesItem = Container(rootItem, "All by Languages")
+        rootItem.add_child(languagesItem)
         
         self.appendLanguage("Recent Videos", self.language, rootItem, sort='-age', count=15)
         self.appendLanguage("Top Rated", self.language, rootItem, sort='rating', count=15)
@@ -150,30 +148,31 @@ class MiroStore(BackendStore):
         return str(self.__class__).split('.')[-1]
 
 
-    def storeItem(self, parent, item, id):
-        self.store[id] = item
-        parent.add_child(item)
+    def set_root_item(self, item):
+        storage_id = ROOT_CONTAINER_ID
+        self.store[storage_id] = item
+        return storage_id
 
+    def append_item(self, child):
+        storage_id = self.getnextID()
+        self.store[storage_id] = child
+        return storage_id
+
+    def remove_item(self, child):
+        del self.store[child.storage_id]
 
     def appendCategory( self, name, category_id, parent):
-        id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
-        self.storeItem(parent, item, id)
+        item = LazyContainer(parent, name, category_id, self.refresh, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
+        parent.add_child(item, external_id=category_id)
 
     def appendLanguage( self, name, language_id, parent, sort='name', count=0):
-        id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannels, filter="language", filter_value=language_id, per_page=100, sort=sort, count=count)
-        self.storeItem(parent, item, id)
+        item = LazyContainer(parent, name, language_id, self.refresh, self.retrieveChannels, filter="language", filter_value=language_id, per_page=100, sort=sort, count=count)
+        parent.add_child(item, external_id=language_id)
 
     def appendChannel(self, name, channel_id, parent):
-        id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveChannelItems, channel_id=channel_id)
-        self.storeItem(parent, item, id)
+        item = LazyContainer(parent, name, channel_id, self.refresh, self.retrieveChannelItems, channel_id=channel_id)
+        parent.add_child(item, external_id=channel_id)
 
-    def appendVideoEntry(self, name, description, url, thumbnail_url, parent):
-        id = self.getnextID()
-        item = VideoItem (self, id, name, description, url, thumbnail_url, parent)
-        self.storeItem(parent, item, id)
 
     def len(self):
         return len(self.store)
@@ -255,6 +254,7 @@ class MiroStore(BackendStore):
            if (channel.has_key('item')):
                items = channel['item']
            for item in items:
+               #print item
                url = item['url']
                description = item['description']
                name = item['name']
@@ -263,7 +263,8 @@ class MiroStore(BackendStore):
                    #print "Thumbnail:", channel['thumbnail_url']
                    thumbnail_url = channel['thumbnail_url']
                #size = size['size']
-               self.appendVideoEntry(name, description, url, thumbnail_url, parent)
+               item = VideoItem (name, description, url, thumbnail_url, self)
+               parent.add_child(item, external_id=url)
 
         def gotError(error):
             print "ERROR: %s" % error
