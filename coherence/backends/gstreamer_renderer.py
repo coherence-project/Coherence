@@ -506,7 +506,10 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
         #self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'TRANSITIONING')
         #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek')
+        if uri.startswith('http://'):
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
+        else:
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek')
         self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
         if state == gst.STATE_PLAYING:
@@ -573,7 +576,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
     def seek(self, location, old_state):
         self.player.seek(location)
-        self.server.av_transport_server.set_variable(0, 'TransportState', old_state)
+        if old_state != None:
+            self.server.av_transport_server.set_variable(0, 'TransportState', old_state)
 
     def mute(self):
         self.player.mute()
