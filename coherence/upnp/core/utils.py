@@ -89,14 +89,14 @@ def get_ip_address(ifname):
     Thx Lawrence for that patch!
     """
 
+    if have_netifaces:
+        if ifname in netifaces.interfaces():
+            iface = netifaces.ifaddresses(ifname)
+            ifaceadr = iface[netifaces.AF_INET]
+            # we now have a list of address dictionaries, there may be multiple addresses bound
+            return ifaceadr[0]['addr']
     import sys
-    if sys.platform == 'win32':
-        if have_netifaces:
-            if ifname in netifaces.interfaces():
-                iface = netifaces.ifaddresses(ifname)
-                ifaceadr = iface[netifaces.AF_INET]
-                # we now have a list of address dictionaries, there may be multiple addresses bound
-                return ifaceadr[0]['addr']
+    if sys.platform in ('win32','sunos5'):
         return '127.0.0.1'
 
     from os import uname
@@ -118,7 +118,7 @@ def get_ip_address(ifname):
             SIOCGIFADDR,
             struct.pack('256s', ifname[:15])
         )[20:24])
-    except IOError:
+    except:
         return '127.0.0.1'
 
 
