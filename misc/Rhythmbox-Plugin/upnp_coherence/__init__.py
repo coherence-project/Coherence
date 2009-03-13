@@ -14,6 +14,9 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+UPNP_VERSION = 1 # should be actually 2, but due to some %$*! UPnP clients
+                 # out there we have to set that here manually
+
 # For the icon
 import os.path, urllib, gnomevfs, gtk.gdk
 
@@ -66,9 +69,9 @@ class CoherencePlugin(rb.Plugin,log.Loggable):
         from coherence.upnp.devices.media_server import MediaServer
         from MediaStore import MediaStore
         if the_icon:
-            server = MediaServer(self.coherence, MediaStore, no_thread_needed=True, db=self.shell.props.db, plugin=self, icon=the_icon)
+            server = MediaServer(self.coherence, MediaStore, version=UPNP_VERSION, no_thread_needed=True, db=self.shell.props.db, plugin=self, icon=the_icon)
         else:
-            server = MediaServer(self.coherence, MediaStore, no_thread_needed=True, db=self.shell.props.db, plugin=self)
+            server = MediaServer(self.coherence, MediaStore, version=UPNP_VERSION, no_thread_needed=True, db=self.shell.props.db, plugin=self)
 
         self.uuid = str(server.uuid)
 
@@ -78,9 +81,9 @@ class CoherencePlugin(rb.Plugin,log.Loggable):
             from coherence.upnp.devices.media_renderer import MediaRenderer
             from MediaPlayer import RhythmboxPlayer
             if the_icon:
-                MediaRenderer(self.coherence, RhythmboxPlayer, no_thread_needed=True, shell=self.shell, icon=the_icon)
+                MediaRenderer(self.coherence, RhythmboxPlayer, version=UPNP_VERSION, no_thread_needed=True, shell=self.shell, icon=the_icon)
             else:
-                MediaRenderer(self.coherence, RhythmboxPlayer, no_thread_needed=True, shell=self.shell)
+                MediaRenderer(self.coherence, RhythmboxPlayer, version=UPNP_VERSION, no_thread_needed=True, shell=self.shell)
 
         # watch for media servers
         louie.connect(self.detected_media_server,
