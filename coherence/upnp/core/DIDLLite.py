@@ -14,8 +14,11 @@ import os
 import string
 from datetime import datetime
 
-my_namespaces = {'http://purl.org/dc/elements/1.1/' : 'dc',
-                 'urn:schemas-upnp-org:metadata-1-0/upnp/': 'upnp'
+DC_NS = 'http://purl.org/dc/elements/1.1/'
+UPNP_NS = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
+
+my_namespaces = { DC_NS: 'dc',
+                 UPNP_NS: 'upnp'
                  }
 from coherence.extern.et import ET, namespace_map_update, ElementInterface
 namespace_map_update(my_namespaces)
@@ -25,6 +28,12 @@ from coherence.upnp.core import utils
 from coherence.upnp.core import dlna
 
 from coherence import log
+
+
+def qname(tag,ns=''):
+    if len(ns) == 0:
+        return tag
+    return "{%s}%s" % (ns,tag)
 
 
 def is_audio(mimetype):
@@ -336,7 +345,7 @@ class Object(log.Loggable):
         #    ET.SubElement(root, 'dc:title').text = self.title
 
         root.attrib['id'] = str(self.id)
-        ET.SubElement(root, 'dc:title').text = self.title
+        ET.SubElement(root, qname('title',DC_NS)).text = self.title
 
         #if self.title != None:
         #    ET.SubElement(root, 'dc:title').text = self.title
@@ -351,7 +360,7 @@ class Object(log.Loggable):
 
         if kwargs.get('requested_id',None):
             if kwargs.get('requested_id') == '0':
-                t = root.find('dc:title')
+                t = root.find(qname('title',DC_NS))
                 t.text = 'root'
             #if kwargs.get('requested_id') != '0' and kwargs.get('requested_id') != root.attrib['id']:
             if kwargs.get('requested_id') != root.attrib['id']:
@@ -380,10 +389,10 @@ class Object(log.Loggable):
                 else:
                     self.info("Changing ID from %r to %r, with parentID from %r to %r", self.id, root.attrib['id'], self.parentID, root.attrib['parentID'])
 
-        ET.SubElement(root, 'upnp:class').text = self.upnp_class
+        ET.SubElement(root, qname('class',UPNP_NS)).text = self.upnp_class
 
         if kwargs.get('upnp_client','') == 'XBox':
-            u = root.find('upnp:class')
+            u = root.find(qname('class',UPNP_NS))
             if(kwargs.get('parent_container',None) != None and
                 u.text.startswith('object.container')):
                 if kwargs.get('parent_container') in ('14','15','16'):
@@ -398,39 +407,39 @@ class Object(log.Loggable):
             root.attrib['restricted'] = '0'
 
         if self.creator is not None:
-            ET.SubElement(root, 'dc:creator').text = self.creator
+            ET.SubElement(root, qname('creator',DC_NS)).text = self.creator
 
         if self.writeStatus is not None:
-            ET.SubElement(root, 'upnp:writeStatus').text = self.writeStatus
+            ET.SubElement(root, qname('writeStatus',UPNP_NS)).text = self.writeStatus
 
         if self.date is not None:
             if isinstance(self.date, datetime):
-                ET.SubElement(root, 'dc:date').text = self.date.isoformat()
+                ET.SubElement(root, qname('date',DC_NS)).text = self.date.isoformat()
             else:
-                ET.SubElement(root, 'dc:date').text = self.date
+                ET.SubElement(root, qname('date',DC_NS)).text = self.date
         else:
-            ET.SubElement(root, 'dc:date').text = utils.datefaker().isoformat()
+            ET.SubElement(root, qname('date',DC_NS)).text = utils.datefaker().isoformat()
 
         if self.albumArtURI is not None:
-            e = ET.SubElement(root, 'upnp:albumArtURI')
+            e = ET.SubElement(root, qname('albumArtURI',UPNP_NS))
             e.text = self.albumArtURI
             e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
             e.attrib['dlna:profileID'] = 'JPEG_TN'
 
         if self.artist is not None:
-            ET.SubElement(root, 'upnp:artist').text = self.artist
+            ET.SubElement(root, qname('artist',UPNP_NS)).text = self.artist
 
         if self.originalTrackNumber is not None:
-            ET.SubElement(root, 'upnp:originalTrackNumber').text = str(self.originalTrackNumber)
+            ET.SubElement(root, qname('originalTrackNumber',UPNP_NS)).text = str(self.originalTrackNumber)
 
         if self.description is not None:
-            ET.SubElement(root, 'dc:description').text = self.description
+            ET.SubElement(root, qname('description',DC_NS)).text = self.description
 
         if self.longDescription is not None:
-            ET.SubElement(root, 'upnp:longDescription').text = self.longDescription
+            ET.SubElement(root, qname('longDescription',UPNP_NS)).text = self.longDescription
 
         if self.server_uuid is not None:
-            ET.SubElement(root, 'upnp:server_uuid').text = self.server_uuid
+            ET.SubElement(root, qname('server_uuid',UPNP_NS)).text = self.server_uuid
 
         return root
 
@@ -503,7 +512,7 @@ class Item(Object):
         root = Object.toElement(self,**kwargs)
 
         if self.director is not None:
-            ET.SubElement(root, 'upnp:director').text = self.director
+            ET.SubElement(root, qname('director',UPNP_NS)).text = self.director
 
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
@@ -556,16 +565,16 @@ class ImageItem(Item):
         root = Item.toElement(self,**kwargs)
 
         if self.rating is not None:
-            ET.SubElement(root, 'upnp:rating').text = str(self.rating)
+            ET.SubElement(root, qname('rating',UPNP_NS)).text = str(self.rating)
 
         if self.storageMedium is not None:
-            ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
+            ET.SubElement(root, qname('storageMedium',UPNP_NS)).text = self.storageMedium
 
         if self.publisher is not None:
-            ET.SubElement(root, 'dc:publisher').text = self.contributor
+            ET.SubElement(root, qname('publisher',DC_NS)).text = self.contributor
 
         if self.rights is not None:
-            ET.SubElement(root, 'dc:rights').text = self.rights
+            ET.SubElement(root, qname('rights',DC_NS)).text = self.rights
 
         return root
 
@@ -576,7 +585,7 @@ class Photo(ImageItem):
     def toElement(self,**kwargs):
         root = ImageItem.toElement(self,**kwargs)
         if self.album is not None:
-            ET.SubElement(root, 'upnp:album').text = self.album
+            ET.SubElement(root, qname('album',UPNP_NS)).text = self.album
         return root
 
 class AudioItem(Item):
@@ -599,19 +608,19 @@ class AudioItem(Item):
         root = Item.toElement(self,**kwargs)
 
         if self.genre is not None:
-            ET.SubElement(root, 'upnp:genre').text = self.genre
+            ET.SubElement(root, qname('genre',UPNP_NS)).text = self.genre
 
         if self.publisher is not None:
-            ET.SubElement(root, 'dc:publisher').text = self.publisher
+            ET.SubElement(root, qname('publisher',DC_NS)).text = self.publisher
 
         if self.language is not None:
-            ET.SubElement(root, 'dc:language').text = self.language
+            ET.SubElement(root, qname('language',DC_NS)).text = self.language
 
         if self.relation is not None:
-            ET.SubElement(root, 'dc:relation').text = self.relation
+            ET.SubElement(root, qname('relation',DC_NS)).text = self.relation
 
         if self.rights is not None:
-            ET.SubElement(root, 'dc:rights').text = self.rights
+            ET.SubElement(root, qname('rights',DC_NS)).text = self.rights
 
         return root
 
@@ -639,16 +648,16 @@ class MusicTrack(AudioItem):
         root = AudioItem.toElement(self,**kwargs)
 
         if self.album is not None:
-            ET.SubElement(root, 'upnp:album').text = self.album
+            ET.SubElement(root, qname('album',UPNP_NS)).text = self.album
 
         if self.playlist is not None:
-            ET.SubElement(root, 'upnp:playlist').text = self.playlist
+            ET.SubElement(root, qname('playlist',UPNP_NS)).text = self.playlist
 
         if self.storageMedium is not None:
-            ET.SubElement(root, 'upnp:storageMedium').text = self.storageMedium
+            ET.SubElement(root, qname('storageMedium',UPNP_NS)).text = self.storageMedium
 
         if self.contributor is not None:
-            ET.SubElement(root, 'dc:contributor').text = self.contributor
+            ET.SubElement(root, qname('contributor',DC_NS)).text = self.contributor
 
         return root
 
@@ -699,12 +708,12 @@ class Container(Object):
             root.attrib['childCount'] = str(self.childCount)
 
         if self.createClass is not None:
-            ET.SubElement(root, 'upnp:createclass').text = self.createClass
+            ET.SubElement(root, qname('createclass',UPNP_NS)).text = self.createClass
 
         if not isinstance(self.searchClass, (list, tuple)):
             self.searchClass = [self.searchClass]
         for i in self.searchClass:
-            sc = ET.SubElement(root, 'upnp:searchClass')
+            sc = ET.SubElement(root, qname('searchClass',UPNP_NS))
             sc.attrib['includeDerived'] = '1'
             sc.text = i
 
