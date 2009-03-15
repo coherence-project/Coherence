@@ -219,7 +219,6 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
 
     def __init__(self,controlpoint):
-        self.controlpoint = controlpoint
         self.bus = dbus.SessionBus()
         self.bus_name = dbus.service.BusName(BUS_NAME, self.bus)
         dbus.service.Object.__init__(self, self.bus_name, OBJECT_PATH)
@@ -227,6 +226,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         self.debug("D-Bus pontoon %r %r %r" % (self, self.bus, self.bus_name))
 
         self.devices = []
+        self.controlpoint = controlpoint
 
         for device in self.controlpoint.get_devices():
             self.devices.append(DBusDevice(device,self.bus_name))

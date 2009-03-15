@@ -240,7 +240,9 @@ class MSRoot(resource.Resource, log.Loggable):
                     request.content = StringIO()
 
             if hasattr(ch, "location"):
-                if isinstance(ch.location, ReverseProxyResource):
+                print "we have a location", isinstance(ch.location, resource.Resource)
+                if(isinstance(ch.location, ReverseProxyResource) or
+                   isinstance(ch.location, resource.Resource)):
                     self.info('getChild proxy %s to %s' % (name, ch.location.uri))
                     new_id,_,_ = self.server.connection_manager_server.add_connection('',
                                                                                 'Output',

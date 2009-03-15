@@ -145,6 +145,75 @@ class DataSink(gst.Element, log.Loggable):
 
 gobject.type_register(DataSink)
 
+class GStreamerPipeline(resource.Resource, log.Loggable):
+    logCategory = 'gstreamer'
+    addSlash = True
+
+    def __init__(self,pipeline,mimetype):
+        self.uri = pipeline
+        self.contentType = mimetype
+        resource.Resource.__init__(self)
+
+    def start(self,request=None):
+        self.info("GStreamerPipeline start %r %r" % (request,self.uri))
+        self.pipeline = gst.parse_launch(
+                            self.uri)
+        sink = DataSink(request=request)
+        self.pipeline.add(sink)
+        enc = self.pipeline.get_by_name('enc')
+        enc.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+        d = request.notifyFinish()
+        d.addBoth(self.requestFinished)
+
+    def getChild(self, name, request):
+        self.info('getChild %s, %s' % (name, request))
+        return self
+
+    def render_GET(self,request):
+        self.info('render GET %r' % (request))
+        request.setResponseCode(200)
+        if hasattr(self,'contentType'):
+            request.setHeader('Content-Type', self.contentType)
+        request.write('')
+
+        headers = request.getAllHeaders()
+        if('connection' in headers and
+           headers['connection'] == 'close'):
+            pass
+
+        self.start(request)
+        return server.NOT_DONE_YET
+
+    def render_HEAD(self,request):
+        self.info('render HEAD %r' % (request))
+        request.setResponseCode(200)
+        request.setHeader('Content-Type', self.contentType)
+        request.write('')
+
+    def requestFinished(self,result):
+        self.info("requestFinished %r" % result)
+        """ we need to find a way to destroy the pipeline here
+        """
+        #from twisted.internet import reactor
+        #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
+        gobject.idle_add(self.cleanup)
+
+    def on_message(self,bus,message):
+        t = message.type
+        print "on_message", t
+        if t == gst.MESSAGE_ERROR:
+            #err, debug = message.parse_error()
+            #print "Error: %s" % err, debug
+            self.cleanup()
+        elif t == gst.MESSAGE_EOS:
+            self.cleanup()
+
+    def cleanup(self):
+        self.pipeline.set_state(gst.STATE_NULL)
+
+
 class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
     addSlash = True

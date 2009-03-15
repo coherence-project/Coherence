@@ -304,6 +304,7 @@ if __name__ == '__main__':
     #print config
 
     if(config.get('use_dbus', 'no') == 'yes' or
+       config.get('glib', 'no') == 'yes' or
        config.get('transcoding', 'no') == 'yes'):
         try:
             from twisted.internet import glib2reactor
@@ -328,7 +329,14 @@ if __name__ == '__main__':
             for pair in plugin_conf:
                 pair = pair.split(':',1)
                 if len(pair) == 2:
-                    plugin[pair[0]] = pair[1]
+                    pair[0] = pair[0].strip()
+                    if pair[0] in plugin:
+                        if not isinstance(plugin[pair[0]],list):
+                            new_list = [plugin[pair[0]]]
+                            plugin[pair[0]] = new_list
+                        plugin[pair[0]].append(pair[1])
+                    else:
+                        plugin[pair[0]] = pair[1]
             try:
                 plugins.append(plugin)
             except AttributeError:
