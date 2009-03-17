@@ -29,6 +29,7 @@ from coherence.upnp.core.utils import ReverseProxyResource
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
+from coherence.upnp.services.servers.scheduled_recording_server import ScheduledRecordingServer
 from coherence.upnp.services.servers.media_receiver_registrar_server import MediaReceiverRegistrarServer
 from coherence.upnp.services.servers.media_receiver_registrar_server import FakeMediaReceiverRegistrarBackend
 
@@ -549,6 +550,12 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         except LookupError,msg:
             self.warning( 'MediaReceiverRegistrarServer (optional)', msg)
 
+        try:
+            self.scheduled_recording_server = ScheduledRecordingServer(self)
+            self._services.append(self.scheduled_recording_server)
+        except LookupError,msg:
+            self.info( 'ScheduledRecordingServer', msg)
+
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:
             upnp_init()
@@ -581,6 +588,8 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('ContentDirectory', self.content_directory_server)
+        if hasattr(self,"scheduled_recording_server"):
+            self.web_resource.putChild('ScheduledRecording', self.scheduled_recording_server)
         if hasattr(self,"media_receiver_registrar_server"):
             self.web_resource.putChild('X_MS_MediaReceiverRegistrar', self.media_receiver_registrar_server)
 

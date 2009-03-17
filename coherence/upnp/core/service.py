@@ -706,7 +706,9 @@ class ServiceServer(log.Loggable):
                     self.info('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
                     continue
                 else:
-                    self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
+                    if((hasattr(self,'implementation') and self.implementation == 'required') or
+                        not hasattr(self,'implementation')):
+                        self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
                     raise LookupError,"missing callback"
 
             new_action = action.Action(self, name, implementation, arguments)

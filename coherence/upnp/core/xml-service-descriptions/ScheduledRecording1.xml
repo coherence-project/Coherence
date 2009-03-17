@@ -9,7 +9,7 @@ Note:
 This file uses tabs (not spaces) for block indentation.
 Any updates to this file should maintain this convention.
 This includes disabling any automatic tab-to-space conversion
-feature provided by your editor. 
+feature provided by your editor.
 ================================================================-->
 <scpd>
 	<serviceStateTable>
@@ -109,7 +109,7 @@ feature provided by your editor.
 			<dataType>string</dataType>
 		</stateVariable>
 	</serviceStateTable>
-	
+
 	<actionList>
 		<action>
 			<name>GetSortCapabilities</name>
@@ -472,8 +472,7 @@ feature provided by your editor.
 				<argument>
 					<name>UpdateID</name>
 					<direction>out</direction>
-					<relatedStateVariable>StateUpdateID
-					</relatedStateVariable>
+					<relatedStateVariable>StateUpdateID</relatedStateVariable>
 				</argument>
 			</argumentList>
 		</action>

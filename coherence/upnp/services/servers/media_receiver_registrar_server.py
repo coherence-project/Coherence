@@ -38,6 +38,8 @@ class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):
 
 class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
 
+    implementation = 'optional'
+
     def __init__(self, device, backend=None):
         self.device = device
         if backend == None:
