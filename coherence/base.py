@@ -258,7 +258,9 @@ class Coherence(log.Loggable):
         else:
             _debug = '*:%d' % log.human2level(logmode)
         try:
-            logfile = unicode(config.get('logging').get('logfile',None))
+            logfile = config.get('logging').get('logfile',None)
+            if logfile != None:
+                logfile = unicode(logfile)
         except (KeyError,AttributeError,TypeError):
             logfile = config.get('logfile', None)
         log.init(logfile, _debug)
