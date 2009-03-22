@@ -22,7 +22,7 @@ from urlparse import urlsplit
 import zlib
 
 from coherence.backend import BackendStore,BackendItem
-from coherence.backends.youtube_storage import Container
+
 
 ROOT_CONTAINER_ID = 0
 
@@ -107,6 +107,62 @@ class ProxyStream(utils.ReverseProxyResource):
             d = request.notifyFinish()
             d.addBoth(self.requestFinished)
         return utils.ReverseProxyResource.render(self, request)
+
+class Container(BackendItem):
+
+    def __init__(self, id, store, parent_id, title):
+        self.url = store.urlbase+str(id)
+        self.parent_id = parent_id
+        self.id = id
+        self.name = title
+        self.mimetype = 'directory'
+        self.update_id = 0
+        self.children = []
+        self.store = store
+
+        self.item = DIDLLite.Container(self.id, self.parent_id, self.name)
+        self.item.childCount = 0
+
+        self.sorted = False
+
+    def add_child(self, child):
+        id = child.id
+        if isinstance(child.id, basestring):
+            _,id = child.id.split('.')
+        if self.children is None:
+            self.children = []
+        self.children.append(child)
+        self.item.childCount += 1
+        self.sorted = False
+
+    def get_children(self, start=0, end=0):
+        if self.sorted == False:
+            def childs_sort(x,y):
+                r = cmp(x.name,y.name)
+                return r
+
+            self.children.sort(cmp=childs_sort)
+            self.sorted = True
+        if end != 0:
+            return self.children[start:end]
+        return self.children[start:]
+
+    def get_child_count(self):
+        if self.children is None:
+            return 0
+        return len(self.children)
+
+    def get_path(self):
+        return self.url
+
+    def get_item(self):
+        return self.item
+
+    def get_name(self):
+        return self.name
+
+    def get_id(self):
+        return self.id
 
 
 class ITVItem(BackendItem):

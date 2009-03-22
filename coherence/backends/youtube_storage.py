@@ -22,10 +22,9 @@ from urlparse import urlsplit
 
 from gdata.youtube.service import YouTubeService
 from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,YoutubePlaylistIE
+from coherence.backends.picasa_storage import Container, LazyContainer
 
 ROOT_CONTAINER_ID = 0
-MY_PLAYLISTS_CONTAINER_ID = 100
-MY_SUBSCRIPTIONS_CONTAINER_ID = 101
 MPEG4_MIMETYPE = 'video/mp4'
 MPEG4_EXTENSION = 'mp4'
 
@@ -548,9 +547,7 @@ class VideoProxy(utils.ReverseProxyResource, log.Loggable):
 
 class YoutubeVideoItem(BackendItem):
 
-    def __init__(self, store, parent, id, external_id, title, url, mimetype, entry):
-        self.parent = parent
-        self.id = id
+    def __init__(self, external_id, title, url, mimetype, entry, store):
         self.external_id = external_id
         self.name = title
         self.duration = None
@@ -560,7 +557,6 @@ class YoutubeVideoItem(BackendItem):
         self.date = None
         self.item = None
         self.store = store
-        self.url = self.store.urlbase + str(self.id) + "." + MPEG4_EXTENSION
 
         def extractDataURL(url, quality):
             if (quality == 'hd'):
@@ -605,7 +601,7 @@ class YoutubeVideoItem(BackendItem):
 
     def get_item(self):
         if self.item == None:
-            self.item = DIDLLite.VideoItem(self.id, self.parent.id, self.name)
+            self.item = DIDLLite.VideoItem(self.storage_id, self.parent.id, self.name)
             self.item.description = self.description
             self.item.date = self.date
 
@@ -619,114 +615,12 @@ class YoutubeVideoItem(BackendItem):
         return self.item
 
     def get_path(self):
+        self.url = self.store.urlbase + str(self.storage_id) + "." + MPEG4_EXTENSION
         return self.url
-
-
-class Container(BackendItem):
-
-    def __init__(self, id, store, parent_id, title):
-        self.url = store.urlbase+str(id)
-        self.parent_id = parent_id
-        self.id = id
-        self.name = title
-        self.mimetype = 'directory'
-        self.update_id = 0
-        self.children = []
-        self.store = store
-
-        self.item = DIDLLite.Container(self.id, self.parent_id, self.name)
-        self.item.childCount = 0
-
-        self.sorted = False
-
-    def add_child(self, child):
-        id = child.id
-        if isinstance(child.id, basestring):
-            _,id = child.id.split('.')
-        if self.children is None:
-            self.children = []
-        self.children.append(child)
-        self.item.childCount += 1
-        self.sorted = False
-
-    def get_children(self, start=0, end=0):
-        if self.sorted == False:
-            def childs_sort(x,y):
-                r = cmp(x.name,y.name)
-                return r
-
-            self.children.sort(cmp=childs_sort)
-            self.sorted = True
-        if end != 0:
-            return self.children[start:end]
-        return self.children[start:]
-
-    def get_child_count(self):
-        if self.children is None:
-            return 0
-        return len(self.children)
-
-    def get_path(self):
-        return self.url
-
-    def get_item(self):
-        return self.item
-
-    def get_name(self):
-        return self.name
 
     def get_id(self):
-        return self.id
-
-
-class LazyContainer(Container):
-
-    def __init__(self, id, store, parent_id, title, childrenRetriever=None, **kwargs):
-        Container.__init__(self, id, store, parent_id, title)
-        self.children = []
-
-        self.childrenRetrievingNeeded = True
-        self.childrenRetrievingOffset = 0
-        self.childrenRetrievingDeferred = None
-        self.childrenRetriever = childrenRetriever
-        self.childrenRetriever_params = kwargs
-        self.childrenRetriever_params['parent']=self
-        self.has_pages = (self.childrenRetriever_params.has_key('per_page'))
-
-    def return_items(self, start, request_count):
-        if self.children == None:
-            return  []
-        if request_count == 0:
-            return self.children[start:]
-        else:
-            return self.children[start:request_count]
-
-    def get_children(self,start=0,request_count=0, previous_deferred=None):
-
-        def items_retrieved(result, source_deferred):
-            self.childrenRetrievingOffset = len(self.children)
-            if self.childrenRetrievingNeeded is True:
-                return self.get_children(self.childrenRetrievingOffset, request_count)
-            return []
-
-        def all_items_retrieved (result):
-            #print "All items retrieved!"
-            return Container.get_children(self, start, request_count)
-
-        if self.childrenRetrievingNeeded is True:
-            #print "children Retrieving IS Needed (offset is %d)" % start
-            if self.childrenRetriever is not None:
-                if self.has_pages is True:
-                    self.childrenRetriever_params['offset'] = start
-                d = self.childrenRetriever(**self.childrenRetriever_params)
-                self.childrenRetrievingNeeded = False
-                d.addCallback(items_retrieved, d)
-                if start == 0:
-                    d.addCallback(all_items_retrieved)
-                return d
-
-        return Container.get_children(self, start, request_count)
-
+        return self.storage_id
+    
 
 class YouTubeStore(BackendStore):
 
@@ -746,6 +640,7 @@ class YouTubeStore(BackendStore):
         self.locale = kwargs.get('location',None)
         self.quality = kwargs.get('quality','sd')
         self.showStandardFeeds = (kwargs.get('standard_feeds','True') in ['Yes','yes','true','True','1'])
+        self.refresh = int(kwargs.get('refresh',60))*60
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
         try:
@@ -765,10 +660,8 @@ class YouTubeStore(BackendStore):
         self.update_id = 0
         self.store = {}
 
-        rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
-        self.store[ROOT_CONTAINER_ID] = rootItem
-
-
+        rootItem = Container(None, self.name, force_store=self, force_id = ROOT_CONTAINER_ID)
+        self.set_root_item(rootItem)
 
         if (self.showStandardFeeds):
             standardfeeds_uri = 'http://gdata.youtube.com/feeds/api/standardfeeds'
@@ -789,10 +682,10 @@ class YouTubeStore(BackendStore):
             userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
             self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
             self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)
-            playlistsItem = LazyContainer(MY_PLAYLISTS_CONTAINER_ID, self, rootItem.get_id(), 'My Playlists', self.retrievePlaylistFeeds)
-            self.storeItem(rootItem, playlistsItem, MY_PLAYLISTS_CONTAINER_ID)
-            subscriptionsItem = LazyContainer(MY_SUBSCRIPTIONS_CONTAINER_ID, self, rootItem.get_id(), 'My Subscriptions', self.retrieveSubscriptionFeeds)
-            self.storeItem(rootItem, subscriptionsItem, MY_SUBSCRIPTIONS_CONTAINER_ID)
+            playlistsItem = LazyContainer(rootItem, 'My Playlists', None, self.refresh, self.retrievePlaylistFeeds)
+            rootItem.add_child(playlistsItem)
+            subscriptionsItem = LazyContainer(rootItem, 'My Subscriptions', None, self.refresh, self.retrieveSubscriptionFeeds)
+            rootItem.add_child(subscriptionsItem)
 
         self.init_completed()
 
@@ -801,26 +694,32 @@ class YouTubeStore(BackendStore):
         return str(self.__class__).split('.')[-1]
 
 
-    def storeItem(self, parent, item, id):
-        self.store[id] = item
-        parent.add_child(item)
+    def set_root_item(self, item):
+        storage_id = ROOT_CONTAINER_ID
+        self.store[storage_id] = item
+        return storage_id
 
+    def append_item(self, child):
+        storage_id = self.getnextID()
+        self.store[storage_id] = child
+        return storage_id
+
+    def remove_item(self, child):
+        del self.store[child.storage_id]
 
     def appendFeed( self, name, feed_uri, parent):
-        id = self.getnextID()
-        item = LazyContainer(id, self, parent.get_id(), name, self.retrieveFeedItems, feed_uri=feed_uri)
-        self.storeItem(parent, item, id)
+        item = LazyContainer(parent, name, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
+        parent.add_child(item, external_id=feed_uri)
 
 
     def appendVideoEntry(self, entry, parent):
-        id = self.getnextID()
         external_id = entry.id.text.split('/')[-1]
         title = entry.media.title.text
         url = entry.media.player.url
         mimetype = MPEG4_MIMETYPE
         #mimetype = 'video/mpeg'
-        item = YoutubeVideoItem (self, parent, id, external_id, title, url, mimetype, entry)
-        self.storeItem(parent, item, id)
+        item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
+        parent.add_child(item, external_id=external_id)
 
     def len(self):
         return len(self.store)
@@ -915,10 +814,10 @@ class YouTubeStore(BackendStore):
            for playlist_video_entry in playlist_video_feed.entry:
                title = playlist_video_entry.title.text
                playlist_id = playlist_video_entry.id.text.split("/")[-1] # FIXME find better way to retrieve the playlist ID
-               id = self.getnextID()
-               item = LazyContainer(id, self, parent.get_id(), title, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
-               self.storeItem(parent, item, id)
-
+               
+               item = LazyContainer(parent, title, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
+               parent.add_child(item, external_id=playlist_id)
+               
         def gotError(error):
             self.warning("ERROR: %s" % error)
 
@@ -938,10 +837,10 @@ class YouTubeStore(BackendStore):
                title = entry.title.text
                uri = entry.id.text
                name = "[%s] %s" % (type,title)
-               id = self.getnextID()
-               item = LazyContainer(id, self, parent.get_id(), name, self.retrieveSubscriptionFeedItems, uri=uri)
-               self.storeItem(parent, item, id)
-
+               
+               item = LazyContainer(parent, name, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
+               parent.add_child(item, external_id=uri)
+               
         def gotError(error):
             self.warning("ERROR: %s" % error)
 

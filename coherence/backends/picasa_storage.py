@@ -62,8 +62,11 @@ class Container(BackendItem):
         self.sorted = False
         if update == True:
             self.update_id += 1
+        
         child.storage_id = id
         child.parent = self
+        child.url = self.store.urlbase + str(id)
+        
         if external_id is not None:
             child.external_id = external_id
             self.children_by_external_id[external_id] = child
@@ -206,14 +209,25 @@ class LazyContainer(Container):
             self.update_id += 1
         self.last_updated = time.time()
         self.retrieved_children = {}
+    
+    def retrieve_children(self, start=0):
 
-    def retrieve_children(self, start=0, request_count=0):  
         def items_retrieved(result, source_deferred):
-            childrenRetrievingOffset = len(self.children)
+            childrenRetrievingOffset = len(self.retrieved_children)
             if self.childrenRetrievingNeeded is True:
-                return retrieve_children(childrenRetrievingOffset, request_count)
-            return self.children
+                return self.retrieve_children(childrenRetrievingOffset)
+            return self.retrieved_children
         
+        self.childrenRetrievingNeeded = False
+        if self.has_pages is True:
+            self.childrenRetriever_params['offset'] = start
+        d = self.childrenRetriever(**self.childrenRetriever_params)
+        d.addCallback(items_retrieved, d)
+        return d
+
+
+    def retrieve_all_children(self, start=0, request_count=0):
+           
         def all_items_retrieved (result):
             #print "All items retrieved!"
             self.end_children_retrieval_campaign(True)
@@ -229,13 +243,9 @@ class LazyContainer(Container):
         #if ((self.last_updated == 0) and (self.refresh > 0)):
         #    task.LoopingCall(self.retrieve_children,0,0).start(self.refresh, now=False)
         
-        self.start_children_retrieval_campaign()
+        self.start_children_retrieval_campaign()        
         if self.childrenRetriever is not None:
-            if self.has_pages is True:
-                self.childrenRetriever_params['offset'] = start
-            d = self.childrenRetriever(**self.childrenRetriever_params)
-            self.childrenRetrievingNeeded = False
-            d.addCallback(items_retrieved, d)
+            d = self.retrieve_children(start)
             if start == 0:
                 d.addCallbacks(all_items_retrieved, error_while_retrieving_items)
             return d
@@ -256,7 +266,7 @@ class LazyContainer(Container):
 
         if self.childrenRetrievingNeeded is True:
             #print "children Retrieving IS Needed (offset is %d)" % start
-            return self.retrieve_children()
+            return self.retrieve_all_children()
         else:
             return Container.get_children(self, start, request_count)
 
@@ -296,6 +306,8 @@ class PicasaPhotoItem(BackendItem):
         self.photo_url = photo.content.src
         self.thumbnail_url = photo.media.thumbnail[0].url
         
+        self.url = None
+        
         self.location = PicasaProxy(self.photo_url)
 
     def replace_by(self, item):
@@ -320,7 +332,7 @@ class PicasaPhotoItem(BackendItem):
         return self.item
 
     def get_path(self):
-        return self.parent.store.urlbase + str(self.get_id())
+        return self.url
 
     def get_id(self):
         return self.storage_id

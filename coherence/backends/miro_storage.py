@@ -27,12 +27,13 @@ class VideoItem(BackendItem):
         self.duration = None
         self.size = None
         self.mimetype = "video"
+        self.url = None
         self.video_url = url
         self.thumbnail_url = thumbnail_url
         self.description = description
         self.date = None
         self.item = None
-        self.store = store
+
         self.location = TestVideoProxy(self.video_url, hash(self.video_url),
                                    store.proxy_mode,
                                    store.cache_directory, store.cache_maxsize,store.buffer_size
@@ -52,8 +53,7 @@ class VideoItem(BackendItem):
         return self.item
 
     def get_path(self):
-    	url = self.parent.store.urlbase + str(self.storage_id)
-        return url
+        return self.url
 
     def get_id(self):
         return self.storage_id
@@ -135,7 +135,7 @@ class MiroStore(BackendStore):
             for language in languages:
                 name = language['name'].encode('ascii', 'strict')
                 language_url = language['url'].encode('ascii', 'strict')
-                self.appendLanguage(name, name, languagesItems)
+                self.appendLanguage(name, name, languagesItem)
 
         languages_url = "https://www.miroguide.com/api/list_languages"
         d2 = utils.getPage(languages_url)
