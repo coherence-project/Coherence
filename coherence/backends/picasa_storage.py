@@ -16,6 +16,7 @@ from twisted.internet import task
 from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore,BackendItem
+from coherence import log
 
 from urlparse import urlsplit
 
@@ -118,8 +119,9 @@ class Container(BackendItem):
         return self.update_id
 
 
-class LazyContainer(Container):
-
+class LazyContainer(Container, log.Loggable):
+    logCategory = 'lazyContainer'
+    
     def __init__(self, parent, title, external_id=None, refresh=0, childrenRetriever=None, **kwargs):
         Container.__init__(self, parent, title)
         
@@ -159,7 +161,7 @@ class LazyContainer(Container):
         # Phase 1
         # let's classify the item between items to be removed,
         # to be updated or to be added
-        print("Refresh pass 1:", len(new_children), len(old_children))
+        self.debug("Refresh pass 1:%d %d" % (len(new_children), len(old_children)))
         for id,item in old_children.items():
             children_to_be_removed[id] = item
         for id,item in new_children.items():
@@ -173,7 +175,7 @@ class LazyContainer(Container):
         # Phase 2
         # Now, we remove, update or add the relevant items
         # to the list of items            
-        print("Refresh pass 2:", len(children_to_be_removed), len(children_to_be_replaced), len(children_to_be_added))
+        self.debug("Refresh pass 2: %d %d %d" % (len(children_to_be_removed), len(children_to_be_replaced), len(children_to_be_added)))
         # Remove relevant items from Container children
         for id,item in children_to_be_removed.items():
             self.remove_child(item, external_id=id, update=False)
@@ -196,13 +198,13 @@ class LazyContainer(Container):
         self.update_id += 1
 
     def start_children_retrieval_campaign(self):
-        print "start_update_campaign"
+        #print "start_update_campaign"
         self.last_updated = time.time()
         self.retrieved_children = {}
         self.children_retrieval_campaign_in_progress = True
         
     def end_children_retrieval_campaign(self, success=True):
-        print "end_update_campaign"
+        #print "end_update_campaign"
         self.children_retrieval_campaign_in_progress = False
         if success is True:
             self.update_children(self.retrieved_children, self.children_by_external_id)          
@@ -261,7 +263,7 @@ class LazyContainer(Container):
         delay_since_last_updated = current_time - self.last_updated
         period = self.refresh
         if (period > 0) and (delay_since_last_updated > period):
-            print "Last update is older than %d s -> update data" % period
+            self.info("Last update is older than %d s -> update data" % period)
             self.childrenRetrievingNeeded = True
 
         if self.childrenRetrievingNeeded is True:
