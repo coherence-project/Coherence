@@ -16,9 +16,7 @@ from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendStore,BackendItem
 
 from coherence.backends.youtube_storage import TestVideoProxy
-from coherence.backends.picasa_storage import Container, LazyContainer
-
-ROOT_CONTAINER_ID = 0
+from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
 
 class VideoItem(BackendItem):
 
@@ -59,17 +57,15 @@ class VideoItem(BackendItem):
         return self.storage_id
     
 
-class MiroStore(BackendStore):
+class MiroStore(AbstractBackendStore):
 
     logCategory = 'miro_store'
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'15': ROOT_CONTAINER_ID}
-
     def __init__(self, server, **kwargs):
-        self.next_id = 1000
-        self.config = kwargs
+        AbstractBackendStore.__init__(self, server, **kwargs)
+         
         self.name = kwargs.get('name','MiroGuide')
 
         self.language = kwargs.get('language','English')
@@ -86,16 +82,7 @@ class MiroStore(BackendStore):
         self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
         self.buffer_size = kwargs.get('buffer_size', 750000)
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
-        self.server = server
-        self.update_id = 0
-        self.store = {}
-
-        rootItem = Container(None, self.name, force_store=self, force_id = ROOT_CONTAINER_ID)
+        rootItem = Container(None, self.name)
         self.set_root_item(rootItem)
 
         categoriesItem = Container(rootItem, "All by Categories")
@@ -147,20 +134,6 @@ class MiroStore(BackendStore):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-
-    def set_root_item(self, item):
-        storage_id = ROOT_CONTAINER_ID
-        self.store[storage_id] = item
-        return storage_id
-
-    def append_item(self, child):
-        storage_id = self.getnextID()
-        self.store[storage_id] = child
-        return storage_id
-
-    def remove_item(self, child):
-        del self.store[child.storage_id]
-
     def appendCategory( self, name, category_id, parent):
         item = LazyContainer(parent, name, category_id, self.refresh, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
         parent.add_child(item, external_id=category_id)
@@ -174,24 +147,6 @@ class MiroStore(BackendStore):
         parent.add_child(item, external_id=channel_id)
 
 
-    def len(self):
-        return len(self.store)
-
-    def get_by_id(self,id):
-        if isinstance(id, basestring):
-            id = id.split('@',1)
-            id = id[0]
-        try:
-            return self.store[int(id)]
-        except (ValueError,KeyError):
-            pass
-        return None
-
-    def getnextID(self):
-        ret = self.next_id
-        self.next_id += 1
-        return ret
-
     def upnp_init(self):
         self.current_connection_id = None
 
@@ -200,6 +155,8 @@ class MiroStore(BackendStore):
                0, 'SourceProtocolInfo',
                ['http-get:*:%s:*' % 'video/'], #FIXME put list of all possible video mimetypes
                default=True)
+
+        self.wmc_mapping = {'15': self.get_root_id()}
 
 
     def retrieveChannels (self, parent, filter, filter_value, per_page=100, offset=0, count=0, sort='name'):

@@ -24,22 +24,21 @@ import gdata.photos.service
 import gdata.media
 import gdata.geo
 
-ROOT_CONTAINER_ID = 0
 
 class Container(BackendItem):
 
-    def __init__(self, parent, title, force_store=None, force_id=0):
+    def __init__(self, parent, title):
         BackendItem.__init__(self)
         
         self.parent = parent
         if self.parent is not None:
             self.parent_id = self.parent.get_id()
-            self.store = parent.store
-            self.storage_id = self.store.getnextID()
         else:
             self.parent_id = -1 
-            self.store = force_store
-            self.storage_id = force_id     
+        
+        self.store = None
+        self.storage_id = None     
+        
         self.name = title
         self.mimetype = 'directory'
         
@@ -49,23 +48,20 @@ class Container(BackendItem):
                 
         self.update_id = 0
         
-        self.item = DIDLLite.Container(self.storage_id, self.parent_id, self.name)
-        self.item.childCount = 0
+        self.item = None
 
         self.sorted = False
+
 
     def add_child(self, child, external_id = None, update=True):
         id = self.store.append_item(child)
         if self.children is None:
             self.children = []
         self.children.append(child)
-        self.item.childCount += 1
         self.sorted = False
         if update == True:
             self.update_id += 1
         
-        child.storage_id = id
-        child.parent = self
         child.url = self.store.urlbase + str(id)
         
         if external_id is not None:
@@ -76,9 +72,6 @@ class Container(BackendItem):
     def remove_child(self, child, external_id = None, update=True):
         self.children.remove(child)
         self.store.remove_item(child)
-        self.item.childCount -= 1
-        child.parent = None
-        child.storage_id = None
         if update == True:
             self.update_id += 1
         if external_id is not None:
@@ -107,6 +100,9 @@ class Container(BackendItem):
         return self.store.urlbase + str(self.storage_id)
 
     def get_item(self):
+        if self.item is None:
+            self.item = DIDLLite.Container(self.storage_id, self.parent_id, self.name)
+        self.item.childCount = len(self.children)
         return self.item
 
     def get_name(self):
@@ -273,6 +269,52 @@ class LazyContainer(Container, log.Loggable):
             return Container.get_children(self, start, request_count)
 
 
+ROOT_CONTAINER_ID = 0
+SEED_ITEM_ID = 1000
+
+class AbstractBackendStore (BackendStore):
+    def __init__(self, server, **kwargs):
+        BackendStore.__init__(self, server, **kwargs)
+        self.next_id = SEED_ITEM_ID
+        self.store = {}
+
+    def len(self):
+        return len(self.store)
+
+    def set_root_item(self, item):
+        return self.append_item(item, storage_id = ROOT_CONTAINER_ID)
+    
+    def get_root_id(self):
+        return ROOT_CONTAINER_ID
+
+    def append_item(self, item, storage_id=None):
+        if storage_id is None:
+            storage_id = self.getnextID()
+        self.store[storage_id] = item
+        item.storage_id = storage_id
+        item.store = self       
+        return storage_id
+
+    def remove_item(self, item):
+        item.storage_id = -1
+        item.store = None 
+        del self.store[child.storage_id]
+
+    def get_by_id(self,id):
+        if isinstance(id, basestring):
+            id = id.split('@',1)
+            id = id[0].split('.')[0]
+        try:
+            return self.store[int(id)]
+        except (ValueError,KeyError):
+            pass
+        return None
+
+    def getnextID(self):
+        ret = self.next_id
+        self.next_id += 1
+        return ret
+    
 
 class PicasaProxy(ReverseProxyResource):
 
@@ -339,18 +381,16 @@ class PicasaPhotoItem(BackendItem):
     def get_id(self):
         return self.storage_id
 
-
-class PicasaStore(BackendStore):
+                
+class PicasaStore(AbstractBackendStore):
 
     logCategory = 'picasa_store'
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'16': ROOT_CONTAINER_ID}
-
-    def __init__(self, server, **kwargs):
-        self.next_id = 1000
-        self.config = kwargs
+    def __init__(self, server, **kwargs):       
+        AbstractBackendStore.__init__(self, server, **kwargs)
+        
         self.name = kwargs.get('name','Picasa Web Albums')
 
         self.refresh = int(kwargs.get('refresh',60))*60
@@ -358,16 +398,7 @@ class PicasaStore(BackendStore):
         self.login = kwargs.get('userid',kwargs.get('login',''))
         self.password = kwargs.get('password','')
         
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
-        self.server = server
-        self.update_id = 0
-        self.store = {}
-
-        rootContainer = Container(None, self.name, force_store=self, force_id = ROOT_CONTAINER_ID)
+        rootContainer = Container(None, self.name)
         self.set_root_item(rootContainer)
         
         self.AlbumsContainer = LazyContainer(rootContainer, 'My Albums', None, self.refresh, self.retrieveAlbums)
@@ -382,36 +413,6 @@ class PicasaStore(BackendStore):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def len(self):
-        return len(self.store)
-
-    def set_root_item(self, item):
-        storage_id = ROOT_CONTAINER_ID
-        self.store[storage_id] = item
-        return storage_id
-
-    def append_item(self, child):
-        storage_id = self.getnextID()
-        self.store[storage_id] = child
-        return storage_id
-
-    def remove_item(self, child):
-        del self.store[child.storage_id]
-
-    def get_by_id(self,id):
-        if isinstance(id, basestring):
-            id = id.split('@',1)
-            id = id[0].split('.')[0]
-        try:
-            return self.store[int(id)]
-        except (ValueError,KeyError):
-            pass
-        return None
-
-    def getnextID(self):
-        ret = self.next_id
-        self.next_id += 1
-        return ret
 
     def upnp_init(self):
         self.current_connection_id = None
@@ -426,6 +427,8 @@ class PicasaStore(BackendStore):
                                                                   'http-get:*:image/gif:*,'
                                                                   'http-get:*:image/png:*',
                                                                 default=True)
+
+        self.wmc_mapping = {'16': self.get_root_id()}
             
         self.gd_client = gdata.photos.service.PhotosService()
         self.gd_client.email = self.login

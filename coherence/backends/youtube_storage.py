@@ -22,9 +22,8 @@ from urlparse import urlsplit
 
 from gdata.youtube.service import YouTubeService
 from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,YoutubePlaylistIE
-from coherence.backends.picasa_storage import Container, LazyContainer
+from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
 
-ROOT_CONTAINER_ID = 0
 MPEG4_MIMETYPE = 'video/mp4'
 MPEG4_EXTENSION = 'mp4'
 
@@ -622,17 +621,15 @@ class YoutubeVideoItem(BackendItem):
         return self.storage_id
     
 
-class YouTubeStore(BackendStore):
+class YouTubeStore(AbstractBackendStore):
 
     logCategory = 'youtube_store'
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'15': ROOT_CONTAINER_ID}
-
     def __init__(self, server, **kwargs):
-        self.next_id = 1000
-        self.config = kwargs
+        AbstractBackendStore.__init__(self, server, **kwargs)
+
         self.name = kwargs.get('name','YouTube')
 
         self.login = kwargs.get('userid',kwargs.get('login',''))
@@ -651,16 +648,7 @@ class YouTubeStore(BackendStore):
         self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
         self.buffer_size = kwargs.get('buffer_size', 750000)
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
-        self.server = server
-        self.update_id = 0
-        self.store = {}
-
-        rootItem = Container(None, self.name, force_store=self, force_id = ROOT_CONTAINER_ID)
+        rootItem = Container(None, self.name)
         self.set_root_item(rootItem)
 
         if (self.showStandardFeeds):
@@ -694,19 +682,6 @@ class YouTubeStore(BackendStore):
         return str(self.__class__).split('.')[-1]
 
 
-    def set_root_item(self, item):
-        storage_id = ROOT_CONTAINER_ID
-        self.store[storage_id] = item
-        return storage_id
-
-    def append_item(self, child):
-        storage_id = self.getnextID()
-        self.store[storage_id] = child
-        return storage_id
-
-    def remove_item(self, child):
-        del self.store[child.storage_id]
-
     def appendFeed( self, name, feed_uri, parent):
         item = LazyContainer(parent, name, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
         parent.add_child(item, external_id=feed_uri)
@@ -721,23 +696,6 @@ class YouTubeStore(BackendStore):
         item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
         parent.add_child(item, external_id=external_id)
 
-    def len(self):
-        return len(self.store)
-
-    def get_by_id(self,id):
-        if isinstance(id, basestring):
-            id = id.split('@',1)
-            id = id[0].split('.')[0]
-        try:
-            return self.store[int(id)]
-        except (ValueError,KeyError):
-            pass
-        return None
-
-    def getnextID(self):
-        ret = self.next_id
-        self.next_id += 1
-        return ret
 
     def upnp_init(self):
         self.current_connection_id = None
@@ -746,6 +704,9 @@ class YouTubeStore(BackendStore):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:%s:*' % MPEG4_MIMETYPE],
                                                                     default=True)
+
+
+        self.wmc_mapping = {'15': self.get_root_id()}
 
         self.yt_service = YouTubeService()
         self.yt_service.client_id = 'ytapi-JeanMichelSizun-youtubebackendpl-ruabstu7-0'
