@@ -61,7 +61,7 @@ from coherence.backend import BackendItem
 from coherence.transcoder import GStreamerPipeline
 
 from coherence.upnp.core import DIDLLite
-from coherence.upnp.core.utils import parse_xml,ReverseProxyResource
+from coherence.upnp.core.utils import parse_xml
 
 from coherence import log
 
