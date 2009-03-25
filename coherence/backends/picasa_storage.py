@@ -11,7 +11,7 @@ from twisted.internet import threads
 
 from twisted.web import server, static
 from twisted.web.error import PageRedirect
-from coherence.upnp.core.utils import ReverseProxyResource
+from coherence.upnp.core.utils import ReverseProxyUriResource
 from twisted.internet import task
 from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
@@ -316,23 +316,14 @@ class AbstractBackendStore (BackendStore):
         return ret
     
 
-class PicasaProxy(ReverseProxyResource):
+class PicasaProxy(ReverseProxyUriResource):
 
     def __init__(self, uri):
-        self.uri = uri
-        _,host_port,path,_,_ = urlsplit(uri)
-        if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
-            port = int(port)
-        else:
-            host = host_port
-            port = 80
-
-        ReverseProxyResource.__init__(self, host, port, path)
+        ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
         del request.received_headers['referer']
-        return ReverseProxyResource.render(self, request)
+        return ReverseProxyUriResource.render(self, request)
 
 class PicasaPhotoItem(BackendItem):
     def __init__(self, photo):

@@ -5,6 +5,7 @@
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
 import urlparse
+from urlparse import urlsplit
 
 from coherence.extern.et import parse_xml as et_parse_xml
 
@@ -401,6 +402,38 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.path = path
         self.qs = qs
 
+class ReverseProxyUriResource(ReverseProxyResource):
+    
+    uri = None
+    
+    def __init__(self, uri, reactor=reactor):
+        self.uri = uri     
+        _,host_port,path,params,_ = urlsplit(uri)
+        if host_port.find(':') != -1:
+            host,port = tuple(host_port.split(':'))
+            port = int(port)
+        else:
+            host = host_port
+            port = 80
+        if path =='':
+            path = '/'
+        if params == '':
+            rest = path
+        else:
+            rest = '?'.join((path, params))
+        ReverseProxyResource.__init__(self, host, port, rest, reactor)
+    
+    def resetUri (self, uri):
+        self.uri = uri
+        _,host_port,path,params,_ =  urlsplit(uri)
+        if host_port.find(':') != -1:
+            host,port = tuple(host_port.split(':'))
+            port = int(port)
+        else:
+            host = host_port
+            port = 80
+        self.resetTarget(host, port, path, params)
+           
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 
