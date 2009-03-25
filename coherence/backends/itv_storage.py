@@ -17,8 +17,6 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
-from urlparse import urlsplit
-
 import zlib
 
 from coherence.backend import BackendStore,BackendItem
@@ -30,43 +28,19 @@ SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newtvlister.phtml?service=wina
 SHOUTCAST_TUNEIN_URL = 'http://www.shoutcast.com/sbin/tunein-tvstation.pls?id=%s'
 VIDEO_MIMETYPE = 'video/x-nsv'
 
-class ProxyStream(utils.ReverseProxyResource):
+class ProxyStream(utils.ReverseProxyUriResource):
 
     stream_url = None
 
     def __init__(self, uri):
-        self.uri = uri
         self.stream_url = None
-        host,port,path,params =  self.splitUri(uri)
-        utils.ReverseProxyResource.__init__(self, host, port, '%s?%s' % (path, params))
-
-    def splitUri (self, uri):
-        _,host_port,path,params,_ = urlsplit(uri)
-        if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
-            port = int(port)
-        else:
-            host = host_port
-            port = 80
-        if path == '':
-            path = '/'
-        return host, port, path, params
-
-    def resetUri (self, uri):
-        host,port,path,params =  self.splitUri(uri)
-        self.uri = uri
-        if params != '':
-            rest = '%s?%s' % (path, params)
-        else:
-            rest = path
-        self.resetTarget(host, port, rest)
-
+        utils.ReverseProxyUriResource.__init__(self, uri)
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
         print "ProxyStream requestFinished"
-        self.connection.transport.loseConnection()
-
+        if self.connection is not None:
+            self.connection.transport.loseConnection()
 
     def render(self, request):
 
@@ -83,7 +57,7 @@ class ProxyStream(utils.ReverseProxyResource):
                 if self.stream_url is None:
                     print 'Error to retrieve playlist - inconsistent playlist file'
                     return requestFinished(result)
-                self.resetUri(self.stream_url)
+                #self.resetUri(self.stream_url)
                 request.uri = self.stream_url
                 return self.render(request)
 
@@ -91,7 +65,7 @@ class ProxyStream(utils.ReverseProxyResource):
                 print error
                 return None
 
-            playlist_url = "http://%s:%s/%s" % (self.host,self.port,self.path)
+            playlist_url = self.uri
             d = utils.getPage(playlist_url, timeout=20)
             d.addCallbacks(got_playlist, got_error)
             return server.NOT_DONE_YET
@@ -106,7 +80,8 @@ class ProxyStream(utils.ReverseProxyResource):
         else:
             d = request.notifyFinish()
             d.addBoth(self.requestFinished)
-        return utils.ReverseProxyResource.render(self, request)
+        return utils.ReverseProxyUriResource.render(self, request)
+
 
 class Container(BackendItem):
 

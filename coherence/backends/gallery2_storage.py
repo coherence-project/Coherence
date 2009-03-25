@@ -7,7 +7,7 @@
 from twisted.internet import defer
 
 from coherence.upnp.core import utils
-from coherence.upnp.core.utils import ReverseProxyResource
+from coherence.upnp.core.utils import ReverseProxyUriResource
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
@@ -19,23 +19,14 @@ from urlparse import urlsplit
 from coherence.extern.galleryremote import Gallery
 
 
-class ProxyGallery2Image(ReverseProxyResource):
+class ProxyGallery2Image(ReverseProxyUriResource):
 
     def __init__(self, uri):
-        self.uri = uri
-        _,host_port,path,params,_ = urlsplit(uri)
-        if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
-            port = int(port)
-        else:
-            host = host_port
-            port = 80
-
-        ReverseProxyResource.__init__(self, host, port, '%s?%s' % (path, params))
+        ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
         del request.received_headers['referer']
-        return ReverseProxyResource.render(self, request)
+        return ReverseProxyUriResource.render(self, request)
 
 
 class Gallery2Item(BackendItem):
