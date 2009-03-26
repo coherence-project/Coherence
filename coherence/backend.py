@@ -102,7 +102,10 @@ class BackendStore(Backend):
             of urlbase + '/' + id to the DIDLLite.Resource
         """
         self.urlbase = kwargs.get('urlbase','')
-
+        if( len(self.urlbase)>0 and
+            self.urlbase[len(self.urlbase)-1] != '/'):
+            self.urlbase += '/'
+            
         self.wmc_mapping.update({'4':lambda: self._get_all_items(0),
                                  '8':lambda: self._get_all_items(0),
                                  'B':lambda: self._get_all_items(0),
