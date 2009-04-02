@@ -13,7 +13,7 @@
 
     coherence --plugin=backend:TestStore,name:Test,\
                        item:<item><location>audio.mp3</location>\
-                            <mimetype>audio/mpeg></mimetype></item>,\
+                            <mimetype>audio/mpeg</mimetype></item>,\
                        item:<item><location>audio.ogg</location>\
                             <mimetype>audio/ogg</mimetype></item>
 
@@ -46,6 +46,21 @@
                 running, so coherence needs to be started with -o glib:yes
     'command: the commandline for an external script to run, its output will
               be returned as the items content
+
+In the config file the definition of this backend could look like this:
+
+        <plugin active="yes">
+          <backend>TestStore</backend>
+          <name>Test</name>
+          <item>
+            <location>/tmp/audio.mp3</location>
+            <mimetype>audio/mpeg</mimetype>
+          </item>
+          <item>
+            <location>/tmp/audio.ogg</location>
+            <mimetype>audio/ogg</mimetype>
+          </item>
+        </plugin>
 
 """
 
