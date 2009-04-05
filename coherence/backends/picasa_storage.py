@@ -63,6 +63,7 @@ class Container(BackendItem):
             self.update_id += 1
         
         child.url = self.store.urlbase + str(id)
+        child.parent = self
         
         if external_id is not None:
             child.external_id = external_id
@@ -359,11 +360,12 @@ class PicasaPhotoItem(BackendItem):
 
     def get_item(self):
         if self.item == None:
-            upnp_id = self.storage_id
+            upnp_id = self.get_id()
             upnp_parent_id = self.parent.get_id()
             self.item = DIDLLite.Photo(upnp_id,upnp_parent_id,self.title)
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             self.item.res.append(res)
+        self.item.childCount = len(self.children)
         return self.item
 
     def get_path(self):

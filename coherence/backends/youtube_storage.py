@@ -347,7 +347,9 @@ class YoutubeVideoItem(BackendItem):
 
     def get_item(self):
         if self.item == None:
-            self.item = DIDLLite.VideoItem(self.storage_id, self.parent.id, self.name)
+            upnp_id = self.get_id()
+            upnp_parent_id = self.parent.get_id()
+            self.item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.name)
             self.item.description = self.description
             self.item.date = self.date
 
