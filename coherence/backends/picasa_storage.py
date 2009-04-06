@@ -29,25 +29,25 @@ class Container(BackendItem):
 
     def __init__(self, parent, title):
         BackendItem.__init__(self)
-        
+
         self.parent = parent
         if self.parent is not None:
             self.parent_id = self.parent.get_id()
         else:
-            self.parent_id = -1 
-        
+            self.parent_id = -1
+
         self.store = None
-        self.storage_id = None     
-        
+        self.storage_id = None
+
         self.name = title
         self.mimetype = 'directory'
-        
+
         self.children = []
         self.children_ids = {}
         self.children_by_external_id = {}
-                
+
         self.update_id = 0
-        
+
         self.item = None
 
         self.sorted = False
@@ -61,10 +61,10 @@ class Container(BackendItem):
         self.sorted = False
         if update == True:
             self.update_id += 1
-        
+
         child.url = self.store.urlbase + str(id)
         child.parent = self
-        
+
         if external_id is not None:
             child.external_id = external_id
             self.children_by_external_id[external_id] = child
@@ -78,7 +78,7 @@ class Container(BackendItem):
         if external_id is not None:
             child.external_id = None
             del self.children_by_external_id[external_id]
-        
+
     def get_children(self, start=0, end=0):
 
         if self.sorted == False:
@@ -111,33 +111,33 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.storage_id
-    
+
     def get_update_id(self):
         return self.update_id
 
 
 class LazyContainer(Container, log.Loggable):
     logCategory = 'lazyContainer'
-    
+
     def __init__(self, parent, title, external_id=None, refresh=0, childrenRetriever=None, **kwargs):
         Container.__init__(self, parent, title)
-        
-        self.childrenRetrievingNeeded = False       
+
+        self.childrenRetrievingNeeded = False
         self.childrenRetrievingDeferred = None
         self.childrenRetriever = childrenRetriever
         self.children_retrieval_campaign_in_progress = False
         self.childrenRetriever_params = kwargs
         self.childrenRetriever_params['parent']=self
         self.has_pages = (self.childrenRetriever_params.has_key('per_page'))
-        
+
         self.external_id = None
         self.external_id = external_id
-            
+
         self.retrieved_children = {}
-        
+
         self.last_updated = 0
         self.refresh = refresh
-        
+
     def replace_by(self, item):
         if self.external_id is not None and item.external_id is not None:
             return (self.external_id == item.external_id)
@@ -148,13 +148,13 @@ class LazyContainer(Container, log.Loggable):
             self.retrieved_children[external_id] = child
         else:
             Container.add_child(self, child, external_id=external_id, update=update)
-            
-           
+
+
     def update_children(self, new_children, old_children):
         children_to_be_removed = {}
         children_to_be_replaced = {}
         children_to_be_added = {}
-        
+
         # Phase 1
         # let's classify the item between items to be removed,
         # to be updated or to be added
@@ -168,10 +168,10 @@ class LazyContainer(Container, log.Loggable):
                 del children_to_be_removed[id]
             else:
                 children_to_be_added[id] = new_children[id]
-        
+
         # Phase 2
         # Now, we remove, update or add the relevant items
-        # to the list of items            
+        # to the list of items
         self.debug("Refresh pass 2: %d %d %d" % (len(children_to_be_removed), len(children_to_be_replaced), len(children_to_be_added)))
         # Remove relevant items from Container children
         for id,item in children_to_be_removed.items():
@@ -183,7 +183,7 @@ class LazyContainer(Container, log.Loggable):
             replaced = False
             if self.replace_by:
                 #print "Replacement method available: Try"
-                replaced = old_item.replace_by(new_item) 
+                replaced = old_item.replace_by(new_item)
             if replaced is False:
                 #print "No replacement possible: we remove and add the item again"
                 self.remove_child(old_item, external_id=id, update=False)
@@ -191,7 +191,7 @@ class LazyContainer(Container, log.Loggable):
         # Add relevant items to COntainer children
         for id,item in children_to_be_added.items():
             self.add_child(item, external_id=id, update=False)
-        
+
         self.update_id += 1
 
     def start_children_retrieval_campaign(self):
@@ -199,16 +199,16 @@ class LazyContainer(Container, log.Loggable):
         self.last_updated = time.time()
         self.retrieved_children = {}
         self.children_retrieval_campaign_in_progress = True
-        
+
     def end_children_retrieval_campaign(self, success=True):
         #print "end_update_campaign"
         self.children_retrieval_campaign_in_progress = False
         if success is True:
-            self.update_children(self.retrieved_children, self.children_by_external_id)          
+            self.update_children(self.retrieved_children, self.children_by_external_id)
             self.update_id += 1
         self.last_updated = time.time()
         self.retrieved_children = {}
-    
+
     def retrieve_children(self, start=0):
 
         def items_retrieved(result, source_deferred):
@@ -216,7 +216,7 @@ class LazyContainer(Container, log.Loggable):
             if self.childrenRetrievingNeeded is True:
                 return self.retrieve_children(childrenRetrievingOffset)
             return self.retrieved_children
-        
+
         self.childrenRetrievingNeeded = False
         if self.has_pages is True:
             self.childrenRetriever_params['offset'] = start
@@ -226,7 +226,7 @@ class LazyContainer(Container, log.Loggable):
 
 
     def retrieve_all_children(self, start=0, request_count=0):
-           
+
         def all_items_retrieved (result):
             #print "All items retrieved!"
             self.end_children_retrieval_campaign(True)
@@ -238,11 +238,11 @@ class LazyContainer(Container, log.Loggable):
             return Container.get_children(self, start, request_count)
 
         # if first retrieval and refresh required
-        # we start a looping call to periodically update the children       
+        # we start a looping call to periodically update the children
         #if ((self.last_updated == 0) and (self.refresh > 0)):
         #    task.LoopingCall(self.retrieve_children,0,0).start(self.refresh, now=False)
-        
-        self.start_children_retrieval_campaign()        
+
+        self.start_children_retrieval_campaign()
         if self.childrenRetriever is not None:
             d = self.retrieve_children(start)
             if start == 0:
@@ -251,8 +251,8 @@ class LazyContainer(Container, log.Loggable):
         else:
             self.end_children_retrieval_campaign()
             return self.children
-                    
-    
+
+
     def get_children(self,start=0,request_count=0):
 
         # Check if an update is needed since last update
@@ -284,7 +284,7 @@ class AbstractBackendStore (BackendStore):
 
     def set_root_item(self, item):
         return self.append_item(item, storage_id = ROOT_CONTAINER_ID)
-    
+
     def get_root_id(self):
         return ROOT_CONTAINER_ID
 
@@ -293,12 +293,12 @@ class AbstractBackendStore (BackendStore):
             storage_id = self.getnextID()
         self.store[storage_id] = item
         item.storage_id = storage_id
-        item.store = self       
+        item.store = self
         return storage_id
 
     def remove_item(self, item):
         item.storage_id = -1
-        item.store = None 
+        item.store = None
         del self.store[child.storage_id]
 
     def get_by_id(self,id):
@@ -315,7 +315,7 @@ class AbstractBackendStore (BackendStore):
         ret = self.next_id
         self.next_id += 1
         return ret
-    
+
 
 class PicasaProxy(ReverseProxyUriResource):
 
@@ -338,12 +338,12 @@ class PicasaPhotoItem(BackendItem):
         self.description = photo.summary.text
         self.date = None
         self.item = None
-            
+
         self.photo_url = photo.content.src
         self.thumbnail_url = photo.media.thumbnail[0].url
-        
+
         self.url = None
-        
+
         self.location = PicasaProxy(self.photo_url)
 
     def replace_by(self, item):
@@ -356,7 +356,7 @@ class PicasaPhotoItem(BackendItem):
         self.thumbnail_url = self.photo.media.thumbnail[0].url
         self.location = PicasaProxy(self.photo_url)
         return True
-        
+
 
     def get_item(self):
         if self.item == None:
@@ -374,26 +374,26 @@ class PicasaPhotoItem(BackendItem):
     def get_id(self):
         return self.storage_id
 
-                
+
 class PicasaStore(AbstractBackendStore):
 
     logCategory = 'picasa_store'
 
     implements = ['MediaServer']
 
-    def __init__(self, server, **kwargs):       
+    def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
-        
+
         self.name = kwargs.get('name','Picasa Web Albums')
 
         self.refresh = int(kwargs.get('refresh',60))*60
 
         self.login = kwargs.get('userid',kwargs.get('login',''))
         self.password = kwargs.get('password','')
-        
+
         rootContainer = Container(None, self.name)
         self.set_root_item(rootContainer)
-        
+
         self.AlbumsContainer = LazyContainer(rootContainer, 'My Albums', None, self.refresh, self.retrieveAlbums)
         rootContainer.add_child(self.AlbumsContainer)
 
@@ -422,7 +422,7 @@ class PicasaStore(AbstractBackendStore):
                                                                 default=True)
 
         self.wmc_mapping = {'16': self.get_root_id()}
-            
+
         self.gd_client = gdata.photos.service.PhotosService()
         self.gd_client.email = self.login
         self.gd_client.password = self.password
@@ -461,6 +461,7 @@ class PicasaStore(AbstractBackendStore):
            for photo in photos.entry:
                photo_id = photo.gphoto_id.text
                item = PicasaPhotoItem(photo)
+               item.parent = parent
                parent.add_child(item, external_id=photo_id)
 
         def gotError(error):
@@ -470,10 +471,9 @@ class PicasaStore(AbstractBackendStore):
         return photos
 
     def retrieveAlbumPhotos (self, parent=None, album_id=''):
-        album_feed_uri = '/data/feed/api/user/%s/albumid/%s?kind=photo' % (self.login, album_id)       
+        album_feed_uri = '/data/feed/api/user/%s/albumid/%s?kind=photo' % (self.login, album_id)
         return self.retrieveFeedPhotos(parent, album_feed_uri)
 
-    def retrieveFeaturedPhotos (self, parent=None):       
+    def retrieveFeaturedPhotos (self, parent=None):
         feed_uri = 'http://picasaweb.google.com/data/feed/api/featured'
         return self.retrieveFeedPhotos(parent, feed_uri)
-

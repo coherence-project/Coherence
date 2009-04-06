@@ -35,9 +35,9 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                  cache_maxsize=100000000,
                  buffer_size=2000000,
                  fct=None, **kwargs):
-        
+
         ReverseProxyUriResource.__init__(self, uri)
-        
+
         self.id = id
         if isinstance(self.id,int):
             self.id = '%d' % self.id
@@ -368,7 +368,7 @@ class YoutubeVideoItem(BackendItem):
 
     def get_id(self):
         return self.storage_id
-    
+
 
 class YouTubeStore(AbstractBackendStore):
 
@@ -443,6 +443,7 @@ class YouTubeStore(AbstractBackendStore):
         mimetype = MPEG4_MIMETYPE
         #mimetype = 'video/mpeg'
         item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
+        item.parent = parent
         parent.add_child(item, external_id=external_id)
 
 
@@ -524,10 +525,10 @@ class YouTubeStore(AbstractBackendStore):
            for playlist_video_entry in playlist_video_feed.entry:
                title = playlist_video_entry.title.text
                playlist_id = playlist_video_entry.id.text.split("/")[-1] # FIXME find better way to retrieve the playlist ID
-               
+
                item = LazyContainer(parent, title, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
                parent.add_child(item, external_id=playlist_id)
-               
+
         def gotError(error):
             self.warning("ERROR: %s" % error)
 
@@ -547,10 +548,11 @@ class YouTubeStore(AbstractBackendStore):
                title = entry.title.text
                uri = entry.id.text
                name = "[%s] %s" % (type,title)
-               
+
                item = LazyContainer(parent, name, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
+               item.parent = parent
                parent.add_child(item, external_id=uri)
-               
+
         def gotError(error):
             self.warning("ERROR: %s" % error)
 

@@ -20,7 +20,7 @@ from coherence.backends.picasa_storage import Container, LazyContainer, Abstract
 
 class VideoItem(BackendItem):
 
-    def __init__(self, name, description, url, thumbnail_url, store): 
+    def __init__(self, name, description, url, thumbnail_url, store):
         self.name = name
         self.duration = None
         self.size = None
@@ -57,7 +57,7 @@ class VideoItem(BackendItem):
 
     def get_id(self):
         return self.storage_id
-    
+
 
 class MiroStore(AbstractBackendStore):
 
@@ -67,7 +67,7 @@ class MiroStore(AbstractBackendStore):
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
-         
+
         self.name = kwargs.get('name','MiroGuide')
 
         self.language = kwargs.get('language','English')
@@ -91,12 +91,12 @@ class MiroStore(AbstractBackendStore):
         rootItem.add_child(categoriesItem)
         languagesItem = Container(rootItem, "All by Languages")
         rootItem.add_child(languagesItem)
-        
+
         self.appendLanguage("Recent Videos", self.language, rootItem, sort='-age', count=15)
         self.appendLanguage("Top Rated", self.language, rootItem, sort='rating', count=15)
         self.appendLanguage("Most Popular", self.language, rootItem, sort='-popular', count=15)
 
-        
+
         def gotError(error):
             print "ERROR: %s" % error
 
@@ -163,7 +163,7 @@ class MiroStore(AbstractBackendStore):
 
     def retrieveChannels (self, parent, filter, filter_value, per_page=100, offset=0, count=0, sort='name'):
         filter_value = urllib.quote(filter_value.encode("utf-8"))
-        
+
         limit = count
         if (count == 0):
             limit = per_page
@@ -191,7 +191,7 @@ class MiroStore(AbstractBackendStore):
            if ((count == 0) and (len(channels) >= per_page)):
                #print "reached page limit (%d)" % len(channels)
                parent.childrenRetrievingNeeded = True
-                
+
         def gotError(error):
             print "ERROR: %s" % error
 
@@ -222,7 +222,8 @@ class MiroStore(AbstractBackendStore):
                    #print "Thumbnail:", channel['thumbnail_url']
                    thumbnail_url = channel['thumbnail_url']
                #size = size['size']
-               item = VideoItem (name, description, url, thumbnail_url, self)
+               item = VideoItem(name, description, url, thumbnail_url, self)
+               item.parent = parent
                parent.add_child(item, external_id=url)
 
         def gotError(error):
