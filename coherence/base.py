@@ -276,7 +276,32 @@ class Coherence(log.Loggable):
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
-        unittest = config.get('unittest', 'no')
+        if network_if:
+            self.hostname = get_ip_address('%s' % network_if)
+        else:
+            try:
+                self.hostname = socket.gethostbyname(socket.gethostname())
+            except socket.gaierror:
+                self.warning("hostname can't be resolved, maybe a system misconfiguration?")
+                self.hostname = '127.0.0.1'
+
+        if self.hostname.startswith('127.'):
+            """ use interface detection via routing table as last resort """
+            def catch_result(hostname):
+                self.hostname = hostname
+                self.setup_part2()
+            d = defer.maybeDeferred(get_host_address)
+            d.addCallback(catch_result)
+        else:
+            self.setup_part2()
+
+    def setup_part2(self):
+
+        self.info('running on host: %s' % self.hostname)
+        if self.hostname.startswith('127.'):
+            self.warning('detection of own ip failed, using %s as own address, functionality will be limited', self.hostname)
+
+        unittest = self.config.get('unittest', 'no')
         if unittest == 'no':
             unittest = False
         else:
@@ -295,23 +320,7 @@ class Coherence(log.Loggable):
 
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
-        if network_if:
-            self.hostname = get_ip_address('%s' % network_if)
-        else:
-            try:
-                self.hostname = socket.gethostbyname(socket.gethostname())
-            except socket.gaierror:
-                self.warning("hostname can't be resolved, maybe a system misconfiguration?")
-                self.hostname = '127.0.0.1'
-
-        if self.hostname.startswith('127.'):
-            """ use interface detection via routing table as last resort """
-            self.hostname = get_host_address()
-
-        self.info('running on host: %s' % self.hostname)
-        if self.hostname.startswith('127.'):
-            self.warning('detection of own ip failed, using %s as own address, functionality will be limited', self.hostname)
-        self.web_server = WebServer( config.get('web-ui',None), self.web_server_port, self)
+        self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
@@ -321,13 +330,13 @@ class Coherence(log.Loggable):
         self.available_plugins = None
 
         try:
-            plugins = config['plugin']
+            plugins = self.config['plugin']
             if isinstance(plugins,dict):
                 plugins=[plugins]
         except:
             plugins = None
         if plugins is None:
-            plugins = config.get('plugins',None)
+            plugins = self.config.get('plugins',None)
 
         if plugins is None:
             self.info("No plugin defined!")
@@ -361,10 +370,10 @@ class Coherence(log.Loggable):
                         self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
                         self.info(traceback.format_exc())
 
-        if config.get('controlpoint', 'no') == 'yes':
+        if self.config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
 
-        if config.get('use_dbus', 'no') == 'yes':
+        if self.config.get('use_dbus', 'no') == 'yes':
             try:
                 from coherence import dbus_service
                 self.dbus = dbus_service.DBusPontoon(self.ctrl)

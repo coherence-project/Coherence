@@ -150,20 +150,28 @@ def get_host_address():
                             return get_ip_address(l[0])
         except IOError, msg:
             """ fallback to parsing the output of netstat """
-            from os import uname
-            import posix
-            (osname,_, _, _,_) = uname()
-            osname = osname.lower()
-            f = posix.popen('netstat -rn')
-            lines = f.readlines()
-            f.close()
-            for l in lines:
-                parts = [x.strip() for x in l.split(' ') if len(x) > 0]
-                if parts[0] in ('0.0.0.0','default'):
-                    if osname[:6] == 'darwin':
-                        return get_ip_address(parts[5])
-                    else:
-                        return get_ip_address(parts[-1])
+            from twisted.internet import utils
+
+            def result(r):
+                from os import uname
+                (osname,_, _, _,_) = uname()
+                osname = osname.lower()
+                lines = r.split('\n')
+                for l in lines:
+                    l = l.strip(' \r\n')
+                    parts = [x.strip() for x in l.split(' ') if len(x) > 0]
+                    if parts[0] in ('0.0.0.0','default'):
+                        if osname[:6] == 'darwin':
+                            return get_ip_address(parts[5])
+                        else:
+                            return get_ip_address(parts[-1])
+                return '127.0.0.1'
+
+            def fail(f):
+                return '127.0.0.1'
+
+            d = utils.getProcessOutput('netstat', ['-rn'])
+            return d
         except Exception, msg:
             import traceback
             traceback.print_exc()
@@ -403,11 +411,11 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.qs = qs
 
 class ReverseProxyUriResource(ReverseProxyResource):
-    
+
     uri = None
-    
+
     def __init__(self, uri, reactor=reactor):
-        self.uri = uri     
+        self.uri = uri
         _,host_port,path,params,_ = urlsplit(uri)
         if host_port.find(':') != -1:
             host,port = tuple(host_port.split(':'))
@@ -422,7 +430,7 @@ class ReverseProxyUriResource(ReverseProxyResource):
         else:
             rest = '?'.join((path, params))
         ReverseProxyResource.__init__(self, host, port, rest, reactor)
-    
+
     def resetUri (self, uri):
         self.uri = uri
         _,host_port,path,params,_ =  urlsplit(uri)
@@ -433,7 +441,7 @@ class ReverseProxyUriResource(ReverseProxyResource):
             host = host_port
             port = 80
         self.resetTarget(host, port, path, params)
-           
+
 
 class myHTTPPageGetter(client.HTTPPageGetter):
 
