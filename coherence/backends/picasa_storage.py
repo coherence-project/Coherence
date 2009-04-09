@@ -362,10 +362,10 @@ class PicasaPhotoItem(BackendItem):
         if self.item == None:
             upnp_id = self.get_id()
             upnp_parent_id = self.parent.get_id()
-            self.item = DIDLLite.Photo(upnp_id,upnp_parent_id,self.title)
+            self.item = DIDLLite.Photo(upnp_id,upnp_parent_id,self.name)
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             self.item.res.append(res)
-        self.item.childCount = len(self.children)
+        self.item.childCount = 0
         return self.item
 
     def get_path(self):
