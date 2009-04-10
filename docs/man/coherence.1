@@ -1,0 +1,67 @@
+.TH "coherence" "1" "Thur Mar 19 2009" "Frank Scholz" "Python UPnP Framwork"
+.SH "NAME"
+.LP 
+Coherence \- Is a Python UPnP framework which enabling your application to
+participate in digital living networks, at the moment primarily the
+UPnP universe.
+
+Its goal is to relieve your application from all the membership and UPnP
+related tasks as much as possible.
+
+The core of Coherence provides a (hopefully complete) implementation
+of:
+  * a SSDP server,
+  * a MSEARCH client,
+  * server and client for HTTP/SOAP requests, and
+  * server and client for Event Subscription and Notification (GENA).
+.SH "SYNTAX"
+.LP 
+coherence \-\-<\fIOPTION\fP> : <\fISTORE_TYPE\fP>, url:<\fIURL\fP>, key:<\fIKEY\fP>
+.SH "OPTIONS"
+.LP 
+.TP 
+\fB\-d\fR \fB\-\-daemon\fR daemonize
+.TP 
+\fB\-v\fR \fB\-\-version\fR print version
+.TP 
+\fB\-c\fR \fB\-\-configfile=\fR<\fIPATH\fP> Path to config file
+.TP 
+\fB  \fR \fB\-\-noconfig\fR ignore any config file found
+.TP 
+\fB\-o\fR \fB\-\-option=\fR activate option
+.TP 
+\fB\-l\fR \fB\-\-logfile=<\fIPATH\fP> Path to log file.
+.TP 
+\fB  \fR \fB\-\-help  Displays coherence options.
+.SH "AVAILABLE STORES"
+BetterLight, AmpacheStore, FlickrStore, MiroStore, ElisaPlayer,
+.br 
+ElisaMediaStore, Gallery2Store, DVBDStore, FSStore,
+.br 
+BuzztardPlayer, BuzztardStore, GStreamerPlayer, SimpleLight,
+.br 
+ITVStore, SWR3Store, TrackerStore, LolcatsStore, BBCStore,
+.br 
+MediaStore, AppleTrailerStore, LastFMStore, AxisCamStore, 
+.br 
+YouTubeStore, TEDStore, IRadioStore
+.SH "FILES"
+.LP 
+\fI/home/name/.coherence\fP
+.SH "ENVIRONMENT VARIABLES"
+.LP 
+.TP 
+\fBCOHERENCE_DEBUG=<\fISTORE\fP>\fP
+Supplies debug information pertaining to the named store.
+.SH "EXAMPLES"
+.LP 
+coherence \-\-plugin=backend:FSStore,name:MyCoherence
+
+.SH "AUTHORS"
+.LP 
+Coherence was written by Frank Scholz <coherence@beebits.net>.
+This man page was created by Charlie Smotherman <cjsmo@cableone.net> for Frank Scholz and the Debian Project.
+.SH "SEE ALSO"
+.LP 
+http://coherence.beebits.net/
+
