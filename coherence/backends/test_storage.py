@@ -41,6 +41,8 @@
     'mimetype': the mimetype of the item (mandatory)
     'upnp_class': the DIDLLite class the item shall have,
                   object.item will be taken as default
+    'fourth_field': value for the 4th field of the protocolInfo phalanx,
+                    default is '*'
     'pipeline': a GStreamer pipeline that has to end with a bin named 'enc',
                 some pipelines do only work properly when we have a glib mainloop
                 running, so coherence needs to be started with -o glib:yes
@@ -184,7 +186,7 @@ class ExternalProcessProducer(object):
 
 class Item(BackendItem):
 
-    def __init__(self, parent, id, title, location, url):
+    def __init__(self,parent,id,title,location,url):
         self.parent = parent
         self.id = id
         self.location = location
@@ -193,6 +195,7 @@ class Item(BackendItem):
         self.duration = None
         self.size = None
         self.mimetype = None
+        self.fourth_field = '*'
         self.description = None
         self.date = None
 
@@ -207,7 +210,7 @@ class Item(BackendItem):
             self.item.description = self.description
             self.item.date = self.date
 
-            res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            res = DIDLLite.Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,self.fourth_field))
             res.duration = self.duration
             res.size = self.get_size()
             self.item.res.append(res)
@@ -229,7 +232,10 @@ class Item(BackendItem):
 
     def get_size(self):
         if isinstance( self.location,FilePath):
-            return self.location.getsize()
+            try:
+                return self.location.getsize()
+            except OSError:
+                return self.size
         else:
             return self.size
 
@@ -364,6 +370,7 @@ class TestStore(BackendStore):
                 #item.date = something
                 #item.size = something
                 new_item.mimetype = mimetype
+                new_item.fourth_field = item.get('fourth_field','*')
 
                 self.store[ROOT_CONTAINER_ID].add_child(new_item)
                 self.store[item_id] = new_item

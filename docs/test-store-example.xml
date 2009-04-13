@@ -1,0 +1,17 @@
+<config>
+  <serverport>30020</serverport>
+<plugin active="yes">
+    <item>
+      <mimetype>audio/mpeg</mimetype>
+      <location>/tmp/audio.mp3</location>
+    </item>
+    <item>
+      <mimetype>audio/ogg</mimetype>
+      <location>/tmp/audio.ogg</location>
+      <fourth_field>DLNA.ORG_PN=VORBIS;DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01100000000000000000000000000000</fourth_field>
+    </item>
+    <uuid>33d68364-5bee-4dee-9ede-52afdd7baeaf</uuid>
+    <name>Test</name>
+    <backend>TestStore</backend>
+  </plugin>
+</config>
