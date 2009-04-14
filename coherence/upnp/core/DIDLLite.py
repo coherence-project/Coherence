@@ -879,6 +879,23 @@ class DIDLElement(ElementInterface,log.Loggable):
             instance.addItem(new_node)
         return instance
 
+
+def element_to_didl(item):
+    """ a helper method to create a DIDLElement out of one ET element
+        or XML fragment string
+    """
+    if not isinstance(item,basestring):
+        item = ET.tostring(item)
+    didl = """<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"
+                         xmlns:dc="http://purl.org/dc/elements/1.1/"
+                         xmlns:dlna="urn:schemas-dlna-org:metadata-1-0"
+                         xmlns:pv="http://www.pv.com/pvns/"
+                         xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">""" \
+                         + item + \
+                         """</DIDL-Lite>"""
+    return didl
+
+
 upnp_classes = {'object': Object,
                 'object.item': Item,
                 'object.item.imageItem': ImageItem,
