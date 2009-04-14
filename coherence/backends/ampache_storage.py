@@ -469,7 +469,9 @@ class Video(BackendItem):
             seconds = seconds - minutes * 60
             self.duration = ("%d:%02d:%02d") % (hours, minutes, seconds)
         except:
-            pass
+            self.duration = 0
+
+        self.cover = None
 
 
         self.title = element.find('title').text
@@ -495,12 +497,12 @@ class Video(BackendItem):
     def get_child_count(self):
         return 0
 
-    def get_item(self, parent_id=None):
+    def get_item(self, parent_id=VIDEO_CONTAINER_ID):
 
-        self.debug("video get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("video get_item %r @ %r" %(self.id,parent_id))
 
         # create item
-        item = DIDLLite.VideoItem(self.id,self.parent_id)
+        item = DIDLLite.VideoItem(self.id,parent_id)
         item.title = self.title
 
         item.albumArtURI = self.cover
@@ -680,6 +682,7 @@ class AmpacheStore(BackendStore):
 
     def got_response(self, response, query_item, request):
         self.info("got a response for %r", query_item)
+        self.debug(response)
         response = utils.parse_xml(response, encoding='utf-8')
         items = []
         try:
