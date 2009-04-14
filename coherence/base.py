@@ -80,13 +80,14 @@ class WebServer(log.Loggable):
 
     def __init__(self, ui, port, coherence):
         try:
-            self.warning("Web UI not supported atm, will return with version 0.7.0")
-            raise ImportError
-
             if ui != 'yes':
                 """ use this to jump out here if we do not want
                     the web ui """
                 raise ImportError
+
+            self.warning("Web UI not supported atm, will return with version 0.7.0")
+            raise ImportError
+
 
             from nevow import __version_info__, __version__
             if __version_info__ <(0,9,17):
