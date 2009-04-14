@@ -682,7 +682,8 @@ class FSStore(BackendStore):
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
             self.info('%s was deleted, parent %r (%s)' % (path, parameter, iwp.path))
             id = self.get_id_by_name(parameter,os.path.join(iwp.path,filename))
-            self.remove(id)
+            if id != None:
+                self.remove(id)
         if(mask & IN_CREATE or mask & IN_MOVED_TO):
             if mask & IN_ISDIR:
                 self.info('directory %s was created, parent %r (%s)' % (path, parameter, iwp.path))
@@ -692,7 +693,8 @@ class FSStore(BackendStore):
                 if os.path.isdir(path):
                     self.walk(path, self.get_by_id(parameter), self.ignore_file_pattern)
                 else:
-                    self.append(path, self.get_by_id(parameter))
+                    if self.ignore_file_pattern.match(filename) == None:
+                        self.append(path, self.get_by_id(parameter))
 
     def getnextID(self):
         ret = self.next_id
@@ -735,6 +737,8 @@ class FSStore(BackendStore):
                          'http-get:*:application/ogg:*',
                          'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
                          'http-get:*:video/x-msvideo:*',
+                         'internal:%s:video/mpeg:*' % self.server.coherence.hostname,
+                         'http-get:*:video/mpeg:*',
                          'internal:%s:video/avi:*' % self.server.coherence.hostname,
                          'http-get:*:video/avi:*',
                          'internal:%s:video/quicktime:*' % self.server.coherence.hostname,

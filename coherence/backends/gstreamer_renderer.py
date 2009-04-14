@@ -505,11 +505,11 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
         #self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'TRANSITIONING')
-        #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek,Next,Previous')
+        #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
         if uri.startswith('http://'):
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE')
         else:
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause,Seek')
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK')
         self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
         if state == gst.STATE_PLAYING:
