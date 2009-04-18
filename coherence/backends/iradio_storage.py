@@ -9,11 +9,8 @@ from coherence.upnp.core import utils
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
-import coherence.extern.louie as louie
-
-from coherence.extern.simple_plugin import Plugin
-
 from coherence import log
+from coherence.backend import BackendItem, BackendStore
 
 from urlparse import urlsplit
 
@@ -212,29 +209,26 @@ class IRadioItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url + ' ' + self.name
 
-class IRadioStore(log.Loggable,Plugin):
+class IRadioStore(BackendStore):
 
     logCategory = 'iradio_store'
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4': 1000}
-
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000
         self.config = kwargs
         self.name = kwargs.get('name','iRadioStore')
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
-        self.server = server
         self.update_id = 0
+
+        self.wmc_mapping = {'4': 1000}
+
+
         self.store = {}
 
-        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+        self.init_completed()
 
 
     def __repr__(self):

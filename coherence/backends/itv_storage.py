@@ -16,6 +16,7 @@ from coherence.upnp.core import DIDLLite
 from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
+from coherence.backend import BackendItem, BackendStore
 
 import zlib
 
@@ -177,23 +178,17 @@ class ITVStore(BackendStore):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'4': 1000}
-
-    shoutcast_ws_url = '';
-
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000
         self.config = kwargs
         self.name = kwargs.get('name','iTV')
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
-        self.server = server
         self.update_id = 0
         self.store = {}
+
+        self.wmc_mapping = {'4': 1000}
+
 
         self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
 

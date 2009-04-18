@@ -170,9 +170,10 @@ class LolcatsStore(BackendStore):
     # define the first (the root) item:
     ROOT_ID = 0
 
-    wmc_mapping = {'16': 0}
-
     def __init__(self, server, *args, **kwargs):
+        # first we inizialize our heritage
+        BackendStore.__init__(self,server,**kwargs)
+
         # When a Backend is initialized, the configuration is given as keyword
         # arguments to the initialization. We receive it here as a dicitonary
         # and allow some values to be set:
@@ -183,7 +184,8 @@ class LolcatsStore(BackendStore):
         # timeout between updates in hours:
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
 
-        # the UPnP device that's hosting that backend
+        # the UPnP device that's hosting that backend, that's already done
+        # in the BackendStore.__init__, just left here the sake of completeness
         self.server = server
 
         # internally used to have a new id for each item
@@ -199,6 +201,10 @@ class LolcatsStore(BackendStore):
         # but as we also have to return them on 'get_by_id', we have our local
         # store of images per id:
         self.images = {}
+
+        # we tell that if an XBox sends a request for images we'll
+        # map the WMC id of that request to our local one
+        self.wmc_mapping = {'16': 0}
 
         # and trigger an update of the data
         dfr = self.update_data()

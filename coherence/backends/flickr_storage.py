@@ -39,6 +39,7 @@ from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 
 from coherence.upnp.core.utils import getPage
+from coherence.backend import BackendItem, BackendStore
 
 import coherence.extern.louie as louie
 
@@ -350,14 +351,13 @@ class FlickrItem(log.Loggable):
         return 'id: ' + str(self.id) + ' @ ' + str(self.url)
 
 
-class FlickrStore(log.Loggable, Plugin):
+class FlickrStore(BackendStore):
     logCategory = 'flickr_storage'
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'16': 0}
-
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
         self.next_id = 10000
         self.name = kwargs.get('name','Flickr')
         self.proxy = kwargs.get('proxy','false')
@@ -375,15 +375,11 @@ class FlickrStore(log.Loggable, Plugin):
         else:
             self.proxy = False
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
         ignore_patterns = kwargs.get('ignore_patterns',[])
         ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
 
-        self.server = server
+        self.wmc_mapping = {'16': 0}
+
         self.update_id = 0
         self.flickr = Proxy('http://api.flickr.com/services/xmlrpc/')
         self.flickr_api_key = '837718c8a622c699edab0ea55fcec224'

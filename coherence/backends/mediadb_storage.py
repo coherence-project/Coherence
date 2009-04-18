@@ -429,8 +429,8 @@ class MediaStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
         self.info("MediaStore __init__")
-        self.server = server
         self.update_id = 0
 
         self.medialocation = kwargs.get('medialocation','tests/content/audio')
@@ -440,11 +440,6 @@ class MediaStore(BackendStore):
         self.mediadb = kwargs.get('mediadb',MEDIA_DB)
 
         self.name = kwargs.get('name','MediaStore')
-
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \

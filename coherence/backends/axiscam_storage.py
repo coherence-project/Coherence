@@ -125,21 +125,17 @@ class AxisCamStore(BackendStore):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'8': 1000}
-
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
+
         self.next_id = 1000
         self.config = kwargs
         self.name = kwargs.get('name','AxisCamStore')
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-
-        self.server = server
         self.update_id = 0
         self.store = {}
+
+        self.wmc_mapping = {'8': 1000}
 
         self.init_completed()
 

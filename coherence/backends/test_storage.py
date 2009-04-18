@@ -314,12 +314,8 @@ class TestStore(BackendStore):
 
     def __init__(self, server, *args, **kwargs):
         print "TestStore kwargs", kwargs
+        BackendStore.__init__(self,server,**kwargs)
         self.name = kwargs.get('name', 'TestServer')
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-        self.server = server
         self.next_id = 1000
         self.update_id = 0
         self.store = {}

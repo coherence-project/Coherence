@@ -106,15 +106,13 @@ class SWR3Store(BackendStore,BackendRssMixin):
     implements = ['MediaServer']
 
     def __init__(self, server, *args, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
+
         self.name = kwargs.get('name', 'SWR3')
         self.opml = kwargs.get('opml', 'http://www.swr3.de/rdf-feed/podcast/')
         self.encoding = kwargs.get('encoding', "ISO-8859-1")
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
-        self.server = server
+
         self.next_id = 1000
         self.update_id = 0
         self.last_updated = None

@@ -180,14 +180,10 @@ class DVBDStore(BackendStore):
         if server.coherence.config.get('use_dbus','no') != 'yes':
             raise Exception, 'this backend needs use_dbus enabled in the configuration'
 
+        BackendStore.__init__(self,server,**kwargs)
         self.config = kwargs
         self.name = kwargs.get('name','TV')
 
-        self.urlbase = kwargs.get('urlbase','')
-        if self.urlbase[len(self.urlbase)-1] != '/':
-            self.urlbase += '/'
-
-        self.server = server
         self.update_id = 0
 
         if kwargs.get('enable_destroy','no') == 'yes':

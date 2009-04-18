@@ -543,6 +543,7 @@ class AmpacheStore(BackendStore):
     logCategory = 'ampache_store'
 
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
         self.config = kwargs
         self.name = kwargs.get('name','Ampache')
         self.key = kwargs.get('key','')
@@ -554,12 +555,6 @@ class AmpacheStore(BackendStore):
         else:
             self.proxy = False
 
-        self.urlbase = kwargs.get('urlbase','')
-        if self.urlbase[len(self.urlbase)-1] != '/':
-            self.urlbase += '/'
-
-
-        self.server = server
         self.update_id = 0
         self.token = None
 

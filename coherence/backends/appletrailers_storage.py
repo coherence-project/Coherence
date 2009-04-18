@@ -76,22 +76,15 @@ class AppleTrailersStore(BackendStore):
     logCategory = 'apple_trailers'
     implements = ['MediaServer']
 
-    wmc_mapping = {'15': 0}
-
-
     def __init__(self, server, *args, **kwargs):
-
+        BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000
         self.name = kwargs.get('name','Apple Trailers')
         self.refresh = int(kwargs.get('refresh', 8)) * (60 *60)
 
-        self.urlbase = kwargs.get('urlbase','')
-        if self.urlbase[len(self.urlbase)-1] != '/':
-            self.urlbase += '/'
-
-        self.server = server # the UPnP device that's hosting that backend
-        self.update_id = 0
         self.trailers = {}
+
+        self.wmc_mapping = {'15': 0}
 
         dfr = self.update_data()
         # first get the first bunch of data before sending init_completed

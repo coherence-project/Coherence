@@ -404,7 +404,7 @@ class FSStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server)
+        BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000
         self.name = kwargs.get('name','my media')
         self.content = kwargs.get('content',None)
@@ -423,12 +423,7 @@ class FSStore(BackendStore):
         if not isinstance( self.content, list):
             self.content = [self.content]
         self.content = Set([os.path.abspath(x) for x in self.content])
-        self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])
-
-        if not self.urlbase.endswith('/'):
-            self.urlbase += '/'
-        self.server = server
         self.store = {}
 
         self.inotify = None

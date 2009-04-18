@@ -162,25 +162,15 @@ class Gallery2Store(BackendStore):
 
     implements = ['MediaServer']
 
-    wmc_mapping = {'16': 1000}
-
-    gallery2_server_url = None;
-    gallery2_username = None;
-    gallery2_password = None;
-
-    gallery2_remote = None;
-
     def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
+
         self.next_id = 1000
         self.config = kwargs
         self.name = kwargs.get('name','gallery2Store')
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
-            self.urlbase += '/'
+        self.wmc_mapping = {'16': 1000}
 
-        self.server = server
         self.update_id = 0
         self.store = {}
 

@@ -43,14 +43,10 @@ class TEDStore(LolcatsStore):
     ROOT_ID = 0
 
     def __init__(self, server, *args, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
 
         self.name = kwargs.get('name', 'TEDtalks')
         self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
-        self.server = server
-
-        self.urlbase = kwargs.get('urlbase','')
-        if self.urlbase[len(self.urlbase)-1] != '/':
-            self.urlbase += '/'
 
         self.next_id = 1001
         self.last_updated = None
