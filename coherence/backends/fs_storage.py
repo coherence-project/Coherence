@@ -5,7 +5,7 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import os
+import os, stat
 import tempfile
 import shutil
 import time
@@ -620,6 +620,11 @@ class FSStore(BackendStore):
         if os.path.exists(path) == False:
             self.warning("path %r not available - ignored", path)
             return None
+
+        if stat.S_ISFIFO(os.stat(path).st_mode):
+            self.warning("path %r is a FIFO - ignored", path)
+            return None
+
         try:
             mimetype,_ = mimetypes.guess_type(path, strict=False)
             if mimetype == None:
