@@ -3,6 +3,8 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from sets import Set
+
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 from twisted.python import failure
@@ -425,6 +427,19 @@ class GStreamerPlayer(log.Loggable,Plugin):
         elif current == gst.STATE_PAUSED:
             state = 'paused'
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
+        elif len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0:
+            state = 'transitioning'
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
+            CurrentURI = self.server.av_transport_server.get_variable('NextAVTransportURI').value
+            CurrentURIMetaData = self.server.av_transport_server.get_variable('NextAVTransportURIMetaData').value
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NextAVTransportURI', '')
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NextAVTransportURIMetaData', '')
+            r = self.upnp_SetAVTransportURI(self, InstanceID=0,CurrentURI=CurrentURI,CurrentURIMetaData=CurrentURIMetaData)
+            if r == {}:
+                self.play()
+            else:
+                state = 'idle'
+                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
         else:
             state = 'idle'
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
@@ -507,9 +522,19 @@ class GStreamerPlayer(log.Loggable,Plugin):
         #self.server.av_transport_server.set_variable(connection_id, 'TransportState', 'TRANSITIONING')
         #self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
         if uri.startswith('http://'):
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE')
+            transport_actions = Set(['PLAY,STOP,PAUSE'])
         else:
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK')
+            transport_actions = Set(['PLAY,STOP,PAUSE,SEEK'])
+
+        if len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0:
+            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',2)
+            transport_actions.add('NEXT')
+        else:
+            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
+
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions',transport_actions)
+
+
         self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
         if state == gst.STATE_PLAYING:
@@ -663,11 +688,35 @@ class GStreamerPlayer(log.Loggable,Plugin):
             self.seek(str(seconds), old_state)
         return {}
 
+    def upnp_SetNextAVTransportURI(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        NextURI = kwargs['NextURI']
+        current_connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
+        NextMetaData = kwargs['NextURIMetaData']
+        self.server.av_transport_server.set_variable(current_connection_id, 'NextAVTransportURI',NextURI)
+        self.server.av_transport_server.set_variable(current_connection_id, 'NextAVTransportURIMetaData',NextMetaData)
+        if len(NextURI) == 0:
+            transport_actions = self.server.av_transport_server.get_variable('CurrentTransportActions').value
+            transport_actions = Set(transport_actions.split(','))
+            try:
+                transport_actions.remove('NEXT')
+                self.server.av_transport_server.set_variable(current_connection_id, 'CurrentTransportActions',transport_actions)
+            except KeyError:
+                pass
+            self.server.av_transport_server.set_variable(current_connection_id, 'NumberOfTracks',1)
+            return {}
+        self.server.av_transport_server.set_variable(current_connection_id, 'NumberOfTracks',2)
+        transport_actions = self.server.av_transport_server.get_variable('CurrentTransportActions').value
+        transport_actions = Set(transport_actions.split(','))
+        transport_actions.add('NEXT')
+        self.server.av_transport_server.set_variable(current_connection_id, 'CurrentTransportActions',transport_actions)
+        return {}
+
     def upnp_SetAVTransportURI(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        #print InstanceID, CurrentURI, CurrentURIMetaData
+        #print "upnp_SetAVTransportURI",InstanceID, CurrentURI, CurrentURIMetaData
         if len(CurrentURIMetaData)==0:
             self.load(CurrentURI,CurrentURIMetaData)
             return {}
