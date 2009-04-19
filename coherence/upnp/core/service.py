@@ -120,6 +120,7 @@ class Service(log.Loggable):
         append('URL base',self.device.get_urlbase)
         r.append(('UDN',self.device.get_id()))
         r.append(('Type',self.service_type))
+        r.append(('ID',self.id))
         append('Service Description URL',(self.scpd_url,lambda: self.device.make_fullyqualified(self.scpd_url)))
         append('Control URL',(self.control_url,lambda: self.device.make_fullyqualified(self.control_url),False))
         append('Event Subscription URL',(self.event_sub_url,lambda: self.device.make_fullyqualified(self.event_sub_url),False))
