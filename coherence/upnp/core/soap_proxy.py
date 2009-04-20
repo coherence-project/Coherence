@@ -84,6 +84,8 @@ class SOAPProxy(log.Loggable):
                 print c, c.tag
                 print_c(c)
 
+        self.debug("result: %r" % page)
+
         tree = parse_xml(page)
         #print tree, "find %s" % self.action
 
