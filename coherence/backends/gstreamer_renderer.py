@@ -5,7 +5,7 @@
 
 from sets import Set
 
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 from twisted.internet.task import LoopingCall
 from twisted.python import failure
 
@@ -50,9 +50,9 @@ class Player(log.Loggable):
     def remove_view(self,view):
         self.views.remove(view)
 
-    def update(self):
+    def update(self,message=None):
         for v in self.views:
-            v()
+            v(message=message)
 
     def create_pipeline(self, mimetype):
         if platform.uname()[1].startswith('Nokia'):
@@ -215,7 +215,7 @@ class Player(log.Loggable):
         elif t == gst.MESSAGE_EOS:
             print "reached file end"
             self.seek('-0')
-            self.update()
+            self.update(message=gst.MESSAGE_EOS)
 
     def query_position( self):
         #print "query_position"
@@ -405,12 +405,16 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.tags = {}
         self.server = device
 
+        self.playcontainer = None
+
+        self.dlna_caps = ['playcontainer-0-1']
+
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def update( self):
+    def update( self,message=None):
         _, current,_ = self.player.get_state()
         print "update", current
         """
@@ -427,7 +431,35 @@ class GStreamerPlayer(log.Loggable,Plugin):
         elif current == gst.STATE_PAUSED:
             state = 'paused'
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
-        elif len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0:
+        elif(self.playcontainer != None and
+             message == gst.MESSAGE_EOS and
+             self.playcontainer[0]+1 < len(self.playcontainer[2])):
+            state = 'transitioning'
+            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
+
+            next_track = ()
+            item = self.playcontainer[2][self.playcontainer[0]+1]
+            local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+            res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
+            if len(res) == 0:
+                res = item.res.get_matching(local_protocol_infos)
+            if len(res) > 0:
+                res = res[0]
+                remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                didl = DIDLLite.DIDLElement()
+                didl.addItem(item)
+                next_track = (res.data,didl.toString(),remote_content_format)
+                self.playcontainer[0] = self.playcontainer[0]+1
+
+            if len(next_track) == 3:
+                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack',self.playcontainer[0]+1)
+                self.load(next_track[0],next_track[1],next_track[2])
+                self.play()
+            else:
+                state = 'idle'
+                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
+        elif (message == gst.MESSAGE_EOS and
+              len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0):
             state = 'transitioning'
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
             CurrentURI = self.server.av_transport_server.get_variable('NextAVTransportURI').value
@@ -484,7 +516,6 @@ class GStreamerPlayer(log.Loggable,Plugin):
                             position[u'human'][u'position'],
                             position[u'human'][u'remaining'],
                             position[u'human'][u'duration'])
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack', 0)
             duration = string.atol(position[u'raw'][u'duration'])
             m,s = divmod( duration/1000000000, 60)
             h,m = divmod(m,60)
@@ -514,8 +545,16 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.mimetype = mimetype
         self.tags = {}
 
-        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
-        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+        if self.playcontainer == None:
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
+            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack',1)
+        else:
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',self.playcontainer[1])
+            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',len(self.playcontainer[2]))
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack',self.playcontainer[0]+1)
+
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
@@ -527,16 +566,10 @@ class GStreamerPlayer(log.Loggable,Plugin):
             transport_actions = Set(['PLAY,STOP,PAUSE,SEEK'])
 
         if len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0:
-            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',2)
             transport_actions.add('NEXT')
-        else:
-            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
 
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions',transport_actions)
 
-
-        self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTracks',1)
         if state == gst.STATE_PLAYING:
             print "was playing..."
             self.play()
@@ -625,6 +658,111 @@ class GStreamerPlayer(log.Loggable,Plugin):
         rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
         self.server.rendering_control_server.set_variable(rcs_id, 'Volume', volume)
 
+    def playcontainer_browse(self,uri):
+        """
+        dlna-playcontainer://uuid%3Afe814e3e-5214-4c24-847b-383fb599ff01?sid=urn%3Aupnp-org%3AserviceId%3AContentDirectory&cid=1441&fid=1444&fii=0&sc=&md=0
+        """
+        from urllib import unquote
+        from cgi import parse_qs
+        from coherence.extern.et import ET
+        from coherence.upnp.core.utils import parse_xml
+
+        def handle_reply(r,uri,action,kw):
+            try:
+                next_track = ()
+                elt = DIDLLite.DIDLElement.fromString(r['Result'])
+                item = elt.getItems()[0]
+                local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+                res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
+                if len(res) == 0:
+                    res = item.res.get_matching(local_protocol_infos)
+                if len(res) > 0:
+                    res = res[0]
+                    remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                    didl = DIDLLite.DIDLElement()
+                    didl.addItem(item)
+                    next_track = (res.data,didl.toString(),remote_content_format)
+                """ a list with these elements:
+
+                    the current track index
+                     - will change during playback of the container items
+                    the initial complete playcontainer-uri
+                    a list of all the items in the playcontainer
+                    the action methods to do the Browse call on the device
+                    the kwargs for the Browse call
+                     - kwargs['StartingIndex'] will be modified during further Browse requests
+                """
+                self.playcontainer = [int(kw['StartingIndex']),uri,elt.getItems()[:],action,kw]
+
+                def browse_more(starting_index,number_returned,total_matches):
+                    self.info("browse_more", starting_index,number_returned,total_matches)
+                    try:
+
+                        def handle_error(r):
+                            pass
+
+                        def handle_reply(r,starting_index):
+                            elt = DIDLLite.DIDLElement.fromString(r['Result'])
+                            self.playcontainer[2] += elt.getItems()[:]
+                            browse_more(starting_index,int(r['NumberReturned']),int(r['TotalMatches']))
+
+                        if((number_returned != 5 or
+                           number_returned < (total_matches-starting_index)) and
+                            (total_matches-number_returned) != starting_index):
+                            self.info("seems we have been returned only a part of the result")
+                            self.info("requested %d, starting at %d" % (5,starting_index))
+                            self.info("got %d out of %d" % (number_returned, total_matches))
+                            self.info("requesting more starting now at %d" % (starting_index+number_returned))
+                            self.playcontainer[4]['StartingIndex'] = str(starting_index+number_returned)
+                            d = self.playcontainer[3].call(**self.playcontainer[4])
+                            d.addCallback(handle_reply,starting_index+number_returned)
+                            d.addErrback(handle_error)
+                    except:
+                        import traceback
+                        traceback.print_exc()
+
+                browse_more(int(kw['StartingIndex']),int(r['NumberReturned']),int(r['TotalMatches']))
+
+                if len(next_track) == 3:
+                    return next_track
+            except:
+                import traceback
+                traceback.print_exc()
+
+            return failure.Failure(errorCode(714))
+
+        def handle_error(r):
+            return failure.Failure(errorCode(714))
+
+        try:
+            udn,args =  uri[21:].split('?')
+            udn = unquote(udn)
+            args = parse_qs(args)
+
+            type = args['sid'][0].split(':')[-1]
+
+            try:
+                sc = args['sc'][0]
+            except:
+                sc = ''
+
+            device = self.server.coherence.get_device_with_id(udn)
+            service = device.get_service_by_type(type)
+            action = service.get_action('Browse')
+
+            kw = {'ObjectID':args['cid'][0],
+                  'BrowseFlag':'BrowseDirectChildren',
+                  'StartingIndex':args['fii'][0],
+                  'RequestedCount':str(5),
+                  'Filter':'*',
+                  'SortCriteria':sc}
+
+            d = action.call(**kw)
+            d.addCallback(handle_reply,uri,action,kw)
+            d.addErrback(handle_error)
+            return d
+        except:
+            return failure.Failure(errorCode(714))
 
 
     def upnp_init(self):
@@ -651,7 +789,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
                              'internal:%s:image/jpeg:*' % self.server.coherence.hostname,
                              'http-get:*:image/jpeg:*',
                              'internal:%s:image/png:*' % self.server.coherence.hostname,
-                             'http-get:*:image/png:*'],
+                             'http-get:*:image/png:*',
+                             'http-get:*:*:*'],
                             default=True)
         self.server.av_transport_server.set_variable(0, 'TransportState', 'NO_MEDIA_PRESENT', default=True)
         self.server.av_transport_server.set_variable(0, 'TransportStatus', 'OK', default=True)
@@ -703,9 +842,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 self.server.av_transport_server.set_variable(current_connection_id, 'CurrentTransportActions',transport_actions)
             except KeyError:
                 pass
-            self.server.av_transport_server.set_variable(current_connection_id, 'NumberOfTracks',1)
             return {}
-        self.server.av_transport_server.set_variable(current_connection_id, 'NumberOfTracks',2)
         transport_actions = self.server.av_transport_server.get_variable('CurrentTransportActions').value
         transport_actions = Set(transport_actions.split(','))
         transport_actions.add('NEXT')
@@ -717,7 +854,20 @@ class GStreamerPlayer(log.Loggable,Plugin):
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
         #print "upnp_SetAVTransportURI",InstanceID, CurrentURI, CurrentURIMetaData
-        if len(CurrentURIMetaData)==0:
+        if CurrentURI.startswith('dlna-playcontainer://'):
+            def handle_result(r):
+                self.load(r[0],r[1],mimetype=r[2])
+                return {}
+
+            def pass_error(r):
+                return r
+
+            d = defer.maybeDeferred(self.playcontainer_browse,CurrentURI)
+            d.addCallback(handle_result)
+            d.addErrback(pass_error)
+            return d
+        elif len(CurrentURIMetaData)==0:
+            self.playcontainer = None
             self.load(CurrentURI,CurrentURIMetaData)
             return {}
         else:
@@ -732,6 +882,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 if len(res) > 0:
                     res = res[0]
                     remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                    self.playcontainer = None
                     self.load(res.data,CurrentURIMetaData,mimetype=remote_content_format)
                     return {}
         return failure.Failure(errorCode(714))

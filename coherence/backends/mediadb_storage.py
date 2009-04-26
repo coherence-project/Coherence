@@ -139,26 +139,26 @@ def sanitize(filename):
     f = f.replace(badchars, '_')
     return f
 
+
 class Container(BackendItem):
 
     get_path = None
 
-    def __init__(self, id, parent_id, name, children_callback=None):
+    def __init__(self, id, parent_id, name, children_callback=None,store=None,play_container=False):
         self.id = id
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = DIDLLite.Container(id, parent_id,self.name)
+        self.store = store
+        self.play_container = play_container
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
         else:
             self.children = []
-        self.item.childCount = self.get_child_count()
 
     def add_child(self, child):
         self.children.append(child)
-        self.item.childCount += 1
 
     def get_children(self,start=0,request_count=0):
         if callable(self.children):
@@ -177,13 +177,20 @@ class Container(BackendItem):
             return len(self.children)
 
     def get_item(self):
-        return self.item
+        item = DIDLLite.Container(self.id, self.parent_id,self.name)
+        item.childCount = self.get_child_count()
+        if self.store and self.play_container == True:
+            if item.childCount > 0:
+                res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=self.get_children()[0].get_id())
+                item.res.append(res)
+        return item
 
     def get_name(self):
         return self.name
 
     def get_id(self):
         return self.id
+
 
 class Artist(item.Item,BackendItem):
     """ definition for an artist """
@@ -212,7 +219,8 @@ class Artist(item.Item,BackendItem):
         all_id = 'artist_all_tracks_%d' % (self.storeID+1000)
         self.store.containers[all_id] = \
                 Container( all_id, self.storeID+1000, 'All tracks of %s' % self.name,
-                          children_callback=self.get_artist_all_tracks)
+                          children_callback=self.get_artist_all_tracks,
+                          store=self.store,play_container=True)
 
         children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self,sort=Album.title.ascending))
         if request_count == 0:
@@ -237,6 +245,7 @@ class Artist(item.Item,BackendItem):
     def __repr__(self):
         return '<Artist %d name="%s" musicbrainz="%s">' \
                % (self.storeID, self.name.encode('ascii', 'ignore'), self.musicbrainz_id)
+
 
 class Album(item.Item,BackendItem):
     """ definition for an album """
@@ -270,6 +279,10 @@ class Album(item.Item,BackendItem):
         if len(self.cover)>0:
             _,ext =  os.path.splitext(self.cover)
             item.albumArtURI = ''.join((self.store.urlbase,str(self.get_id()),'?cover',ext))
+
+        if self.get_child_count() > 0:
+            res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=self.get_children()[0].get_id())
+            item.res.append(res)
         return item
 
     def get_id(self):
@@ -288,6 +301,7 @@ class Album(item.Item,BackendItem):
                   self.cd_count,
                   self.cover.encode('ascii', 'ignore'),
                   self.musicbrainz_id)
+
 
 class Track(item.Item,BackendItem):
     """ definition for a track """
@@ -406,6 +420,7 @@ class Track(item.Item,BackendItem):
                   self.album.artist.name.encode('ascii', 'ignore'),
                   self.location.encode('ascii', 'ignore'))
 
+
 class Playlist(item.Item,BackendItem):
     """ definition for a playlist
 
@@ -423,6 +438,7 @@ class Playlist(item.Item,BackendItem):
     # references to tracks
 
     get_path = None
+
 
 class MediaStore(BackendStore):
     logCategory = 'media_store'
@@ -630,7 +646,8 @@ class MediaStore(BackendStore):
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)))
+                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)),
+                          store=self,play_container=True)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
                 Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',

@@ -89,6 +89,11 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         self.web_resource = HttpRoot(self)
         self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
 
+        try:
+            dlna_caps = self.backend.dlna_caps
+        except AttributeError:
+            dlna_caps = []
+
 
         version = self.version
         while version > 0:
@@ -103,7 +108,8 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                                     model_name='Coherence UPnP A/V %s' % self.device_type,
                                     services=self._services,
                                     devices=self._devices,
-                                    icons=self.icons))
+                                    icons=self.icons,
+                                    dlna_caps=dlna_caps))
             version -= 1
 
 

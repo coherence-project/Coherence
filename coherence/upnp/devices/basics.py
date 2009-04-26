@@ -68,7 +68,8 @@ class RootDeviceXML(static.Data):
                         presentation_url='',
                         services=[],
                         devices=[],
-                        icons=[]):
+                        icons=[],
+                        dlna_caps=[]):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
@@ -95,6 +96,14 @@ class RootDeviceXML(static.Data):
             x = ET.SubElement(d, 'dlna:X_DLNADOC')
             x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
             x.text = 'M-DMR-1.50'
+
+        if len(dlna_caps) > 0:
+            if isinstance(dlna_caps, basestring):
+                dlna_caps = [dlna_caps]
+            for cap in dlna_caps:
+                x = ET.SubElement(d, 'dlna:X_DLNACAP')
+                x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+                x.text = cap
 
         ET.SubElement( d, 'deviceType').text = _device_type
         ET.SubElement( d, 'friendlyName').text = friendly_name
@@ -152,6 +161,7 @@ class RootDeviceXML(static.Data):
 
         self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
+
 
 class BasicDeviceMixin(object):
 

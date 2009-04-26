@@ -12,6 +12,7 @@ TODO:
 """
 import os
 import string
+import urllib
 from datetime import datetime
 
 DC_NS = 'http://purl.org/dc/elements/1.1/'
@@ -180,7 +181,7 @@ def build_dlna_additional_info(content_format):
     return additional_info
 
 
-class Resource:
+class Resource(object):
     """An object representing a resource."""
 
     def __init__(self, data=None, protocolInfo=None):
@@ -301,6 +302,43 @@ class Resource:
         new_res.resolution = self.resolution
         return new_res
 
+
+class PlayContainerResource(Resource):
+    """An object representing a DLNA playcontainer resource."""
+
+    def __init__(self, udn, sid='urn:upnp-org:serviceId:ContentDirectory',
+                            cid=None,
+                            fid=None,
+                            fii=0,
+                            sc='',md=0,
+                            protocolInfo=None):
+
+        if cid == None:
+            raise AttributeError('missing Container Id')
+        if fid == None:
+            raise AttributeError('missing first Child Id')
+        self.protocolInfo = protocolInfo
+        self.bitrate = None
+        self.size = None
+        self.duration = None
+        self.resolution = None
+        self.importUri = None
+
+        args = ['sid=' + urllib.quote(sid),
+                'cid=' + urllib.quote(str(cid)),
+                'fid=' + urllib.quote(str(fid)),
+                'fii=' + urllib.quote(str(fii)),
+                'sc=' + urllib.quote(''),
+                'md=' + urllib.quote(str(0))]
+
+        self.data = 'dlna-playcontainer://' + urllib.quote(str(udn)) \
+                                            + '?' + '&'.join(args)
+
+
+        if self.protocolInfo == None:
+            self.protocolInfo = 'http-get:*:*:*'
+
+
 class Object(log.Loggable):
     """The root class of the entire content directory class heirachy."""
 
@@ -308,7 +346,7 @@ class Object(log.Loggable):
 
     upnp_class = 'object'
     creator = None
-    #res = None
+    res = None
     writeStatus = None
     date = None
     albumArtURI = None
@@ -329,6 +367,7 @@ class Object(log.Loggable):
         self.title = title
         self.creator = creator
         self.restricted = restricted
+        self.res = Resources()
 
     def checkUpdate(self):
         return self
@@ -482,7 +521,9 @@ class Object(log.Loggable):
                 self.upnp_class = child.text
             elif child.tag.endswith('server_uuid'):
                 self.server_uuid = child.text
-
+            elif child.tag.endswith('res'):
+                res = Resource.fromString(ET.tostring(child))
+                self.res.append(res)
 
     @classmethod
     def fromString(cls, data):
@@ -505,7 +546,6 @@ class Item(Object):
 
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
-        self.res = Resources()
 
     def toElement(self,**kwargs):
 
@@ -549,9 +589,7 @@ class Item(Object):
                 self.refID = child.text
             elif child.tag.endswith('director'):
                 self.director = child.text
-            elif child.tag.endswith('res'):
-                res = Resource.fromString(ET.tostring(child))
-                self.res.append(res)
+
 
 class ImageItem(Item):
     upnp_class = Item.upnp_class + '.imageItem'
@@ -723,6 +761,8 @@ class Container(Object):
             else:
                 root.attrib['searchable'] = '0'
 
+        for res in self.res:
+            root.append(res.toElement(**kwargs))
         return root
 
     def fromElement(self, elt):
@@ -750,24 +790,6 @@ class MusicArtist(Person):
 
 class PlaylistContainer(Container):
     upnp_class = Container.upnp_class + '.playlistContainer'
-
-    def __init__(self, id=None, parentID=None, title=None,
-                 restricted = False, creator = None):
-        Container.__init__(self, id, parentID, title, restricted, creator)
-        self.res = Resources()
-
-    def toElement(self,**kwargs):
-        root = Container.toElement(self,**kwargs)
-        for res in self.res:
-            root.append(res.toElement(**kwargs))
-        return root
-
-    def fromElement(self, elt):
-        Container.fromElement(self, elt)
-        for child in elt.getchildren():
-            if child.tag.endswith('res'):
-                res = Resource.fromString(ET.tostring(child))
-                self.res.append(res)
 
 
 class Album(Container):
