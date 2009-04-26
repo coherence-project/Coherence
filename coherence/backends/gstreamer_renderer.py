@@ -156,7 +156,7 @@ class Player(log.Loggable):
                 muted = self.stored_volume == 0
             except:
                 muted = False
-                print "can't get mute state"
+                self.warning("can't get mute state")
         return muted
 
     def get_state(self):
@@ -186,7 +186,7 @@ class Player(log.Loggable):
         #print t
         if t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
-            print "Gstreamer error: %s" % err, debug
+            self.warning("Gstreamer error: %r,%r" % (err, debug))
             if self.playing == True:
                 self.seek('-0')
             #self.player.set_state(gst.STATE_READY)
@@ -213,7 +213,7 @@ class Player(log.Loggable):
                 #    self.update()
 
         elif t == gst.MESSAGE_EOS:
-            print "reached file end"
+            self.debug("reached file end")
             self.seek('-0')
             self.update(message=gst.MESSAGE_EOS)
 
@@ -255,12 +255,12 @@ class Player(log.Loggable):
         return r
 
     def load( self, uri, mimetype):
-        print "load -->", uri, mimetype
+        self.debug("load --> %r %r" % (uri, mimetype))
         _,state,_ = self.player.get_state()
         if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
             self.stop()
 
-        print "player -->", self.player.get_name()
+        #print "player -->", self.player.get_name()
         if self.player.get_name() != 'player':
             self.create_pipeline(mimetype)
 
@@ -272,18 +272,18 @@ class Player(log.Loggable):
         #self.player.set_state(gst.STATE_PAUSED)
         self.player.set_state(gst.STATE_READY)
         self.update()
-        print "load <--"
+        self.debug("load <--")
         if state == gst.STATE_PLAYING:
             self.play()
 
     def play( self):
         uri = self.get_uri()
         mimetype = self.mimetype
-        print "play -->", uri, mimetype
+        self.debug("play --> %r %r" % (uri, mimetype))
 
         if self.player.get_name() != 'player':
             if self.player_clean == False:
-                print "rebuild pipeline"
+                #print "rebuild pipeline"
                 self.player.set_state(gst.STATE_NULL)
 
                 self.create_pipeline(mimetype)
@@ -293,7 +293,7 @@ class Player(log.Loggable):
         else:
             self.player_clean = True
         self.player.set_state(gst.STATE_PLAYING)
-        print "play <--"
+        self.debug("play <--")
 
     def pause(self):
         self.player.set_state(gst.STATE_PAUSED)
@@ -327,7 +327,7 @@ class Player(log.Loggable):
                 l = max( l, 0L)
 
 
-        print "seeking to %r" % l
+        self.debug("seeking to %r" % l)
         """
         self.player.seek( 1.0, gst.FORMAT_TIME,
             gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
@@ -416,7 +416,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
     def update( self,message=None):
         _, current,_ = self.player.get_state()
-        print "update", current
+        self.debug("update current %r" % current)
         """
         if current == gst.STATE_NULL:
             return
@@ -476,7 +476,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             state = 'idle'
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
 
-        print "update", state
+        self.info("update %r" % state)
         position = self.player.query_position()
         #print position
 
@@ -507,7 +507,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                                                     'CurrentTrackMetaData',self.metadata)
 
 
-            print "%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
+            self.info("%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
                             string.atol(position[u'raw'][u'position'])/1000000000,
                             string.atol(position[u'raw'][u'remaining'])/1000000000,
                             string.atol(position[u'raw'][u'duration'])/1000000000,
@@ -515,7 +515,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                             position[u'percent'][u'remaining'],
                             position[u'human'][u'position'],
                             position[u'human'][u'remaining'],
-                            position[u'human'][u'duration'])
+                            position[u'human'][u'duration']))
             duration = string.atol(position[u'raw'][u'duration'])
             m,s = divmod( duration/1000000000, 60)
             h,m = divmod(m,60)
@@ -528,7 +528,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
 
     def load( self, uri,metadata, mimetype=None):
-        print "loading:", uri, mimetype
+        self.info("loading: %r %r " % (uri, mimetype))
         _,state,_ = self.player.get_state()
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
         self.stop(silent=True) # the check whether a stop is really needed is done inside stop
@@ -571,7 +571,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions',transport_actions)
 
         if state == gst.STATE_PLAYING:
-            print "was playing..."
+            self.info("was playing...")
             self.play()
         self.update()
 
@@ -611,7 +611,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.play()
 
     def stop(self,silent=False):
-        print 'Stopping:', self.player.get_uri()
+        self.info('Stopping: %r' % self.player.get_uri())
         if self.player.get_uri() == None:
             return
         if self.player.get_state()[1] in [gst.STATE_PLAYING,gst.STATE_PAUSED]:
@@ -620,7 +620,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
 
     def play( self):
-        print "Playing:", self.player.get_uri()
+        self.info("Playing: %r" % self.player.get_uri())
         if self.player.get_uri() == None:
             return
         self.player.play()
@@ -628,7 +628,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
 
     def pause( self):
-        print 'Pausing:', self.player.get_uri()
+        self.info('Pausing: %r' % self.player.get_uri())
         self.player.pause()
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
 
