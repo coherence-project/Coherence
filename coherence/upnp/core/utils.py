@@ -171,6 +171,8 @@ def get_host_address():
                 return '127.0.0.1'
 
             d = utils.getProcessOutput('netstat', ['-rn'])
+            d.addCallback(result)
+            d.addErrback(fail)
             return d
         except Exception, msg:
             import traceback
