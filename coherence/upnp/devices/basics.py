@@ -29,7 +29,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
         self.server = server
 
     def getChildWithDefault(self, path, request):
-        self.info('DeviceHttpRoot %s getChildWithDefault' % self.server.device_type, path, request.uri, request.client)
+        self.info('DeviceHttpRoot %s getChildWithDefault ' % self.server.device_type, path, request.uri, request.client)
         self.info( request.getAllHeaders())
         if self.children.has_key(path):
             return self.children[path]
@@ -38,12 +38,13 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
         return self.getChild(path, request)
 
     def getChild(self, name, request):
-        self.info('DeviceHttpRoot %s getChild %s' % (name, request))
+        self.info('DeviceHttpRoot %s getChild %s ' % (name, request))
+        ch = None
         if ch is None:
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
-        self.info('DeviceHttpRoot ch', ch)
+        self.info('DeviceHttpRoot ch ', ch)
         return ch
 
     def listchilds(self, uri):
@@ -60,11 +61,18 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
 class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
+                        xmlns='urn:schemas-upnp-org:device-1-0',
+                        device_uri_base='urn:schemas-upnp-org:device',
                         device_type='BasicDevice',
                         version=2,
                         friendly_name='Coherence UPnP BasicDevice',
+                        manufacturer='beebits.net',
+                        manufacturer_url='http://coherence.beebits.net',
                         model_description='Coherence UPnP BasicDevice',
                         model_name='Coherence UPnP BasicDevice',
+                        model_number=__version__,
+                        model_url='http://coherence.beebits.net',
+                        serial_number='0000001',
                         presentation_url='',
                         services=[],
                         devices=[],
@@ -72,8 +80,8 @@ class RootDeviceXML(static.Data):
                         dlna_caps=[]):
         uuid = str(uuid)
         root = ET.Element('root')
-        root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
-        _device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, version)
+        root.attrib['xmlns']=xmlns
+        device_type_uri = ':'.join((device_uri_base,device_type, str(version)))
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement( e, 'major').text = '1'
         ET.SubElement( e, 'minor').text = '0'
@@ -105,15 +113,15 @@ class RootDeviceXML(static.Data):
                 x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
                 x.text = cap
 
-        ET.SubElement( d, 'deviceType').text = _device_type
+        ET.SubElement( d, 'deviceType').text = device_type_uri
         ET.SubElement( d, 'friendlyName').text = friendly_name
-        ET.SubElement( d, 'manufacturer').text = 'beebits.net'
-        ET.SubElement( d, 'manufacturerURL').text = 'http://coherence.beebits.net'
+        ET.SubElement( d, 'manufacturer').text = manufacturer
+        ET.SubElement( d, 'manufacturerURL').text = manufacturer_url
         ET.SubElement( d, 'modelDescription').text = model_description
         ET.SubElement( d, 'modelName').text = model_name
-        ET.SubElement(d, 'modelNumber').text = __version__
-        ET.SubElement( d, 'modelURL').text = 'http://coherence.beebits.net'
-        ET.SubElement( d, 'serialNumber').text = '0000001'
+        ET.SubElement(d, 'modelNumber').text = model_number
+        ET.SubElement( d, 'modelURL').text = model_url
+        ET.SubElement( d, 'serialNumber').text = serial_number
         ET.SubElement( d, 'UDN').text = uuid
         ET.SubElement( d, 'UPC').text = ''
         ET.SubElement( d, 'presentationURL').text = presentation_url
@@ -148,13 +156,25 @@ class RootDeviceXML(static.Data):
         if len(icons):
             e = ET.SubElement(d, 'iconList')
             for icon in icons:
-                i = ET.SubElement(e, 'icon')
-                for k,v in icon.items():
-                    if k == 'url':
-                        if v.startswith('file://'):
-                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
-                            continue
-                    ET.SubElement(i, k).text = str(v)
+
+                icon_path = ''
+                if icon.has_key('url'):
+                    if icon['url'].startswith('file://'):
+                        icon_path = os.path.basename(icon['url'])
+                    elif icon['url'] == '.face':
+                        icon_path = os.path.join(os.path.expanduser('~'), ".face")
+                    else:
+                        from pkg_resources import resource_filename
+                        icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
+
+                if os.path.exists(icon_path) == True:
+                    i = ET.SubElement(e, 'icon')
+                    for k,v in icon.items():
+                        if k == 'url':
+                            if v.startswith('file://'):
+                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                continue
+                        ET.SubElement(i, k).text = str(v)
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)

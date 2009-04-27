@@ -473,19 +473,31 @@ class RootDeviceXML(static.Data):
         if len(icons):
             e = ET.SubElement(d, 'iconList')
             for icon in icons:
-                i = ET.SubElement(e, 'icon')
-                for k,v in icon.items():
-                    if k == 'url':
-                        if v.startswith('file://'):
-                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
-                            continue
-                        elif v == '.face':
-                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+'face-icon.png'
-                            continue
-                        else:
-                            ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
-                            continue
-                    ET.SubElement(i, k).text = str(v)
+
+                icon_path = ''
+                if icon.has_key('url'):
+                    if icon['url'].startswith('file://'):
+                        icon_path = os.path.basename(icon['url'])
+                    elif icon['url'] == '.face':
+                        icon_path = os.path.join(os.path.expanduser('~'), ".face")
+                    else:
+                        from pkg_resources import resource_filename
+                        icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
+
+                if os.path.exists(icon_path) == True:
+                    i = ET.SubElement(e, 'icon')
+                    for k,v in icon.items():
+                        if k == 'url':
+                            if v.startswith('file://'):
+                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                continue
+                            elif v == '.face':
+                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+'face-icon.png'
+                                continue
+                            else:
+                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                continue
+                        ET.SubElement(i, k).text = str(v)
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
@@ -596,17 +608,18 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         for icon in self.icons:
             if icon.has_key('url'):
                 if icon['url'].startswith('file://'):
-                    self.web_resource.putChild(os.path.basename(icon['url']),
-                                               StaticFile(icon['url'][7:]))
+                    if os.path.exists(os.path.basename(icon['url'])):
+                        self.web_resource.putChild(os.path.basename(icon['url']),
+                                                   StaticFile(icon['url'][7:],defaultType=icon['mimetype']))
                 elif icon['url'] == '.face':
-                    face_path = os.path.join(os.path.expanduser('~'), ".face")
+                    face_path = os.path.abspath(os.path.join(os.path.expanduser('~'), ".face"))
                     if os.path.exists(face_path):
-                        self.web_resource.putChild('face-icon.png',StaticFile(face_path))
+                        self.web_resource.putChild('face-icon.png',StaticFile(face_path,defaultType=icon['mimetype']))
                 else:
                     from pkg_resources import resource_filename
                     icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
                     if os.path.exists(icon_path):
-                        self.web_resource.putChild(icon['url'],StaticFile(icon_path))
+                        self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
 
         self.register()
         self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))

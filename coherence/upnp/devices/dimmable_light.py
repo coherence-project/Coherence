@@ -90,7 +90,7 @@ class DimmableLight(log.Loggable,BasicDeviceMixin):
                                     RootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
-                                    self.device_type, version,
+                                    device_type=self.device_type, version=version,
                                     friendly_name=self.backend.name,
                                     model_description='Coherence UPnP %s' % self.device_type,
                                     model_name='Coherence UPnP %s' % self.device_type,
