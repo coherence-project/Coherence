@@ -22,7 +22,7 @@
                             <pipeline>v4l2src num-buffers=1 ! video/x-raw-yuv,width=640,height=480 ! ffmpegcolorspace ! jpegenc name=enc</pipeline>\
                             <mimetype>image/jpeg></mimetype></item>"
 
-                "video/x-raw-yuv,,width=640,height=480" won't work here as it is a delimiter for the plugin string,
+                "video/x-raw-yuv,width=640,height=480" won't work here as it is a delimiter for the plugin string,
                 so if you need things like that in the pipeline, you need to use a config file
 
     coherence --plugin="backend:TestStore,name:Test,\
@@ -75,7 +75,10 @@ from twisted.web import resource,server
 from coherence.backend import BackendStore,BackendRssMixin
 from coherence.backend import BackendItem
 
-from coherence.transcoder import GStreamerPipeline
+try:
+    from coherence.transcoder import GStreamerPipeline
+except ImportError:
+    pass
 
 from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.utils import parse_xml
@@ -350,8 +353,12 @@ class TestStore(BackendStore):
                     new_item = Item(self.store[ROOT_CONTAINER_ID], item_id, name, location,self.urlbase + str(item_id))
                 elif type == 'gstreamer':
                     pipeline = item.get('pipeline')
-                    pipeline = GStreamerPipeline(pipeline,mimetype)
-                    new_item = ResourceItem(self.store[ROOT_CONTAINER_ID], item_id, name, pipeline,self.urlbase + str(item_id))
+                    try:
+                        pipeline = GStreamerPipeline(pipeline,mimetype)
+                        new_item = ResourceItem(self.store[ROOT_CONTAINER_ID], item_id, name, pipeline,self.urlbase + str(item_id))
+                    except NameError:
+                        self.warning("Can't enable GStreamerPipeline, probably pygst not installed")
+                        continue
 
                 elif type == 'process':
                     pipeline = item.get('command')
