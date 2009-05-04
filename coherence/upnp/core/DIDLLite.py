@@ -152,33 +152,46 @@ simple_dlna_tags = ['DLNA.ORG_OP=01',      # operations parameter
                     'DLNA.ORG_CI=0',       # transcoded parameter
                     'DLNA.ORG_FLAGS=01100000000000000000000000000000']
 
-def build_dlna_additional_info(content_format):
-    additional_info = '*'
+def build_dlna_additional_info(content_format,does_playcontainer=False):
+    additional_info = ['*']
     if content_format == 'audio/mpeg':
-        additional_info = ';'.join(['DLNA.ORG_PN=MP3']+simple_dlna_tags)
+        additional_info = ['DLNA.ORG_PN=MP3']+simple_dlna_tags
     if content_format == 'audio/ms-wma':
-        additional_info = ';'.join(['DLNA.ORG_PN=WMABASE']+simple_dlna_tags)
+        additional_info = ['DLNA.ORG_PN=WMABASE']+simple_dlna_tags
     if content_format == 'image/jpeg':
         dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
-        additional_info = ';'.join(['DLNA.ORG_PN=JPEG_LRG']+dlna_tags)
+        additional_info = ['DLNA.ORG_PN=JPEG_LRG']+dlna_tags
     if content_format == 'image/png':
         dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
-        additional_info = ';'.join(['DLNA.ORG_PN=PNG_LRG']+dlna_tags)
+        additional_info = ['DLNA.ORG_PN=PNG_LRG']+dlna_tags
     if content_format == 'video/mpeg':
-        additional_info = ';'.join(['DLNA.ORG_PN=MPEG_PS_PAL']+simple_dlna_tags)
+        additional_info = ['DLNA.ORG_PN=MPEG_PS_PAL']+simple_dlna_tags
     if content_format == 'video/mpegts':
-        additional_info = ';'.join(['DLNA.ORG_PN=MPEG_TS_PAL']+simple_dlna_tags)
+        additional_info = ['DLNA.ORG_PN=MPEG_TS_PAL']+simple_dlna_tags
         content_format = 'video/mpeg'
     if content_format in ['video/mp4','video/x-m4a']:
-        additional_info = ';'.join(['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC']+simple_dlna_tags)
+        additional_info = ['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC']+simple_dlna_tags
     if content_format == 'video/x-msvideo':
         #additional_info = ';'.join(['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC']+simple_dlna_tags)
-        additional_info = '*'
+        additional_info = ['*']
     if content_format == 'video/x-ms-wmv':
-        additional_info = ';'.join(['DLNA.ORG_PN=WMV_BASE']+simple_dlna_tags)
-    return additional_info
+        additional_info = ['DLNA.ORG_PN=WMV_BASE']+simple_dlna_tags
+    if content_format == '*':
+        additional_info = simple_dlna_tags
+
+    if does_playcontainer == True:
+        i = 0
+        for part in additional_info:
+            if part.startswith('DLNA.ORG_FLAGS'):
+                _,bits = part.split('=')
+                bits = int(bits,16)
+                bits |=  0x10000000000000000000000000000000
+                additional_info[i] = 'DLNA.ORG_FLAGS=%.32x' % bits
+                break
+            i += 1
+    return ';'.join(additional_info)
 
 
 class Resource(object):

@@ -389,7 +389,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
     logCategory = 'gstreamer_player'
     implements = ['MediaRenderer']
     vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'},
-                             'AVTransport': {'A_ARG_TYPE_SeekMode':('ABS_TIME','REL_TIME')}}
+                             'AVTransport': {'A_ARG_TYPE_SeekMode':('ABS_TIME','REL_TIME','TRACK_NR')}}
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, device, **kwargs):
@@ -567,6 +567,12 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
         if len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0:
             transport_actions.add('NEXT')
+
+        if self.playcontainer != None:
+            if len(self.playcontainer[2]) - (self.playcontainer[0]+1) > 0:
+                transport_actions.add('NEXT')
+            if self.playcontainer[0] > 0:
+                transport_actions.add('PREVIOUS')
 
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions',transport_actions)
 
@@ -819,13 +825,60 @@ class GStreamerPlayer(log.Loggable,Plugin):
         InstanceID = int(kwargs['InstanceID'])
         Unit = kwargs['Unit']
         Target = kwargs['Target']
+        if InstanceID != 0:
+            return failure.Failure(errorCode(718))
         if Unit in ['ABS_TIME','REL_TIME']:
-            old_state = self.server.av_transport_server.get_variable(0, 'TransportState')
-            self.server.av_transport_server.set_variable(0, 'TransportState', 'TRANSITIONING')
+            old_state = self.server.av_transport_server.get_variable('TransportState').value
+            self.server.av_transport_server.set_variable(InstanceID, 'TransportState', 'TRANSITIONING')
             h,m,s = Target.split(':')
             seconds = int(h)*3600 + int(m)*60 + int(s)
             self.seek(str(seconds), old_state)
+        if Unit in ['TRACK_NR']:
+            if self.playcontainer == None:
+                NextURI = self.server.av_transport_server.get_variable(InstanceID, 'NextAVTransportURI').value
+                if NextURI != '':
+                    self.server.av_transport_server.set_variable(InstanceID, 'TransportState', 'TRANSITIONING')
+                    NextURIMetaData = self.server.av_transport_server.get_variable('NextAVTransportURIMetaData').value
+                    self.server.av_transport_server.set_variable(InstanceID, 'NextAVTransportURI', '')
+                    self.server.av_transport_server.set_variable(InstanceID, 'NextAVTransportURIMetaData', '')
+                    r = self.upnp_SetAVTransportURI(self, InstanceID=InstanceID,CurrentURI=NextURI,CurrentURIMetaData=NextURIMetaData)
+                    return r
+            else:
+                Target = int(Target)
+                if 0 < Target <= len(self.playcontainer[2]):
+                    self.server.av_transport_server.set_variable(InstanceID, 'TransportState', 'TRANSITIONING')
+                    next_track = ()
+                    item = self.playcontainer[2][Target-1]
+                    local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+                    res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
+                    if len(res) == 0:
+                        res = item.res.get_matching(local_protocol_infos)
+                    if len(res) > 0:
+                        res = res[0]
+                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                        didl = DIDLLite.DIDLElement()
+                        didl.addItem(item)
+                        next_track = (res.data,didl.toString(),remote_content_format)
+                        self.playcontainer[0] = Target-1
+
+                    if len(next_track) == 3:
+                        self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack',Target)
+                        self.load(next_track[0],next_track[1],next_track[2])
+                        self.play()
+                        return {}
+            return failure.Failure(errorCode(711))
+
         return {}
+
+    def upnp_Next(self,*args,**kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        track_nr = self.server.av_transport_server.get_variable('CurrentTrack')
+        return self.upnp_Seek(self,InstanceID=InstanceID,Unit='TRACK_NR',Target=str(int(track_nr.value)+1))
+
+    def upnp_Previous(self,*args,**kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        track_nr = self.server.av_transport_server.get_variable('CurrentTrack')
+        return self.upnp_Seek(self,InstanceID=InstanceID,Unit='TRACK_NR',Target=str(int(track_nr.value)-1))
 
     def upnp_SetNextAVTransportURI(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])

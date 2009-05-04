@@ -52,6 +52,13 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
         self.set_variable(0, 'SinkProtocolInfo', '')
         self.set_variable(0, 'CurrentConnectionIDs', '')
 
+        self.does_playcontainer = False
+        try:
+            if 'playcontainer-0-1' in backend.dlna_caps:
+                self.does_playcontainer = True
+        except AttributeError:
+            pass
+
         self.remove_lingering_connections_loop = task.LoopingCall(self.remove_lingering_connections)
         self.remove_lingering_connections_loop.start(180.0, now=False)
 
@@ -179,7 +186,8 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
         return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
     def set_variable(self, instance, variable_name, value, default=False):
-        if variable_name == 'SourceProtocolInfo':
+        if(variable_name == 'SourceProtocolInfo' or
+           variable_name == 'SinkProtocolInfo'):
             if isinstance(value,basestring) and len(value) > 0:
                 value = [v.strip() for v in value.split(',')]
             without_dlna_tags = []
@@ -202,7 +210,10 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
             for w in without_dlna_tags:
                 if with_some_tag_already_there(w) == False:
                     protocol,network,content_format,additional_info = w.split(':')
-                    value.append(':'.join((protocol,network,content_format,build_dlna_additional_info(content_format))))
+                    if variable_name == 'SinkProtocolInfo':
+                        value.append(':'.join((protocol,network,content_format,build_dlna_additional_info(content_format,does_playcontainer=self.does_playcontainer))))
+                    else:
+                        value.append(':'.join((protocol,network,content_format,build_dlna_additional_info(content_format))))
 
         service.ServiceServer.set_variable(self,instance,variable_name,value,default=default)
 
