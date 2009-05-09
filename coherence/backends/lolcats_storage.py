@@ -215,6 +215,7 @@ class LolcatsStore(BackendStore):
         # And we don't want that to happen as long as we don't have succeeded
         # in fetching some first data, so we delay this signaling after the update is done:
         dfr.addCallback(self.init_completed)
+        dfr.addCallback(self.queue_update)
 
     def get_by_id(self, id):
         print "asked for", id, type(id)
@@ -228,17 +229,46 @@ class LolcatsStore(BackendStore):
 
     def upnp_init(self):
         # after the signal was triggered, this method is called by coherence and
+
+        # from now on self.server is existing and we can do
+        # the necessary setup here
+
         # that allows us to specify our server options in more detail.
+
+        # here we define what kind of media content we do provide
+        # mostly needed to make some naughty DLNA devices behave
+        # will probably move into Coherence internals one day
+        self.server.connection_manager_server.set_variable( \
+            0, 'SourceProtocolInfo', ['http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                      'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                      'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                      'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
+                                      'http-get:*:image/jpeg:*'])
+
+        # and as it was done after we fetched the data the first time
+        # we want to take care about the server wide updates as well
+        self._update_container()
+
+    def _update_container(self, result=None):
+        # we need to inform Coherence about these changes
+        # again this is something that will probably move
+        # into Coherence internals one day
         if self.server:
-            # here we define what kind of media content we do provide
-            # mostly needed to make some naughty DLNA devices behave
-            # will probably move into Coherence internals one day
-            self.server.connection_manager_server.set_variable( \
-                0, 'SourceProtocolInfo', ['http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
-                                          'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
-                                          'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
-                                          'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
-                                          'http-get:*:image/jpeg:*'])
+            self.server.content_directory_server.set_variable(0,
+                    'SystemUpdateID', self.update_id)
+            value = (self.ROOT_ID,self.container.update_id)
+            self.server.content_directory_server.set_variable(0,
+                    'ContainerUpdateIDs', value)
+        return result
+
+    def update_loop(self):
+        # in the loop we want to call update_data
+        dfr = self.update_data()
+        # aftert it was done we want to take care about updating
+        # the container
+        dfr.addCallback(self._update_container)
+        # in ANY case queue an update of the data
+        dfr.addBoth(self.queue_update)
 
     def update_data(self):
         # trigger an update of the data
@@ -252,9 +282,6 @@ class LolcatsStore(BackendStore):
         # then parse the data into our models
         dfr.addCallback(self.parse_data)
 
-        # in ANY case queue an update of the data
-        dfr.addBoth(self.queue_update)
-
         return dfr
 
     def parse_data(self, xml_data):
@@ -266,7 +293,7 @@ class LolcatsStore(BackendStore):
 
         # from there, we look for the newest update and compare it with the one
         # we have saved. If they are the same, we don't need to go on:
-        pub_date = root.find('./channel/pubDate').text
+        pub_date = root.find('./channel/lastBuildDate').text
 
         if pub_date == self.last_updated:
             return
@@ -307,14 +334,8 @@ class LolcatsStore(BackendStore):
         # so that the clients can refresh with the new data
         self.container.update_id += 1
         self.update_id += 1
-        # we need to inform Coherence about these changes
-        # again this is something that will probably move
-        # into Coherence internals one day
-        if self.server:
-            self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-            value = (self.ROOT_ID,self.container.update_id)
-            self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
     def queue_update(self, error_or_failure):
         # We use the reactor to queue another updating of our data
-        reactor.callLater(self.refresh, self.update_data)
+        print error_or_failure
+        reactor.callLater(self.refresh, self.update_loop)
