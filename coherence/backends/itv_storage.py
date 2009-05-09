@@ -62,7 +62,7 @@ class ProxyStream(utils.ReverseProxyUriResource):
                 request.uri = self.stream_url
                 return self.render(request)
 
-            def got_error(result):
+            def got_error(error):
                 print error
                 return None
 
@@ -142,6 +142,8 @@ class Container(BackendItem):
 
 
 class ITVItem(BackendItem):
+    logCategory = 'itv_item'
+    
     def __init__(self, store, id, obj, parent):
         self.parent = parent
         self.id = id
