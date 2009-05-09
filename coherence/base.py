@@ -333,6 +333,8 @@ class Coherence(log.Loggable):
 
         self.available_plugins = None
 
+        self.ctrl = None
+
         try:
             plugins = self.config['plugin']
             if isinstance(plugins,dict):
@@ -380,6 +382,8 @@ class Coherence(log.Loggable):
         if self.config.get('use_dbus', 'no') == 'yes':
             try:
                 from coherence import dbus_service
+                if self.ctrl == None:
+                    self.ctrl = ControlPoint(self)
                 self.dbus = dbus_service.DBusPontoon(self.ctrl)
             except Exception, msg:
                 self.warning("Unable to activate dbus sub-system: %r" % msg)
