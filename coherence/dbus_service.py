@@ -43,6 +43,95 @@ class DBusProxy(log.Loggable):
         self.bus = bus
 
 
+class DBusCDSService(dbus.service.Object,log.Loggable):
+    logCategory = 'dbus'
+
+    def __init__(self, service, dbus_device, bus):
+        self.service = service
+        self.dbus_device = dbus_device
+        self.type = self.service.service_type.split(':')[3] # get the service name
+        bus_name = dbus.service.BusName(BUS_NAME+'.service', bus)
+        self.path = OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + 'CDS'
+        s = dbus.service.Object.__init__(self, bus_name, self.path)
+        self.debug("DBusService %r %r %r", service, self.type, s)
+        louie.connect(self.variable_changed, 'StateVariable.changed', sender=self.service)
+
+        self.subscribeStateVariables()
+
+    def variable_changed(self,variable):
+        self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
+
+    @dbus.service.signal(BUS_NAME+'.service',
+                         signature='sssv')
+    def StateVariableChanged(self, udn, service, variable, value):
+        self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='as')
+    def getAvailableActions(self):
+        actions = self.service.get_actions()
+        r = []
+        for name in actions.keys():
+            r.append(name)
+        return r
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='ssv')
+    def subscribeStateVariables(self):
+        notify = [v for v in self.service._variables[0].values() if v.send_events == True]
+        if len(notify) == 0:
+            return
+        data = {}
+        for n in notify:
+            if n.name == 'LastChange':
+                lc = {}
+                for instance, vdict in self.service._variables.items():
+                    v = {}
+                    for variable in vdict.values():
+                        if( variable.name != 'LastChange' and
+                            variable.name[0:11] != 'A_ARG_TYPE_' and
+                            variable.never_evented == False):
+                                if hasattr(variable, 'dbus_updated') == False:
+                                    variable.dbus_updated = None
+                    if len(v) > 0:
+                        lc[str(instance)] = v
+                if len(lc) > 0:
+                    data[unicode(n.name)] = lc
+            else:
+                data[unicode(n.name)] = unicode(n.value)
+        return self.dbus_device.device.get_id(), self.type, dbus.Dictionary(data,signature='sv',variant_level=3)
+
+    @dbus.service.method(BUS_NAME+'.service',in_signature='sssiis',out_signature='siii',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def Browse(self,ObjectID, BrowseFlag, Filter, StartingIndex, RequestedCount,SortCriteria,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ObjectID':unicode(ObjectID),
+                     'BrowseFlag':unicode(BrowseFlag),
+                     'Filter':unicode(Filter),
+                     'StartingIndex':int(StartingIndex),
+                     'RequestedCount':int(RequestedCount),
+                     'SortCriteria':unicode(SortCriteria)}
+        r = self.callAction('Browse',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def adjust_reply(data):
+            dbus_async_cb(unicode(data['Result']),int(data['NumberReturned']),int(data['TotalMatches']),int(data['UpdateID']))
+        r.addCallback(adjust_reply)
+        r.addErrback(dbus_async_err_cb)
+
+
+    def callAction(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
+        def reply(data):
+            return data
+
+        action = self.service.get_action('Browse')
+        if action != None:
+            d = action.call(**arguments)
+            #d.addCallback(reply)
+            #d.addErrback(dbus_async_err_cb)
+            return d
+        return ''
+
+
 class DBusService(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
 
@@ -180,6 +269,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         self.services = []
         for service in device.get_services():
             self.services.append(DBusService(service,self,bus))
+            if service.service_type.split(':')[3] == 'ContentDirectory':
+                self.services.append(DBusCDSService(service,self,bus))
 
     def path(self):
         return OBJECT_PATH + '/devices/' + self.id
@@ -302,11 +393,6 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         r['type'] = device.get_device_type()
         return r
 
-    @dbus.service.method(BUS_NAME,in_signature='ssoss',out_signature='s')
-    def register(self, device_type, name, dbus_object,action_mapping,container_mapping):
-        id = "n/a"
-        return id
-
     @dbus.service.method(BUS_NAME,in_signature='sa{ss}',out_signature='s')
     def add_plugin(self,backend,arguments):
         kwargs = {}
@@ -415,3 +501,43 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                          signature='s')
     def UPnP_ControlPoint_MediaRenderer_removed(self,udn):
         self.info("emitting signal UPnP_ControlPoint_MediaRenderer_removed")
+
+    """ org.DLNA related methods and signals
+    """
+    @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
+    def getDMSList(self):
+        r = []
+        for device in self.devices:
+            #r.append(device.path())
+            if 'MediaServer' in device.get_device_type().split(':'):
+                r.append(device.get_info())
+        return dbus.Array(r,signature='v',variant_level=2)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
+    def getDMRList(self):
+        r = []
+        for device in self.devices:
+            #r.append(device.path())
+            if 'MediaRenderer' in device.get_device_type().split(':'):
+                r.append(device.get_info())
+        return dbus.Array(r,signature='v',variant_level=2)
+
+    @dbus.service.signal(BUS_NAME,
+                         signature='vs')
+    def DMS_added(self,device,udn):
+        self.info("emitting signal DMS_added")
+
+    @dbus.service.signal(BUS_NAME,
+                         signature='s')
+    def DMS_removed(self,udn):
+        self.info("emitting signal DMS_removed")
+
+    @dbus.service.signal(BUS_NAME,
+                         signature='vs')
+    def DMR_added(self,device,udn):
+        self.info("emitting signal DMR_added")
+
+    @dbus.service.signal(BUS_NAME,
+                         signature='s')
+    def DMR_removed(self,udn):
+        self.info("emitting signal DMR_detected")
