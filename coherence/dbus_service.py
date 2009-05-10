@@ -23,6 +23,7 @@ import dbus.gobject_service
 
 #import dbus.glib
 
+DLNA_BUS_NAME = 'org.DLNA'     # bus name for DLNA API
 
 BUS_NAME = 'org.Coherence'     # the one with the dots
 OBJECT_PATH = '/org/Coherence'  # the one with the slashes ;-)
@@ -50,7 +51,8 @@ class DBusService(dbus.service.Object,log.Loggable):
         self.dbus_device = dbus_device
         self.type = self.service.service_type.split(':')[3] # get the service name
         bus_name = dbus.service.BusName(BUS_NAME+'.service', bus)
-        s = dbus.service.Object.__init__(self, bus_name, OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type)
+        self.path = OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type
+        s = dbus.service.Object.__init__(self, bus_name, self.path)
         self.debug("DBusService %r %r %r", service, self.type, s)
         louie.connect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
 
@@ -77,9 +79,6 @@ class DBusService(dbus.service.Object,log.Loggable):
                 print func, func._dbus_interface, func._dbus_is_method
                 if hasattr(func, 'im_func'):
                     print func.im_func
-
-    def path(self):
-        return OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type
 
     def variable_changed(self,variable):
         #print self.service, "got signal for change of", variable
@@ -191,7 +190,7 @@ class DBusDevice(dbus.service.Object,log.Loggable):
              'device_type':self.device.get_device_type(),
              'friendly_name':self.device.get_friendly_name(),
              'udn':self.device.get_id(),
-             'services':self.services}
+             'services':[x.path for x in self.services]}
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
     @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='s')
@@ -237,6 +236,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
+        self.debug("D-Bus pontoon started")
         self.pinboard = {}
 
     @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='')
