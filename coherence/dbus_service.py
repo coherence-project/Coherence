@@ -1,7 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2007 - Frank Scholz <coherence@beebits.net>
+# Copyright 2007,2008,2009 - Frank Scholz <coherence@beebits.net>
 
 """ DBUS service class
 
@@ -50,7 +50,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         self.service = service
         self.dbus_device = dbus_device
         self.type = self.service.service_type.split(':')[3] # get the service name
-        bus_name = dbus.service.BusName(BUS_NAME+'.service', bus)
+        bus_name = dbus.service.BusName(DLNA_BUS_NAME+'.DMS.CDS', bus)
         self.path = OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + 'CDS'
         s = dbus.service.Object.__init__(self, bus_name, self.path)
         self.debug("DBusService %r %r %r", service, self.type, s)
@@ -61,12 +61,12 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def variable_changed(self,variable):
         self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
 
-    @dbus.service.signal(BUS_NAME+'.service',
+    @dbus.service.signal(DLNA_BUS_NAME+'.DMS.CDS',
                          signature='sssv')
     def StateVariableChanged(self, udn, service, variable, value):
         self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='as')
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='as')
     def getAvailableActions(self):
         actions = self.service.get_actions()
         r = []
@@ -74,7 +74,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
             r.append(name)
         return r
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='ssv')
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='ssv')
     def subscribeStateVariables(self):
         notify = [v for v in self.service._variables[0].values() if v.send_events == True]
         if len(notify) == 0:
@@ -99,7 +99,67 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                 data[unicode(n.name)] = unicode(n.value)
         return self.dbus_device.device.get_id(), self.type, dbus.Dictionary(data,signature='sv',variant_level=3)
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='sssiis',out_signature='siii',
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def GetSearchCapabilites(self,dbus_async_cb,dbus_async_err_cb):
+
+        r = self.callAction('GetSearchCapabilites',{},dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['SearchCaps']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def GetSortCapabilities(self,dbus_async_cb,dbus_async_err_cb):
+
+        r = self.callAction('GetSortCapabilities',{},dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['SortCaps']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def GetSortExtensionCapabilities(self,dbus_async_cb,dbus_async_err_cb):
+
+        r = self.callAction('GetSortExtensionCapabilities',{},dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['SortExtensionCaps']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def GetFeatureList(self,dbus_async_cb,dbus_async_err_cb):
+
+        r = self.callAction('GetFeatureList',{},dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['FeatureList']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='i',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def GetSystemUpdateID(self,dbus_async_cb,dbus_async_err_cb):
+
+        r = self.callAction('GetSystemUpdateID',{},dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(int(data['Id']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='sssiis',out_signature='siii',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def Browse(self,ObjectID, BrowseFlag, Filter, StartingIndex, RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
@@ -113,21 +173,182 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r = self.callAction('Browse',arguments,dbus_async_cb,dbus_async_err_cb)
         if r == '':
             return r
-        def adjust_reply(data):
+        def convert_reply(data):
             dbus_async_cb(unicode(data['Result']),int(data['NumberReturned']),int(data['TotalMatches']),int(data['UpdateID']))
-        r.addCallback(adjust_reply)
+        r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='sssiis',out_signature='siii',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def Search(self,ContainerID,SearchCriteria,Filter,StartingIndex,RequestedCount,SortCriteria,
+                    dbus_async_cb,dbus_async_err_cb):
 
-    def callAction(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
-        def reply(data):
-            return data
+        arguments = {'ContainerID':unicode(ContainerID),
+                     'SearchCriteria':unicode(SearchCriteria),
+                     'Filter':unicode(Filter),
+                     'StartingIndex':int(StartingIndex),
+                     'RequestedCount':int(RequestedCount),
+                     'SortCriteria':unicode(SortCriteria)}
+        r = self.callAction('Search',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['Result']),int(data['NumberReturned']),int(data['TotalMatches']),int(data['UpdateID']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
 
-        action = self.service.get_action('Browse')
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='ss',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def CreateObject(self,ContainerID,Elements,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ContainerID':unicode(ContainerID),
+                     'Elements':unicode(Elements)}
+        r = self.callAction('CreateObject',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['ObjectID']),unicode(data['Result']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='s',out_signature='',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def DestroyObject(self,ObjectID,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ObjectID':unicode(ObjectID)}
+        r = self.callAction('DestroyObject',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb()
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='sss',out_signature='',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def UpdateObject(self,ObjectID,CurrentTagValue,NewTagValue,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ObjectID':unicode(ObjectID),
+                     'CurrentTagValue':unicode(CurrentTagValue),
+                     'NewTagValue':NewTagValue}
+        r = self.callAction('UpdateObject',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb()
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='s',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def MoveObject(self,ObjectID,NewParentID,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ObjectID':unicode(ObjectID),
+                     'NewParentID':unicode(NewParentID)}
+        r = self.callAction('MoveObject',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['NewObjectID']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='i',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def ImportResource(self,SourceURI,DestinationURI,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'SourceURI':unicode(SourceURI),
+                     'DestinationURI':unicode(DestinationURI)}
+        r = self.callAction('ImportResource',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['TransferID']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='i',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def ExportResource(self,SourceURI,DestinationURI,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'SourceURI':unicode(SourceURI),
+                     'DestinationURI':unicode(DestinationURI)}
+        r = self.callAction('ExportResource',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['TransferID']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='s',out_signature='',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def DeleteResource(self,ResourceURI,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ResourceURI':unicode(ResourceURI)}
+        r = self.callAction('DeleteResource',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb()
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='i',out_signature='',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def StopTransferResource(self,TransferID,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'TransferID':unicode(TransferID)}
+        r = self.callAction('StopTransferResource',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb()
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='i',out_signature='sss',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def GetTransferProgress(self,TransferID,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'TransferID':unicode(TransferID)}
+        r = self.callAction('GetTransferProgress',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['TransferStatus']),unicode(data['TransferLength']),unicode(data['TransferTotal']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='s',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def CreateReference(self,ContainerID,ObjectID,
+                    dbus_async_cb,dbus_async_err_cb):
+
+        arguments = {'ContainerID':unicode(ContainerID),
+                     'ObjectID':unicode(ObjectID)}
+        r = self.callAction('CreateReference',arguments,dbus_async_cb,dbus_async_err_cb)
+        if r == '':
+            return r
+        def convert_reply(data):
+            dbus_async_cb(unicode(data['NewID']))
+        r.addCallback(convert_reply)
+        r.addErrback(dbus_async_err_cb)
+
+    def callAction(self,name,arguments):
+
+        action = self.service.get_action(name)
         if action != None:
             d = action.call(**arguments)
-            #d.addCallback(reply)
-            #d.addErrback(dbus_async_err_cb)
             return d
         return ''
 
