@@ -1,3 +1,24 @@
+0.6.4 - Pont Mirabeau - 20090512
+
+ * new MediaServer backends that allow access to
+   * Picasa Web Albums (http://picasa.google.com)
+   * a TestServer to easily serve and test interaction with
+     * one or more items and adjust 'upnp_class', 'mimetype' and 'DLNA-flags',
+     * items that are a GStreamer pipeline or an external program
+ * a new - used in parallel - D-Bus API with an 'org.DLNA' interface
+   with the goal to create a common API for all UPnP/DNLA frameworks
+ * support for the dlna-playcontainer URI
+   (http://netzflocken.de/2009/4/23/media-collection-playing-the-dlna-way)
+ * enchancements to the GStreamer MediaRenderer, supporting now
+   dlna-playcontainer and SetNextAVTransportURI, and jumping to previous
+   and next tracks
+ * support for video items served by Ampache (http://ampache.org)
+ * base classes for a ScheduledRecording service
+ * some 'compatibility' adjustments for different devices
+ * and - as every time - the usual bugfixes and enhancements
+
+   Kudos go to jmsizun, Stecchino, cjsmo, chewi, and lightyear.
+
 0.6.2 - Rosenmontag - 20090223
 
  * new MediaServer backends that allow access to

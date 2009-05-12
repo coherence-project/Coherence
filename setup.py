@@ -34,26 +34,33 @@ setup_args = {
     'description':"""Coherence - DLNA/UPnP framework for the digital living""",
     'long_description':"""Coherence is a framework written in Python,
 providing a variety of UPnP MediaServer and UPnP MediaRenderer implementations
-for instant use. Furthermore it enables your application to participate in
+for instant use. It includes an UPnP ControlPoint, which is accessible via
+D-Bus too. Furthermore it enables your application to participate in
 digital living networks, at the moment primarily the DLNA/UPnP universe.
 
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this %s - Rosenmontag - release
+New in this %s - Pont Mirabeau - release
 
  * new MediaServer backends that allow access to
-   * YouTube videos (http://youtube.com)
-   * the MiroGuide for online videos (https://www.miroguide.com)
-   * the videos provided by Shoutcast TV (http://www.shoutcast.com)
-   * the SWR3 podcasts, a German radio station (http://swr3.de)
- * adjustments to the Ampache backend to work with newer Ampache versions (http://ampache.org)
- * a lot of 'compatibility' enhancements for different devices
- * a 'port' to the OpenEmbedded platform (http://www.openembedded.org/),
-   bringing Coherence to the BeagleBoard (http://beagleboard.org/)
+   * Picasa Web Albums (http://picasa.google.com)
+   * a TestServer to easily serve and test interaction with
+     * one or more items and adjust 'upnp_class', 'mimetype' and 'DLNA-flags',
+     * items that are a GStreamer pipeline or an external program
+ * a new - used in parallel - D-Bus API with an 'org.DLNA' interface
+   with the goal to create a common API for all UPnP/DNLA frameworks
+ * support for the dlna-playcontainer URI
+   (http://netzflocken.de/2009/4/23/media-collection-playing-the-dlna-way)
+ * enchancements to the GStreamer MediaRenderer, supporting now
+   dlna-playcontainer and SetNextAVTransportURI, and jumping to previous
+   and next tracks
+ * support for video items served by Ampache (http://ampache.org)
+ * base classes for a ScheduledRecording service
+ * more 'compatibility' enhancements for different devices
  * and - as every time - the usual bugfixes and enhancements
 
-Kudos go especially to jmsizun for his work on the new backends!
+Kudos go to jmsizun, cjsmo, chewi, and lightyear.
 
 """ % __version__,
     'author':"Frank Scholz",
