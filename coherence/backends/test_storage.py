@@ -46,7 +46,7 @@
     'pipeline': a GStreamer pipeline that has to end with a bin named 'enc',
                 some pipelines do only work properly when we have a glib mainloop
                 running, so coherence needs to be started with -o glib:yes
-    'command: the commandline for an external script to run, its output will
+    'command': the commandline for an external script to run, its output will
               be returned as the items content
 
 In the config file the definition of this backend could look like this:
