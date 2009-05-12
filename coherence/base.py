@@ -216,6 +216,7 @@ class Coherence(log.Loggable):
         self.cls._instance_ = None
 
     def setup(self, config={}):
+        self._tube_publisher = None
 
         self.devices = []
         self.children = {}
@@ -388,6 +389,24 @@ class Coherence(log.Loggable):
             except Exception, msg:
                 self.warning("Unable to activate dbus sub-system: %r" % msg)
                 self.debug(traceback.format_exc())
+            else:
+                if self.config.get('enable_mirabeau', 'no') == 'yes':
+                    from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
+                    from coherence.extern.telepathy import connect
+                    from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisher
+                    # FIXME: move hardcoded stuff in config options
+                    chatroom = "UPnPProxy"
+                    manager = "salut"     # "gabble"
+                    protocol = "local-xmpp"
+                    #manager="gabble"
+                    #protocol="jabber"
+                    account = {'first-name': 'player', 'last-name':'', 'nickname':'player',
+                               'published-name':'player'}
+                    connection = connect.tp_connect(manager, protocol, account)
+                    tubes_to_offer = {BUS_NAME: {}, DEVICE_IFACE: {}, SERVICE_IFACE: {}}
+                    self._tube_publisher = MirabeauTubePublisher(connection, chatroom,
+                                                                 tubes_to_offer, self)
+                    self._tube_publisher.start()
 
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin %r", plugin)
@@ -485,6 +504,8 @@ class Coherence(log.Loggable):
         if self._incarnations_ > 1:
             self._incarnations_ -= 1
             return
+        if self._tube_publisher is not None:
+            self._tube_publisher.stop()
         if self.louieplugin != None:
             louie.remove_plugin(self.louieplugin)
             self.louieplugin = None

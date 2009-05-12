@@ -23,13 +23,9 @@ import dbus.gobject_service
 
 #import dbus.glib
 
-DLNA_BUS_NAME = 'org.DLNA'     # bus name for DLNA API
-
-BUS_NAME = 'org.Coherence'     # the one with the dots
-OBJECT_PATH = '/org/Coherence'  # the one with the slashes ;-)
-
 from coherence import __version__
 from coherence.upnp.core import DIDLLite
+from coherence.dbus_constants import *
 
 
 import coherence.extern.louie as louie
@@ -45,14 +41,32 @@ class DBusProxy(log.Loggable):
 
 class DBusCDSService(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
+    SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self, service, dbus_device, bus):
         self.service = service
         self.dbus_device = dbus_device
-        self.type = self.service.service_type.split(':')[3] # get the service name
-        bus_name = dbus.service.BusName(DLNA_BUS_NAME+'.DMS.CDS', bus)
-        self.path = OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + 'CDS'
-        s = dbus.service.Object.__init__(self, bus_name, self.path)
+
+        if self.service is not None:
+            self.type = self.service.service_type.split(':')[3] # get the service name
+        else:
+            self.type = "from_the_tubes"
+
+        try:
+            bus_name = dbus.service.BusName(CDS_SERVICE, bus)
+        except:
+            bus_name = None
+            self.tube = bus
+        else:
+            self.tube = None
+
+        if dbus_device:
+            device_id = dbus_device.id
+        else:
+            device_id = "dev_from_the_tubes"
+        self.path = OBJECT_PATH + '/devices/' + device_id + '/services/' + 'CDS'
+        s = dbus.service.Object.__init__(self, bus, bus_name=bus_name,
+                                         object_path=self.path)
         self.debug("DBusService %r %r %r", service, self.type, s)
         louie.connect(self.variable_changed, 'StateVariable.changed', sender=self.service)
 
@@ -61,12 +75,12 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     def variable_changed(self,variable):
         self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
 
-    @dbus.service.signal(DLNA_BUS_NAME+'.DMS.CDS',
+    @dbus.service.signal(CDS_SERVICE,
                          signature='sssv')
     def StateVariableChanged(self, udn, service, variable, value):
         self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='as')
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='as')
     def getAvailableActions(self):
         actions = self.service.get_actions()
         r = []
@@ -74,8 +88,10 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
             r.append(name)
         return r
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='ssv')
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='ssv')
     def subscribeStateVariables(self):
+        if not self.service:
+            return
         notify = [v for v in self.service._variables[0].values() if v.send_events == True]
         if len(notify) == 0:
             return
@@ -99,7 +115,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                 data[unicode(n.name)] = unicode(n.value)
         return self.dbus_device.device.get_id(), self.type, dbus.Dictionary(data,signature='sv',variant_level=3)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def GetSearchCapabilites(self,dbus_async_cb,dbus_async_err_cb):
 
@@ -111,7 +127,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def GetSortCapabilities(self,dbus_async_cb,dbus_async_err_cb):
 
@@ -123,7 +139,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def GetSortExtensionCapabilities(self,dbus_async_cb,dbus_async_err_cb):
 
@@ -135,7 +151,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='s',
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def GetFeatureList(self,dbus_async_cb,dbus_async_err_cb):
 
@@ -147,7 +163,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='',out_signature='i',
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='i',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def GetSystemUpdateID(self,dbus_async_cb,dbus_async_err_cb):
 
@@ -159,7 +175,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='sssiis',out_signature='siii',
+    @dbus.service.method(CDS_SERVICE,in_signature='sssiis',out_signature='siii',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def Browse(self,ObjectID, BrowseFlag, Filter, StartingIndex, RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
@@ -178,7 +194,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='sssiis',out_signature='siii',
+    @dbus.service.method(CDS_SERVICE,in_signature='sssiis',out_signature='siii',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def Search(self,ContainerID,SearchCriteria,Filter,StartingIndex,RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
@@ -197,7 +213,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='ss',
+    @dbus.service.method(CDS_SERVICE,in_signature='ss',out_signature='ss',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def CreateObject(self,ContainerID,Elements,
                     dbus_async_cb,dbus_async_err_cb):
@@ -212,7 +228,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='s',out_signature='',
+    @dbus.service.method(CDS_SERVICE,in_signature='s',out_signature='',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def DestroyObject(self,ObjectID,
                     dbus_async_cb,dbus_async_err_cb):
@@ -226,7 +242,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='sss',out_signature='',
+    @dbus.service.method(CDS_SERVICE,in_signature='sss',out_signature='',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def UpdateObject(self,ObjectID,CurrentTagValue,NewTagValue,
                     dbus_async_cb,dbus_async_err_cb):
@@ -242,7 +258,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='s',
+    @dbus.service.method(CDS_SERVICE,in_signature='ss',out_signature='s',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def MoveObject(self,ObjectID,NewParentID,
                     dbus_async_cb,dbus_async_err_cb):
@@ -257,7 +273,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='i',
+    @dbus.service.method(CDS_SERVICE,in_signature='ss',out_signature='i',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def ImportResource(self,SourceURI,DestinationURI,
                     dbus_async_cb,dbus_async_err_cb):
@@ -272,7 +288,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='i',
+    @dbus.service.method(CDS_SERVICE,in_signature='ss',out_signature='i',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def ExportResource(self,SourceURI,DestinationURI,
                     dbus_async_cb,dbus_async_err_cb):
@@ -287,7 +303,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='s',out_signature='',
+    @dbus.service.method(CDS_SERVICE,in_signature='s',out_signature='',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def DeleteResource(self,ResourceURI,
                     dbus_async_cb,dbus_async_err_cb):
@@ -301,7 +317,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='i',out_signature='',
+    @dbus.service.method(CDS_SERVICE,in_signature='i',out_signature='',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def StopTransferResource(self,TransferID,
                     dbus_async_cb,dbus_async_err_cb):
@@ -315,7 +331,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='i',out_signature='sss',
+    @dbus.service.method(CDS_SERVICE,in_signature='i',out_signature='sss',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def GetTransferProgress(self,TransferID,
                     dbus_async_cb,dbus_async_err_cb):
@@ -329,7 +345,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMS.CDS',in_signature='ss',out_signature='s',
+    @dbus.service.method(CDS_SERVICE,in_signature='ss',out_signature='s',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def CreateReference(self,ContainerID,ObjectID,
                     dbus_async_cb,dbus_async_err_cb):
@@ -355,14 +371,34 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
 
 class DBusService(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
+    SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self, service, dbus_device, bus):
         self.service = service
         self.dbus_device = dbus_device
-        self.type = self.service.service_type.split(':')[3] # get the service name
-        bus_name = dbus.service.BusName(BUS_NAME+'.service', bus)
-        self.path = OBJECT_PATH + '/devices/' + dbus_device.id + '/services/' + self.type
-        s = dbus.service.Object.__init__(self, bus_name, self.path)
+
+        if self.service is not None:
+            self.type = self.service.service_type.split(':')[3] # get the service name
+        else:
+            self.type = "from_the_tubes"
+
+        try:
+            bus_name = dbus.service.BusName(SERVICE_IFACE, bus)
+        except:
+            bus_name = None
+            self.tube = bus
+        else:
+            self.tube = None
+
+
+        if self.dbus_device is not None:
+            device_id = self.dbus_device.id
+        else:
+            device_id = "dev_from_the_tubes"
+        self.path = OBJECT_PATH + '/devices/' + device_id + '/services/' + self.type
+
+        s = dbus.service.Object.__init__(self, bus, bus_name=bus_name,
+                                         object_path=self.path)
         self.debug("DBusService %r %r %r", service, self.type, s)
         louie.connect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
 
@@ -396,12 +432,12 @@ class DBusService(dbus.service.Object,log.Loggable):
         #print type(variable.name), type(variable.value)
         self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
 
-    @dbus.service.signal(BUS_NAME+'.service',
+    @dbus.service.signal(SERVICE_IFACE,
                          signature='sssv')
     def StateVariableChanged(self, udn, service, variable, value):
         self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='as')
+    @dbus.service.method(SERVICE_IFACE,in_signature='',out_signature='as')
     def get_available_actions(self):
         actions = self.service.get_actions()
         r = []
@@ -409,7 +445,7 @@ class DBusService(dbus.service.Object,log.Loggable):
             r.append(name)
         return r
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='sv',out_signature='v',
+    @dbus.service.method(SERVICE_IFACE,in_signature='sv',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def action(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
 
@@ -432,7 +468,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                 d.addErrback(dbus_async_err_cb)
         return ''
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='v',out_signature='v',
+    @dbus.service.method(SERVICE_IFACE,in_signature='v',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def destroy_object(self,arguments,dbus_async_cb,dbus_async_err_cb):
 
@@ -448,9 +484,11 @@ class DBusService(dbus.service.Object,log.Loggable):
             d.addErrback(dbus_async_err_cb)
         return ''
 
-    @dbus.service.method(BUS_NAME+'.service',in_signature='',out_signature='ssv')
+    @dbus.service.method(SERVICE_IFACE,in_signature='',out_signature='ssv')
     def subscribe(self):
-        notify = [v for v in self.service._variables[0].values() if v.send_events == True]
+        notify = []
+        if self.service:
+            notify = [v for v in self.service._variables[0].values() if v.send_events == True]
         if len(notify) == 0:
             return
         data = {}
@@ -480,23 +518,40 @@ class DBusService(dbus.service.Object,log.Loggable):
 
 class DBusDevice(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
+    SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self,device, bus):
-        self.device = device
-        self.id = device.get_id()[5:].replace('-','')
-        bus_name = dbus.service.BusName(BUS_NAME+'.device', bus)
-        d = dbus.service.Object.__init__(self, bus_name, self.path())
-        self.debug("DBusDevice %r %r %r", device, self.id, d)
+        if device is not None:
+            self.id = device.get_id()[5:].replace('-','')
+        else:
+            self.id = "from_the_tubes"
+
+        try:
+            bus_name = dbus.service.BusName(DEVICE_IFACE, bus)
+        except:
+            bus_name = None
+            self.tube = bus
+        else:
+            self.tube = None
+
+        d = dbus.service.Object.__init__(self, bus, bus_name=bus_name,
+                                         object_path=self.path())
+
         self.services = []
-        for service in device.get_services():
-            self.services.append(DBusService(service,self,bus))
-            if service.service_type.split(':')[3] == 'ContentDirectory':
-                self.services.append(DBusCDSService(service,self,bus))
+        self.device = device
+
+        self.debug("DBusDevice %r %r %r", device, self.id, d)
+
+        if device is not None:
+            for service in device.get_services():
+                self.services.append(DBusService(service,self,bus))
+                if service.service_type.split(':')[3] == 'ContentDirectory':
+                    self.services.append(DBusCDSService(service,self,bus))
 
     def path(self):
         return OBJECT_PATH + '/devices/' + self.id
 
-    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='v')
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='v')
     def get_info(self):
         r = {'path':self.path(),
              'device_type':self.device.get_device_type(),
@@ -505,39 +560,55 @@ class DBusDevice(dbus.service.Object,log.Loggable):
              'services':[x.path for x in self.services]}
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
-    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='s')
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_friendly_name(self):
         return self.device.get_friendly_name()
 
-    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='s')
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_id(self):
         return self.device.get_id()
 
-    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='s')
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_device_type(self):
         return self.device.get_device_type()
 
-    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='s')
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_usn(self):
         return self.device.get_usn()
 
-    @dbus.service.method(BUS_NAME+'.device',in_signature='',out_signature='av')
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='av')
     def get_device_icons(self):
         return dbus.Array(self.device.icons,signature='av',variant_level=2)
 
 
 class DBusPontoon(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
+    SUPPORTS_MULTIPLE_CONNECTIONS = True
 
-    def __init__(self,controlpoint):
-        self.bus = dbus.SessionBus()
-        self.bus_name = dbus.service.BusName(BUS_NAME, self.bus)
-        dbus.service.Object.__init__(self, self.bus_name, OBJECT_PATH)
+    def __init__(self,controlpoint, bus=None):
+        self.bus = bus or dbus.SessionBus()
+        try:
+            bus_name = dbus.service.BusName(BUS_NAME, self.bus)
+        except:
+            bus_name = None
+            self.tube = self.bus
+        else:
+            self.tube = None
+
+        self.bus_name = bus_name
+        dbus.service.Object.__init__(self, self.bus, bus_name=self.bus_name,
+                                     object_path=OBJECT_PATH)
+
 
         self.debug("D-Bus pontoon %r %r %r" % (self, self.bus, self.bus_name))
 
         self.devices = []
         self.controlpoint = controlpoint
+        self.pinboard = {}
+
+        # i am a stub service if i have no control point
+        if self.controlpoint is None:
+            return
 
         for device in self.controlpoint.get_devices():
             self.devices.append(DBusDevice(device,self.bus_name))
