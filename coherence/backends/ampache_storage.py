@@ -71,26 +71,30 @@ class Container(BackendItem):
 
     get_path = None
 
-    def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container):
+    def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container,play_container=False):
         self.id = id
         self.parent_id = parent_id
         self.name = name
         self.mimetype = 'directory'
-        self.item = container_class(id, parent_id,self.name)
+        self.container_class = container_class
         self.update_id = 0
         if children_callback != None:
             self.children = children_callback
         else:
             self.children = []
-        self.item.childCount = None #self.get_child_count()
+        self.childCount = None
 
-        if store!=None:
-            self.get_url = lambda: store.urlbase + str(self.id)
+        self.store = store
+        self.play_container = play_container
+
+        if self.store!=None:
+            self.get_url = lambda: self.store.urlbase + str(self.id)
 
     def add_child(self, child):
         self.children.append(child)
-        if self.item.childCount != None:
-            self.item.childCount += 1
+        if self.childCount == None:
+            self.childCount = 0
+        self.childCount += 1
 
     def get_children(self,start=0,end=0):
         self.info("container.get_children %r %r", start, end)
@@ -108,16 +112,32 @@ class Container(BackendItem):
             return children[start:end]
 
     def get_child_count(self):
-        if self.item.childCount != None:
-            return self.item.childCount
-
-        if callable(self.children):
-            return len(self.children())
-        else:
-            return len(self.children)
+        if self.childCount == None:
+            if callable(self.children):
+                self.childCount = len(self.children())
+            else:
+                self.childCount = len(self.children)
+        return self.childCount
 
     def get_item(self):
-        return self.item
+        item = self.container_class(self.id, self.parent_id,self.name)
+        item.childCount = self.get_child_count()
+        #if self.store and self.play_container == True:
+        #    if item.childCount > 0:
+        #        d = defer.maybeDeferred(self.get_children, 0, 1)
+
+        #        def process_result(r,item):
+        #            res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=r[0].get_id())
+        #            item.res.append(res)
+        #            return item
+
+        #        def got_error(f,item):
+        #            return item
+
+        #        d.addCallback(process_result,item)
+        #        d.addErrback(got_error,item)
+        #        return d
+        return item
 
     def get_name(self):
         return self.name
@@ -153,7 +173,7 @@ class Playlist(BackendItem):
     def get_item(self, parent_id = AUDIO_PLAYLIST_CONTAINER_ID):
         item = DIDLLite.PlaylistItem(self.id, parent_id, self.title)
         item.childCount = self.get_child_count()
-        item.artist = self.artist
+        #item.artist = self.artist
         item.albumArtURI = self.cover
         return item
 
@@ -196,6 +216,20 @@ class Album(BackendItem):
         item.childCount = self.get_child_count()
         item.artist = self.artist
         item.albumArtURI = self.cover
+        #if item.childCount > 0:
+        #    d = defer.maybeDeferred(self.get_children, 0, 1)
+
+        #    def process_result(r,item):
+        #        res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=r[0].get_id())
+        #        item.res.append(res)
+        #        return item
+
+        #    def got_error(f,item):
+        #        return item
+
+        #    d.addCallback(process_result,item)
+        #    d.addErrback(got_error,item)
+        #    return d
         return item
 
     def get_id(self):
@@ -546,7 +580,7 @@ class AmpacheStore(BackendStore):
         BackendStore.__init__(self,server,**kwargs)
         self.config = kwargs
         self.name = kwargs.get('name','Ampache')
-        self.key = kwargs.get('key','')
+        self.key = kwargs.get('password',kwargs.get('key',''))
         self.user = kwargs.get('user',None)
         self.url = kwargs.get('url','http://localhost/ampache/server/xml.server.php')
 
@@ -790,53 +824,54 @@ class AmpacheStore(BackendStore):
                              'http-get:*:video/quicktime:*',])
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                Container(AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
                           store=self,
-                          children_callback=self.ampache_query_songs)
-        self.containers[AUDIO_ALL_CONTAINER_ID].item.childCount = self.songs
+                          children_callback=self.ampache_query_songs,
+                          play_container=True)
+        self.containers[AUDIO_ALL_CONTAINER_ID].childCount = self.songs
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
 
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                Container(AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
                           store=self,
                           children_callback=self.ampache_query_albums)
-        self.containers[AUDIO_ALBUM_CONTAINER_ID].item.childCount = self.albums
+        self.containers[AUDIO_ALBUM_CONTAINER_ID].childCount = self.albums
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
                           store=self,
                           children_callback=self.ampache_query_artists)
-        self.containers[AUDIO_ARTIST_CONTAINER_ID].item.childCount = self.artists
+        self.containers[AUDIO_ARTIST_CONTAINER_ID].childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
-                Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                Container(AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
                           store=self,
                           children_callback=self.ampache_query_playlists,
                           container_class=DIDLLite.PlaylistContainer)
-        self.containers[AUDIO_PLAYLIST_CONTAINER_ID].item.childCount = self.playlists
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID].childCount = self.playlists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
         self.containers[AUDIO_GENRE_CONTAINER_ID] = \
-                Container( AUDIO_GENRE_CONTAINER_ID,ROOT_CONTAINER_ID, 'Genres',
+                Container(AUDIO_GENRE_CONTAINER_ID,ROOT_CONTAINER_ID, 'Genres',
                           store=self,
                           children_callback=self.ampache_query_genres)
-        self.containers[AUDIO_GENRE_CONTAINER_ID].item.childCount = self.genres
+        self.containers[AUDIO_GENRE_CONTAINER_ID].childCount = self.genres
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
 
         self.containers[AUDIO_TAG_CONTAINER_ID] = \
-                Container( AUDIO_TAG_CONTAINER_ID,ROOT_CONTAINER_ID, 'Tags',
+                Container(AUDIO_TAG_CONTAINER_ID,ROOT_CONTAINER_ID, 'Tags',
                           store=self,
                           children_callback=self.ampache_query_tags)
-        self.containers[AUDIO_TAG_CONTAINER_ID].item.childCount = self.tags
+        self.containers[AUDIO_TAG_CONTAINER_ID].childCount = self.tags
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_TAG_CONTAINER_ID])
 
         self.containers[VIDEO_CONTAINER_ID] = \
-                Container( VIDEO_CONTAINER_ID,ROOT_CONTAINER_ID, 'Videos',
+                Container(VIDEO_CONTAINER_ID,ROOT_CONTAINER_ID, 'Videos',
                           store=self,
                           children_callback=self.ampache_query_videos)
-        self.containers[VIDEO_CONTAINER_ID].item.childCount = self.videos
+        self.containers[VIDEO_CONTAINER_ID].childCount = self.videos
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[VIDEO_CONTAINER_ID])
 
     def upnp_XBrowse(self, *args, **kwargs):
