@@ -394,14 +394,11 @@ class Coherence(log.Loggable):
                     from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
                     from coherence.extern.telepathy import connect
                     from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisher
-                    # FIXME: move hardcoded stuff in config options
-                    chatroom = "UPnPProxy"
-                    manager = "salut"     # "gabble"
-                    protocol = "local-xmpp"
-                    #manager="gabble"
-                    #protocol="jabber"
-                    account = {'first-name': 'player', 'last-name':'', 'nickname':'player',
-                               'published-name':'player'}
+                    mirabeau_cfg = self.config.get('mirabeau', {})
+                    chatroom = mirabeau_cfg['chatroom']
+                    manager = mirabeau_cfg['manager']
+                    protocol = mirabeau_cfg['protocol']
+                    account = mirabeau_cfg['account']
                     connection = connect.tp_connect(manager, protocol, account)
                     tubes_to_offer = {BUS_NAME: {}, DEVICE_IFACE: {}, SERVICE_IFACE: {}}
                     self._tube_publisher = MirabeauTubePublisher(connection, chatroom,
