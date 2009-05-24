@@ -16,6 +16,8 @@ from coherence.extern.telepathy.tubeconn import TubeConnection
 from coherence import log
 
 class Client(log.Loggable):
+    logCategory = "client"
+
     def __init__(self, connection, muc_id):
         super(Client, self).__init__()
 
@@ -95,6 +97,8 @@ class Client(log.Loggable):
                                         self.tube_state_changed_cb)
             tubes_obj.connect_to_signal("NewTube", self.new_tube_cb)
             tubes_obj.connect_to_signal("TubeClosed", self.tube_closed_cb)
+            tubes_obj.connect_to_signal("StreamTubeNewConnection",
+                                        self.stream_tube_new_connection_cb)
 
             for tube in tubes_obj.ListTubes():
                 id, initiator, type, service, params, state = tube[:6]
@@ -122,10 +126,18 @@ class Client(log.Loggable):
     def tube_opened(self, id):
         self.info("tube %r opened", id)
         group_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
+        try:
+            self.tube_conn = TubeConnection(self.conn,
+                                            self.channel_tubes[CHANNEL_TYPE_TUBES],
+                                            id, group_iface=group_iface)
+        except:
+            self.tube_conn = None
 
-        self.tube_conn = TubeConnection(self.conn,
-                                        self.channel_tubes[CHANNEL_TYPE_TUBES],
-                                        id, group_iface=group_iface)
+    def stream_tube_new_connection_cb(self, id, handle):
+        conn_obj = self.conn[CONN_INTERFACE]
+        contact = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
+                                          [handle])[0]
+        self.info("new socket connection on tube %u from %s" % (id, contact))
 
     def tube_state_changed_cb(self, id, state):
         if state == TUBE_STATE_OPEN:
