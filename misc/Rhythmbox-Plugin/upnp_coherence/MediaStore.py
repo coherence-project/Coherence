@@ -295,6 +295,7 @@ class MediaStore(BackendStore):
 
     def __init__(self, server, **kwargs):
         self.warning("__init__ MediaStore %r", kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.server = server
         self.db = kwargs['db']
         self.plugin = kwargs['plugin']
