@@ -411,6 +411,16 @@ class RhythmboxPlayer(log.Loggable):
         self.play()
         return {}
 
+    def upnp_Previous(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        self.player.do_previous()
+        return {}
+
+    def upnp_Next(self, *args, **kwargs):
+        InstanceID = int(kwargs['InstanceID'])
+        self.player.do_next()
+        return {}
+
     def upnp_Pause(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
         self.pause()
