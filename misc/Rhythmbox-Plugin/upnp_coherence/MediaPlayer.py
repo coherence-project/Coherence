@@ -36,6 +36,7 @@ class RhythmboxPlayer(log.Loggable):
         self.server = device
 
         self.player = None
+        self.entry = None
         self.metadata = None
         self.name = "Rhythmbox on %s" % self.server.coherence.hostname
 
@@ -324,7 +325,10 @@ class RhythmboxPlayer(log.Loggable):
         self.warning("player play")
 
         if self.playing == False:
-            self.player.play_entry(self.entry)
+            if self.entry:
+               self.player.play_entry(self.entry)
+            else:
+               self.player.playpause()
             self.playing = True
         else:
             self.player.playpause()
