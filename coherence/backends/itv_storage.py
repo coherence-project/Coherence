@@ -159,7 +159,7 @@ class ITVItem(BackendItem):
 
     def get_item(self):
         if self.item == None:
-            self.item = DIDLLite.AudioItem(self.id, self.parent.id, self.name)
+            self.item = DIDLLite.VideoItem(self.id, self.parent.id, self.name)
             self.item.description = self.description
             self.item.date = self.date
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
