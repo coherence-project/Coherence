@@ -10,6 +10,8 @@
 import rhythmdb, rb
 import gobject, gtk
 
+import gconf
+
 import coherence.extern.louie as louie
 
 from coherence import log
@@ -20,13 +22,40 @@ UPNP_VERSION = 1 # should be actually 2, but due to some %$*! UPnP clients
 # For the icon
 import os.path, urllib, gnomevfs, gtk.gdk
 
-class CoherencePlugin(rb.Plugin,log.Loggable):
+gconf_keys = {
+    # renderer
+    'r_active': '/apps/rhythmbox/plugins/upnp_coherence/renderer_active',
+#    'r_name': '/apps/rhythmbox/plugins/upnp_coherence/renderer_name',
+    'r_version': '/apps/rhythmbox/plugins/upnp_coherence/renderer_version',
+    'r_uuid': '/apps/rhythmbox/plugins/upnp_coherence/renderer_uuid',
+    # store
+    's_active': '/apps/rhyhtmbox/plugins/upnp_coherence/store_active',
+#    's_name': '/apps/rhyhtmbox/plugins/upnp_coherence/store_name',
+    's_uuid': '/apps/rhyhtmbox/plugins/upnp_coherence/store_uuid',
+    's_version': '/apps/rhyhtmbox/plugins/upnp_coherence/store_version',
+    # client
+    'c_active': '/apps/rhythmbox/plugins/upnp_coherence/client_active',
+     }
+
+
+class CoherencePlugin(rb.Plugin, log.Loggable):
 
     logCategory = 'rb_coherence_plugin'
 
     def __init__(self):
         rb.Plugin.__init__(self)
         self.coherence = None
+        self.config = gconf.client_get_default()
+
+        if self.config.get(gconf_keys['c_active']) is None:
+            print "setting defaults"
+            self._set_defaults()
+
+    def _set_defaults(self):
+        for a in ('r', 's', 'c'):
+            self.config.set_bool(gconf_keys['%s_active' % a], True)
+        for a in ('r', 's'):
+            self.config.set_int(gconf_keys['%s_version' % a], 2)
 
     def activate(self, shell):
         from twisted.internet import gtk2reactor
@@ -66,32 +95,73 @@ class CoherencePlugin(rb.Plugin,log.Loggable):
             the_icon = None
 
         # create our own media server
-        from coherence.upnp.devices.media_server import MediaServer
-        from MediaStore import MediaStore
-        if the_icon:
-            server = MediaServer(self.coherence, MediaStore, version=UPNP_VERSION, no_thread_needed=True, db=self.shell.props.db, plugin=self, icon=the_icon)
-        else:
-            server = MediaServer(self.coherence, MediaStore, version=UPNP_VERSION, no_thread_needed=True, db=self.shell.props.db, plugin=self)
+        if self.config.get_bool(gconf_keys['s_active']):
+            print "activating media store"
 
-        self.uuid = str(server.uuid)
+            from coherence.upnp.devices.media_server import MediaServer
+            from MediaStore import MediaStore
+            kw = {
+                "version": self.config.get_int(gconf_keys['s_version']),
+                "no_thread_needed": True,
+                "db": self.shell.props.db,
+                "plugin": self,
+                }
 
-        if self.coherence_version >= (0,5,2):
+            uuid = self.config.get_string(gconf_keys['s_uuid'])
+            if uuid:
+                kw['uuid'] = uuid
+
+            if the_icon:
+                kw['icon'] = the_icon
+
+            self.server = MediaServer(self.coherence, MediaStore, **kw)
+            if not uuid:
+                uuid = str(self.server.uuid)
+                self.config.set_string(gconf_keys['s_uuid'], uuid)
+
+            print "Media Store available at %s" % uuid
+
+        if self.config.get_bool(gconf_keys['r_active']):
+            print "activating media renderer" 
             # create our own media renderer
             # but only if we have a matching Coherence package installed
-            from coherence.upnp.devices.media_renderer import MediaRenderer
-            from MediaPlayer import RhythmboxPlayer
-            if the_icon:
-                MediaRenderer(self.coherence, RhythmboxPlayer, version=UPNP_VERSION, no_thread_needed=True, shell=self.shell, icon=the_icon)
+            if self.coherence_version < (0, 5, 2):
+                print "activation faild. coherence is older than version 0.5.2"
             else:
-                MediaRenderer(self.coherence, RhythmboxPlayer, version=UPNP_VERSION, no_thread_needed=True, shell=self.shell)
+                from coherence.upnp.devices.media_renderer import MediaRenderer
+                from MediaPlayer import RhythmboxPlayer
+                kw = {
+                    "version": self.config.get_int(gconf_keys['r_version']),
+                    "no_thread_needed": True,
+                    "shell": self.shell,
+                    }
 
-        # watch for media servers
-        louie.connect(self.detected_media_server,
-                'Coherence.UPnP.ControlPoint.MediaServer.detected',
-                louie.Any)
-        louie.connect(self.removed_media_server,
-                'Coherence.UPnP.ControlPoint.MediaServer.removed',
-                louie.Any)
+                uuid = self.config.get_string(gconf_keys['r_uuid'])
+                if uuid:
+                    kw['uuid'] = uuid
+
+                if the_icon:
+                    kw['icon'] = the_icon
+
+                self.renderer = MediaRenderer(self.coherence,
+                        RhythmboxPlayer, **kw)
+
+                if not uuid:
+                    # first time launch
+                    uuid = str(self.renderer.uuid)
+                    self.config.set_string(gconf_keys['r_uuid'], uuid)
+
+                print "Media Renderer available at %s" % uuid
+
+        if self.config.get_bool(gconf_keys['c_active']):
+            print "start observing for media servers"
+            # watch for media servers
+            louie.connect(self.detected_media_server,
+                    'Coherence.UPnP.ControlPoint.MediaServer.detected',
+                    louie.Any)
+            louie.connect(self.removed_media_server,
+                    'Coherence.UPnP.ControlPoint.MediaServer.removed',
+                    louie.Any)
 
 
     def deactivate(self, shell):
@@ -153,15 +223,19 @@ class CoherencePlugin(rb.Plugin,log.Loggable):
             del self.sources[udn]
 
     def detected_media_server(self, client, udn):
-        print "found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn)
-        self.warning("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
-        if client.device.get_id() == self.uuid:
+        print "found upnp server %s (%s)"  % \
+                (client.device.get_friendly_name(), udn)
+        self.warning("found upnp server %s (%s)"  %
+                (client.device.get_friendly_name(), udn))
+
+        if self.server and client.device.get_id() == str(self.server.uuid):
             """ don't react on our own MediaServer"""
             return
 
         db = self.shell.props.db
-        group = rb.rb_source_group_get_by_name ("shared")
-        entry_type = db.entry_register_type("CoherenceUpnp:" + client.device.get_id()[5:])
+        group = rb.rb_source_group_get_by_name("shared")
+        entry_type = db.entry_register_type("CoherenceUpnp:%s" %
+                 client.device.get_id()[5:])
 
         from UpnpSource import UpnpSource
         source = gobject.new (UpnpSource,
