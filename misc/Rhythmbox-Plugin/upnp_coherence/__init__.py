@@ -16,23 +16,20 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
-UPNP_VERSION = 1 # should be actually 2, but due to some %$*! UPnP clients
-                 # out there we have to set that here manually
-
 # For the icon
 import os.path, urllib, gnomevfs, gtk.gdk
 
 gconf_keys = {
     # renderer
     'r_active': '/apps/rhythmbox/plugins/upnp_coherence/renderer_active',
-#    'r_name': '/apps/rhythmbox/plugins/upnp_coherence/renderer_name',
+    'r_name': '/apps/rhythmbox/plugins/upnp_coherence/renderer_name',
     'r_version': '/apps/rhythmbox/plugins/upnp_coherence/renderer_version',
     'r_uuid': '/apps/rhythmbox/plugins/upnp_coherence/renderer_uuid',
     # store
-    's_active': '/apps/rhyhtmbox/plugins/upnp_coherence/store_active',
-#    's_name': '/apps/rhyhtmbox/plugins/upnp_coherence/store_name',
-    's_uuid': '/apps/rhyhtmbox/plugins/upnp_coherence/store_uuid',
-    's_version': '/apps/rhyhtmbox/plugins/upnp_coherence/store_version',
+    's_active': '/apps/rhythmbox/plugins/upnp_coherence/store_active',
+    's_name': '/apps/rhythmbox/plugins/upnp_coherence/store_name',
+    's_uuid': '/apps/rhythmbox/plugins/upnp_coherence/store_uuid',
+    's_version': '/apps/rhythmbox/plugins/upnp_coherence/store_version',
     # client
     'c_active': '/apps/rhythmbox/plugins/upnp_coherence/client_active',
      }
@@ -56,6 +53,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             self.config.set_bool(gconf_keys['%s_active' % a], True)
         for a in ('r', 's'):
             self.config.set_int(gconf_keys['%s_version' % a], 2)
+            self.config.set_string(gconf_keys['%s_name' % a], '')
 
     def activate(self, shell):
         from twisted.internet import gtk2reactor
@@ -111,6 +109,10 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             if uuid:
                 kw['uuid'] = uuid
 
+            name = self.config.get_string(gconf_keys['s_name'])
+            if name:
+                kw['name'] = name
+
             if the_icon:
                 kw['icon'] = the_icon
 
@@ -139,6 +141,10 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
                 uuid = self.config.get_string(gconf_keys['r_uuid'])
                 if uuid:
                     kw['uuid'] = uuid
+
+                name = self.config.get_string(gconf_keys['r_name'])
+                if name:
+                    kw['name'] = name
 
                 if the_icon:
                     kw['icon'] = the_icon

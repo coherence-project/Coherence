@@ -316,7 +316,10 @@ class MediaStore(BackendStore):
         if( len(self.urlbase) > 0 and self.urlbase[len(self.urlbase)-1] != '/'):
             self.urlbase += '/'
 
-        self.name = "Rhythmbox on %s" % self.server.coherence.hostname
+        try:
+            self.name = kwargs['name']
+        except KeyError:
+            self.name = "Rhythmbox on %s" % self.server.coherence.hostname
 
         query = self.db.query_new()
         self.info(query)

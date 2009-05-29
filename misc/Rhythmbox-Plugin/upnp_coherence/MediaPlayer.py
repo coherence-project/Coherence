@@ -38,7 +38,10 @@ class RhythmboxPlayer(log.Loggable):
         self.player = None
         self.entry = None
         self.metadata = None
-        self.name = "Rhythmbox on %s" % self.server.coherence.hostname
+        try:
+            self.name = kwargs['name']
+        except KeyError:
+            self.name = "Rhythmbox on %s" % self.server.coherence.hostname
 
         self.player = self.shell.get_player()
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
