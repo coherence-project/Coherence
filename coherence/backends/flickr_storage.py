@@ -749,7 +749,8 @@ class FlickrStore(BackendStore):
         return d
 
     def flickr_photos_getSizes(self, photo_id=None):
-        d = self.flickr_call('flickr.photos.getSizes', photo_id=photo_id)
+        api_sig = self.flickr_create_api_signature(auth_token=self.flickr_authtoken,method='flickr.photos.getSizes', photo_id=photo_id)
+        d = self.flickr_call('flickr.photos.getSizes', auth_token=self.flickr_authtoken, photo_id=photo_id,api_sig=api_sig)
         return d
 
 
