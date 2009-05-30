@@ -400,9 +400,11 @@ class Coherence(log.Loggable):
                     protocol = mirabeau_cfg['protocol']
                     account = mirabeau_cfg['account']
                     connection = connect.tp_connect(manager, protocol, account)
+                    allowed_devices = mirabeau_cfg["allowed_devices"].split(",")
                     tubes_to_offer = {BUS_NAME: {}, DEVICE_IFACE: {}, SERVICE_IFACE: {}}
                     self._tube_publisher = MirabeauTubePublisher(connection, chatroom,
-                                                                 tubes_to_offer, self)
+                                                                 tubes_to_offer, self,
+                                                                 allowed_devices)
                     self._tube_publisher.start()
 
     def add_plugin(self, plugin, **kwargs):
