@@ -521,8 +521,9 @@ class DBusDevice(dbus.service.Object,log.Loggable):
     SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self,device, bus):
+        self.uuid = device.get_id()[5:]
         if device is not None:
-            self.id = device.get_id()[5:].replace('-','')
+            self.id = self.uuid.replace('-','')
         else:
             self.id = "from_the_tubes"
 
