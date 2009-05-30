@@ -302,6 +302,7 @@ class YoutubeVideoItem(BackendItem):
         self.description = None
         self.date = None
         self.item = None
+        self.youtube_entry = entry
         self.store = store
 
         def extractDataURL(url, quality):
@@ -353,8 +354,13 @@ class YoutubeVideoItem(BackendItem):
             self.item.description = self.description
             self.item.date = self.date
 
-            if hasattr(self.parent, 'cover'):
-                self.item.albumArtURI = self.parent.cover
+            # extract thumbnail from youtube entry
+            # we take the last one, hoping this is the bigger one
+            thumbnail_url = None
+            for image in self.youtube_entry.media.thumbnail:
+                thumbnail_url = image.url
+            if thumbnail_url is not None:
+                self.item.albumArtURI = thumbnail_url
 
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             res.duration = self.duration
@@ -441,6 +447,7 @@ class YouTubeStore(AbstractBackendStore):
         title = entry.media.title.text
         url = entry.media.player.url
         mimetype = MPEG4_MIMETYPE
+        
         #mimetype = 'video/mpeg'
         item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
         item.parent = parent
