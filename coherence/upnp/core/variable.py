@@ -56,6 +56,8 @@ class StateVariable(log.Loggable):
         r.append(('Data Type',self.data_type))
         r.append(('Default Value',self.default_value))
         r.append(('Current Value',unicode(self.value)))
+        if(self.allowed_values != None and len(self.allowed_values) > 0):
+            r.append(('Allowed Values',','.join(self.allowed_values)))
         return r
 
     def set_default_value(self, value):
