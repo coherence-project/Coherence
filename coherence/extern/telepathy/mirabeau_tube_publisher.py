@@ -16,18 +16,42 @@ class MirabeauTubePublisher(tube.TubePublisher):
         super(MirabeauTubePublisher, self).tube_opened(id)
         self.coherence.dbus.add_to_connection(self.tube_conn, OBJECT_PATH)
         for device in self.coherence.dbus.devices:
-            if device.uuid not in self.allowed_devices:
-                continue
-            device.add_to_connection(self.tube_conn, device.path())
-            for service in device.services:
-                service.add_to_connection(self.tube_conn, service.path)
+            self._register_device(device)
+        self.coherence.dbus.bus.add_signal_receiver(self._media_server_found,
+                                                    "UPnP_ControlPoint_MediaServer_detected")
+        self.coherence.dbus.bus.add_signal_receiver(self._media_server_removed,
+                                                    "UPnP_ControlPoint_MediaServer_removed")
 
-    def device_found(self, device):
+    def _media_server_found(self, infos, udn):
+        uuid = udn[5:]
+        for device in self.coherence.dbus.devices:
+            if device.uuid == uuid and device.uuid in self.allowed_devices:
+                self._register_device(device)
+                return
+
+    def _register_device(self, device):
         name = '%s (%s)' % (device.get_friendly_name(),
                             ':'.join(device.get_device_type().split(':')[3:5]))
         print "device found: %s" % name
-        # TODO: call add_to_connection() to publish device in the tube
-        #device.add_to_connection(self.tube_conn, device.path())
+        try:
+            device.add_to_connection(self.tube_conn, device.path())
+        except Exception, exc:
+            # XXX: remove this when Pontoon doesn't store duplicates anymore
+            pass
+        else:
+            for service in device.services:
+                service.add_to_connection(self.tube_conn, service.path)
 
-    def device_removed(self, usn):
-        pass
+    def _media_server_removed(self, udn):
+        for device in self.coherence.dbus.devices:
+            if udn == device.device.get_id() and \
+               device.uuid in self.allowed_devices:
+                try:
+                    device.remove_from_connection(self.tube_conn, device.path())
+                except:
+                    # XXX: remove this when Pontoon doesn't store duplicates anymore
+                    continue
+                else:
+                    for service in device.services:
+                        service.remove_from_connection(self.tube_conn, service.path)
+                    break
