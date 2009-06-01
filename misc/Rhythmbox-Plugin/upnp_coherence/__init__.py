@@ -16,24 +16,26 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
-# For the icon
+# for the icon
 import os.path, urllib, gnomevfs, gtk.gdk
 
+# the gconf configuration
 gconf_keys = {
-    # renderer
-    'r_active': '/apps/rhythmbox/plugins/upnp_coherence/renderer_active',
-    'r_name': '/apps/rhythmbox/plugins/upnp_coherence/renderer_name',
-    'r_version': '/apps/rhythmbox/plugins/upnp_coherence/renderer_version',
-    'r_uuid': '/apps/rhythmbox/plugins/upnp_coherence/renderer_uuid',
-    # store
-    's_active': '/apps/rhythmbox/plugins/upnp_coherence/store_active',
-    's_name': '/apps/rhythmbox/plugins/upnp_coherence/store_name',
-    's_uuid': '/apps/rhythmbox/plugins/upnp_coherence/store_uuid',
-    's_version': '/apps/rhythmbox/plugins/upnp_coherence/store_version',
-    # client
-    'c_active': '/apps/rhythmbox/plugins/upnp_coherence/client_active',
-     }
-
+    'port': "/apps/rhythmbox/plugins/coherence/port",
+    'interface': "/apps/rhythmbox/plugins/coherence/interface",
+    # DMS
+    'dms_uuid': "/apps/rhythmbox/plugins/coherence/dms/uuid",
+    'dms_active': "/apps/rhythmbox/plugins/coherence/dms/active",
+    'dms_version': "/apps/rhythmbox/plugins/coherence/dms/version",
+    'dms_name': "/apps/rhythmbox/plugins/coherence/dms/name",
+    # DMR
+    'dmr_uuid': "/apps/rhythmbox/plugins/coherence/dmr/uuid",
+    'dmr_active': "/apps/rhythmbox/plugins/coherence/dmr/active",
+    'dmr_version': "/apps/rhythmbox/plugins/coherence/dmr/version",
+    'dmr_name': "/apps/rhythmbox/plugins/coherence/dmr/name",
+    # DMC
+    'dmc_active': "/apps/rhythmbox/plugins/coherence/dmc/active",
+}
 
 class CoherencePlugin(rb.Plugin, log.Loggable):
 
@@ -44,16 +46,14 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         self.coherence = None
         self.config = gconf.client_get_default()
 
-        if self.config.get(gconf_keys['c_active']) is None:
-            print "setting defaults"
+        if self.config.get(gconf_keys['dmc_active']) is None:
             self._set_defaults()
 
     def _set_defaults(self):
         for a in ('r', 's', 'c'):
-            self.config.set_bool(gconf_keys['%s_active' % a], True)
+            self.config.set_bool(gconf_keys['dm%s_active' % a], True)
         for a in ('r', 's'):
-            self.config.set_int(gconf_keys['%s_version' % a], 2)
-            self.config.set_string(gconf_keys['%s_name' % a], '')
+            self.config.set_int(gconf_keys['dm%s_version' % a], 2)
 
     def activate(self, shell):
         from twisted.internet import gtk2reactor
@@ -83,84 +83,75 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             height = "%s" % pixbuf.get_height()
             depth = '24'
             the_icon = {
-                'url':url,
+                'url': url,
                 'mimetype':mimetype,
                 'width':width,
                 'height':height,
                 'depth':depth
                 }
-        else:
-            the_icon = None
 
-        # create our own media server
-        if self.config.get_bool(gconf_keys['s_active']):
-            print "activating media store"
-
+        if self.config.get_bool(gconf_keys['dms_active']):
+            # create our own media server
             from coherence.upnp.devices.media_server import MediaServer
             from MediaStore import MediaStore
-            kw = {
-                "version": self.config.get_int(gconf_keys['s_version']),
-                "no_thread_needed": True,
-                "db": self.shell.props.db,
-                "plugin": self,
-                }
 
-            uuid = self.config.get_string(gconf_keys['s_uuid'])
-            if uuid:
-                kw['uuid'] = uuid
-
-            name = self.config.get_string(gconf_keys['s_name'])
-            if name:
-                kw['name'] = name
-
+            kwargs = {'version':self.config.get_int(gconf_keys['dms_version']),
+                    'no_thread_needed':True,
+                    'db':self.shell.props.db,
+                    'plugin':self}
             if the_icon:
-                kw['icon'] = the_icon
+                kwargs['icon']=the_icon
 
-            self.server = MediaServer(self.coherence, MediaStore, **kw)
-            if not uuid:
-                uuid = str(self.server.uuid)
-                self.config.set_string(gconf_keys['s_uuid'], uuid)
+            dms_uuid = self.config.get_string(gconf_keys['dms_uuid'])
+            if dms_uuid != None:
+                kwargs['uuid']=dms_uuid
 
-            print "Media Store available at %s" % uuid
+            name = self.config.get_string(gconf_keys['dms_name'])
+            if name:
+                kwargs['name'] = name
 
-        if self.config.get_bool(gconf_keys['r_active']):
-            print "activating media renderer" 
+            self.server = MediaServer(self.coherence, MediaStore, **kwargs)
+
+            if dms_uuid == None:
+                self.config.set_string(gconf_keys['dms_uuid'], str(self.server.uuid))
+
+            self.warning("Media Store available with UUID %s" % str(self.server.uuid))
+
+        if self.config.get_bool(gconf_keys['dmr_active']):
             # create our own media renderer
             # but only if we have a matching Coherence package installed
             if self.coherence_version < (0, 5, 2):
-                print "activation faild. coherence is older than version 0.5.2"
+                print "activation faild. Coherence is older than version 0.5.2"
             else:
                 from coherence.upnp.devices.media_renderer import MediaRenderer
                 from MediaPlayer import RhythmboxPlayer
-                kw = {
-                    "version": self.config.get_int(gconf_keys['r_version']),
+                kwargs = {
+                    "version": self.config.get_int(gconf_keys['dmr_version']),
                     "no_thread_needed": True,
                     "shell": self.shell,
+                    'rb_mediaserver':self.server,
                     }
+                dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
 
-                uuid = self.config.get_string(gconf_keys['r_uuid'])
-                if uuid:
-                    kw['uuid'] = uuid
-
-                name = self.config.get_string(gconf_keys['r_name'])
-                if name:
-                    kw['name'] = name
-
+                kwargs = {'version':self.config.get_int(gconf_keys['dmr_version']),
+                        'no_thread_needed':True,
+                        'shell':self.shell,
+                        'rb_mediaserver':self.server}
                 if the_icon:
-                    kw['icon'] = the_icon
+                    kwargs['icon']=the_icon
+                if dmr_uuid != None:
+                    kwargs['uuid']=dmr_uuid
+                name = self.config.get_string(gconf_keys['dmr_name'])
+                if name:
+                    kwargs['name'] = name
+                self.renderer = MediaRenderer(self.coherence,RhythmboxPlayer,**kwargs)
+                if dmr_uuid == None:
+                    self.config.set_string(gconf_keys['dmr_uuid'], str(self.renderer.uuid))
 
-                self.renderer = MediaRenderer(self.coherence,
-                        RhythmboxPlayer, **kw)
+                self.warning("Media Renderer available with UUID %s" % str(self.renderer.uuid))
 
-                if not uuid:
-                    # first time launch
-                    uuid = str(self.renderer.uuid)
-                    self.config.set_string(gconf_keys['r_uuid'], uuid)
-
-                print "Media Renderer available at %s" % uuid
-
-        if self.config.get_bool(gconf_keys['c_active']):
-            print "start observing for media servers"
+        if self.config.get_bool(gconf_keys['dmc_active']):
+            self.warning("start looking for media servers")
             # watch for media servers
             louie.connect(self.detected_media_server,
                     'Coherence.UPnP.ControlPoint.MediaServer.detected',
@@ -171,18 +162,24 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
 
     def deactivate(self, shell):
-        print "coherence UPnP plugin deactivated"
+        self.info("Coherence UPnP plugin deactivated")
         if self.coherence is None:
             return
 
         self.coherence.shutdown()
 
-        louie.disconnect(self.detected_media_server,
-                'Coherence.UPnP.ControlPoint.MediaServer.detected',
-                louie.Any)
-        louie.disconnect(self.removed_media_server,
-                'Coherence.UPnP.ControlPoint.MediaServer.removed',
-                louie.Any)
+        try:
+            louie.disconnect(self.detected_media_server,
+                    'Coherence.UPnP.ControlPoint.MediaServer.detected',
+                    louie.Any)
+        except louie.error.DispatcherKeyError:
+            pass
+        try:
+            louie.disconnect(self.removed_media_server,
+                    'Coherence.UPnP.ControlPoint.MediaServer.removed',
+                    louie.Any)
+        except louie.error.DispatcherKeyError:
+            pass
 
         del self.shell
         del self.coherence
@@ -218,22 +215,23 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             'controlpoint': 'yes',
             'plugins': {},
         }
+
+        serverport = self.config.get_int(gconf_keys['port'])
+        if serverport != None and serverport != 0:
+            coherence_config['serverport'] = serverport
+
         coherence_instance = Coherence(coherence_config)
 
         return coherence_instance
 
     def removed_media_server(self, udn):
-        print "upnp server went away %s" % udn
+        self.info("upnp server went away %s" % udn)
         if self.sources.has_key(udn):
             self.sources[udn].delete_thyself()
             del self.sources[udn]
 
     def detected_media_server(self, client, udn):
-        print "found upnp server %s (%s)"  % \
-                (client.device.get_friendly_name(), udn)
-        self.warning("found upnp server %s (%s)"  %
-                (client.device.get_friendly_name(), udn))
-
+        self.info("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
         if self.server and client.device.get_id() == str(self.server.uuid):
             """ don't react on our own MediaServer"""
             return
@@ -255,3 +253,59 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         self.sources[udn] = source
 
         self.shell.append_source (source, None)
+
+    def create_configure_dialog(self, dialog=None):
+        if dialog == None:
+
+            def store_config(dialog,port_spinner,interface_entry):
+                port = port_spinner.get_value_as_int()
+                self.config.set_int(gconf_keys['port'],port)
+                interface = interface_entry.get_text()
+                if len(interface) != 0:
+                    self.config.set_string(gconf_keys['interface'],interface)
+                dialog.hide()
+
+            dialog = gtk.Dialog(title='DLNA/UPnP Configuration',
+                            parent=None,flags=0,buttons=None)
+            dialog.set_default_size(400,350)
+
+            table = gtk.Table(rows=2, columns=2, homogeneous=True)
+            dialog.vbox.pack_start(table, False, False, 0)
+
+            label = gtk.Label("Port :")
+            label.set_alignment(0,0.5)
+            table.attach(label, 0, 1, 0, 1)
+
+            value = 0
+            if self.config.get_int(gconf_keys['port']) != None:
+                value = self.config.get_int(gconf_keys['port'])
+            adj = gtk.Adjustment(value, 0, 65535, 1, 100, 0)
+            port_spinner = gtk.SpinButton(adj, 0, 0)
+            port_spinner.set_wrap(True)
+            port_spinner.set_numeric(True)
+            table.attach(port_spinner, 1, 2, 0, 1,
+                         xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
+
+            label = gtk.Label("Interface :")
+            label.set_alignment(0,0.5)
+            table.attach(label, 0, 1, 1, 2)
+            interface_entry = gtk.Entry()
+            interface_entry.set_max_length(16)
+            if self.config.get_string(gconf_keys['interface']) != None:
+                interface_entry.set_text(self.config.get_string(gconf_keys['interface']))
+            else:
+                interface_entry.set_text('')
+            table.attach(interface_entry, 1, 2, 1, 2,
+                         xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
+
+            button = gtk.Button(stock=gtk.STOCK_CANCEL)
+            dialog.action_area.pack_start(button, True, True, 5)
+            button.connect("clicked", lambda w: dialog.hide())
+            button = gtk.Button(stock=gtk.STOCK_OK)
+            button.connect("clicked", lambda w: store_config(dialog,port_spinner,interface_entry))
+            dialog.action_area.pack_start(button, True, True, 5)
+            dialog.show_all()
+
+
+        dialog.present()
+        return dialog
