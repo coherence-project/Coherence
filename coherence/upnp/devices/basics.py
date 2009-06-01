@@ -160,7 +160,7 @@ class RootDeviceXML(static.Data):
                 icon_path = ''
                 if icon.has_key('url'):
                     if icon['url'].startswith('file://'):
-                        icon_path = os.path.basename(icon['url'])
+                        icon_path = icon['url'][7:]
                     elif icon['url'] == '.face':
                         icon_path = os.path.join(os.path.expanduser('~'), ".face")
                     else:
