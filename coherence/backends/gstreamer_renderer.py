@@ -319,7 +319,7 @@ class Player(log.Loggable):
         if location[0] == '+':
             l =  long(p[u'raw'][u'position']) + (long(location[1:])*1000000000)
             l = min( l, long(p[u'raw'][u'duration']))
-        if location[0] == '-':
+        elif location[0] == '-':
             if location == '-0':
                 l = 0L
             else:
@@ -830,9 +830,18 @@ class GStreamerPlayer(log.Loggable,Plugin):
         if Unit in ['ABS_TIME','REL_TIME']:
             old_state = self.server.av_transport_server.get_variable('TransportState').value
             self.server.av_transport_server.set_variable(InstanceID, 'TransportState', 'TRANSITIONING')
+
+            sign = ''
+            if Target[0] == '+':
+                Target = Target[1:]
+                sign = '+'
+            if Target[0] == '-':
+                Target = Target[1:]
+                sign = '-'
+
             h,m,s = Target.split(':')
             seconds = int(h)*3600 + int(m)*60 + int(s)
-            self.seek(str(seconds), old_state)
+            self.seek(sign+str(seconds), old_state)
         if Unit in ['TRACK_NR']:
             if self.playcontainer == None:
                 NextURI = self.server.av_transport_server.get_variable(InstanceID, 'NextAVTransportURI').value
