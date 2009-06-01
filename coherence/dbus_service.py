@@ -32,6 +32,8 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+from twisted.internet import reactor
+
 class DBusProxy(log.Loggable):
     logCategory = 'dbus'
 
@@ -653,12 +655,16 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
     def remove(self,udn):
         #print "DBusPontoon remove", udn
+        device_to_remove = None
         for device in self.devices:
             #print "check against", device.device.get_id()
             if udn == device.device.get_id():
-                device.device = None
-                self.devices.remove(device)
+                device_to_remove = device
                 break
+
+        if device_to_remove:
+            device_to_remove.device = None
+            self.devices.remove(device_to_remove)
 
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
     def version(self):
@@ -769,11 +775,15 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def cp_ms_removed(self,udn):
         #print "cp_ms_removed", udn
         self.UPnP_ControlPoint_MediaServer_removed(udn)
-        self.remove(udn)
+        # schedule removal of device from our cache after signal has
+        # been called. Let's assume one second is long enough...
+        reactor.callLater(1, self.remove, udn)
 
     def cp_mr_removed(self,udn):
         self.UPnP_ControlPoint_MediaRenderer_removed(udn)
-        self.remove(udn)
+        # schedule removal of device from our cache after signal has
+        # been called. Let's assume one second is long enough...
+        reactor.callLater(1, self.remove, udn)
 
     @dbus.service.signal(BUS_NAME,
                          signature='vs')
