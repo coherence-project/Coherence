@@ -436,7 +436,7 @@ class RootDeviceXML(static.Data):
                 icon_path = ''
                 if icon.has_key('url'):
                     if icon['url'].startswith('file://'):
-                        icon_path = os.path.basename(icon['url'])
+                        icon_path = icon['url'][7:]
                     elif icon['url'] == '.face':
                         icon_path = os.path.join(os.path.expanduser('~'), ".face")
                     else:
@@ -613,7 +613,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         for icon in self.icons:
             if icon.has_key('url'):
                 if icon['url'].startswith('file://'):
-                    if os.path.exists(os.path.basename(icon['url'])):
+                    if os.path.exists(icon['url'][7:]):
                         self.web_resource.putChild(os.path.basename(icon['url']),
                                                    StaticFile(icon['url'][7:],defaultType=icon['mimetype']))
                 elif icon['url'] == '.face':

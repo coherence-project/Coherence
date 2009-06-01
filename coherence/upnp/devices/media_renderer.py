@@ -15,6 +15,8 @@ from coherence import __version__
 
 from coherence.extern.et import ET, indent
 
+from coherence.upnp.core.utils import StaticFile
+
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.rendering_control_server import RenderingControlServer
 from coherence.upnp.services.servers.av_transport_server import AVTransportServer
@@ -121,8 +123,19 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         for icon in self.icons:
             if icon.has_key('url'):
                 if icon['url'].startswith('file://'):
-                    self.web_resource.putChild(os.path.basename(icon['url']),
-                                               static.File(icon['url'][7:]))
+                    if os.path.exists(icon['url'][7:]):
+                        self.web_resource.putChild(os.path.basename(icon['url']),
+                                                   StaticFile(icon['url'][7:],defaultType=icon['mimetype']))
+                elif icon['url'] == '.face':
+                    face_path = os.path.abspath(os.path.join(os.path.expanduser('~'), ".face"))
+                    if os.path.exists(face_path):
+                        self.web_resource.putChild('face-icon.png',StaticFile(face_path,defaultType=icon['mimetype']))
+                else:
+                    from pkg_resources import resource_filename
+                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
+                    if os.path.exists(icon_path):
+                        self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
+
 
         self.register()
         self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))
