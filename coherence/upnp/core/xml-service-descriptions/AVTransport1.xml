@@ -162,7 +162,7 @@
             <name>A_ARG_TYPE_SeekMode</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-            <allowedValueList coherence:X_withVendorDefines="True">
+            <allowedValueList>
                  <allowedValue>TRACK_NR</allowedValue>
             </allowedValueList>
         </stateVariable>
