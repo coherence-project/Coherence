@@ -67,12 +67,21 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         else:
             device_id = "dev_from_the_tubes"
         self.path = OBJECT_PATH + '/devices/' + device_id + '/services/' + 'CDS'
-        s = dbus.service.Object.__init__(self, bus, bus_name=bus_name,
+        dbus.service.Object.__init__(self, bus, bus_name=bus_name,
                                          object_path=self.path)
-        self.debug("DBusService %r %r %r", service, self.type, s)
+        self.debug("DBusService %r %r", service, self.type)
         louie.connect(self.variable_changed, 'StateVariable.changed', sender=self.service)
 
         self.subscribeStateVariables()
+
+    def _release_thyself(self):
+        louie.disconnect(self.variable_changed, 'StateVariable.changed', sender=self.service)
+        self.service = None
+        self.dbus_device = None
+        self.tube = None
+        self.path = None
+        self.remove_from_connection()
+        del self
 
     def variable_changed(self,variable):
         self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
@@ -399,9 +408,9 @@ class DBusService(dbus.service.Object,log.Loggable):
             device_id = "dev_from_the_tubes"
         self.path = OBJECT_PATH + '/devices/' + device_id + '/services/' + self.type
 
-        s = dbus.service.Object.__init__(self, bus, bus_name=bus_name,
+        dbus.service.Object.__init__(self, bus, bus_name=bus_name,
                                          object_path=self.path)
-        self.debug("DBusService %r %r %r", service, self.type, s)
+        self.debug("DBusService %r %r", service, self.type)
         louie.connect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
 
         self.subscribe()
@@ -417,6 +426,15 @@ class DBusService(dbus.service.Object,log.Loggable):
         #            print self.__class__._reflect_on_method(func)
 
         #self._get_service_methods()
+
+    def _release_thyself(self):
+        louie.disconnect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
+        self.service = None
+        self.dbus_device = None
+        self.tube = None
+        self.path = None
+        self.remove_from_connection()
+        del self
 
     def _get_service_methods(self):
         '''Returns a list of method descriptors for this object'''
@@ -537,19 +555,29 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         else:
             self.tube = None
 
-        d = dbus.service.Object.__init__(self, bus, bus_name=bus_name,
+        dbus.service.Object.__init__(self, bus, bus_name=bus_name,
                                          object_path=self.path())
 
         self.services = []
         self.device = device
 
-        self.debug("DBusDevice %r %r %r", device, self.id, d)
+        self.debug("DBusDevice %r %r", device, self.id)
 
         if device is not None:
             for service in device.get_services():
                 self.services.append(DBusService(service,self,bus))
                 if service.service_type.split(':')[3] == 'ContentDirectory':
                     self.services.append(DBusCDSService(service,self,bus))
+
+    def _release_thyself(self):
+        for service in self.services:
+            service._release_thyself()
+        self.services = None
+        self.device = None
+        self.tube = None
+        self.path = None
+        self.remove_from_connection()
+        del self
 
     def path(self):
         return OBJECT_PATH + '/devices/' + self.id
@@ -655,9 +683,9 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     def remove(self,udn):
         print "DBusPontoon remove", udn
         print "before remove", self.devices
-        self.devices[udn].device = None
-        self.devices[udn].services = None
-        del self.devices[udn]
+        d = self.devices.pop(udn)
+        d._release_thyself()
+        del d
         print "after remove", self.devices
 
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
