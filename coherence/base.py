@@ -399,11 +399,11 @@ class Coherence(log.Loggable):
                     chatroom = mirabeau_cfg['chatroom']
                     manager = mirabeau_cfg['manager']
                     protocol = mirabeau_cfg['protocol']
-                    account = {'first-name': mirabeau_cfg['account']['first-name'],
-                               'last-name': mirabeau_cfg['account']['last-name'],
-                               'published-name': mirabeau_cfg['account']['published-name'],
-                               'nickname': mirabeau_cfg['account']['nickname']}
-                    #print chatroom, manager, protocol, account
+                    # account dict keys are different for each
+                    # protocol so we assume the user gave the right
+                    # account parameters depending on the specified
+                    # protocol.
+                    account = mirabeau_cfg['account']
                     connection = connect.tp_connect(manager, protocol, account)
                     try:
                         allowed_devices = mirabeau_cfg["allowed_devices"].split(",")
