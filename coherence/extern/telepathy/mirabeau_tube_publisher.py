@@ -16,8 +16,6 @@ class MirabeauTubePublisher(tube.TubePublisher):
         super(MirabeauTubePublisher, self).tube_opened(id)
         self.coherence.dbus.add_to_connection(self.tube_conn, OBJECT_PATH)
         for device in self.coherence.dbus.devices.values():
-            if self.allowed_devices != None and device.uuid not in self.allowed_devices:
-                return
             self._register_device(device)
         self.coherence.dbus.bus.add_signal_receiver(self._media_server_found,
                                                     "UPnP_ControlPoint_MediaServer_detected")
@@ -28,18 +26,19 @@ class MirabeauTubePublisher(tube.TubePublisher):
         uuid = udn[5:]
         for device in self.coherence.dbus.devices.values():
             if device.uuid == uuid:
-                if self.allowed_devices != None and device.uuid not in self.allowed_devices:
-                    return
                 self._register_device(device)
                 return
 
     def _register_device(self, device):
         name = '%s (%s)' % (device.get_friendly_name(),
                             ':'.join(device.get_device_type().split(':')[3:5]))
-        print "device found: %s" % name
+        self.info("device found: %s" % name)
+        if self.allowed_devices != None and device.uuid not in self.allowed_devices:
+            self.debug("device not allowed: %r", device.uuid)
+            return
         try:
             device.add_to_connection(self.tube_conn, device.path())
-            print "device add_to_connection: %s" % name
+            self.debug("device add_to_connection: %s" % name)
         except Exception, exc:
             # XXX: remove this when Pontoon doesn't store duplicates anymore
             pass
@@ -50,16 +49,18 @@ class MirabeauTubePublisher(tube.TubePublisher):
     def _media_server_removed(self, udn):
         for device in self.coherence.dbus.devices.values():
             if udn == device.device.get_id():
-                print "remove", device.get_friendly_name()
-                #if self.allowed_devices != None and device.uuid not in self.allowed_devices:
-                #    continue
+                if self.allowed_devices != None and device.uuid not in self.allowed_devices:
+                    # the device is not allowed, no reason to
+                    # disconnect from the tube to which it wasn't
+                    # connected in the first place anyway
+                    return
                 try:
                     device.remove_from_connection(self.tube_conn, device.path())
-                    print "remove_from_connection: %s" % device.get_friendly_name()
+                    self.debug("remove_from_connection: %s" % device.get_friendly_name())
                 except:
                     # XXX: remove this when Pontoon doesn't store duplicates anymore
                     continue
                 else:
                     for service in device.services:
                         service.remove_from_connection(self.tube_conn, service.path)
-                    break
+                    return
