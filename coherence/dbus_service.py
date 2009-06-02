@@ -19,7 +19,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)
 
 import dbus.service
-import dbus.gobject_service
+#import dbus.gobject_service
 
 #import dbus.glib
 
@@ -605,7 +605,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
         self.debug("D-Bus pontoon %r %r %r" % (self, self.bus, self.bus_name))
 
-        self.devices = []
+        self.devices = {}
         self.controlpoint = controlpoint
         self.pinboard = {}
 
@@ -614,7 +614,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             return
 
         for device in self.controlpoint.get_devices():
-            self.devices.append(DBusDevice(device,self.bus_name))
+            self.devices[device.get_id()] = DBusDevice(device,self.bus_name)
 
         louie.connect(self.cp_ms_detected, 'Coherence.UPnP.ControlPoint.MediaServer.detected', louie.Any)
         louie.connect(self.cp_ms_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
@@ -623,7 +623,6 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
         self.debug("D-Bus pontoon started")
-        self.pinboard = {}
 
     @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='')
     def pin(self,key,value):
@@ -654,17 +653,12 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             pass
 
     def remove(self,udn):
-        #print "DBusPontoon remove", udn
-        device_to_remove = None
-        for device in self.devices:
-            #print "check against", device.device.get_id()
-            if udn == device.device.get_id():
-                device_to_remove = device
-                break
-
-        if device_to_remove:
-            device_to_remove.device = None
-            self.devices.remove(device_to_remove)
+        print "DBusPontoon remove", udn
+        print "before remove", self.devices
+        self.devices[udn].device = None
+        self.devices[udn].services = None
+        del self.devices[udn]
+        print "after remove", self.devices
 
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
     def version(self):
@@ -677,7 +671,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='av')
     def get_devices(self):
         r = []
-        for device in self.devices:
+        for device in self.devices.values():
             #r.append(device.path())
             r.append(device.get_info())
         return dbus.Array(r,signature='v',variant_level=2)
@@ -763,14 +757,17 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addErrback(dbus_async_err_cb)
 
     def cp_ms_detected(self,client,udn=''):
-        new_device = DBusDevice(client.device,self.bus)
-        self.devices.append(new_device)
-        self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),udn)
+        print "cp_ms_detected", udn
+        if client.device.get_id() not in self.devices:
+            new_device = DBusDevice(client.device,self.bus)
+            self.devices[client.device.get_id()] = new_device
+            self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),udn)
 
     def cp_mr_detected(self,client,udn=''):
-        new_device = DBusDevice(client.device,self.bus)
-        self.devices.append(new_device)
-        self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),udn)
+        if client.device.get_id() not in self.devices:
+            new_device = DBusDevice(client.device,self.bus)
+            self.devices[client.device.get_id()] = new_device
+            self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),udn)
 
     def cp_ms_removed(self,udn):
         #print "cp_ms_removed", udn
@@ -810,7 +807,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
     def getDMSList(self):
         r = []
-        for device in self.devices:
+        for device in self.devices.values():
             #r.append(device.path())
             if 'MediaServer' in device.get_device_type().split(':'):
                 r.append(device.get_info())
@@ -819,7 +816,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
     def getDMRList(self):
         r = []
-        for device in self.devices:
+        for device in self.devices.values():
             #r.append(device.path())
             if 'MediaRenderer' in device.get_device_type().split(':'):
                 r.append(device.get_info())

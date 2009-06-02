@@ -10,13 +10,16 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
     initial_announce_done = False
 
     def __init__(self, connection, muc_id, found_peer_callback=None,
-                 disapeared_peer_callback=None, got_devices_callback=None):
+                 disappeared_peer_callback=None, got_devices_callback=None):
         super(MirabeauTubeConsumer, self).__init__(connection, muc_id,
                                                    found_peer_callback=found_peer_callback,
-                                                   disapeared_peer_callback=disapeared_peer_callback)
+                                                   disapeared_peer_callback=disappeared_peer_callback)
         self.got_devices_callback = got_devices_callback
+        print "MirabeauTubeConsumer __init__"
 
     def _create_peer_remote_object(self, peer, interface):
+        print "_create_peer_remote_object", peer, interface
+        return
         if interface == BUS_NAME:
             peer.remote_object = dbus_service.DBusPontoon(None, self.tube_conn)
         elif interface == DEVICE_IFACE:
@@ -25,6 +28,7 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
             peer.remote_object = dbus_service.DBusService(None, None, self.tube_conn)
 
     def _create_peer_object_proxy(self, peer, interface):
+        print "_create_peer_object_proxy", peer, interface
         found_peer = False
         if interface == BUS_NAME:
             found_peer = True

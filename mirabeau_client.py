@@ -16,9 +16,10 @@ def run(args=None):
     loop = gobject.MainLoop()
 
     def found_peer(peer):
+        print "found peer"
         pass
 
-    def disapeared_peer(peer):
+    def disappeared_peer(peer):
         pass
 
     def got_devices(devices):
@@ -45,7 +46,7 @@ def run(args=None):
                                "published-name": nickname, "nickname": nickname})
     cli = MirabeauTubeConsumer(conn, "UPnPProxy",
                                found_peer_callback=found_peer,
-                               disapeared_peer_callback=disapeared_peer,
+                               disappeared_peer_callback=disappeared_peer,
                                got_devices_callback=got_devices)
     cli.start()
 

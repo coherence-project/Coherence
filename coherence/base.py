@@ -394,18 +394,49 @@ class Coherence(log.Loggable):
                     from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
                     from coherence.extern.telepathy import connect
                     from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisher
+                    from coherence.extern.telepathy.mirabeau_tube_consumer import MirabeauTubeConsumer
                     mirabeau_cfg = self.config.get('mirabeau', {})
                     chatroom = mirabeau_cfg['chatroom']
                     manager = mirabeau_cfg['manager']
                     protocol = mirabeau_cfg['protocol']
-                    account = mirabeau_cfg['account']
+                    account = {'first-name': mirabeau_cfg['account']['first-name'],
+                               'last-name': mirabeau_cfg['account']['last-name'],
+                               'published-name': mirabeau_cfg['account']['published-name'],
+                               'nickname': mirabeau_cfg['account']['nickname']}
+                    #print chatroom, manager, protocol, account
                     connection = connect.tp_connect(manager, protocol, account)
-                    allowed_devices = mirabeau_cfg["allowed_devices"].split(",")
+                    try:
+                        allowed_devices = mirabeau_cfg["allowed_devices"].split(",")
+                    except KeyError:
+                        allowed_devices = None
                     tubes_to_offer = {BUS_NAME: {}, DEVICE_IFACE: {}, SERVICE_IFACE: {}}
                     self._tube_publisher = MirabeauTubePublisher(connection, chatroom,
                                                                  tubes_to_offer, self,
                                                                  allowed_devices)
                     self._tube_publisher.start()
+
+                    def found_peer(peer):
+                        pass
+
+                    def disappeared_peer(peer):
+                        pass
+
+                    def got_devices(devices):
+                        for device in devices:
+                            try:
+                                name = '%s (%s)' % (device.get_friendly_name(),
+                                                    ':'.join(device.get_device_type().split(':')[3:5]))
+                            except:
+                                continue
+                            print "MIRABEAU found:",name
+
+                    """
+                    self._tube_consumer = MirabeauTubeConsumer(connection, chatroom,
+                               found_peer_callback=found_peer,
+                               disappeared_peer_callback=disappeared_peer,
+                               got_devices_callback=got_devices)
+                    self._tube_consumer.start()
+                    """
 
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin %r", plugin)
