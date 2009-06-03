@@ -47,13 +47,15 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         self.config = gconf.client_get_default()
 
         if self.config.get(gconf_keys['dmc_active']) is None:
+            # key not yet found represented by "None"
             self._set_defaults()
 
     def _set_defaults(self):
-        for a in ('r', 's', 'c'):
-            self.config.set_bool(gconf_keys['dm%s_active' % a], True)
         for a in ('r', 's'):
+            self.config.set_bool(gconf_keys['dm%s_active' % a], True)
             self.config.set_int(gconf_keys['dm%s_version' % a], 2)
+
+        self.conf.set_bool(gconf_keys['dmc_active'], True)
 
     def activate(self, shell):
         from twisted.internet import gtk2reactor
@@ -84,10 +86,10 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             depth = '24'
             the_icon = {
                 'url': url,
-                'mimetype':mimetype,
-                'width':width,
-                'height':height,
-                'depth':depth
+                'mimetype': mimetype,
+                'width': width,
+                'height': height,
+                'depth': depth
                 }
 
         if self.config.get_bool(gconf_keys['dms_active']):
@@ -95,16 +97,18 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             from coherence.upnp.devices.media_server import MediaServer
             from MediaStore import MediaStore
 
-            kwargs = {'version':self.config.get_int(gconf_keys['dms_version']),
-                    'no_thread_needed':True,
-                    'db':self.shell.props.db,
-                    'plugin':self}
+            kwargs = {
+                    'version': self.config.get_int(gconf_keys['dms_version']),
+                    'no_thread_needed': True,
+                    'db': self.shell.props.db,
+                    'plugin': self}
+
             if the_icon:
-                kwargs['icon']=the_icon
+                kwargs['icon'] = the_icon
 
             dms_uuid = self.config.get_string(gconf_keys['dms_uuid'])
-            if dms_uuid != None:
-                kwargs['uuid']=dms_uuid
+            if dms_uuid:
+                kwargs['uuid'] = dms_uuid
 
             name = self.config.get_string(gconf_keys['dms_name'])
             if name:
@@ -112,7 +116,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
             self.server = MediaServer(self.coherence, MediaStore, **kwargs)
 
-            if dms_uuid == None:
+            if dms_uuid is None:
                 self.config.set_string(gconf_keys['dms_uuid'], str(self.server.uuid))
 
             self.warning("Media Store available with UUID %s" % str(self.server.uuid))
@@ -129,23 +133,24 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
                     "version": self.config.get_int(gconf_keys['dmr_version']),
                     "no_thread_needed": True,
                     "shell": self.shell,
-                    'rb_mediaserver':self.server,
+                    'rb_mediaserver': self.server,
                     }
-                dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
 
-                kwargs = {'version':self.config.get_int(gconf_keys['dmr_version']),
-                        'no_thread_needed':True,
-                        'shell':self.shell,
-                        'rb_mediaserver':self.server}
                 if the_icon:
-                    kwargs['icon']=the_icon
-                if dmr_uuid != None:
-                    kwargs['uuid']=dmr_uuid
+                    kwargs['icon'] = the_icon
+
+                dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
+                if dmr_uuid:
+                    kwargs['uuid'] = dmr_uuid
+
                 name = self.config.get_string(gconf_keys['dmr_name'])
                 if name:
                     kwargs['name'] = name
-                self.renderer = MediaRenderer(self.coherence,RhythmboxPlayer,**kwargs)
-                if dmr_uuid == None:
+
+                self.renderer = MediaRenderer(self.coherence,
+                        RhythmboxPlayer, **kwargs)
+
+                if dmr_uuid is None:
                     self.config.set_string(gconf_keys['dmr_uuid'], str(self.renderer.uuid))
 
                 self.warning("Media Renderer available with UUID %s" % str(self.renderer.uuid))
@@ -217,7 +222,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         }
 
         serverport = self.config.get_int(gconf_keys['port'])
-        if serverport != None and serverport != 0:
+        if serverport:
             coherence_config['serverport'] = serverport
 
         coherence_instance = Coherence(coherence_config)
@@ -255,7 +260,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         self.shell.append_source (source, None)
 
     def create_configure_dialog(self, dialog=None):
-        if dialog == None:
+        if dialog is None:
 
             def store_config(dialog,port_spinner,interface_entry):
                 port = port_spinner.get_value_as_int()
