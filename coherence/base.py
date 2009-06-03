@@ -41,17 +41,33 @@ class SimpleRoot(resource.Resource, log.Loggable):
     def __init__(self, coherence):
         resource.Resource.__init__(self)
         self.coherence = coherence
+        self.http_hostname = '%s:%d' % (self.coherence.hostname, self.coherence.web_server_port)
 
     def getChild(self, name, request):
         self.debug('SimpleRoot getChild %s, %s' % (name, request))
         if name == 'oob':
             """ we have an out-of-band request """
             return static.File(self.coherence.dbus.pinboard[request.args['key'][0]])
+        
+        if name == '':
+            return self
+        
+        # in case of call to SUBSCRIBE or UNSUBSCRIBE (instead of the standard GET, HEAD...)
+        # the request URI is http://hostname:port/uuid/xxx instead of just /uuid/xxx
+        # it seems to be a big from the twisted library
+        # to overcome it, we return self until we reach the device UUID 
+        if request.method in ['SUBSCRIBE','UNSUBSCRIBE']:
+            if name in [ 'ttp:', self.http_hostname]:
+                return self
+
         try:
             return self.coherence.children[name]
         except:
-            return self
+            self.warning("Cannot find device for requested name:", name)
+            request.setResponseCode(404)
+            return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name,'text/html')
 
+  
     def listchilds(self, uri):
         self.info('listchilds %s' % uri)
         if uri[-1] != '/':
