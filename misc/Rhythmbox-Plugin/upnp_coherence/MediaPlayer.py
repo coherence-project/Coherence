@@ -6,6 +6,8 @@
 import os.path
 import urllib
 
+from twisted.python import failure
+
 import rhythmdb
 
 from coherence.upnp.core.soap_service import errorCode
