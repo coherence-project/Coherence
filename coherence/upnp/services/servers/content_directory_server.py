@@ -132,7 +132,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                hasattr(result, 'get_artist_all_tracks')):
                 d = defer.maybeDeferred( result.get_artist_all_tracks, StartingIndex, StartingIndex + RequestedCount)
             else:
-                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+                d = defer.maybeDeferred( result.search_children, StartingIndex, StartingIndex + RequestedCount,SearchCriteria)
             d.addCallback(process_result,found_item=result)
             d.addErrback(got_error)
             return d

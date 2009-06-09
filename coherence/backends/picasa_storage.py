@@ -52,23 +52,22 @@ class Container(BackendItem):
 
         self.sorted = False
 
+    def register_child(self, child, external_id = None): 
+        id = self.store.append_item(child)
+        child.url = self.store.urlbase + str(id)
+        child.parent = self
+        if external_id is not None:
+            child.external_id = external_id
+            self.children_by_external_id[external_id] = child
 
     def add_child(self, child, external_id = None, update=True):
-        id = self.store.append_item(child)
+        id = self.register_child(child, external_id)
         if self.children is None:
             self.children = []
         self.children.append(child)
         self.sorted = False
         if update == True:
             self.update_id += 1
-
-        child.url = self.store.urlbase + str(id)
-        child.parent = self
-
-        if external_id is not None:
-            child.external_id = external_id
-            self.children_by_external_id[external_id] = child
-
 
     def remove_child(self, child, external_id = None, update=True):
         self.children.remove(child)
@@ -287,6 +286,9 @@ class AbstractBackendStore (BackendStore):
 
     def get_root_id(self):
         return ROOT_CONTAINER_ID
+
+    def get_root_item(self):
+        return self.get_by_id(ROOT_CONTAINER_ID)
 
     def append_item(self, item, storage_id=None):
         if storage_id is None:

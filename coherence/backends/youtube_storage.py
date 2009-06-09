@@ -18,7 +18,7 @@ from coherence.backend import BackendStore,BackendItem
 
 from coherence import log
 
-from gdata.youtube.service import YouTubeService
+from gdata.youtube.service import YouTubeService,YouTubeVideoQuery
 from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,YoutubePlaylistIE
 from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
 
@@ -290,7 +290,22 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
             self.info("new cache size is %d" % cache_size)
 
+class YoutubeContainer(LazyContainer):
+    def __init__(self, parent, title, store, external_id=None, refresh=0, childrenRetriever=None, **kwargs):
+        LazyContainer.__init__(self, parent, title, external_id, refresh, childrenRetriever, **kwargs)
+        self.store = store
+        
+    def search_children(self,start=0,request_count=0, searchCriteria=''):
+        print "search_children"
+        print "searchCriteria: %s" % searchCriteria
 
+        searchContainer = self.store.appendSearchFeed(searchCriteria)
+      
+        return searchContainer.get_children(start, request_count)
+        
+        
+
+    
 class YoutubeVideoItem(BackendItem):
 
     def __init__(self, external_id, title, url, mimetype, entry, store):
@@ -382,6 +397,8 @@ class YouTubeStore(AbstractBackendStore):
 
     implements = ['MediaServer']
 
+    searchItem = None
+
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
@@ -403,7 +420,7 @@ class YouTubeStore(AbstractBackendStore):
         self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
         self.buffer_size = kwargs.get('buffer_size', 750000)
 
-        rootItem = Container(None, self.name)
+        rootItem = YoutubeContainer(None, self.name, self)
         self.set_root_item(rootItem)
 
         if (self.showStandardFeeds):
@@ -425,9 +442,9 @@ class YouTubeStore(AbstractBackendStore):
             userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
             self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
             self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)
-            playlistsItem = LazyContainer(rootItem, 'My Playlists', None, self.refresh, self.retrievePlaylistFeeds)
+            playlistsItem = YoutubeContainer(rootItem, 'My Playlists', self, None, self.refresh, self.retrievePlaylistFeeds)
             rootItem.add_child(playlistsItem)
-            subscriptionsItem = LazyContainer(rootItem, 'My Subscriptions', None, self.refresh, self.retrieveSubscriptionFeeds)
+            subscriptionsItem = YoutubeContainer(rootItem, 'My Subscriptions', self, None, self.refresh, self.retrieveSubscriptionFeeds)
             rootItem.add_child(subscriptionsItem)
 
         self.init_completed()
@@ -436,10 +453,23 @@ class YouTubeStore(AbstractBackendStore):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
+    def getSearchItem(self):
+        if self.searchItem is None:
+            rootItem = self.get_root_item()
+            self.searchItem = YoutubeContainer(rootItem, "My Searches", self)
+            rootItem.add_child(self.searchItem)
+        return self.searchItem
 
     def appendFeed( self, name, feed_uri, parent):
-        item = LazyContainer(parent, name, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
+        item = YoutubeContainer(parent, name, self, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
         parent.add_child(item, external_id=feed_uri)
+        return item
+        
+    def appendSearchFeed( self, searchCriteria):
+        parent = self.getSearchItem()
+        item = YoutubeContainer(parent, searchCriteria, self, None, self.refresh, self.retrieveSearchFeedItems, searchCriteria=searchCriteria)
+        parent.add_child(item, external_id=searchCriteria)
+        return item  
 
 
     def appendVideoEntry(self, entry, parent):
@@ -447,7 +477,6 @@ class YouTubeStore(AbstractBackendStore):
         title = entry.media.title.text
         url = entry.media.player.url
         mimetype = MPEG4_MIMETYPE
-        
         #mimetype = 'video/mpeg'
         item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
         item.parent = parent
@@ -461,7 +490,8 @@ class YouTubeStore(AbstractBackendStore):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:%s:*' % MPEG4_MIMETYPE],
                                                                     default=True)
-
+            
+            self.server.content_directory_server.set_variable(0, 'SearchCapabilities', ['metadata'], default=True)
 
         self.wmc_mapping = {'15': self.get_root_id()}
 
@@ -533,7 +563,7 @@ class YouTubeStore(AbstractBackendStore):
                title = playlist_video_entry.title.text
                playlist_id = playlist_video_entry.id.text.split("/")[-1] # FIXME find better way to retrieve the playlist ID
 
-               item = LazyContainer(parent, title, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
+               item = YoutubeContainer(parent, title, self, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
                parent.add_child(item, external_id=playlist_id)
 
         def gotError(error):
@@ -556,7 +586,7 @@ class YouTubeStore(AbstractBackendStore):
                uri = entry.id.text
                name = "[%s] %s" % (type,title)
 
-               item = LazyContainer(parent, name, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
+               item = YoutubeContainer(parent, name, self, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
                item.parent = parent
                parent.add_child(item, external_id=uri)
 
@@ -565,3 +595,27 @@ class YouTubeStore(AbstractBackendStore):
 
         playlists_feed.addCallbacks(gotPlaylists, gotError)
         return playlists_feed
+    
+    def retrieveSearchFeedItems(self, parent, searchCriteria=''):
+        queryTerm = searchCriteria.replace('metadata contains ', '')
+        queryTerm = queryTerm.strip()
+        
+        query = YouTubeVideoQuery()
+        query.vq = queryTerm
+        query.orderby = 'viewCount'
+        query.racy = 'include'
+
+        searchFeed = threads.deferToThread(self.yt_service.YouTubeQuery, query=query)
+        
+        def gotSearchFeed (feed):
+            if feed is None:
+               self.warning("Unable to retrieve search feed: %s" % feed_uri)
+               return
+            for entry in feed.entry:
+               self.appendVideoEntry(entry, parent)
+
+        def gotError(error):
+            self.warning("ERROR: %s" % error)
+            
+        searchFeed.addCallbacks(gotSearchFeed, gotError)
+        return searchFeed

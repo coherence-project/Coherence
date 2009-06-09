@@ -228,6 +228,18 @@ class BackendItem(log.Loggable):
         """
         pass
 
+    def search_children(self,start=0,end=0,searchCriteria=''):
+        """ called by the CDS and the MediaServer web
+            should return
+
+            - a list of its childs[start:end]
+            - or a Deferred
+
+            if end == 0, the request is for all childs
+            after start - childs[start:]
+        """
+        return self.get_children(start, end)
+    
     def get_child_count(self):
         """ called by the CDS
             should return
