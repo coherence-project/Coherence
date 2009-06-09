@@ -74,9 +74,18 @@ class Container(BackendItem):
         self.store.remove_item(child)
         if update == True:
             self.update_id += 1
-        if external_id is not None:
+        if child.external_id is not None:
+            del self.children_by_external_id[child.external_id]
             child.external_id = None
-            del self.children_by_external_id[external_id]
+
+    def remove_children(self):
+        for child in self.children:
+            self.store.remove_item(child)
+        self.children = []
+        self.children_ids = {}
+        self.children_by_external_id = {}
+        self.update_id +=1
+        
 
     def get_children(self, start=0, end=0):
 
@@ -299,9 +308,9 @@ class AbstractBackendStore (BackendStore):
         return storage_id
 
     def remove_item(self, item):
-        item.storage_id = -1
         item.store = None
-        del self.store[child.storage_id]
+        del self.store[item.storage_id]
+        item.storage_id = -1
 
     def get_by_id(self,id):
         if isinstance(id, basestring):
@@ -422,7 +431,7 @@ class PicasaStore(AbstractBackendStore):
                                                                   'http-get:*:image/gif:*,'
                                                                   'http-get:*:image/png:*',
                                                                 default=True)
-
+            
         self.wmc_mapping = {'16': self.get_root_id()}
 
         self.gd_client = gdata.photos.service.PhotosService()

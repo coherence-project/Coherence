@@ -302,10 +302,43 @@ class YoutubeContainer(LazyContainer):
         searchContainer = self.store.appendSearchFeed(searchCriteria)
       
         return searchContainer.get_children(start, request_count)
-        
-        
 
+class ActionProxy (ReverseProxyUriResource):
+    def __init__(self, title, action, **kwargs):
+        self.title = title
+        self.function = action
+        self.params = kwargs
+                    
+    def render(self, request):
+        print "call action: ", self.title
+        print self.params
+        self.function(**self.params)
+        return "Action called:", self.title
+        
+        
+class ActionItem(BackendItem):
+    def __init__(self, title,action,**kwargs):
+        self.name = title
+        self.mimetype = "video/mpeg"
+        self.location = ActionProxy(title, action, **kwargs)
+        self.item = None
+        
+        
+    def get_item(self):
+        if self.item == None:
+            upnp_id = self.get_id()
+            upnp_parent_id = self.parent.get_id()
+            self.item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.name)
+            self.item.description = self.name
+
+            res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            self.item.res.append(res)
+        return self.item
     
+    def get_id(self):
+        return self.storage_id
+
+               
 class YoutubeVideoItem(BackendItem):
 
     def __init__(self, external_id, title, url, mimetype, entry, store):
@@ -398,7 +431,8 @@ class YouTubeStore(AbstractBackendStore):
     implements = ['MediaServer']
 
     searchItem = None
-
+    resetSearchesItem = None
+    
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
@@ -458,7 +492,17 @@ class YouTubeStore(AbstractBackendStore):
             rootItem = self.get_root_item()
             self.searchItem = YoutubeContainer(rootItem, "My Searches", self)
             rootItem.add_child(self.searchItem)
+
+        if self.resetSearchesItem is None:  
+            def resetSearches(message):
+                print "Reset Searches:", message
+                self.searchItem.remove_children()
+                self.resetSearchesItem = None           
+            self.resetSearchesItem = ActionItem("Reset my searches", resetSearches, message="coucou")
+            self.searchItem.add_child(self.resetSearchesItem)
+
         return self.searchItem
+
 
     def appendFeed( self, name, feed_uri, parent):
         item = YoutubeContainer(parent, name, self, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
