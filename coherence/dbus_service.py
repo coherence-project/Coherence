@@ -541,8 +541,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
     SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self,device, bus):
-        self.uuid = device.get_id()[5:]
         if device is not None:
+            self.uuid = device.get_id()[5:]
             self.id = self.uuid.replace('-','')
         else:
             self.id = "from_the_tubes"
@@ -681,12 +681,12 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             pass
 
     def remove(self,udn):
-        print "DBusPontoon remove", udn
-        print "before remove", self.devices
+        #print "DBusPontoon remove", udn
+        #print "before remove", self.devices
         d = self.devices.pop(udn)
         d._release_thyself()
         del d
-        print "after remove", self.devices
+        #print "after remove", self.devices
 
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='s')
     def version(self):
@@ -785,7 +785,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addErrback(dbus_async_err_cb)
 
     def cp_ms_detected(self,client,udn=''):
-        print "cp_ms_detected", udn
+        #print "cp_ms_detected", udn
         if client.device.get_id() not in self.devices:
             new_device = DBusDevice(client.device,self.bus)
             self.devices[client.device.get_id()] = new_device
