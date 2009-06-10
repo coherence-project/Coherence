@@ -122,7 +122,7 @@ class TubeConsumer(Client):
             # skip tubes offered by myself
             conn_obj = self.conn[CONN_INTERFACE]
             myself = conn_obj.GetSelfHandle()
-            print '>>>', initiator, myself
+            self.info('>>> initiator %r myself %r' % (initiator, myself))
             ## if initiator == myself:
             ##     return
 

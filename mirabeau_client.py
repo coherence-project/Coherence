@@ -29,7 +29,7 @@ def run(args=None):
                                     ':'.join(device.get_device_type().split(':')[3:5]))
             except:
                 continue
-            print name
+            print "got_devices", name
             #
             #print "  >",
             if device.get_friendly_name() == "Phil":
