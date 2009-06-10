@@ -449,7 +449,7 @@ feature provided by your editor.
 		</stateVariable>
 	</serviceStateTable>
 
-	<actionList>
+	<actionList xmlns:coherence="urn:schemas-beebits-net:service-1-0">
 		<action>
 			<name>SetAVTransportURI</name>
 			<argumentList>
@@ -761,7 +761,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>Pause</name>
 			<argumentList>
@@ -774,7 +774,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>Record</name>
 			<argumentList>
 				<argument>
@@ -785,7 +785,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<name>Seek</name>
 			<argumentList>
 				<argument>
@@ -806,7 +806,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<name>Next</name>
 			<argumentList>
 				<argument>
@@ -817,7 +817,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<name>Previous</name>
 			<argumentList>
 				<argument>
@@ -829,7 +829,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>SetPlayMode</name>
 			<argumentList>
 				<argument>
@@ -846,7 +846,7 @@ feature provided by your editor.
 		</action>
 
 		<action>
-			<Optional/>
+			<Optional coherence:X_needs_backend="True"/>
 			<name>SetRecordQualityMode</name>
 			<argumentList>
 				<argument>

@@ -177,7 +177,7 @@
             <dataType>ui4</dataType>
         </stateVariable>
     </serviceStateTable>
-    <actionList>
+    <actionList  xmlns:coherence="urn:schemas-beebits-net:service-1-0">
         <action>
             <name>SetAVTransportURI</name>
             <argumentList>
@@ -379,7 +379,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>	<Optional/>
+        <action coherence:X_needs_backend="True">	<Optional/>
             <name>Pause</name>
             <argumentList>
                 <argument>
@@ -388,7 +388,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>	<Optional/>
+        <action coherence:X_needs_backend="True">	<Optional/>
             <name>Record</name>
             <argumentList>
                 <argument>
@@ -397,7 +397,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>
+        <action coherence:X_needs_backend="True">
             <name>Seek</name>
             <argumentList>
                 <argument>
@@ -414,7 +414,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>
+        <action coherence:X_needs_backend="True">
             <name>Next</name>
             <argumentList>
                 <argument>
@@ -423,7 +423,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>
+        <action coherence:X_needs_backend="True">
             <name>Previous</name>
             <argumentList>
                 <argument>
@@ -432,7 +432,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>	<Optional/>
+        <action>	<Optional coherence:X_needs_backend="True"/>
             <name>SetPlayMode</name>
             <argumentList>
                 <argument>
@@ -445,7 +445,7 @@
                 </argument>
             </argumentList>
         </action>
-        <action>	<Optional/>
+        <action>	<Optional coherence:X_needs_backend="True"/>
             <name>SetRecordQualityMode</name>
             <argumentList>
                 <argument>

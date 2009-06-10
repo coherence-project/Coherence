@@ -672,11 +672,16 @@ class ServiceServer(log.Loggable):
             name = action_node.findtext('name')
             implementation = 'required'
             needs_callback = False
+            if action_node.attrib.get('{urn:schemas-beebits-net:service-1-0}X_needs_backend',
+                                        None) != None:
+                needs_callback = True
             if action_node.find('Optional') != None:
                 implementation = 'optional'
-                if action_node.find('Optional').attrib.get(
+                if(action_node.find('Optional').attrib.get(
                                         '{urn:schemas-beebits-net:service-1-0}X_needs_backend',
-                                        None) != None:
+                                        None) != None or
+                    action_node.attrib.get('{urn:schemas-beebits-net:service-1-0}X_needs_backend',
+                                            None) != None):
                     needs_callback = True
 
             arguments = []
