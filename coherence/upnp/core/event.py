@@ -2,13 +2,14 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 
 import time
 from urlparse import urlsplit
 
 from twisted.internet import reactor, defer
 from twisted.web import resource, server
+from twisted.web.http import datetimeToString
 from twisted.internet.protocol import Protocol, ClientCreator, _InstanceFactory
 from twisted.python import failure
 
@@ -282,7 +283,7 @@ def subscribe(service, action='subscribe'):
             request.append("CALLBACK: <%s>" % url)
             request.append("NT: upnp:event")
 
-        request.append('Date: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
+        request.append('Date: %s' % datetimeToString())
         request.append( "Content-Length: 0")
         request.append( "")
         request.append( "")

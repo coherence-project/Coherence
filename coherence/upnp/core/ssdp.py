@@ -4,7 +4,7 @@
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 #
 # Implementation of a SSDP server under Twisted Python.
 #
@@ -18,6 +18,7 @@ import socket
 from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor, error
 from twisted.internet import task
+from twisted.web.http import datetimeToString
 
 from coherence import log, SERVER_ID
 
@@ -203,7 +204,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                         usn = v
                     if k not in ('MANIFESTATION','SILENT','HOST'):
                         response.append('%s: %s' % (k, v))
-                response.append('DATE: %s' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
+                response.append('DATE: %s' % datetimeToString())
 
                 response.extend(('', ''))
                 delay = random.randint(0, int(headers['mx']))
