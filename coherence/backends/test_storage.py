@@ -39,6 +39,9 @@
 
     'location': the filesystem path or an url (mandatory)
     'mimetype': the mimetype of the item (mandatory)
+    'extension': an optional extension to append to the
+                 url created for the DIDLLite resource data
+    'title': the 'title' this item should have (optional)
     'upnp_class': the DIDLLite class the item shall have,
                   object.item will be taken as default
     'fourth_field': value for the 4th field of the protocolInfo phalanx,
@@ -275,9 +278,9 @@ class Container(BackendItem):
 
     def add_child(self, child):
         print "ADD CHILD %r" % child
-        id = child.id
-        if isinstance(child.id, basestring):
-            _,id = child.id.split('.')
+        #id = child.id
+        #if isinstance(child.id, basestring):
+        #    _,id = child.id.split('.')
         self.children.append(child)
         self.item.childCount += 1
         self.sorted = False
@@ -339,15 +342,23 @@ class TestStore(BackendStore):
                     item[child.tag] = child.text
             type = item.get('type','file')
             try:
-                name = item.get('name',None)
+                name = item.get('title',None)
                 if type == 'file':
                     location = FilePath(item.get('location'))
                 if type == 'url':
                     location = item.get('location')
 
                 mimetype = item.get('mimetype')
-
                 item_id = self.get_next_id()
+
+                extension = item.get('extension')
+                if extension == None:
+                    extension = ''
+                if len(extension) and extension[0] != '.':
+                    extension = '.' + extension
+
+                if extension != None:
+                    item_id = str(item_id)+extension
 
                 if type in ('file','url'):
                     new_item = Item(self.store[ROOT_CONTAINER_ID], item_id, name, location,self.urlbase + str(item_id))
@@ -382,6 +393,8 @@ class TestStore(BackendStore):
                 import traceback
                 self.warning(traceback.format_exc())
 
+        #print self.store
+
         self.init_completed()
 
     def get_upnp_class(self,name):
@@ -406,7 +419,10 @@ class TestStore(BackendStore):
 
     def get_by_id(self, id):
         print "GET_BY_ID %r" % id
-        if int(id) == 0:
-            return self.store[ROOT_CONTAINER_ID]
-        else:
-            return self.store.get(int(id),None)
+        item = self.store.get(id,None)
+        if item == None:
+            if int(id) == 0:
+                item = self.store[ROOT_CONTAINER_ID]
+            else:
+                item = self.store.get(int(id),None)
+        return item
