@@ -111,7 +111,7 @@ class Resources(list):
                    (remote_network == local_network or
                     remote_network == '*' or
                     local_network == '*') and
-                   (remote_content_format == local_content_format or
+                   (remote_content_format.startswith(local_content_format) or
                     remote_content_format == '*' or
                     local_content_format == '*')):
                         #print result, res
