@@ -1,5 +1,6 @@
 from telepathy.interfaces import CONN_INTERFACE, CHANNEL_INTERFACE_GROUP, \
-     CHANNEL_TYPE_TUBES, CONNECTION_INTERFACE_ALIASING, CHANNEL_TYPE_TEXT
+     CHANNEL_TYPE_TUBES, CONNECTION_INTERFACE_ALIASING, CHANNEL_TYPE_TEXT, \
+     CHANNEL_INTERFACE
 from telepathy.constants import TUBE_STATE_LOCAL_PENDING
 from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT
 from telepathy.constants import TUBE_TYPE_DBUS, TUBE_TYPE_STREAM
@@ -8,7 +9,7 @@ from telepathy.constants import SOCKET_ADDRESS_TYPE_IPV4, \
 
 import telepathy
 
-from coherence.extern.telepathy.client import Client
+from coherence.extern.telepathy.client import Client, DBUS_PROPERTIES
 
 class TubePublisher(Client):
     logCategory = "tube_publisher"
@@ -32,8 +33,17 @@ class TubePublisher(Client):
         super(TubePublisher, self).muc_joined()
         self.info("muc joined. Offering the tubes")
 
+        conn_obj = self.conn[CONN_INTERFACE]
+        self_handle = conn_obj.GetSelfHandle()
+        my_name = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
+                                          [self_handle])[0]
+
         tubes_obj = self.channel_tubes[CHANNEL_TYPE_TUBES]
         for interface, params in self._tubes_to_offer.iteritems():
+            # FIXME: storing my name in params... This could be
+            # avoided by correctly retrieving tube offerrer from
+            # client side
+            params["initiator"] = my_name
             tubes_obj.OfferDBusTube(interface, params)
 
     def offer_stream_tube(self, service, params, socket_address):
@@ -45,12 +55,13 @@ class TubePublisher(Client):
 
 class Peer:
 
-    def __init__(self, tube_id, initiator, service, tube_type):
+    def __init__(self, tube_id, initiator, service, tube_type, params):
         self.tube_id = tube_id
         self.initiator = initiator
         self.initiator_contact = None
         self.service = service
         self.tube_type = tube_type
+        self.params = params
         self.remote_object = None
         self.remote_object_proxy = None
 
@@ -67,11 +78,16 @@ class TubeConsumer(Client):
         self._peers = {}
 
     def new_tube_cb(self, id, initiator, tube_type, service, params, state):
-        self._peers[id] = Peer(id, initiator, service, tube_type)
+        peer = Peer(id, initiator, service, tube_type, params)
+        self._peers[id] = peer
 
         super(TubeConsumer, self).new_tube_cb(id, initiator, tube_type, service,
                                               params, state)
         if state == TUBE_STATE_LOCAL_PENDING:
+            can_accept = self.pre_accept_tube(peer)
+            if not can_accept:
+               self.info("Can't accept tube")
+               return
             self.info("accepting tube %r", id)
             tubes_channel = self.channel_tubes[CHANNEL_TYPE_TUBES]
             if tube_type == TUBE_TYPE_DBUS:
@@ -81,6 +97,9 @@ class TubeConsumer(Client):
                                                SOCKET_ADDRESS_TYPE_IPV4,
                                                SOCKET_ACCESS_CONTROL_LOCALHOST,
                                                "")
+
+    def pre_accept_tube(self, peer):
+        return True
 
     def _create_peer_remote_object(self, peer, interface):
         pass
@@ -99,6 +118,7 @@ class TubeConsumer(Client):
         initiator = peer.initiator
         tube_type = peer.tube_type
 
+
         if tube_type == TUBE_TYPE_STREAM:
             channel_obj = self.channel_tubes[CHANNEL_TYPE_TUBES]
             address_type, address = channel_obj.GetStreamTubeSocketAddress(id,
@@ -107,7 +127,6 @@ class TubeConsumer(Client):
             return
 
         def find_initiator_contact(contact_list):
-            conn_obj = self.conn[CONN_INTERFACE]
             initiator_contact = None
             for contact in contact_list:
                 if contact[0] == initiator:
@@ -122,7 +141,7 @@ class TubeConsumer(Client):
             # skip tubes offered by myself
             conn_obj = self.conn[CONN_INTERFACE]
             myself = conn_obj.GetSelfHandle()
-            self.info('>>> initiator %r myself %r' % (initiator, myself))
+            self.info('initiator: %r myself: %r' % (initiator, myself))
             ## if initiator == myself:
             ##     return
 

@@ -3,6 +3,9 @@ from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVIC
 
 from coherence import dbus_service
 
+from telepathy.interfaces import CHANNEL_INTERFACE
+from coherence.extern.telepathy.client import DBUS_PROPERTIES
+
 class MirabeauTubeConsumer(tube.TubeConsumer):
     pontoon = None
     device_peer = None
@@ -17,6 +20,10 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
         self.got_devices_callback = got_devices_callback
         self.debug("MirabeauTubeConsumer __init__")
 
+    def pre_accept_tube(self, peer):
+        initiator = peer.params["initiator"]
+        return initiator in self.roster
+
     def _create_peer_remote_object(self, peer, interface):
         self.debug("_create_peer_remote_object %r %r", peer, interface)
         if interface == BUS_NAME:
@@ -28,6 +35,7 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
 
     def _create_peer_object_proxy(self, peer, interface):
         self.debug("_create_peer_object_proxy %r %r", peer, interface)
+
         found_peer = False
         if interface == BUS_NAME:
             found_peer = True
