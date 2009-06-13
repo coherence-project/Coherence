@@ -1,12 +1,15 @@
 
 import time
 
+import dbus
 import telepathy
+from telepathy.errors import NotAvailable
 from telepathy.client import Connection, Channel
 from telepathy.interfaces import CONN_INTERFACE, CHANNEL_INTERFACE_GROUP, \
-     CHANNEL_TYPE_TUBES, \
-     CHANNEL_TYPE_TEXT
+     CHANNEL_TYPE_TUBES, CHANNEL_TYPE_CONTACT_LIST,\
+     CHANNEL_TYPE_TEXT, CHANNEL_INTERFACE
 from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT, \
+     CONNECTION_HANDLE_TYPE_LIST, \
      CONNECTION_HANDLE_TYPE_ROOM, CONNECTION_STATUS_CONNECTED, \
      CONNECTION_STATUS_DISCONNECTED, CONNECTION_STATUS_CONNECTING, \
      TUBE_TYPE_DBUS, TUBE_TYPE_STREAM, TUBE_STATE_LOCAL_PENDING, \
@@ -14,6 +17,8 @@ from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT, \
 
 from coherence.extern.telepathy.tubeconn import TubeConnection
 from coherence import log
+
+DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
 
 class Client(log.Loggable):
     logCategory = "client"
@@ -52,7 +57,33 @@ class Client(log.Loggable):
 
     def connected_cb(self):
         self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
+        self.fill_roster()
         self.join_muc()
+
+    def fill_roster(self):
+        self.roster = {}
+        conn_iface = self.conn[CONN_INTERFACE]
+
+        for name in ('subscribe', 'publish', 'hide', 'allow', 'deny', 'known'):
+            try:
+                chan = self._request_list_channel(name)
+            except dbus.DBusException:
+                self.debug("'%s' channel is not available" % name)
+                continue
+
+            group_iface = chan[CHANNEL_INTERFACE_GROUP]
+            current, local_pending, remote_pending = (group_iface.GetAllMembers())
+            for member in current:
+                contact_id = conn_iface.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
+                                                       [member])[0]
+                self.roster[contact_id] = name
+
+    def _request_list_channel(self, name):
+        handle = self.conn[CONN_INTERFACE].RequestHandles(CONNECTION_HANDLE_TYPE_LIST,
+                                                          [name])[0]
+        return self.conn.request_channel(CHANNEL_TYPE_CONTACT_LIST,
+                                         CONNECTION_HANDLE_TYPE_LIST,
+                                         handle, True)
 
     def join_muc(self):
         # workaround to be sure that the muc service is fully resolved in
@@ -87,7 +118,7 @@ class Client(log.Loggable):
             self.muc_joined()
 
     def new_channel_cb(self, object_path, channel_type, handle_type, handle,
-        suppress_handler):
+                       suppress_handler):
         if channel_type == CHANNEL_TYPE_TUBES:
             self.channel_tubes = Channel(self.conn.dbus_proxy.bus_name,
                                          object_path)
@@ -108,7 +139,6 @@ class Client(log.Loggable):
         conn_obj = self.conn[CONN_INTERFACE]
         initiator_id = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
                                                [initiator])[0]
-
         tube_type = {TUBE_TYPE_DBUS: "D-Bus",
                      TUBE_TYPE_STREAM: "Stream"}
 
