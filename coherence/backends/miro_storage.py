@@ -46,6 +46,7 @@ class VideoItem(BackendItem):
             self.item.date = self.date
             if self.thumbnail_url is not None:
                 self.item.icon = self.thumbnail_url
+                self.item.albumArtURI = self.thumbnail_url
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             res.duration = self.duration
             res.size = self.size
@@ -213,9 +214,10 @@ class MiroStore(AbstractBackendStore):
            if (channel.has_key('item')):
                items = channel['item']
            for item in items:
-               #print item
+               #print "item:",item
                url = item['url']
                description = item['description']
+               #print "description:", description              
                name = item['name']
                thumbnail_url = None
                if (channel.has_key('thumbnail_url')):
