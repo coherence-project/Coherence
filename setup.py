@@ -116,6 +116,7 @@ if haz_setuptools == True:
         ITVStore = coherence.backends.itv_storage:ITVStore
         PicasaStore = coherence.backends.picasa_storage:PicasaStore
         TestStore = coherence.backends.test_storage:TestStore
+        PlaylistStore = coherence.backends.playlist_storage:PlaylistStore
         
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
