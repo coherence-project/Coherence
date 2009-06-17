@@ -60,9 +60,9 @@ class VideoItem(BackendItem):
         return self.storage_id
 
 
-class MiroStore(AbstractBackendStore):
+class MiroGuideStore(AbstractBackendStore):
 
-    logCategory = 'miro_store'
+    logCategory = 'miroguide_store'
 
     implements = ['MediaServer']
 
