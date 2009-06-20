@@ -1,22 +1,20 @@
 from coherence.extern.telepathy import tube
+from coherence.extern.telepathy import client
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 
 from coherence import dbus_service
 
-from telepathy.interfaces import CHANNEL_INTERFACE
-from coherence.extern.telepathy.client import DBUS_PROPERTIES
 
-class MirabeauTubeConsumer(tube.TubeConsumer):
+class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
     pontoon = None
     device_peer = None
     service_peer = None
     initial_announce_done = False
 
-    def __init__(self, connection, muc_id, found_peer_callback=None,
-                 disappeared_peer_callback=None, got_devices_callback=None):
-        super(MirabeauTubeConsumer, self).__init__(connection, muc_id,
-                                                   found_peer_callback=found_peer_callback,
-                                                   disapeared_peer_callback=disappeared_peer_callback)
+    def __init__(self, found_peer_callback=None,
+                 disapeared_peer_callback=None, got_devices_callback=None):
+        super(MirabeauTubeConsumerMixin, self).__init__(found_peer_callback=found_peer_callback,
+                                                        disapeared_peer_callback=disapeared_peer_callback)
         self.got_devices_callback = got_devices_callback
         self.debug("MirabeauTubeConsumer __init__")
 
@@ -43,8 +41,6 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
                                                        OBJECT_PATH)
             peer.remote_object_proxy = proxy
             self.pontoon = proxy
-            if self.device_peer:
-                self.found_devices(self.device_peer)
         elif interface == DEVICE_IFACE:
             found_peer = True
             self.device_peer = peer
@@ -59,7 +55,9 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
     def found_devices(self, device_peer):
         devices = []
         service_tube = self.service_peer.remote_object.tube
-        for device_dict in self.pontoon.get_devices():
+        pontoon_devices = self.pontoon.get_devices()
+        self.debug("%r devices registered in pontoon", len(pontoon_devices))
+        for device_dict in pontoon_devices:
             service_proxies = []
             device_path = device_dict["path"]
             proxy = device_peer.remote_object.tube.get_object(device_peer.initiator_contact,
@@ -75,3 +73,12 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
             proxy.services = service_proxies
             devices.append(proxy)
         self.got_devices_callback(devices)
+
+class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
+
+    def __init__(self, connection, muc_id, found_peer_callback=None,
+                 disapeared_peer_callback=None, got_devices_callback=None):
+        MirabeauTubeConsumerMixin.__init__(self, found_peer_callback=found_peer_callback,
+                                           disapeared_peer_callback=disapeared_peer_callback,
+                                           got_devices_callback=got_devices_callback)
+        client.Client.__init__(self, connection, muc_id)

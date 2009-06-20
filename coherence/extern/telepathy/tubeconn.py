@@ -21,6 +21,7 @@ from dbus.connection import Connection
 from coherence import log
 
 class TubeConnection(Connection, log.Loggable):
+    logCategory = "tube_connection"
 
     def __new__(cls, conn, tubes_iface, tube_id, address=None,
                 group_iface=None, mainloop=None):
@@ -69,6 +70,8 @@ class TubeConnection(Connection, log.Loggable):
         self.warning('GetDBusNames failed: %s', e)
 
     def _on_dbus_names_changed(self, tube_id, added, removed):
+        self.debug("dbus names changed for tube %r; added: %r, removed: %r",
+                   tube_id, added, removed)
         if tube_id == self.tube_id:
             for handle, bus_name in added:
                 if handle == self.self_handle:

@@ -21,7 +21,7 @@ from coherence import log
 DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
 
 class Client(log.Loggable):
-    logCategory = "client"
+    logCategory = "tp_client"
 
     def __init__(self, connection, muc_id):
         super(Client, self).__init__()
@@ -38,7 +38,9 @@ class Client(log.Loggable):
         self.joined = False
 
     def start(self):
+        self.info("connecting")
         self.conn[CONN_INTERFACE].Connect()
+        self.info("connected")
 
     def stop(self):
         try:
@@ -46,13 +48,14 @@ class Client(log.Loggable):
         except:
             pass
 
-    def status_changed_cb(self, state, reason):
-        if state == CONNECTION_STATUS_CONNECTING:
+    def status_changed_cb(self, status, reason):
+        self.debug("status changed to %r: %r", status, reason)
+        if status == CONNECTION_STATUS_CONNECTING:
             self.info('connecting')
-        elif state == CONNECTION_STATUS_CONNECTED:
+        elif status == CONNECTION_STATUS_CONNECTED:
             self.info('connected')
             self.connected_cb()
-        elif state == CONNECTION_STATUS_DISCONNECTED:
+        elif status == CONNECTION_STATUS_DISCONNECTED:
             self.info('disconnected')
 
     def connected_cb(self):
@@ -61,6 +64,7 @@ class Client(log.Loggable):
         self.join_muc()
 
     def fill_roster(self):
+        self.debug("Filling up the roster")
         self.roster = {}
         conn_iface = self.conn[CONN_INTERFACE]
 
@@ -77,6 +81,7 @@ class Client(log.Loggable):
                 contact_id = conn_iface.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
                                                        [member])[0]
                 self.roster[contact_id] = name
+        self.debug("roster contents: %r", self.roster)
 
     def _request_list_channel(self, name):
         handle = self.conn[CONN_INTERFACE].RequestHandles(CONNECTION_HANDLE_TYPE_LIST,
@@ -91,7 +96,7 @@ class Client(log.Loggable):
         time.sleep(2)
 
         conn_obj = self.conn[CONN_INTERFACE]
-        self.info("joining muc %r", self.muc_id)
+        self.info("joining MUC %r", self.muc_id)
         handle = conn_obj.RequestHandles(CONNECTION_HANDLE_TYPE_ROOM,
                                          [self.muc_id])[0]
 
@@ -163,6 +168,16 @@ class Client(log.Loggable):
         except:
             self.tube_conn = None
 
+        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
+        channel_obj.connect_to_signal('Received', self.received_cb)
+
+    def received_cb(self, id, timestamp, sender, type, flags, text):
+        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
+        channel_obj.AcknowledgePendingMessages([id])
+        contact = self.conn[telepathy.CONN_INTERFACE].InspectHandles(
+            telepathy.HANDLE_TYPE_CONTACT, [sender])[0]
+
+
     def stream_tube_new_connection_cb(self, id, handle):
         conn_obj = self.conn[CONN_INTERFACE]
         contact = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
@@ -184,6 +199,7 @@ class Client(log.Loggable):
             self.muc_joined()
 
     def muc_joined(self):
+        self.info("MUC joined")
         for msg in self._unsent_messages:
             self.send_text(msg)
         self._unsent_messages = []

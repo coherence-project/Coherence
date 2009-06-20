@@ -8,6 +8,8 @@ import gobject
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE
 from coherence.extern.telepathy.mirabeau_tube_consumer import MirabeauTubeConsumer
 from coherence.extern.telepathy import connect
+from coherence import log
+log.init()
 
 def run(args=None):
     if not args:
@@ -23,6 +25,7 @@ def run(args=None):
         pass
 
     def got_devices(devices):
+        print "got %d devices" % len(devices)
         for device in devices:
             try:
                 name = '%s (%s)' % (device.get_friendly_name(),
@@ -34,7 +37,11 @@ def run(args=None):
             #print "  >",
             if device.get_friendly_name() == "Phil":
                 for service in device.services:
-                    if "Browse" in service.get_available_actions():
+                    try:
+                        actions = service.get_available_actions()
+                    except:
+                        actions = []
+                    if "Browse" in actions:
                         print service.action("browse", {'object_id':'0', 'process_result': 'no',
                                              'starting_index':'0','requested_count': '5'})
 
@@ -44,9 +51,9 @@ def run(args=None):
                               {"first-name": nickname,
                                "last-name": "",
                                "published-name": nickname, "nickname": nickname})
-    cli = MirabeauTubeConsumer(conn, "UPnPProxy",
+    cli = MirabeauTubeConsumer(conn, "Mirabeau",
                                found_peer_callback=found_peer,
-                               disappeared_peer_callback=disappeared_peer,
+                               disapeared_peer_callback=disappeared_peer,
                                got_devices_callback=got_devices)
     cli.start()
 

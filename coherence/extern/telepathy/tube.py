@@ -11,26 +11,14 @@ import telepathy
 
 from coherence.extern.telepathy.client import Client, DBUS_PROPERTIES
 
-class TubePublisher(Client):
+class TubePublisherMixin(object):
     logCategory = "tube_publisher"
 
-    def __init__(self, connection, muc_id, tubes_to_offer):
-        super(TubePublisher, self).__init__(connection, muc_id)
+    def __init__(self, tubes_to_offer):
         self._tubes_to_offer = tubes_to_offer
 
-    def tube_opened(self, id):
-        super(TubePublisher, self).tube_opened(id)
-        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
-        channel_obj.connect_to_signal('Received', self.received_cb)
-
-    def received_cb(self, id, timestamp, sender, type, flags, text):
-        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
-        channel_obj.AcknowledgePendingMessages([id])
-        contact = self.conn[telepathy.CONN_INTERFACE].InspectHandles(
-            telepathy.HANDLE_TYPE_CONTACT, [sender])[0]
-
     def muc_joined(self):
-        super(TubePublisher, self).muc_joined()
+        super(TubePublisherMixin, self).muc_joined()
         self.info("muc joined. Offering the tubes")
 
         conn_obj = self.conn[CONN_INTERFACE]
@@ -53,6 +41,11 @@ class TubePublisher(Client):
                                   socket_address,
                                   SOCKET_ACCESS_CONTROL_LOCALHOST, "")
 
+class TubePublisher(TubePublisherMixin, Client):
+    def __init__(self, connection, muc_id, tubes_to_offer):
+        TubePublisherMixin.__init__(self, tubes_to_offer)
+        Client.__init__(self, connection, muc_id)
+
 class Peer:
 
     def __init__(self, tube_id, initiator, service, tube_type, params):
@@ -66,13 +59,10 @@ class Peer:
         self.remote_object_proxy = None
 
 
-class TubeConsumer(Client):
+class TubeConsumerMixin(object):
     logCategory = "tube_consumer"
 
-    def __init__(self, connection, muc_id, found_peer_callback=None,
-                 disapeared_peer_callback=None):
-        super(TubeConsumer, self).__init__(connection, muc_id)
-
+    def __init__(self, found_peer_callback=None, disapeared_peer_callback=None):
         self.found_peer_callback = found_peer_callback
         self.disapeared_peer_callback = disapeared_peer_callback
         self._peers = {}
@@ -81,8 +71,8 @@ class TubeConsumer(Client):
         peer = Peer(id, initiator, service, tube_type, params)
         self._peers[id] = peer
 
-        super(TubeConsumer, self).new_tube_cb(id, initiator, tube_type, service,
-                                              params, state)
+        super(TubeConsumerMixin, self).new_tube_cb(id, initiator, tube_type, service,
+                                                   params, state)
         if state == TUBE_STATE_LOCAL_PENDING:
             can_accept = self.pre_accept_tube(peer)
             if not can_accept:
@@ -111,13 +101,22 @@ class TubeConsumer(Client):
         self.info("tube opened. Clients can connect to %s", address)
 
     def tube_opened(self, id):
-        super(TubeConsumer, self).tube_opened(id)
+        super(TubeConsumerMixin, self).tube_opened(id)
 
         peer = self._peers[id]
         service = peer.service
         initiator = peer.initiator
         tube_type = peer.tube_type
 
+        # skip tubes offered by myself
+        conn_obj = self.conn[CONN_INTERFACE]
+        self_handle = conn_obj.GetSelfHandle()
+        my_name = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
+                                          [self_handle])[0]
+        self.info('initiator: %r myself: %r params: %r' % (initiator, my_name,
+                                                           peer.params))
+        if peer.params["initiator"] == my_name:
+            return
 
         if tube_type == TUBE_TYPE_STREAM:
             channel_obj = self.channel_tubes[CHANNEL_TYPE_TUBES]
@@ -137,14 +136,6 @@ class TubeConsumer(Client):
         self._create_peer_remote_object(peer, service)
 
         def cb(added, removed):
-
-            # skip tubes offered by myself
-            conn_obj = self.conn[CONN_INTERFACE]
-            myself = conn_obj.GetSelfHandle()
-            self.info('initiator: %r myself: %r' % (initiator, myself))
-            ## if initiator == myself:
-            ##     return
-
             initiator_contact = find_initiator_contact(added)
             self.info("contact %r for service %r", initiator_contact,
                       service)
@@ -155,7 +146,28 @@ class TubeConsumer(Client):
         peer.remote_object.tube.watch_participants(cb)
 
     def tube_closed_cb (self, id):
-        super(TubeConsumer, self).tube_closed_cb(id)
+        super(TubeConsumerMixin, self).tube_closed_cb(id)
         peer = self._peers[id]
         self.disapeared_peer_callback(peer)
         del self._peers[id]
+
+class TubeConsumer(TubeConsumerMixin, Client):
+
+    def __init__(self, connection, muc_id, found_peer_callback=None,
+                 disapeared_peer_callback=None):
+        TubeConsumerMixin.__init__(self, found_peer_callback=found_peer_callback,
+                                   disapeared_peer_callback=disapeared_peer_callback)
+        Client.__init__(self, connection, muc_id)
+
+class TubePublisherConsumer(TubePublisherMixin, TubeConsumerMixin, Client):
+    def __init__(self, connection, muc_id, tubes_to_offer, found_peer_callback=None,
+                 disapeared_peer_callback=None):
+        TubePublisherMixin.__init__(self, tubes_to_offer)
+        TubeConsumerMixin.__init__(self, found_peer_callback=found_peer_callback,
+                                   disapeared_peer_callback=disapeared_peer_callback)
+        Client.__init__(self, connection, muc_id)
+
+    def tube_opened(self, id):
+        Client.tube_opened(self, id)
+        TubePublisherMixin.tube_opened(self, id)
+        TubeConsumerMixin.tube_opened(self, id)
