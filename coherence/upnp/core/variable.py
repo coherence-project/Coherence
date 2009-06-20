@@ -25,22 +25,27 @@ class StateVariable(log.Loggable):
     logCategory = 'variable'
 
     def __init__(self, upnp_service, name, implementation, instance, send_events,
-                 data_type, values):
+                 data_type, allowed_values):
         self.service = upnp_service
-        self.instance = instance
+
         self.name = name
         self.implementation = implementation
+        self.instance = instance
+        self.send_events = utils.means_true(send_events)
+        self.never_evented = False
         self.data_type = data_type
-        self.allowed_values = values
+        self.allowed_values = allowed_values
+        if self.allowed_values == None:
+            self.allowed_values = []
         self.has_vendor_values = False
+        self.allowed_value_range = None
         self.dependant_variable = None
+
         self.default_value = ''
         self.old_value = ''
         self.value = ''
         self.last_time_touched = None
-        self.allowed_value_range = None
-        self.never_evented = False
-        self.send_events = utils.means_true(send_events)
+
         self._callbacks = []
         if isinstance( self.service, service.ServiceServer):
             self.moderated = self.service.is_variable_moderated(name)
