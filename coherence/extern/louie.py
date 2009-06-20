@@ -66,7 +66,7 @@ def send(signal=All, sender=Anonymous, *arguments, **named):
     # the first value of the callback shall always be the signal:
     results, errors = _global_dispatcher.emit(signal, *arguments, **named)
     if errors:
-        warnings.warn('Erros while processing %s: %r' % (signal, errors)
+        warnings.warn('Erros while processing %s: %r' % (signal, errors))
 
 def send_minimal(signal=All, sender=Anonymous, *arguments, **named):
     return send(signal, sender, *arguments, **named)
