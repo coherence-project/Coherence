@@ -664,6 +664,106 @@ class ServiceServer(log.Loggable):
         print "simulate_notification for", self.id
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
+    def get_scpdXML(self):
+        if not hasattr(self,'scpdXML') or self.scpdXML == None:
+            self.scpdXML = scpdXML(self)
+        return self.scpdXML
+
+    def register_vendor_variable(self,name,implementation='optional',
+                                      instance=0, evented='no',
+                                      data_type='string',
+                                      dependant_variable=None,
+                                      default_value=None,
+                                      allowed_values=None,has_vendor_values=False,allowed_value_range=None,
+                                      moderated=False):
+        """
+        enables a backend to add an own, vendor defined, StateVariable to the service
+
+        @ivar name: the name of the new StateVariable
+        @ivar implementation: either 'optional' or 'required'
+        @ivar instance: the instance number of the service that variable should be assigned to, usually '0'
+        @ivar evented: boolean, or the special keyword 'never' if the variable doesn't show up in a LastChange event too
+        @ivar data_type: 'string','boolean','bin.base64' or various number formats
+        @ivar dependant_variable: the name of another StateVariable that depends on this one
+        @ivar default_value: the value this StateVariable should have by default when created
+                             for another instance of in the service
+        @ivar allowed_values: a C{list} of values this StateVariable can have
+        @ivar has_vendor_values: boolean if there are values outside the allowed_values list too
+        @ivar allowed_value_range: a C{dict} of 'minimum','maximum' and 'step' values
+        @ivar moderated: boolean, True if this StateVariable should only be evented via a LastChange event
+
+        """
+
+        # FIXME
+        # we should raise an Exception when there as a StateVariable with that name already
+
+        if evented == 'never':
+            send_events = 'no'
+        else:
+            send_events = evented
+        new_variable = variable.StateVariable(self,name,implementation,instance,send_events,
+                                                   data_type,allowed_values)
+        if default_value == None:
+            new_variable.default_value = ''
+        else:
+            new_variable.default_value = new_variable.old_value = new_variable.value = default_value
+
+        new_variable.dependant_variable = dependant_variable
+        new_variable.has_vendor_values = has_vendor_values
+        new_variable.allowed_value_range = allowed_value_range
+        new_variable.moderated = moderated
+        if evented == 'never':
+            new_variable.never_evented = True
+        self._variables.get(instance)[name] = new_variable
+        return new_variable
+
+    def register_vendor_action(self,name,implementation,arguments=None,needs_callback=True):
+        """
+        enables a backend to add an own, vendor defined, Action to the service
+
+        @ivar name: the name of the new Action
+        @ivar implementation: either 'optional' or 'required'
+        @ivar arguments: a C{list} if argument C{tuples},
+                         like (name,direction,relatedStateVariable)
+        @ivar needs_callback: this Action needs a method in the backend or service class
+        """
+
+        # FIXME
+        # we should raise an Exception when there as an Action with that name already
+        # we should raise an Exception when there is no related StateVariable for an Argument
+
+        """ check for action in backend """
+        callback = getattr(self.backend, "upnp_%s" % name, None)
+
+        if callback == None:
+            """ check for action in ServiceServer """
+            callback = getattr(self, "upnp_%s" % name, None)
+
+        if( needs_callback == True and
+            callback == None):
+            """ we have one or more 'A_ARG_TYPE_' variables
+                issue a warning for now
+            """
+            if implementation == 'optional':
+                self.info('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                return
+            else:
+                if((hasattr(self,'implementation') and self.implementation == 'required') or
+                    not hasattr(self,'implementation')):
+                    self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
+                raise LookupError,"missing callback"
+
+        arguments_list = []
+        for argument in arguments:
+            arguments_list.append(action.Argument(argument[0],argument[1].lower(),argument[2]))
+
+        new_action = action.Action(self, name, implementation, arguments_list)
+        self._actions[name] = new_action
+        if callback != None:
+            new_action.set_callback(callback)
+            self.info('Add callback %s for %s/%s' % (callback, self.id, name))
+        return new_action
+
     def init_var_and_actions(self):
         desc_file = util.sibpath(__file__, os.path.join('xml-service-descriptions', '%s%d.xml' % (self.id, int(self.version))))
         tree = ET.parse(desc_file)
@@ -804,8 +904,17 @@ class ServiceServer(log.Loggable):
 
 class scpdXML(static.Data):
 
-    def __init__(self, server, control):
+    def __init__(self, server, control=None):
+        self.service_server = server
+        self.control = control
+        static.Data.__init__(self, None, 'text/xml')
 
+    def render(self, request):
+        if self.data == None:
+            self.data = self.build_xml()
+        return static.Data.render(self,request)
+
+    def build_xml(self):
         root = ET.Element('scpd')
         root.attrib['xmlns']='urn:schemas-upnp-org:service-1-0'
         e = ET.SubElement(root, 'specVersion')
@@ -813,7 +922,7 @@ class scpdXML(static.Data):
         ET.SubElement( e, 'minor').text = '0'
 
         e = ET.SubElement( root, 'actionList')
-        for action in server._actions.values():
+        for action in self.service_server._actions.values():
             s = ET.SubElement( e, 'action')
             ET.SubElement( s, 'name').text = action.get_name()
             al = ET.SubElement( s, 'argumentList')
@@ -824,7 +933,7 @@ class scpdXML(static.Data):
                 ET.SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
 
         e = ET.SubElement( root, 'serviceStateTable')
-        for var in server._variables[0].values():
+        for var in self.service_server._variables[0].values():
             s = ET.SubElement( e, 'stateVariable')
             if var.send_events == True:
                 s.attrib['sendEvents'] = 'yes'
@@ -850,8 +959,7 @@ class scpdXML(static.Data):
                          if value != None:
                             ET.SubElement( avl, name).text = str(value)
 
-        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
-        static.Data.__init__(self, self.xml, 'text/xml')
+        return """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
 
 from twisted.python.util import OrderedDict
 

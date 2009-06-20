@@ -29,15 +29,14 @@ class AVTransportServer(service.ServiceServer, resource.Resource):
         service.ServiceServer.__init__(self, 'AVTransport', self.device.version, backend)
 
         self.control = AVTransportControl(self)
-        self.putChild(self.scpd_url, service.scpdXML(self, self.control))
+        self.putChild(self.scpd_url, service.scpdXML(self))
         self.putChild(self.control_url, self.control)
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
                 cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
         return cl
-        
+
     def render(self,request):
         return '<html><p>root of the AVTransport</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
-
