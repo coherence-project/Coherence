@@ -1,5 +1,5 @@
 """
-Wrapper module for the louie implementation
+    Wrapper module for the louie implementation
 """
 
 import warnings
@@ -64,9 +64,7 @@ def send(signal=All, sender=Anonymous, *arguments, **named):
     if sender not in (Anonymous, None):
         warnings.warn("Seriously! Use the coherence.dispatcher. It IS object based")
     # the first value of the callback shall always be the signal:
-    results, errors = _global_dispatcher.emit(signal, *arguments, **named)
-    if errors:
-        warnings.warn('Erros while processing %s: %r' % (signal, errors))
+    return _global_dispatcher.save_emit(signal, *arguments, **named)
 
 def send_minimal(signal=All, sender=Anonymous, *arguments, **named):
     return send(signal, sender, *arguments, **named)
