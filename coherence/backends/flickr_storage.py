@@ -34,7 +34,7 @@ from twisted.python.filepath import FilePath
 from coherence.upnp.core.utils import parse_xml, ReverseProxyResource
 
 from coherence.upnp.core.DIDLLite import classChooser,Container,PhotoAlbum,Photo,ImageItem,Resource,DIDLElement
-from coherence.upnp.core.DIDLLite import simple_dlna_tags
+from coherence.upnp.core.DIDLLite import simple_dlna_tags, PlayContainerResource
 from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 
@@ -110,6 +110,7 @@ class FlickrItem(log.Loggable):
         self.id = id
         self.real_url = None
         self.obj = obj
+        self.upnp_class = UPnPClass
         self.store = store
         self.item = None
         self.date = None
@@ -189,15 +190,11 @@ class FlickrItem(log.Loggable):
                         obj.get('secret').encode('utf-8'))
 
         if parent == None:
-            parent_id = -1
+            self.parent_id = -1
         else:
-            parent_id = parent.get_id()
+            self.parent_id = parent.get_id()
 
         if self.mimetype == 'directory':
-            self.item = UPnPClass(self.id, parent_id, self.get_name())
-            if isinstance(self.item, Container):
-                self.item.childCount = 0
-            self.child_count = 0
             self.children = []
             self.update_id = 0
 
@@ -229,19 +226,12 @@ class FlickrItem(log.Loggable):
 
     def add_child(self, child, update=False):
         self.children.append(child)
-        self.child_count += 1
-        if isinstance(self.item, Container):
-            self.item.childCount += 1
         if update == True:
             self.update_id += 1
-
 
     def remove_child(self, child):
         self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
-            self.child_count -= 1
-            if isinstance(self.item, Container):
-                self.item.childCount -= 1
             self.children.remove(child)
             self.update_id += 1
 
@@ -252,7 +242,7 @@ class FlickrItem(log.Loggable):
             return self.children[start:request_count]
 
     def get_child_count(self):
-        return self.child_count
+        return len(self.children)
 
     def get_id(self):
         return self.id
@@ -288,7 +278,14 @@ class FlickrItem(log.Loggable):
 
     def get_item(self):
         if self.item == None:
-            return self.create_item()
+            if self.mimetype == 'directory':
+                self.item = self.upnp_class(self.id, self.parent_id, self.get_name())
+                self.item.childCount = self.get_child_count()
+                if self.get_child_count() > 0:
+                    res = PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=self.get_children()[0].get_id())
+                    self.item.res.append(res)
+            else:
+                return self.create_item()
         return self.item
 
     def create_item(self):
