@@ -287,15 +287,6 @@ class Coherence(log.Loggable):
             logfile = config.get('logfile', None)
         log.init(logfile, _debug)
 
-        self.louieplugin = louie.TwistedDispatchPlugin()
-        try:
-            louie.install_plugin(self.louieplugin)
-        except louie.error.PluginTypeError:
-            """ we do need this to survive multiple calls
-                to Coherence during trial tests
-            """
-            pass
-
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
         if network_if:
@@ -553,9 +544,6 @@ class Coherence(log.Loggable):
             return
         if self._tube_publisher is not None:
             self._tube_publisher.stop()
-        if self.louieplugin != None:
-            louie.remove_plugin(self.louieplugin)
-            self.louieplugin = None
         for backend in self.active_backends.itervalues():
             backend.unregister()
         self.active_backends = {}

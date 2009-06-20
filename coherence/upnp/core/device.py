@@ -57,8 +57,7 @@ class Device(log.Loggable):
             self.client = None
         #del self
 
-    def receiver( self, signal, *args, **kwargs):
-        self.debug("device receiver called with %r %r", signal, kwargs)
+    def receiver(self, *args, **kwargs):
         if self.detection_completed == True:
             return
         for s in self.services:
@@ -324,7 +323,7 @@ class RootDevice(Device):
             return True
         return False
 
-    def device_detect( self, signal, *args, **kwargs):
+    def device_detect( self, *args, **kwargs):
         self.debug("device_detect %r", kwargs)
         if self.root_detection_completed == True:
             return
