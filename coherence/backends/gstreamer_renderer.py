@@ -1,7 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 
 from sets import Set
 
@@ -896,7 +896,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         NextMetaData = kwargs['NextURIMetaData']
         self.server.av_transport_server.set_variable(current_connection_id, 'NextAVTransportURI',NextURI)
         self.server.av_transport_server.set_variable(current_connection_id, 'NextAVTransportURIMetaData',NextMetaData)
-        if len(NextURI) == 0:
+        if len(NextURI) == 0  and self.playcontainer == None:
             transport_actions = self.server.av_transport_server.get_variable('CurrentTransportActions').value
             transport_actions = Set(transport_actions.split(','))
             try:
