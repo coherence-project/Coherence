@@ -36,7 +36,11 @@ from coherence.backend import BackendItem, BackendStore
 
 from urlparse import urlsplit
 
-import md5
+try:
+    from hashlib import md5
+except ImportError:
+    # hashlib is new in Python 2.5
+    from md5 import md5
 
 import string
 
@@ -96,7 +100,7 @@ class LastFMUser(log.Loggable):
             for c in s:
                 result = result + ("%02x" % ord(c))
             return result
-        password = hexify(md5.md5(self.passwd).digest())
+        password = hexify(md5(self.passwd).digest())
         req = self.basepath + "/handshake.php/?version=1&platform=win&username=" + self.user + "&passwordmd5=" + password + "&language=en&player=coherence"
         utils.getPage("http://" + self.host + req).addCallbacks(got_page, got_error, None, None, None, None)
 
