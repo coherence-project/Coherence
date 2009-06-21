@@ -402,6 +402,8 @@ class Coherence(log.Loggable):
                     from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
                     from coherence.extern.telepathy import connect
                     from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisherConsumer
+                    from coherence.tube_service import TubeDeviceProxy
+
                     mirabeau_cfg = self.config.get('mirabeau', {})
                     chatroom = mirabeau_cfg['chatroom']
                     manager = mirabeau_cfg['manager']
@@ -426,15 +428,11 @@ class Coherence(log.Loggable):
 
                     def got_devices(devices):
                         print ">>>", devices
+                        self._tube_proxies = []
                         for device in devices:
-                            try:
-                                name = '%s (%s)' % (device.get_friendly_name(),
-                                                    ':'.join(device.get_device_type().split(':')[3:5]))
-                            except Exception, exc:
-                                print exc
-                                continue
-                            print "MIRABEAU found:",name
-
+                            uuid = device.get_id()
+                            print "MIRABEAU found:", uuid
+                            self._tube_proxies.append(TubeDeviceProxy(self, device))
 
                     self._tube_publisher = MirabeauTubePublisherConsumer(connection, chatroom,
                                                                          tubes_to_offer, self,
