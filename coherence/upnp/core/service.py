@@ -200,6 +200,9 @@ class Service(log.Loggable):
     def get_actions(self):
         return self._actions
 
+    def get_scpdXML(self):
+        return self.scpdXML
+
     def get_action( self, name):
         try:
             return self._actions[name]
@@ -318,8 +321,8 @@ class Service(log.Loggable):
         def gotPage(x):
             #print "gotPage"
             #print x
-            data, headers = x
-            tree = utils.parse_xml(data, 'utf-8').getroot()
+            self.scpdXML, headers = x
+            tree = utils.parse_xml(self.scpdXML, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
 
             for action_node in tree.findall('.//{%s}action' % ns):
@@ -667,6 +670,7 @@ class ServiceServer(log.Loggable):
     def get_scpdXML(self):
         if not hasattr(self,'scpdXML') or self.scpdXML == None:
             self.scpdXML = scpdXML(self)
+            self.scpdXML = self.scpdXML.build_xml()
         return self.scpdXML
 
     def register_vendor_variable(self,name,implementation='optional',

@@ -27,18 +27,11 @@ from coherence import __version__
 from coherence.upnp.core import DIDLLite
 from coherence.dbus_constants import *
 
-
 import coherence.extern.louie as louie
 
 from coherence import log
 
 from twisted.internet import reactor
-
-class DBusProxy(log.Loggable):
-    logCategory = 'dbus'
-
-    def __init__(self, bus):
-        self.bus = bus
 
 
 class DBusCDSService(dbus.service.Object,log.Loggable):
@@ -85,6 +78,15 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
 
     def variable_changed(self,variable):
         self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
+
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s')
+    def get_id(self):
+        return self.service.id
+
+    @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='s')
+    def get_scpd_xml(self):
+        return self.service.scpdXML
+
 
     @dbus.service.signal(CDS_SERVICE,
                          signature='sssv')
@@ -457,6 +459,10 @@ class DBusService(dbus.service.Object,log.Loggable):
     def StateVariableChanged(self, udn, service, variable, value):
         self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
 
+    @dbus.service.method(SERVICE_IFACE,in_signature='',out_signature='s')
+    def get_scpd_xml(self):
+        return self.service.get_scpdXML()
+
     @dbus.service.method(SERVICE_IFACE,in_signature='',out_signature='as')
     def get_available_actions(self):
         actions = self.service.get_actions()
@@ -465,10 +471,15 @@ class DBusService(dbus.service.Object,log.Loggable):
             r.append(name)
         return r
 
+    @dbus.service.method(SERVICE_IFACE,in_signature='',out_signature='s')
+    def get_id(self):
+        return self.service.id
+
     @dbus.service.method(SERVICE_IFACE,in_signature='sv',out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def action(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
 
+        print "action", name, arguments
         def reply(data):
             dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
 
@@ -484,6 +495,27 @@ class DBusService(dbus.service.Object,log.Loggable):
                 except:
                     pass
                 d = func(**kwargs)
+                d.addCallback(reply)
+                d.addErrback(dbus_async_err_cb)
+        return ''
+
+    @dbus.service.method(SERVICE_IFACE,in_signature='sa{ss}',out_signature='v',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def call_action(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
+
+        def reply(data):
+            dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
+
+        if self.service.client is not None:
+            action = self.service.get_action(name)
+            if action:
+                kwargs = {}
+                try:
+                    for k,v in arguments.items():
+                        kwargs[str(k)] = unicode(v)
+                except:
+                    pass
+                d = action.call(**kwargs)
                 d.addCallback(reply)
                 d.addErrback(dbus_async_err_cb)
         return ''
@@ -566,8 +598,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         if device is not None:
             for service in device.get_services():
                 self.services.append(DBusService(service,self,bus))
-                if service.service_type.split(':')[3] == 'ContentDirectory':
-                    self.services.append(DBusCDSService(service,self,bus))
+                #if service.service_type.split(':')[3] == 'ContentDirectory':
+                #    self.services.append(DBusCDSService(service,self,bus))
 
     def _release_thyself(self):
         for service in self.services:

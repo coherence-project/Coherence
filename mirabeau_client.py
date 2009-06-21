@@ -32,9 +32,11 @@ def run(args=None):
                                     ':'.join(device.get_device_type().split(':')[3:5]))
             except:
                 continue
-            print "got_devices", name
+            print "got_devices", name, device.get_id() 
             #
             #print "  >",
+            if device.get_id() == "uuid:d5a96478-ba4b-4bf8-813b-250755d8edde":
+                print "found it"
             if device.get_friendly_name() == "Phil":
                 for service in device.services:
                     try:
