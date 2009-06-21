@@ -12,7 +12,10 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
 
     def tube_opened(self, id):
         super(MirabeauTubePublisherMixin, self).tube_opened(id)
-        self.coherence.dbus.add_to_connection(self.tube_conn, OBJECT_PATH)
+        try:
+            self.coherence.dbus.add_to_connection(self.tube_conn, OBJECT_PATH)
+        except:
+            pass
         for device in self.coherence.dbus.devices.values():
             self._register_device(device)
         self.coherence.dbus.bus.add_signal_receiver(self._media_server_found,

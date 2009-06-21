@@ -136,12 +136,13 @@ class TubeConsumerMixin(object):
         self._create_peer_remote_object(peer, service)
 
         def cb(added, removed):
-            initiator_contact = find_initiator_contact(added)
-            self.info("contact %r for service %r", initiator_contact,
-                      service)
-            peer.initiator_contact = initiator_contact
+            if added:
+                initiator_contact = find_initiator_contact(added)
+                self.info("contact %r for service %r", initiator_contact,
+                          service)
+                peer.initiator_contact = initiator_contact
 
-            self._create_peer_object_proxy(peer, service)
+                self._create_peer_object_proxy(peer, service)
 
         peer.remote_object.tube.watch_participants(cb)
 

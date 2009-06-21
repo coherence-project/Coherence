@@ -193,7 +193,7 @@ class TubeDeviceProxy(log.Loggable):
         self._devices = []
         self.icons = []
 
-        print self.uuid, self.device_type, self.version
+        print self.uuid, self.friendly_name, self.device_type, self.version
 
         """ create the http entrypoint """
 
