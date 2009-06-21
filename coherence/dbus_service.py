@@ -405,10 +405,10 @@ class DBusService(dbus.service.Object,log.Loggable):
 
 
         if self.dbus_device is not None:
-            device_id = self.dbus_device.id
+            self.device_id = self.dbus_device.id
         else:
-            device_id = "dev_from_the_tubes"
-        self.path = OBJECT_PATH + '/devices/' + device_id + '/services/' + self.type
+            self.device_id = "dev_from_the_tubes"
+        self.path = OBJECT_PATH + '/devices/' + self.device_id + '/services/' + self.type
 
         dbus.service.Object.__init__(self, bus, bus_name=bus_name,
                                          object_path=self.path)
@@ -452,7 +452,7 @@ class DBusService(dbus.service.Object,log.Loggable):
         #print self.service, "got signal for change of", variable
         #print variable.name, variable.value
         #print type(variable.name), type(variable.value)
-        self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
+        self.StateVariableChanged(self.device_id,self.type,variable.name, variable.value)
 
     @dbus.service.signal(SERVICE_IFACE,
                          signature='sssv')
