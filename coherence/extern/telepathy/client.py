@@ -9,7 +9,7 @@ from telepathy.interfaces import CONN_INTERFACE, CHANNEL_INTERFACE_GROUP, \
      CHANNEL_TYPE_TUBES, CHANNEL_TYPE_CONTACT_LIST,\
      CHANNEL_TYPE_TEXT, CHANNEL_INTERFACE
 from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT, \
-     CONNECTION_HANDLE_TYPE_LIST, \
+     CONNECTION_HANDLE_TYPE_LIST, HANDLE_TYPE_ROOM, \
      CONNECTION_HANDLE_TYPE_ROOM, CONNECTION_STATUS_CONNECTED, \
      CONNECTION_STATUS_DISCONNECTED, CONNECTION_STATUS_CONNECTING, \
      TUBE_TYPE_DBUS, TUBE_TYPE_STREAM, TUBE_STATE_LOCAL_PENDING, \
@@ -100,12 +100,11 @@ class Client(log.Loggable):
         handle = conn_obj.RequestHandles(CONNECTION_HANDLE_TYPE_ROOM,
                                          [self.muc_id])[0]
 
-        chan_path = conn_obj.RequestChannel(CHANNEL_TYPE_TEXT,
-                                            CONNECTION_HANDLE_TYPE_ROOM,
-                                            handle, True)
-
-        self.channel_text = Channel(self.conn.dbus_proxy.bus_name,
-                                    chan_path)
+        self.channel_text = self.conn.request_channel(CHANNEL_TYPE_TEXT,
+                                                      HANDLE_TYPE_ROOM,
+                                                      handle, True)
+        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
+        channel_obj.connect_to_signal('Received', self.received_cb)
 
         channel_obj = self.channel_text[CHANNEL_INTERFACE_GROUP]
         self.self_handle = channel_obj.GetSelfHandle()
@@ -168,15 +167,13 @@ class Client(log.Loggable):
         except:
             self.tube_conn = None
 
-        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
-        channel_obj.connect_to_signal('Received', self.received_cb)
 
     def received_cb(self, id, timestamp, sender, type, flags, text):
         channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
         channel_obj.AcknowledgePendingMessages([id])
         contact = self.conn[telepathy.CONN_INTERFACE].InspectHandles(
             telepathy.HANDLE_TYPE_CONTACT, [sender])[0]
-
+        self.info("Received message from %s: %s", contact, text)
 
     def stream_tube_new_connection_cb(self, id, handle):
         conn_obj = self.conn[CONN_INTERFACE]
