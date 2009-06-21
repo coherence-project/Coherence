@@ -457,7 +457,8 @@ class DBusService(dbus.service.Object,log.Loggable):
     @dbus.service.signal(SERVICE_IFACE,
                          signature='sssv')
     def StateVariableChanged(self, udn, service, variable, value):
-        self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
+        self.info("%s service %s signals StateVariable %s changed to %r",
+                  self.device_id, self.type, variable, value)
 
     @dbus.service.method(SERVICE_IFACE,in_signature='',out_signature='s')
     def get_scpd_xml(self):
