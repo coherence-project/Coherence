@@ -115,7 +115,7 @@ class TubeConsumerMixin(object):
                                           [self_handle])[0]
         self.info('initiator: %r myself: %r params: %r' % (initiator, my_name,
                                                            peer.params))
-        if peer.params["initiator"] == my_name:
+        if "initiator" in peer.params and peer.params["initiator"] == my_name:
             return
 
         if tube_type == TUBE_TYPE_STREAM:
@@ -130,21 +130,24 @@ class TubeConsumerMixin(object):
             for contact in contact_list:
                 if contact[0] == initiator:
                     initiator_contact = contact[1]
+                    name = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
+                                                   [initiator])[0]
                     break
             return initiator_contact
 
-        self._create_peer_remote_object(peer, service)
-
-        def cb(added, removed):
-            if added:
-                initiator_contact = find_initiator_contact(added)
+        def cb(participants, removed):
+            if participants:
+                initiator_contact = find_initiator_contact(participants)
                 self.info("contact %r for service %r", initiator_contact,
                           service)
-                peer.initiator_contact = initiator_contact
+                if initiator_contact is not None:
+                    peer.initiator_contact = initiator_contact
+                    self._create_peer_object_proxy(peer, service)
 
-                self._create_peer_object_proxy(peer, service)
+        self._create_peer_remote_object(peer, service)
 
-        peer.remote_object.tube.watch_participants(cb)
+        peer.remote_object.tube.watch_participants(cb,
+                                                   callback_id="find_initiator")
 
     def tube_closed_cb (self, id):
         super(TubeConsumerMixin, self).tube_closed_cb(id)

@@ -34,40 +34,41 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
     def _create_peer_object_proxy(self, peer, interface):
         self.debug("_create_peer_object_proxy %r %r", peer, interface)
 
-        found_peer = False
         if interface == BUS_NAME:
-            found_peer = True
-            proxy = peer.remote_object.tube.get_object(peer.initiator_contact,
-                                                       OBJECT_PATH)
-            peer.remote_object_proxy = proxy
-            self.pontoon = proxy
+            pontoon_tube = peer.remote_object.tube
+            self.pontoon = pontoon_tube.get_object(peer.initiator_contact,
+                                                   OBJECT_PATH)
         elif interface == DEVICE_IFACE:
-            found_peer = True
             self.device_peer = peer
         elif interface == SERVICE_IFACE:
             self.service_peer = peer
 
         if not self.initial_announce_done:
             if self.pontoon and self.service_peer and self.device_peer:
-                self.found_devices(self.device_peer)
+                self.found_devices()
                 self.initial_announce_done = True
 
-    def found_devices(self, device_peer):
+    def found_devices(self):
         devices = []
+        initiator_contact = self.device_peer.initiator_contact
+        device_tube = self.device_peer.remote_object.tube
         service_tube = self.service_peer.remote_object.tube
         pontoon_devices = self.pontoon.get_devices()
-        self.debug("%r devices registered in pontoon", len(pontoon_devices))
+        self.debug("%r devices registered in remote pontoon", len(pontoon_devices))
         for device_dict in pontoon_devices:
-            service_proxies = []
             device_path = device_dict["path"]
-            proxy = device_peer.remote_object.tube.get_object(device_peer.initiator_contact,
-                                                              device_path)
+            self.debug("Getting object at %r from %r", device_path,
+                       initiator_contact)
+            proxy = device_tube.get_object(initiator_contact, device_path)
             try:
-                infos = proxy.get_info()
-            except:
+                infos = proxy.get_info(dbus_interface=DEVICE_IFACE)
+            except Exception, exc:
+                self.warning(exc)
+                #import pdb; pdb.set_trace()
                 continue
-            for service_path in infos["services"]:
-                service_proxy = service_tube.get_object(device_peer.initiator_contact,
+            service_proxies = []
+            for service_path in device_dict["services"]:
+                service_proxy = service_tube.get_object(initiator_contact,
                                                         service_path)
                 service_proxies.append(service_proxy)
             proxy.services = service_proxies

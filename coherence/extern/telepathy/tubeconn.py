@@ -34,7 +34,7 @@ class TubeConnection(Connection, log.Loggable):
         self.tube_id = tube_id
         self.participants = {}
         self.bus_name_to_handle = {}
-        self._mapping_watches = []
+        self._mapping_watches = {}
 
         if group_iface is None:
             method = conn.GetSelfHandle
@@ -70,8 +70,8 @@ class TubeConnection(Connection, log.Loggable):
         self.warning('GetDBusNames failed: %s', e)
 
     def _on_dbus_names_changed(self, tube_id, added, removed):
-        self.debug("dbus names changed for tube %r; added: %r, removed: %r",
-                   tube_id, added, removed)
+        self.log("dbus names changed for tube %r; added: %r, removed: %r",
+                 tube_id, added, removed)
         if tube_id == self.tube_id:
             for handle, bus_name in added:
                 if handle == self.self_handle:
@@ -82,19 +82,19 @@ class TubeConnection(Connection, log.Loggable):
 
             # call the callback while the removed people are still in
             # participants, so their bus names are available
-            for callback in self._mapping_watches:
+            for callback in self._mapping_watches.values():
                 callback(added, removed)
 
             for handle in removed:
                 bus_name = self.participants.pop(handle, None)
                 self.bus_name_to_handle.pop(bus_name, None)
 
-    def watch_participants(self, callback):
-        self._mapping_watches.append(callback)
+    def watch_participants(self, callback, callback_id=None):
+        callback_id = callback_id or str(id(callback))
+        if callback_id not in self._mapping_watches:
+            self._mapping_watches[callback_id] = callback
         if self.participants:
             # GetDBusNames already returned: fake a participant add event
             # immediately
-            added = []
-            for k, v in self.participants.iteritems():
-                added.append((k, v))
+            added = list(self.participants.iteritems())
             callback(added, [])
