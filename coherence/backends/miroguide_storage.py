@@ -135,7 +135,7 @@ class MiroGuideStore(AbstractBackendStore):
 
 
     def __repr__(self):
-        return str(self.__class__).split('.')[-1]
+        return self.__class__.__name__
 
     def appendCategory( self, name, category_id, parent):
         item = LazyContainer(parent, name, category_id, self.refresh, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
