@@ -6,7 +6,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2008, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
-from twisted.internet import defer
+from twisted.internet import defer,reactor
 from twisted.web import server
 
 from coherence.upnp.core import utils
@@ -176,7 +176,7 @@ class ITVItem(BackendItem):
 
 class ITVStore(BackendStore):
 
-    logCategory = 'iradio_store'
+    logCategory = 'itv_store'
 
     implements = ['MediaServer']
 
@@ -198,7 +198,7 @@ class ITVStore(BackendStore):
 
 
     def __repr__(self):
-        return str(self.__class__).split('.')[-1]
+        return self.__class__.__name__
 
     def storeItem(self, parent, item, id):
         self.store[id] = item
@@ -248,6 +248,7 @@ class ITVStore(BackendStore):
         self.retrieveList(rootItem)
 
     def retrieveList(self, parent):
+        self.info("Retrieving Shoutcast TV listing...")
 
         def got_page(result):
             self.info("connection to ShoutCast service successful for TV listing")
@@ -297,8 +298,10 @@ class ITVStore(BackendStore):
 
 
         def got_error(error):
-            self.warning("connection to ShoutCast service failed! %r" % error)
+            self.warning("connection to ShoutCast service failed. Will retry in 5s!")
             self.debug("%r", error.getTraceback())
-
+            # will retry later
+            reactor.callLater(5, self.retrieveList, parent=parent)
+            
         d = utils.getPage(self.shoutcast_ws_url)
         d.addCallbacks(got_page, got_error)
