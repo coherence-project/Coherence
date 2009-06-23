@@ -375,7 +375,7 @@ class RootDevice(Device):
                 self.parse_device(d) # root device
 
         def gotError(failure, url):
-            self.warning("error requesting %r", url)
+            self.warning("error getting device description from %r", url)
             self.info(failure)
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
