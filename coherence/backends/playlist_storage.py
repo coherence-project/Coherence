@@ -47,7 +47,12 @@ class PlaylistItem(BackendItem):
             upnp_parent_id = self.parent.get_id()
             item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.name)
             
-            res = Resource(self.stream_url, 'rtsp-rtp-udp:*:%s:*' % self.mimetype)
+            # what to do with MMS:// feeds?
+            protocol = "http-get"
+            if self.stream_url.startswith("rtsp://"):
+                protocol = "rtsp-rtp-udp"
+            
+            res = Resource(self.stream_url, '%s:*:%s:*' % (protocol,self.mimetype))
             res.size = None
             item.res.append(res)
         
