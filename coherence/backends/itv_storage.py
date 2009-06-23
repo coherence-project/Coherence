@@ -39,7 +39,7 @@ class ProxyStream(utils.ReverseProxyUriResource):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        print "ProxyStream requestFinished"
+        self.info("ProxyStream requestFinished")
         if self.connection is not None:
             self.connection.transport.loseConnection()
 
@@ -48,7 +48,7 @@ class ProxyStream(utils.ReverseProxyUriResource):
         if self.stream_url is None:
             def got_playlist(result):
                 if result is None:
-                    print 'Error to retrieve playlist - nothing retrieved'
+                    self.warning('Error to retrieve playlist - nothing retrieved')
                     return requestFinished(result)
                 result = result[0].split('\n')
                 for line in result:
@@ -56,14 +56,14 @@ class ProxyStream(utils.ReverseProxyUriResource):
                         self.stream_url = line[6:].split(";")[0]
                         break
                 if self.stream_url is None:
-                    print 'Error to retrieve playlist - inconsistent playlist file'
+                    self.warning('Error to retrieve playlist - inconsistent playlist file')
                     return requestFinished(result)
                 #self.resetUri(self.stream_url)
                 request.uri = self.stream_url
                 return self.render(request)
 
             def got_error(error):
-                print error
+                self.warning(error)
                 return None
 
             playlist_url = self.uri
@@ -250,7 +250,7 @@ class ITVStore(BackendStore):
     def retrieveList(self, parent):
 
         def got_page(result):
-            print "connection to ShoutCast service successful for TV listing"
+            self.info("connection to ShoutCast service successful for TV listing")
             result = result[0]
             result = utils.parse_xml(result, encoding='utf-8')
 
@@ -297,7 +297,7 @@ class ITVStore(BackendStore):
 
 
         def got_error(error):
-            print ("connection to ShoutCast service failed! %r" % error)
+            self.warning("connection to ShoutCast service failed! %r" % error)
             self.debug("%r", error.getTraceback())
 
         d = utils.getPage(self.shoutcast_ws_url)
