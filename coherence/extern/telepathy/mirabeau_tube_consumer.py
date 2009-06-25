@@ -2,21 +2,23 @@ from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE
 from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT
 
 from coherence.extern.telepathy import tube
-from coherence.extern.telepathy import client
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 from coherence import dbus_service
 
-
-class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
+class MirabeauTubeConsumer(tube.TubeConsumer):
     pontoon = None
     device_peer = None
     service_peer = None
     initial_announce_done = False
 
-    def __init__(self, found_peer_callback=None,
-                 disapeared_peer_callback=None, got_devices_callback=None):
-        super(MirabeauTubeConsumerMixin, self).__init__(found_peer_callback=found_peer_callback,
-                                                        disapeared_peer_callback=disapeared_peer_callback)
+    def __init__(self, manager, protocol,
+                 account, muc_id, found_peer_callback=None,
+                 disapeared_peer_callback=None, got_devices_callback=None,
+                 existing_client=False):
+        tube.TubeConsumer.__init__(self, manager, protocol,
+                                   account, muc_id, existing_client=existing_client,
+                                   found_peer_callback=found_peer_callback,
+                                   disapeared_peer_callback=disapeared_peer_callback)
         self.got_devices_callback = got_devices_callback
         self.debug("MirabeauTubeConsumer __init__")
         self.pontoon_tube = None
@@ -31,7 +33,7 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
         return True
 
     def tube_opened(self, tube):
-        tube_conn = super(MirabeauTubeConsumerMixin, self).tube_opened(tube)
+        tube_conn = super(MirabeauTubeConsumer, self).tube_opened(tube)
         service = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
         if service == BUS_NAME:
             tube.remote_object = dbus_service.DBusPontoon(None, tube_conn)
@@ -43,11 +45,12 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
             tube.remote_object = dbus_service.DBusService(None, None, tube_conn)
             self.service_tube = tube
 
-        if not self.initial_announce_done:
-            if None not in (self.pontoon_tube, self.service_tube, self.device_tube):
-                self.announce()
-                self.initial_announce_done = True
-
+        #if not self.initial_announce_done:
+        if None not in (self.pontoon_tube, self.service_tube, self.device_tube):
+            self.announce()
+            #self.initial_announce_done = True
+        ## except:
+        ##     pass
         return tube_conn
 
     def announce(self):
@@ -90,15 +93,3 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
             proxy.services = service_proxies
             devices.append(proxy)
         self.got_devices_callback(devices)
-
-class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
-
-    def __init__(self, manager, protocol,
-                 account, muc_id, found_peer_callback=None,
-                 disapeared_peer_callback=None, got_devices_callback=None,
-                 existing_connection=False):
-        MirabeauTubeConsumerMixin.__init__(self, found_peer_callback=found_peer_callback,
-                                           disapeared_peer_callback=disapeared_peer_callback,
-                                           got_devices_callback=got_devices_callback)
-        client.Client.__init__(self, manager, protocol,
-                               account, muc_id, existing_connection=existing_connection)

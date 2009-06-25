@@ -1,10 +1,7 @@
 
-import telepathy
-import gobject
-
 from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE
 
-from coherence.extern.telepathy import tube, client, mirabeau_tube_consumer
+from coherence.extern.telepathy import tube, mirabeau_tube_consumer
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 
 class MirabeauTubePublisherConsumer(tube.TubePublisher):
@@ -17,22 +14,12 @@ class MirabeauTubePublisherConsumer(tube.TubePublisher):
         self.found_peer_callback = found_peer_callback
         self.disapeared_peer_callback=disapeared_peer_callback
         self._consumer = None
-
         self.coherence = application
         self.allowed_devices = allowed_devices
         self.got_devices_callback = got_devices_callback
         self.coherence_tube = None
         self.device_tube = None
         self.service_tube = None
-
-    def ready(self):
-        self.info("publisher ready, now starting the consumer")
-        self._consumer = mirabeau_tube_consumer.MirabeauTubeConsumer(None, None, {}, self.muc_id,
-                                                                     found_peer_callback=self.found_peer_callback,
-                                                                     disapeared_peer_callback=self.disapeared_peer_callback,
-                                                                     got_devices_callback=self.got_devices_callback,
-                                                                     existing_connection=self)
-        self._consumer.start()
 
     def tube_opened(self, tube):
         tube_conn = super(MirabeauTubePublisherConsumer, self).tube_opened(tube)
@@ -45,15 +32,23 @@ class MirabeauTubePublisherConsumer(tube.TubePublisher):
         elif service == SERVICE_IFACE:
             self.service_tube = tube_conn
 
-        if None not in (self.coherence_tube,
-                         self.device_tube, self.service_tube):
+        if None not in (self.coherence_tube, self.device_tube,
+                        self.service_tube):
             for device in self.coherence.dbus.devices.values():
                 self._register_device(device)
             self.coherence.dbus.bus.add_signal_receiver(self._media_server_found,
                                                         "UPnP_ControlPoint_MediaServer_detected")
             self.coherence.dbus.bus.add_signal_receiver(self._media_server_removed,
                                                         "UPnP_ControlPoint_MediaServer_removed")
-            self.ready()
+            self.info("publisher ready, now starting the consumer")
+            kwargs = dict(found_peer_callback=self.found_peer_callback,
+                          disapeared_peer_callback=self.disapeared_peer_callback,
+                          got_devices_callback=self.got_devices_callback,
+                          existing_client=self)
+            self._consumer = mirabeau_tube_consumer.MirabeauTubeConsumer(None, None, {},
+                                                                         self.muc_id,
+                                                                         **kwargs)
+            self._consumer.start()
 
         return tube_conn
 

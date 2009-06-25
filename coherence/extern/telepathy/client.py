@@ -27,18 +27,19 @@ class Client(log.Loggable):
     logCategory = "tp_client"
 
     def __init__(self, manager, protocol,
-                 account, muc_id, existing_connection=False):
+                 account, muc_id, existing_client=False):
         super(Client, self).__init__()
         self.account = account
-        self.existing_connection = existing_connection
+        self.existing_client = existing_client
         self.channel_text = None
         self._unsent_messages = []
         self._tube_conns = {}
         self._tubes = {}
+        self._channels = []
 
-        if self.existing_connection:
-            self.muc_id = self.existing_connection.muc_id
-            self.conn = self.existing_connection.conn
+        if self.existing_client:
+            self.muc_id = self.existing_client.muc_id
+            self.conn = self.existing_client.conn
             self.ready_cb(self.conn)
         else:
             self.muc_id = "%s@%s" % (muc_id, self.account["fallback-conference-server"])
@@ -51,13 +52,13 @@ class Client(log.Loggable):
         self.joined = False
 
     def start(self):
-        if not self.existing_connection:
+        if not self.existing_client:
             self.info("connecting")
             self.conn[CONN_INTERFACE].Connect()
             self.info("connected")
 
     def stop(self):
-        if not self.existing_connection:
+        if not self.existing_client:
             try:
                 self.conn[CONN_INTERFACE].Disconnect()
             except:
@@ -118,8 +119,13 @@ class Client(log.Loggable):
         muc_id = self.muc_id
         self.info("joining MUC %r", muc_id)
 
-        if self.existing_connection:
-            self.channel_text = self.existing_connection.channel_text
+        if self.existing_client:
+            self.channel_text = self.existing_client.channel_text
+            #self.new_channels_cb(self.existing_client._channels)
+            ## self._tubes = self.existing_client._tubes
+            ## for path, tube in self._tubes.iteritems():
+            ##     self.connect_tube_signals(tube)
+            ##     self.got_tube(tube)
         else:
             chan_path, props = self.conn[CONNECTION_INTERFACE_REQUESTS].CreateChannel({
                 CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_TEXT,
@@ -128,28 +134,34 @@ class Client(log.Loggable):
 
             self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
 
-        self.self_handle = self.channel_text[CHANNEL_INTERFACE_GROUP].GetSelfHandle()
-        self.channel_text[CHANNEL_INTERFACE_GROUP].connect_to_signal(
-                "MembersChanged", self.text_channel_members_changed_cb)
+        room_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
+        self.self_handle = room_iface.GetSelfHandle()
+        room_iface.connect_to_signal("MembersChanged", self.text_channel_members_changed_cb)
 
-        if self.self_handle in self.channel_text[CHANNEL_INTERFACE_GROUP].GetMembers():
+        if self.self_handle in room_iface.GetMembers():
             self.joined = True
             self.muc_joined()
 
 
     def new_channels_cb(self, channels):
+        self._channels.extend(channels)
         for path, props in channels:
             self.debug("new channel with path %r and props %r", path, props)
             if props[CHANNEL_INTERFACE + ".ChannelType"] == CHANNEL_TYPE_DBUS_TUBE:
                 tube = Channel(self.conn.dbus_proxy.bus_name, path)
-
-                tube[CHANNEL_INTERFACE_TUBE].connect_to_signal(
-                    "TubeChannelStateChanged", lambda state: self.tube_channel_state_changed_cb(tube, state))
-                tube[CHANNEL_INTERFACE].connect_to_signal("Closed",
-                                                          lambda: self.tube_closed_cb(tube))
+                self.connect_tube_signals(tube)
                 tube.props = props
                 self._tubes[path] = tube
                 self.got_tube(tube)
+
+    def connect_tube_signals(self, tube):
+        tube_iface = tube[CHANNEL_INTERFACE_TUBE]
+        tube_iface.connect_to_signal("TubeChannelStateChanged",
+                                     lambda state: self.tube_channel_state_changed_cb(tube,
+                                                                                      state))
+        channel_iface = tube[CHANNEL_INTERFACE]
+        channel_iface.connect_to_signal("Closed",
+                                        lambda: self.tube_closed_cb(tube))
 
     def got_tube(self, tube):
         props = tube.props
@@ -158,17 +170,18 @@ class Client(log.Loggable):
         service = props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
 
         state = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'State')
-        tube_state = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',\
-                      TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',\
+        tube_state = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
+                      TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
                       TUBE_CHANNEL_STATE_OPEN : 'open',
                       TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
 
         self.info("new D-Bus tube offered by %s. Service: %s. State: %s",
                   initiator_id, service, tube_state[state])
-        if state == TUBE_CHANNEL_STATE_OPEN:
-            self.tube_opened(tube)
+        ## if state == TUBE_CHANNEL_STATE_OPEN:
+        ##     self.tube_opened(tube)
 
     def tube_opened(self, tube):
+        #if "local_address" in dir(tube):
         tube_path = tube.object_path
         self.info("tube %r opened", tube_path)
 
@@ -179,6 +192,8 @@ class Client(log.Loggable):
                                    tube_address,
                                    group_iface=group_iface)
         self._tube_conns[tube_path] = tube_conn
+        ## else:
+        ##     tube_conn = None
         return tube_conn
 
     def received_cb(self, id, timestamp, sender, type, flags, text):
