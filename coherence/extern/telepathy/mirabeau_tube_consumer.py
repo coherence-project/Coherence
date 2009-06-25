@@ -1,7 +1,9 @@
+from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE
+from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT
+
 from coherence.extern.telepathy import tube
 from coherence.extern.telepathy import client
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
-
 from coherence import dbus_service
 
 
@@ -17,43 +19,58 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
                                                         disapeared_peer_callback=disapeared_peer_callback)
         self.got_devices_callback = got_devices_callback
         self.debug("MirabeauTubeConsumer __init__")
+        self.pontoon_tube = None
+        self.device_tube = None
+        self.service_tube = None
+        self.initial_announce_done = False
 
-    def pre_accept_tube(self, peer):
-        initiator = peer.params["initiator"]
-        return initiator in self.roster
+    def pre_accept_tube(self, tube):
+        # TODO: reimplement me
+        ## initiator = tube.props["org.freedesktop.Telepathy.Channel.InitiatorHandle"]
+        ## return initiator in self.roster
+        return True
 
-    def _create_peer_remote_object(self, peer, interface):
-        self.debug("_create_peer_remote_object %r %r", peer, interface)
-        if interface == BUS_NAME:
-            peer.remote_object = dbus_service.DBusPontoon(None, self.tube_conn)
-        elif interface == DEVICE_IFACE:
-            peer.remote_object = dbus_service.DBusDevice(None, self.tube_conn)
-        elif interface == SERVICE_IFACE:
-            peer.remote_object = dbus_service.DBusService(None, None, self.tube_conn)
-
-    def _create_peer_object_proxy(self, peer, interface):
-        self.debug("_create_peer_object_proxy %r %r", peer, interface)
-
-        if interface == BUS_NAME:
-            pontoon_tube = peer.remote_object.tube
-            self.pontoon = pontoon_tube.get_object(peer.initiator_contact,
-                                                   OBJECT_PATH)
-        elif interface == DEVICE_IFACE:
-            self.device_peer = peer
-        elif interface == SERVICE_IFACE:
-            self.service_peer = peer
+    def tube_opened(self, tube):
+        tube_conn = super(MirabeauTubeConsumerMixin, self).tube_opened(tube)
+        service = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
+        if service == BUS_NAME:
+            tube.remote_object = dbus_service.DBusPontoon(None, tube_conn)
+            self.pontoon_tube = tube
+        elif service == DEVICE_IFACE:
+            tube.remote_object = dbus_service.DBusDevice(None, tube_conn)
+            self.device_tube = tube
+        elif service == SERVICE_IFACE:
+            tube.remote_object = dbus_service.DBusService(None, None, tube_conn)
+            self.service_tube = tube
 
         if not self.initial_announce_done:
-            if self.pontoon and self.service_peer and self.device_peer:
-                self.found_devices()
+            if None not in (self.pontoon_tube, self.service_tube, self.device_tube):
+                self.announce()
                 self.initial_announce_done = True
 
-    def found_devices(self):
+        return tube_conn
+
+    def announce(self):
+        initiator = self.pontoon_tube.props["org.freedesktop.Telepathy.Channel.InitiatorHandle"]
+        service_name = self.pontoon_tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
+
+        def cb(participants, removed):
+            if participants:
+                initiator_contact = participants[initiator]
+                self.info("contact %r for service %r", initiator_contact,
+                          service_name)
+                if initiator_contact is not None:
+                    self.found_devices(initiator_contact)
+
+        self.pontoon_tube.remote_object.tube.watch_participants(cb)
+
+    def found_devices(self, initiator_contact):
         devices = []
-        initiator_contact = self.device_peer.initiator_contact
-        device_tube = self.device_peer.remote_object.tube
-        service_tube = self.service_peer.remote_object.tube
-        pontoon_devices = self.pontoon.get_devices()
+        device_tube = self.device_tube.remote_object.tube
+        service_tube = self.service_tube.remote_object.tube
+        pontoon = self.pontoon_tube.remote_object.tube.get_object(initiator_contact,
+                                                                  OBJECT_PATH)
+        pontoon_devices = pontoon.get_devices()
         self.debug("%r devices registered in remote pontoon", len(pontoon_devices))
         for device_dict in pontoon_devices:
             device_path = device_dict["path"]
@@ -64,7 +81,6 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
                 infos = proxy.get_info(dbus_interface=DEVICE_IFACE)
             except Exception, exc:
                 self.warning(exc)
-                #import pdb; pdb.set_trace()
                 continue
             service_proxies = []
             for service_path in device_dict["services"]:
@@ -77,9 +93,12 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
 
 class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
 
-    def __init__(self, connection, muc_id, found_peer_callback=None,
-                 disapeared_peer_callback=None, got_devices_callback=None):
+    def __init__(self, manager, protocol,
+                 account, muc_id, found_peer_callback=None,
+                 disapeared_peer_callback=None, got_devices_callback=None,
+                 existing_connection=False):
         MirabeauTubeConsumerMixin.__init__(self, found_peer_callback=found_peer_callback,
                                            disapeared_peer_callback=disapeared_peer_callback,
                                            got_devices_callback=got_devices_callback)
-        client.Client.__init__(self, connection, muc_id)
+        client.Client.__init__(self, manager, protocol,
+                               account, muc_id, existing_connection=existing_connection)

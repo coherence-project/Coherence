@@ -15,7 +15,7 @@ def to_dbus_account(account):
         account[key] = value
     return account
 
-def tp_connect(manager, protocol, account):
+def tp_connect(manager, protocol, account, ready_handler=None):
     account = to_dbus_account(account)
     reg = telepathy.client.ManagerRegistry()
     reg.LoadManagers()
@@ -26,6 +26,6 @@ def tp_connect(manager, protocol, account):
     conn_bus_name, conn_object_path = connection
     client_connection = telepathy.client.Connection(conn_bus_name,
                                                     conn_object_path,
-                                                    ready_handler=None)
+                                                    ready_handler=ready_handler)
     return client_connection
 

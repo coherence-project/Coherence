@@ -1,52 +1,74 @@
 
+import dbus.glib
+import gobject
+import sys
 import time
+from dbus.service import method, signal, Object
+from dbus import  PROPERTIES_IFACE
 
-import dbus
-import telepathy
-from telepathy.errors import NotAvailable
-from telepathy.client import Connection, Channel
-from telepathy.interfaces import CONN_INTERFACE, CHANNEL_INTERFACE_GROUP, \
-     CHANNEL_TYPE_TUBES, CHANNEL_TYPE_CONTACT_LIST,\
-     CHANNEL_TYPE_TEXT, CHANNEL_INTERFACE
-from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT, \
-     CONNECTION_HANDLE_TYPE_LIST, HANDLE_TYPE_ROOM, \
-     CONNECTION_HANDLE_TYPE_ROOM, CONNECTION_STATUS_CONNECTED, \
-     CONNECTION_STATUS_DISCONNECTED, CONNECTION_STATUS_CONNECTING, \
-     TUBE_TYPE_DBUS, TUBE_TYPE_STREAM, TUBE_STATE_LOCAL_PENDING, \
-     TUBE_STATE_REMOTE_PENDING, TUBE_STATE_OPEN
+from telepathy.client import Channel
+from telepathy.interfaces import (
+        CONN_INTERFACE, CHANNEL_INTERFACE_GROUP, CHANNEL_TYPE_CONTACT_LIST,
+        CHANNEL_TYPE_TEXT, CHANNEL_INTERFACE, CONNECTION_INTERFACE_REQUESTS,
+        CHANNEL_INTERFACE_TUBE, CHANNEL_TYPE_DBUS_TUBE)
+from telepathy.constants import (
+        CONNECTION_HANDLE_TYPE_CONTACT, CONNECTION_HANDLE_TYPE_LIST,
+        CONNECTION_HANDLE_TYPE_ROOM, CONNECTION_STATUS_CONNECTED,
+        CONNECTION_STATUS_DISCONNECTED, CONNECTION_STATUS_CONNECTING,
+        SOCKET_ACCESS_CONTROL_CREDENTIALS,
+        TUBE_CHANNEL_STATE_LOCAL_PENDING, TUBE_CHANNEL_STATE_REMOTE_PENDING,
+        TUBE_CHANNEL_STATE_OPEN, TUBE_CHANNEL_STATE_NOT_OFFERED)
 
 from coherence.extern.telepathy.tubeconn import TubeConnection
+from coherence.extern.telepathy.connect import tp_connect
 from coherence import log
-
-DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
 
 class Client(log.Loggable):
     logCategory = "tp_client"
 
-    def __init__(self, connection, muc_id):
+    def __init__(self, manager, protocol,
+                 account, muc_id, existing_connection=False):
         super(Client, self).__init__()
-
-        self.conn = connection
-        self.muc_id = muc_id
+        self.account = account
+        self.existing_connection = existing_connection
         self.channel_text = None
         self._unsent_messages = []
+        self._tube_conns = {}
+        self._tubes = {}
+
+        if self.existing_connection:
+            self.muc_id = self.existing_connection.muc_id
+            self.conn = self.existing_connection.conn
+            self.ready_cb(self.conn)
+        else:
+            self.muc_id = "%s@%s" % (muc_id, self.account["fallback-conference-server"])
+            self.conn = tp_connect(manager, protocol, account, self.ready_cb)
 
         conn_obj = self.conn[CONN_INTERFACE]
         conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)
-        conn_obj.connect_to_signal('NewChannel', self.new_channel_cb)
+        conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
 
         self.joined = False
 
     def start(self):
-        self.info("connecting")
-        self.conn[CONN_INTERFACE].Connect()
-        self.info("connected")
+        if not self.existing_connection:
+            self.info("connecting")
+            self.conn[CONN_INTERFACE].Connect()
+            self.info("connected")
 
     def stop(self):
-        try:
-            self.conn[CONN_INTERFACE].Disconnect()
-        except:
-            pass
+        if not self.existing_connection:
+            try:
+                self.conn[CONN_INTERFACE].Disconnect()
+            except:
+                pass
+
+    def ready_cb(self, conn):
+        self.conn[CONNECTION_INTERFACE_REQUESTS].connect_to_signal ("NewChannels",
+                                                                    self.new_channels_cb)
+        self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
+        self.fill_roster()
+        self.join_muc()
 
     def status_changed_cb(self, status, reason):
         self.debug("status changed to %r: %r", status, reason)
@@ -54,14 +76,9 @@ class Client(log.Loggable):
             self.info('connecting')
         elif status == CONNECTION_STATUS_CONNECTED:
             self.info('connected')
-            self.connected_cb()
         elif status == CONNECTION_STATUS_DISCONNECTED:
             self.info('disconnected')
 
-    def connected_cb(self):
-        self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
-        self.fill_roster()
-        self.join_muc()
 
     def fill_roster(self):
         self.debug("Filling up the roster")
@@ -84,109 +101,105 @@ class Client(log.Loggable):
         self.debug("roster contents: %r", self.roster)
 
     def _request_list_channel(self, name):
-        handle = self.conn[CONN_INTERFACE].RequestHandles(CONNECTION_HANDLE_TYPE_LIST,
-                                                          [name])[0]
-        return self.conn.request_channel(CHANNEL_TYPE_CONTACT_LIST,
-                                         CONNECTION_HANDLE_TYPE_LIST,
-                                         handle, True)
+        handle = self.conn[CONN_INTERFACE].RequestHandles(
+            CONNECTION_HANDLE_TYPE_LIST, [name])[0]
+        return self.conn.request_channel(
+            CHANNEL_TYPE_CONTACT_LIST, CONNECTION_HANDLE_TYPE_LIST,
+            handle, True)
 
     def join_muc(self):
+        conn_obj = self.conn[CONN_INTERFACE]
+
         # workaround to be sure that the muc service is fully resolved in
         # Salut.
-        time.sleep(2)
+        if conn_obj.GetProtocol() == "local-xmpp":
+            time.sleep(2)
 
-        conn_obj = self.conn[CONN_INTERFACE]
-        self.info("joining MUC %r", self.muc_id)
-        handle = conn_obj.RequestHandles(CONNECTION_HANDLE_TYPE_ROOM,
-                                         [self.muc_id])[0]
+        muc_id = self.muc_id
+        self.info("joining MUC %r", muc_id)
 
-        self.channel_text = self.conn.request_channel(CHANNEL_TYPE_TEXT,
-                                                      HANDLE_TYPE_ROOM,
-                                                      handle, True)
-        channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
-        channel_obj.connect_to_signal('Received', self.received_cb)
+        if self.existing_connection:
+            self.channel_text = self.existing_connection.channel_text
+        else:
+            chan_path, props = self.conn[CONNECTION_INTERFACE_REQUESTS].CreateChannel({
+                CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_TEXT,
+                CHANNEL_INTERFACE + ".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
+                CHANNEL_INTERFACE + ".TargetID": muc_id})
 
-        channel_obj = self.channel_text[CHANNEL_INTERFACE_GROUP]
-        self.self_handle = channel_obj.GetSelfHandle()
-        channel_obj.connect_to_signal("MembersChanged",
-                                      self.text_channel_members_changed_cb)
+            self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
 
-        chan_path = conn_obj.RequestChannel(CHANNEL_TYPE_TUBES,
-                                            CONNECTION_HANDLE_TYPE_ROOM,
-                                            handle, True)
-        self.channel_tubes = Channel(self.conn.dbus_proxy.bus_name,
-                                     chan_path)
+        self.self_handle = self.channel_text[CHANNEL_INTERFACE_GROUP].GetSelfHandle()
+        self.channel_text[CHANNEL_INTERFACE_GROUP].connect_to_signal(
+                "MembersChanged", self.text_channel_members_changed_cb)
 
-        if self.self_handle in channel_obj.GetMembers():
+        if self.self_handle in self.channel_text[CHANNEL_INTERFACE_GROUP].GetMembers():
             self.joined = True
             self.muc_joined()
 
-    def new_channel_cb(self, object_path, channel_type, handle_type, handle,
-                       suppress_handler):
-        if channel_type == CHANNEL_TYPE_TUBES:
-            self.channel_tubes = Channel(self.conn.dbus_proxy.bus_name,
-                                         object_path)
 
-            tubes_obj = self.channel_tubes[CHANNEL_TYPE_TUBES]
-            tubes_obj.connect_to_signal("TubeStateChanged",
-                                        self.tube_state_changed_cb)
-            tubes_obj.connect_to_signal("NewTube", self.new_tube_cb)
-            tubes_obj.connect_to_signal("TubeClosed", self.tube_closed_cb)
-            tubes_obj.connect_to_signal("StreamTubeNewConnection",
-                                        self.stream_tube_new_connection_cb)
+    def new_channels_cb(self, channels):
+        for path, props in channels:
+            self.debug("new channel with path %r and props %r", path, props)
+            if props[CHANNEL_INTERFACE + ".ChannelType"] == CHANNEL_TYPE_DBUS_TUBE:
+                tube = Channel(self.conn.dbus_proxy.bus_name, path)
 
-            for tube in tubes_obj.ListTubes():
-                id, initiator, type, service, params, state = tube[:6]
-                self.new_tube_cb(id, initiator, type, service, params, state)
+                tube[CHANNEL_INTERFACE_TUBE].connect_to_signal(
+                    "TubeChannelStateChanged", lambda state: self.tube_channel_state_changed_cb(tube, state))
+                tube[CHANNEL_INTERFACE].connect_to_signal("Closed",
+                                                          lambda: self.tube_closed_cb(tube))
+                tube.props = props
+                self._tubes[path] = tube
+                self.got_tube(tube)
 
-    def new_tube_cb(self, id, initiator, type, service, params, state):
-        conn_obj = self.conn[CONN_INTERFACE]
-        initiator_id = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
-                                               [initiator])[0]
-        tube_type = {TUBE_TYPE_DBUS: "D-Bus",
-                     TUBE_TYPE_STREAM: "Stream"}
+    def got_tube(self, tube):
+        props = tube.props
+        self.debug("got tube with props %r", props)
+        initiator_id = props[CHANNEL_INTERFACE + ".InitiatorID"]
+        service = props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
 
-        tube_state = {TUBE_STATE_LOCAL_PENDING : 'local pending',
-                      TUBE_STATE_REMOTE_PENDING : 'remote pending',
-                      TUBE_STATE_OPEN : 'open'}
+        state = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'State')
+        tube_state = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',\
+                      TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',\
+                      TUBE_CHANNEL_STATE_OPEN : 'open',
+                      TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
 
-        self.info("new %s tube (%d) offered by %s. Service: %s. State: %s",
-                  tube_type[type], id, initiator_id, service,
-                  tube_state[state])
+        self.info("new D-Bus tube offered by %s. Service: %s. State: %s",
+                  initiator_id, service, tube_state[state])
+        if state == TUBE_CHANNEL_STATE_OPEN:
+            self.tube_opened(tube)
 
-        if state == TUBE_STATE_OPEN:
-            self.tube_opened(id)
+    def tube_opened(self, tube):
+        tube_path = tube.object_path
+        self.info("tube %r opened", tube_path)
 
-    def tube_opened(self, id):
-        self.info("tube %r opened", id)
         group_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
-        try:
-            self.tube_conn = TubeConnection(self.conn,
-                                            self.channel_tubes[CHANNEL_TYPE_TUBES],
-                                            id, group_iface=group_iface)
-        except:
-            self.tube_conn = None
-
+        tube_address = tube.local_address
+        tube_conn = TubeConnection(self.conn,
+                                   tube,
+                                   tube_address,
+                                   group_iface=group_iface)
+        self._tube_conns[tube_path] = tube_conn
+        return tube_conn
 
     def received_cb(self, id, timestamp, sender, type, flags, text):
         channel_obj = self.channel_text[CHANNEL_TYPE_TEXT]
         channel_obj.AcknowledgePendingMessages([id])
-        contact = self.conn[telepathy.CONN_INTERFACE].InspectHandles(
-            telepathy.HANDLE_TYPE_CONTACT, [sender])[0]
+        conn_obj = self.conn[telepathy.CONN_INTERFACE]
+        contact = conn_obj.InspectHandles(telepathy.HANDLE_TYPE_CONTACT,
+                                          [sender])[0]
         self.info("Received message from %s: %s", contact, text)
 
-    def stream_tube_new_connection_cb(self, id, handle):
-        conn_obj = self.conn[CONN_INTERFACE]
-        contact = conn_obj.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
-                                          [handle])[0]
-        self.info("new socket connection on tube %u from %s" % (id, contact))
+    def tube_channel_state_changed_cb(self, tube, state):
+        if state == TUBE_CHANNEL_STATE_OPEN:
+            if "local_address" in dir(tube):
+                self.tube_opened(tube)
 
-    def tube_state_changed_cb(self, id, state):
-        if state == TUBE_STATE_OPEN:
-            self.tube_opened(id)
-
-    def tube_closed_cb (self, id):
-        self.info("tube %r closed", id)
+    def tube_closed_cb (self, tube):
+        tube_path = tube.object_path
+        self.info("tube %r closed", tube_path)
+        self._tube_conns[tube_path].close()
+        del self._tube_conns[tube_path]
+        del self._tubes[tube_path]
 
     def text_channel_members_changed_cb(self, message, added, removed,
                                         local_pending, remote_pending,

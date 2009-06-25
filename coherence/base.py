@@ -400,7 +400,6 @@ class Coherence(log.Loggable):
             else:
                 if self.config.get('enable_mirabeau', 'no') == 'yes':
                     from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
-                    from coherence.extern.telepathy import connect
                     from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisherConsumer
                     from coherence.tube_service import TubeDeviceProxy
 
@@ -413,7 +412,6 @@ class Coherence(log.Loggable):
                     # account parameters depending on the specified
                     # protocol.
                     account = mirabeau_cfg['account']
-                    connection = connect.tp_connect(manager, protocol, account)
                     try:
                         allowed_devices = mirabeau_cfg["allowed_devices"].split(",")
                     except KeyError:
@@ -434,7 +432,8 @@ class Coherence(log.Loggable):
                             print "MIRABEAU found:", uuid
                             self._tube_proxies.append(TubeDeviceProxy(self, device))
 
-                    self._tube_publisher = MirabeauTubePublisherConsumer(connection, chatroom,
+                    self._tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
+                                                                         account, chatroom,
                                                                          tubes_to_offer, self,
                                                                          allowed_devices,
                                                                          found_peer_callback=found_peer,
