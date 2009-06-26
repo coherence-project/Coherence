@@ -4,7 +4,7 @@
 # Backend to retrieve the video streams from Shoutcast TV
 
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
-# Copyright 2008, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
+# Copyright 2008,2009 Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
 from twisted.internet import defer,reactor
 from twisted.web import server
@@ -29,7 +29,8 @@ SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newtvlister.phtml?service=wina
 SHOUTCAST_TUNEIN_URL = 'http://www.shoutcast.com/sbin/tunein-tvstation.pls?id=%s'
 VIDEO_MIMETYPE = 'video/x-nsv'
 
-class ProxyStream(utils.ReverseProxyUriResource):
+class ProxyStream(utils.ReverseProxyUriResource, log.Loggable):
+    logCategory = 'itv'
 
     stream_url = None
 
@@ -55,6 +56,7 @@ class ProxyStream(utils.ReverseProxyUriResource):
                     if line.startswith('File1='):
                         self.stream_url = line[6:].split(";")[0]
                         break
+                #print "stream URL:", self.stream_url
                 if self.stream_url is None:
                     self.warning('Error to retrieve playlist - inconsistent playlist file')
                     return requestFinished(result)
@@ -67,14 +69,15 @@ class ProxyStream(utils.ReverseProxyUriResource):
                 return None
 
             playlist_url = self.uri
+            #print "playlist URL:", playlist_url
             d = utils.getPage(playlist_url, timeout=20)
             d.addCallbacks(got_playlist, got_error)
             return server.NOT_DONE_YET
 
         if request.clientproto == 'HTTP/1.1':
-            connection = request.getHeader('connection')
-            if connection:
-                tokens = map(str.lower, connection.split(' '))
+            self.connection = request.getHeader('connection')
+            if self.connection:
+                tokens = map(str.lower, self.connection.split(' '))
                 if 'close' in tokens:
                     d = request.notifyFinish()
                     d.addBoth(self.requestFinished)
@@ -142,7 +145,7 @@ class Container(BackendItem):
 
 
 class ITVItem(BackendItem):
-    logCategory = 'itv_item'
+    logCategory = 'itv'
     
     def __init__(self, store, id, obj, parent):
         self.parent = parent
@@ -155,14 +158,15 @@ class ITVItem(BackendItem):
         self.duration = None
         self.store = store
         self.url = self.store.urlbase + str(self.id)
-        self.location = ProxyStream(obj.get('url'))
+        self.stream_url = obj.get('url')
+        self.location = ProxyStream(self.stream_url)
 
     def get_item(self):
         if self.item == None:
             self.item = DIDLLite.VideoItem(self.id, self.parent.id, self.name)
             self.item.description = self.description
             self.item.date = self.date
-            res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
+            res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype) 
             res.duration = self.duration
             #res.size = 0 #None
             self.item.res.append(res)
@@ -176,7 +180,7 @@ class ITVItem(BackendItem):
 
 class ITVStore(BackendStore):
 
-    logCategory = 'itv_store'
+    logCategory = 'itv'
 
     implements = ['MediaServer']
 
@@ -249,9 +253,13 @@ class ITVStore(BackendStore):
 
     def retrieveList(self, parent):
         self.info("Retrieving Shoutcast TV listing...")
+        self.retrieveList_attemptCount = 0
 
         def got_page(result):
-            self.info("connection to ShoutCast service successful for TV listing")
+            if self.retrieveList_attemptCount == 0:
+                self.info("Connection to ShoutCast service successful for TV listing")
+            else:
+                self.warning("Connection to ShoutCast service successful for TV listing after %d attempts." % attemptCount)
             result = result[0]
             result = utils.parse_xml(result, encoding='utf-8')
 
@@ -298,9 +306,10 @@ class ITVStore(BackendStore):
 
 
         def got_error(error):
-            self.warning("connection to ShoutCast service failed. Will retry in 5s!")
+            self.warning("Connection to ShoutCast service failed. Will retry in 5s!")
             self.debug("%r", error.getTraceback())
             # will retry later
+            self.retrieveList_attemptCount += 1
             reactor.callLater(5, self.retrieveList, parent=parent)
             
         d = utils.getPage(self.shoutcast_ws_url)
