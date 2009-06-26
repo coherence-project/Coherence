@@ -122,8 +122,10 @@ class PlaylistStore(AbstractBackendStore):
         self.current_connection_id = None
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                  'rtsp-rtp-udp:*:video/mpeg:*,'
+                                                                  ['rtsp-rtp-udp:*:video/mpeg:*',
+                                                                  'http-get:*:video/mpeg:*',
                                                                   'rtsp-rtp-udp:*:audio/mpeg:*',
+                                                                  'http-get:*:audio/mpeg:*'],
                                                                   default=True)
         
         rootItem = Container(None, self.name)
