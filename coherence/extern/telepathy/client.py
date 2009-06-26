@@ -42,7 +42,10 @@ class Client(log.Loggable):
             self.conn = self.existing_client.conn
             self.ready_cb(self.conn)
         else:
-            self.muc_id = "%s@%s" % (muc_id, self.account["fallback-conference-server"])
+            if protocol == 'local-xmpp':
+                self.muc_id = muc_id
+            else:
+                self.muc_id = "%s@%s" % (muc_id, self.account["fallback-conference-server"])
             self.conn = tp_connect(manager, protocol, account, self.ready_cb)
 
         conn_obj = self.conn[CONN_INTERFACE]
