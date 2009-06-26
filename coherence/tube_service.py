@@ -7,6 +7,8 @@
 
 """
 
+import urllib, urlparse
+
 import dbus
 
 
@@ -23,7 +25,25 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core import action
 from coherence.upnp.core import variable
 
+from coherence.upnp.core import DIDLLite
+from coherence.upnp.core.utils import ReverseProxyUriResource
+
 from coherence import log
+
+class MirabeauProxy(resource.Resource, log.Loggable):
+    logCategory = 'mirabeau'
+
+    def __init__(self):
+        resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
+        self.isLeaf = 0
+
+    def getChildWithDefault(self, path, request):
+        self.info('MiraBeau getChildWithDefault %s, %s, %s %s' % (request.method, path, request.uri, request.client))
+        uri = urllib.unquote_plus(path)
+        self.info('MiraBeau  uri %r' % uri)
+        return ReverseProxyUriResource(uri)
+
 
 class TubeServiceControl(UPnPPublisher):
 
@@ -43,25 +63,44 @@ class TubeServiceControl(UPnPPublisher):
         """
         self.debug('get_action_results', result)
         #print 'get_action_results', action, instance
-        r = result
         notify = []
         for argument in action.get_out_arguments():
             #print 'get_state_variable_contents', argument.name
             if argument.name[0:11] != 'A_ARG_TYPE_':
                 variable = self.variables[instance][argument.get_state_variable()]
-                variable.update(unicode(r[argument.name]))
+                variable.update(unicode(result[argument.name]))
                 #print 'update state variable contents', variable.name, variable.value, variable.send_events
                 if(variable.send_events == 'yes' and variable.moderated == False):
                     notify.append(variable)
 
             self.service.propagate_notification(notify)
-        #r= { '%sResponse'%action.name: r}
-        self.info( 'action_results unsorted', action.name, r)
-        if len(r) == 0:
-            return r
+        self.info( 'action_results unsorted', action.name, result)
+        if len(result) == 0:
+            return result
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
-            ordered_result[argument.name] = unicode(result[argument.name])
+            if action.name  == 'XXXBrowse' and argument.name == 'Result':
+                didl = DIDLLite.DIDLElement.fromString(result['Result'])
+                changed = False
+                for item in didl.getItems():
+                    new_res = DIDLLite.Resources()
+                    for res in item.res:
+                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                        if remote_protocol == 'http-get' and remote_network == '*':
+                            quoted_url = urllib.quote_plus(res.data)
+                            #print "modifying", res.data
+                            res.data = urlparse.urlunsplit(('http', self.service.device.external_address,'mirabeau',quoted_url,""))
+                            #print "--->", res.data
+                            new_res.append(res)
+                            changed = True
+                    item.res = new_res
+                if changed == True:
+                    didl.rebuild()
+                    ordered_result[argument.name] = didl.toString()
+                else:
+                    ordered_result[argument.name] = unicode(result[argument.name])
+            else:
+                ordered_result[argument.name] = unicode(result[argument.name])
         self.info( 'action_results sorted', action.name, ordered_result)
         return ordered_result
 
@@ -179,9 +218,10 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
 class TubeDeviceProxy(log.Loggable):
     logCategory = 'dbus'
 
-    def __init__(self, coherence, tube_device):
+    def __init__(self, coherence, tube_device,external_address):
         self.device = tube_device
         self.coherence = coherence
+        self.external_address = external_address
         self.uuid = self.device.get_id().split('-')
         self.uuid[1] = 'tube'
         self.uuid = '-'.join(self.uuid)

@@ -8,6 +8,8 @@
 """
 
 import time
+import urllib, urlparse
+
 
 #import gtk
 import dbus
@@ -32,6 +34,7 @@ import coherence.extern.louie as louie
 from coherence import log
 
 from twisted.internet import reactor
+from twisted.internet import defer
 
 
 class DBusCDSService(dbus.service.Object,log.Loggable):
@@ -480,7 +483,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def action(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
 
-        print "action", name, arguments
+        #print "action", name, arguments
         def reply(data):
             dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
 
@@ -501,10 +504,31 @@ class DBusService(dbus.service.Object,log.Loggable):
         return ''
 
     @dbus.service.method(SERVICE_IFACE,in_signature='sa{ss}',out_signature='v',
-                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
-    def call_action(self,name,arguments,dbus_async_cb,dbus_async_err_cb):
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb',),
+                         sender_keyword='sender',connection_keyword='connection')
+    def call_action(self,name,arguments,dbus_async_cb,dbus_async_err_cb,sender=None,connection=None):
 
-        def reply(data):
+        print "call_action called by ", sender, connection, self.type, self.tube
+        def reply(data,name,connection):
+            if hasattr(connection,'_tube') == True:
+                if name  == 'Browse':
+                    didl = DIDLLite.DIDLElement.fromString(data['Result'])
+                    changed = False
+                    for item in didl.getItems():
+                        new_res = DIDLLite.Resources()
+                        for res in item.res:
+                            remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                            if remote_protocol == 'http-get' and remote_network == '*':
+                                quoted_url = 'mirabeau' + '/' + urllib.quote_plus(res.data)
+                                #print "modifying", res.data
+                                res.data = urlparse.urlunsplit(('http', self.service.device.client.coherence.external_address,quoted_url,"",""))
+                                #print "--->", res.data
+                                new_res.append(res)
+                                changed = True
+                        item.res = new_res
+                    if changed == True:
+                        didl.rebuild()
+                        data['Result'] = didl.toString()
             dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
 
         if self.service.client is not None:
@@ -517,7 +541,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                 except:
                     pass
                 d = action.call(**kwargs)
-                d.addCallback(reply)
+                d.addCallback(reply,name,connection)
                 d.addErrback(dbus_async_err_cb)
         return ''
 
@@ -736,6 +760,15 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             #r.append(device.path())
             r.append(device.get_info())
         return dbus.Array(r,signature='v',variant_level=2)
+
+    @dbus.service.method(BUS_NAME,in_signature='',out_signature='av',
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
+    def get_devices_async(self,dbus_async_cb,dbus_async_err_cb):
+        r = []
+        for device in self.devices.values():
+            #r.append(device.path())
+            r.append(device.get_info())
+        reactor.callLater(0.01,dbus_async_cb, dbus.Array(r,signature='v',variant_level=2))
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_device_with_id(self,id):

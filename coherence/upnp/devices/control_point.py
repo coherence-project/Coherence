@@ -131,6 +131,7 @@ class ControlPoint(log.Loggable):
                 if short_type == 'DimmableLight':
                     client = DimmableLightClient(device)
 
+                client.coherence = self.coherence
                 device.set_client( client)
 
         self.process_queries(device)

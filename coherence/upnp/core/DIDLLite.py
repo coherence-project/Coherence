@@ -872,6 +872,14 @@ class DIDLElement(ElementInterface,log.Loggable):
                                    transcoding=self.transcoding))
         self._items.append(item)
 
+    def rebuild(self):
+        self._children = []
+        for item in self._items:
+            self.append(item.toElement(upnp_client=self.upnp_client,
+                                       parent_container=self.parent_container,
+                                       requested_id=self.requested_id,
+                                       transcoding=self.transcoding))
+
     def numItems(self):
         return len(self)
 

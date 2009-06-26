@@ -385,6 +385,10 @@ class Coherence(log.Loggable):
                         self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
                         self.info(traceback.format_exc())
 
+
+        self.external_address = ':'.join((self.hostname,str(self.web_server_port)))
+
+
         if self.config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
 
@@ -401,12 +405,18 @@ class Coherence(log.Loggable):
                 if self.config.get('enable_mirabeau', 'no') == 'yes':
                     from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
                     from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisherConsumer
-                    from coherence.tube_service import TubeDeviceProxy
+                    from coherence.tube_service import TubeDeviceProxy, MirabeauProxy
+
+                    self.add_web_resource('mirabeau',MirabeauProxy())
 
                     mirabeau_cfg = self.config.get('mirabeau', {})
                     chatroom = mirabeau_cfg['chatroom']
                     manager = mirabeau_cfg['manager']
                     protocol = mirabeau_cfg['protocol']
+                    try:
+                        self.external_address = mirabeau_cfg['external_address']
+                    except KeyError:
+                        pass
                     # account dict keys are different for each
                     # protocol so we assume the user gave the right
                     # account parameters depending on the specified
@@ -430,7 +440,7 @@ class Coherence(log.Loggable):
                         for device in devices:
                             uuid = device.get_id()
                             print "MIRABEAU found:", uuid
-                            self._tube_proxies.append(TubeDeviceProxy(self, device))
+                            self._tube_proxies.append(TubeDeviceProxy(self, device,mirabeau_external_address))
 
                     self._tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
                                                                          account, chatroom,
