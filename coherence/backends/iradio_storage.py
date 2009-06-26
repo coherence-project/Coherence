@@ -14,8 +14,9 @@ from coherence.backend import BackendItem, BackendStore
 
 from urlparse import urlsplit
 
-class ProxyStream(utils.ReverseProxyResource):
-
+class ProxyStream(utils.ReverseProxyResource, log.Loggable):
+    logCategory = 'iradio'
+    
     def __init__(self, uri):
         self.uri = uri
         _,host_port,path,_,_ = urlsplit(uri)
@@ -34,16 +35,15 @@ class ProxyStream(utils.ReverseProxyResource):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        print "ProxyStream requestFinished"
+        self.info("ProxyStream requestFinished")
         self.connection.transport.loseConnection()
 
     def render(self, request):
-        print ""
-        print "this is our render method",request.method, request.uri, request.client, request.clientproto
-        print "render", request.getAllHeaders()
+        self.info("this is our render method",request.method, request.uri, request.client, request.clientproto)
+        self.info("render", request.getAllHeaders())
         if request.clientproto == 'HTTP/1.1':
-            connection = request.getHeader('connection')
-            if connection:
+            self.connection = request.getHeader('connection')
+            if self.connection:
                 tokens = map(str.lower, connection.split(' '))
                 if 'close' in tokens:
                     d = request.notifyFinish()
@@ -54,7 +54,7 @@ class ProxyStream(utils.ReverseProxyResource):
         return utils.ReverseProxyResource.render(self, request)
 
 class IRadioItem(log.Loggable):
-    logCategory = 'iradio_item'
+    logCategory = 'iradio'
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
@@ -155,7 +155,7 @@ class IRadioItem(log.Loggable):
                 dl = defer.DeferredList(l)
 
                 def process_items(result):
-                    print "process_item", result, self.children
+                    self.info("process_item", result, self.children)
                     if self.children == None:
                         return  []
                     if request_count == 0:
@@ -211,7 +211,7 @@ class IRadioItem(log.Loggable):
 
 class IRadioStore(BackendStore):
 
-    logCategory = 'iradio_store'
+    logCategory = 'iradio'
 
     implements = ['MediaServer']
 
@@ -232,7 +232,7 @@ class IRadioStore(BackendStore):
 
 
     def __repr__(self):
-        return str(self.__class__).split('.')[-1]
+        return self.__class__.__name__
 
     def append( self, obj, parent):
         if isinstance(obj, basestring):
