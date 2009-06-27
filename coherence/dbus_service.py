@@ -34,7 +34,7 @@ import coherence.extern.louie as louie
 from coherence import log
 
 from twisted.internet import reactor
-from twisted.internet import defer
+from twisted.internet import defer, task
 
 
 class DBusCDSService(dbus.service.Object,log.Loggable):
@@ -765,10 +765,17 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def get_devices_async(self,dbus_async_cb,dbus_async_err_cb):
         r = []
-        for device in self.devices.values():
-            #r.append(device.path())
-            r.append(device.get_info())
-        reactor.callLater(0.01,dbus_async_cb, dbus.Array(r,signature='v',variant_level=2))
+        def iterate_devices():
+            for device in self.devices.values():
+                #r.append(device.path())
+                r.append(device.get_info())
+                yield r
+
+        def got_devices(generator):
+            dbus_async_cb(dbus.Array(r,signature='v',variant_level=2))
+
+        dfr = task.coiterate(iterate_devices())
+        dfr.addCallback(got_devices)
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_device_with_id(self,id):
