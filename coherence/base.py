@@ -440,7 +440,8 @@ class Coherence(log.Loggable):
                         for device in devices:
                             uuid = device.get_id()
                             print "MIRABEAU found:", uuid
-                            self._tube_proxies.append(TubeDeviceProxy(self, device,mirabeau_external_address))
+                            self._tube_proxies.append(TubeDeviceProxy(self, device,
+                                                                      self.external_address))
 
                     self._tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
                                                                          account, chatroom,
