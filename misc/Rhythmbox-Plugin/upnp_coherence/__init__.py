@@ -55,7 +55,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             self.config.set_bool(gconf_keys['dm%s_active' % a], True)
             self.config.set_int(gconf_keys['dm%s_version' % a], 2)
 
-        self.conf.set_bool(gconf_keys['dmc_active'], True)
+        self.config.set_bool(gconf_keys['dmc_active'], True)
 
     def activate(self, shell):
         from twisted.internet import gtk2reactor
@@ -224,6 +224,10 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         serverport = self.config.get_int(gconf_keys['port'])
         if serverport:
             coherence_config['serverport'] = serverport
+
+        interface = self.config.get_string(gconf_keys['interface'])
+        if interface:
+            coherence_config['interface'] = interface
 
         coherence_instance = Coherence(coherence_config)
 
