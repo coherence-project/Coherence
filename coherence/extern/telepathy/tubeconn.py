@@ -47,11 +47,12 @@ class TubeConnection(Connection, log.Loggable):
 
     def _on_get_self_handle_reply(self, handle):
         self.self_handle = handle
-        match = self._tube[CHANNEL_TYPE_DBUS_TUBE].connect_to_signal('DBusNamesChanged',
-                self._on_dbus_names_changed)
+        tube_channel = self._tube[CHANNEL_TYPE_DBUS_TUBE]
+        match = tube_channel.connect_to_signal('DBusNamesChanged',
+                                               self._on_dbus_names_changed)
         self._tube[PROPERTIES_IFACE].Get(CHANNEL_TYPE_DBUS_TUBE, 'DBusNames',
-                reply_handler=self._on_get_dbus_names_reply,
-                error_handler=self._on_get_dbus_names_error)
+                                         reply_handler=self._on_get_dbus_names_reply,
+                                         error_handler=self._on_get_dbus_names_error)
         self._dbus_names_changed_match = match
 
     def _on_get_self_handle_error(self, e):
@@ -92,4 +93,3 @@ class TubeConnection(Connection, log.Loggable):
             # immediately
             added = list(self.participants.iteritems())
             callback(added, [])
-

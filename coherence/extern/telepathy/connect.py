@@ -16,7 +16,10 @@ def to_dbus_account(account):
     return account
 
 def tp_connect(manager, protocol, account, ready_handler=None):
-    account = to_dbus_account(account)
+    try:
+        account = to_dbus_account(account)
+    except:
+        pass
     reg = telepathy.client.ManagerRegistry()
     reg.LoadManagers()
 
