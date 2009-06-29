@@ -249,17 +249,17 @@ class ITVStore(BackendStore):
                                                                    default=True)
         rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
         self.store[ROOT_CONTAINER_ID] = rootItem
+        self.retrieveList_attemptCount = 0
         self.retrieveList(rootItem)
 
     def retrieveList(self, parent):
         self.info("Retrieving Shoutcast TV listing...")
-        self.retrieveList_attemptCount = 0
 
         def got_page(result):
             if self.retrieveList_attemptCount == 0:
                 self.info("Connection to ShoutCast service successful for TV listing")
             else:
-                self.warning("Connection to ShoutCast service successful for TV listing after %d attempts." % attemptCount)
+                self.warning("Connection to ShoutCast service successful for TV listing after %d attempts." % self.retrieveList_attemptCount)
             result = result[0]
             result = utils.parse_xml(result, encoding='utf-8')
 
