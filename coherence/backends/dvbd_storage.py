@@ -106,7 +106,13 @@ class Recording(BackendItem):
         self.parent_id = parent_id
         self.real_id = id
 
-        self.location = FilePath(unicode(file))
+        path = unicode(file)
+        # make sure path is an absolute local path (and not an URL)
+        if path.startswith("file://"):
+            path = path[7:]
+            
+        self.location = FilePath(path)
+        
         self.title = unicode(title)
         self.mimetype = str(mimetype)
         self.date = datetime.fromtimestamp(int(date))
