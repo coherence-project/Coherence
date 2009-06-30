@@ -68,7 +68,7 @@ class TubeServiceControl(UPnPPublisher):
             #print 'get_state_variable_contents', argument.name
             if argument.name[0:11] != 'A_ARG_TYPE_':
                 variable = self.variables[instance][argument.get_state_variable()]
-                variable.update(unicode(result[argument.name]))
+                variable.update(result[argument.name].decode('utf-8').encode('utf-8'))
                 #print 'update state variable contents', variable.name, variable.value, variable.send_events
                 if(variable.send_events == 'yes' and variable.moderated == False):
                     notify.append(variable)
@@ -80,7 +80,7 @@ class TubeServiceControl(UPnPPublisher):
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
             if action.name  == 'XXXBrowse' and argument.name == 'Result':
-                didl = DIDLLite.DIDLElement.fromString(result['Result'])
+                didl = DIDLLite.DIDLElement.fromString(result['Result'].decode('utf-8'))
                 changed = False
                 for item in didl.getItems():
                     new_res = DIDLLite.Resources()
@@ -96,11 +96,11 @@ class TubeServiceControl(UPnPPublisher):
                     item.res = new_res
                 if changed == True:
                     didl.rebuild()
-                    ordered_result[argument.name] = didl.toString()
+                    ordered_result[argument.name] = didl.toString().replace('<ns0:','<')
                 else:
-                    ordered_result[argument.name] = unicode(result[argument.name])
+                    ordered_result[argument.name] = result[argument.name].decode('utf-8')
             else:
-                ordered_result[argument.name] = unicode(result[argument.name])
+                ordered_result[argument.name] = result[argument.name].decode('utf-8').encode('utf-8')
         self.info( 'action_results sorted', action.name, ordered_result)
         return ordered_result
 
@@ -148,7 +148,7 @@ class TubeServiceControl(UPnPPublisher):
         #print 'callit action', action
         #print 'callit dbus action', self.service.service.action
         d = defer.Deferred()
-        self.service.service.call_action( action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler = d.callback, error_handler = d.errback)
+        self.service.service.call_action( action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler = d.callback, error_handler = d.errback,utf8_strings=True)
         d.addCallback( self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d

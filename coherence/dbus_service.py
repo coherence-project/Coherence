@@ -528,7 +528,8 @@ class DBusService(dbus.service.Object,log.Loggable):
                         item.res = new_res
                     if changed == True:
                         didl.rebuild()
-                        data['Result'] = didl.toString()
+                        ### FIXME this is not the proper way to do it
+                        data['Result'] = didl.toString().replace('<ns0:','<').replace('</ns0:','</')
             dbus_async_cb(dbus.Dictionary(data,signature='sv',variant_level=4))
 
         if self.service.client is not None:
