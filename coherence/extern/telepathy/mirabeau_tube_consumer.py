@@ -1,20 +1,17 @@
 from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE, \
      CHANNEL_INTERFACE
 
-from coherence.extern.telepathy import tube
+from coherence.extern.telepathy import client, tube
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 from coherence import dbus_service
 
-class MirabeauTubeConsumer(tube.TubeConsumer):
-    logCategory = "mirabeau_tube_consumer"
+class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
 
-    def __init__(self, manager, protocol, account, muc_id,
-                 found_peer_callback=None, disapeared_peer_callback=None,
-                 got_devices_callback=None, existing_client=False):
-        super(MirabeauTubeConsumer, self).__init__(manager, protocol, account,
-                                                   muc_id, existing_client=existing_client,
-                                                   found_peer_callback=found_peer_callback,
-                                                   disapeared_peer_callback=disapeared_peer_callback)
+    def __init__(self, found_peer_callback=None, disapeared_peer_callback=None,
+                 got_devices_callback=None):
+        tube.TubeConsumerMixin.__init__(self,
+                                        found_peer_callback=found_peer_callback,
+                                        disapeared_peer_callback=disapeared_peer_callback)
         self.got_devices_callback = got_devices_callback
         self.info("MirabeauTubeConsumer created")
         self._coherence_tubes = {}
@@ -25,10 +22,8 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
         ## return initiator in self.roster
         return True
 
-    def tube_opened(self, tube):
-        tube_conn = super(MirabeauTubeConsumer, self).tube_opened(tube)
+    def post_tube_accept(self, tube, tube_conn, initiator_handle):
         service = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
-        initiator_handle = tube.props[CHANNEL_INTERFACE + ".InitiatorHandle"]
 
         if service == BUS_NAME:
             tube.remote_object = dbus_service.DBusPontoon(None, tube_conn)
@@ -46,14 +41,17 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
 
         if len(self._coherence_tubes[initiator_handle]) == 3:
             self.announce(initiator_handle)
-        return tube_conn
+
+    def tube_closed(self, tube):
+        self.disapeared_peer_callback(tube)
+        super(MirabeauTubeConsumerMixin, self).tube_closed(tube)
 
     def announce(self, initiator_handle):
         service_name = BUS_NAME
         pontoon_tube = self._coherence_tubes[initiator_handle][service_name]
 
         def cb(participants, removed):
-            if participants:
+            if participants and initiator_handle in participants:
                 initiator_bus_name = participants[initiator_handle]
                 self.info("bus name %r for service %r", initiator_bus_name,
                           service_name)
@@ -69,24 +67,48 @@ class MirabeauTubeConsumer(tube.TubeConsumer):
         device_tube = tubes[DEVICE_IFACE].remote_object.tube
         service_tube = tubes[SERVICE_IFACE].remote_object.tube
         self.info("using pontoon tube at %r", tubes[BUS_NAME].object_path)
-        pontoon = pontoon_tube.get_object(initiator_bus_name, OBJECT_PATH)
-        pontoon_devices = pontoon.get_devices()
-        self.info("%r devices registered in remote pontoon", len(pontoon_devices))
-        for device_dict in pontoon_devices:
-            device_path = device_dict["path"]
-            self.info("getting object at %r from %r", device_path,
-                       initiator_bus_name)
-            proxy = device_tube.get_object(initiator_bus_name, device_path)
-            try:
+
+        def got_devices(pontoon_devices):
+            self.info("%r devices registered in remote pontoon", len(pontoon_devices))
+            for device_dict in pontoon_devices:
+                device_path = device_dict["path"]
+                self.info("getting object at %r from %r", device_path,
+                           initiator_bus_name)
+                proxy = device_tube.get_object(initiator_bus_name, device_path)
                 infos = proxy.get_info(dbus_interface=DEVICE_IFACE)
-            except Exception, exc:
-                self.warning(exc)
-                continue
-            service_proxies = []
-            for service_path in device_dict["services"]:
-                service_proxy = service_tube.get_object(initiator_bus_name,
-                                                        service_path)
-                service_proxies.append(service_proxy)
-            proxy.services = service_proxies
-            devices.append(proxy)
-        self.got_devices_callback(devices)
+                service_proxies = []
+                for service_path in device_dict["services"]:
+                    service_proxy = service_tube.get_object(initiator_bus_name,
+                                                            service_path)
+                    service_proxies.append(service_proxy)
+                proxy.services = service_proxies
+                devices.append(proxy)
+            self.got_devices_callback(devices)
+
+        def got_error(exception):
+            print ">>>", exception
+
+        pontoon = pontoon_tube.get_object(initiator_bus_name, OBJECT_PATH)
+        pontoon.get_devices_async(reply_handler=got_devices,
+                                  error_handler=got_error)
+
+class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
+    logCategory = "mirabeau_tube_consumer"
+
+    def __init__(self, manager, protocol, account, muc_id,
+                 found_peer_callback=None, disapeared_peer_callback=None,
+                 got_devices_callback=None):
+        MirabeauTubeConsumerMixin.__init__(self,
+                                           found_peer_callback=found_peer_callback,
+                                           disapeared_peer_callback=disapeared_peer_callback,
+                                           got_devices_callback=got_devices_callback)
+        client.Client.__init__(self, manager, protocol, account, muc_id)
+
+    def got_tube(self, tube):
+        client.Client.got_tube(self, tube)
+        self.accept_tube(tube)
+
+    def tube_opened(self, tube):
+        tube_conn = super(MirabeauTubePublisherConsumer, self).tube_opened(tube)
+        self.post_tube_accept(tube, tube_conn)
+        return tube_conn

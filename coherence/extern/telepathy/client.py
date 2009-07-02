@@ -158,7 +158,7 @@ class Client(log.Loggable):
                                                                                       state))
         channel_iface = tube[CHANNEL_INTERFACE]
         channel_iface.connect_to_signal("Closed",
-                                        lambda: self.tube_closed_cb(tube))
+                                        lambda: self.tube_closed(tube))
 
     def got_tube(self, tube):
         props = tube.props
@@ -203,7 +203,7 @@ class Client(log.Loggable):
         if state == TUBE_CHANNEL_STATE_OPEN:
             self.tube_opened(tube)
 
-    def tube_closed_cb (self, tube):
+    def tube_closed(self, tube):
         tube_path = tube.object_path
         self.info("tube %r closed", tube_path)
         self._tube_conns[tube_path].close()
