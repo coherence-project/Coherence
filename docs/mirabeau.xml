@@ -1,0 +1,32 @@
+<config>
+  <serverport>30020</serverport>
+  <use_dbus>yes</use_dbus>
+  <enable_mirabeau>yes</enable_mirabeau>
+  <mirabeau>
+   <chatroom>Mirabeau</chatroom>
+   <manager>gabble</manager>
+   <protocol>jabber</protocol>
+   <account>
+      <!-- setup for a gtalk jabber account -->
+      <account>myjabberaccount@gmail.com</account>
+      <password>mypassword</password>
+      <server>talk.google.com</server>
+      <port>5223</port>
+      <old-ssl>True</old-ssl>
+      <ignore-ssl-errors>True</ignore-ssl-errors>
+      <fallback-conference-server>conference.jabber.org</fallback-conference-server>
+   </account>
+   <!-- <allowed_devices> -->
+   <!--   33d68364-5bee-4dee-9ede-52afdd7baeaf,33d68364-5bee-4dee-9ede-52afdd7beeaf -->
+   <!-- </allowed_devices> -->
+   <external_address>81.38.191.92:30020</external_address>
+  </mirabeau>
+
+  <!-- example config of a simple MediaServer -->
+  <!-- <plugin active="yes"> -->
+  <!--   <uuid>33d68364-5bee-4dee-9ede-52afdd7baeaf</uuid> -->
+  <!--   <name>Phil</name> -->
+  <!--   <content>/home/phil/Music</content> -->
+  <!--   <backend>FSStore</backend> -->
+  <!-- </plugin> -->
+</config>
