@@ -213,6 +213,8 @@ class EventProtocol(Protocol, log.Loggable):
         self.debug("%r %r", cmd, headers)
         if int(cmd[1]) != 200:
             self.warning("response with error code %r received upon our %r request", cmd[1], self.action)
+            # XXX get around devices that return an error on our event subscribe request
+            self.service.process_event({})
         else:
             try:
                 self.service.set_sid(headers['sid'])
