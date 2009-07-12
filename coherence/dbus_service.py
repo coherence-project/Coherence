@@ -798,7 +798,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='s')
     def remove_plugin(self,uuid):
-        return self.controlpoint.coherence.remove_plugin(uuid)
+        return str(self.controlpoint.coherence.remove_plugin(uuid))
 
     @dbus.service.method(BUS_NAME,in_signature='ssa{ss}',out_signature='s')
     def call_plugin(self,uuid,method,arguments):
