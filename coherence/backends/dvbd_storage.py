@@ -1,3 +1,4 @@
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -24,9 +25,11 @@ from coherence.backend import BackendItem, BackendStore
 ROOT_CONTAINER_ID = 0
 
 RECORDINGS_CONTAINER_ID = 100
+CHANNELS_CONTAINER_ID = 200
 
 BUS_NAME = 'org.gnome.DVB'
-OBJECT_PATH = '/org/gnome/DVB/RecordingsStore'
+RECORDINGSSTORE_OBJECT_PATH = '/org/gnome/DVB/RecordingsStore'
+MANAGER_OBJECT_PATH = '/org/gnome/DVB/Manager'
 
 class Container(BackendItem):
 
@@ -91,6 +94,46 @@ class Container(BackendItem):
     def get_id(self):
         return self.id
 
+class Channel(BackendItem):
+
+    logCategory = 'dvbd_store'
+
+    def __init__(self,store,
+                 id,parent_id,
+                 name, url, network,
+                 mimetype):
+
+        self.store = store
+        self.id = 'channel.%s' % id
+        self.parent_id = parent_id
+        self.real_id = id
+    
+        self.name = unicode(name)
+        self.network = unicode(network)
+        self.stream_url = url
+        self.mimetype = str(mimetype)
+
+    def get_children(self, start=0, end=0):
+        return []
+
+    def get_child_count(self):
+        return 0
+
+    def get_item(self, parent_id=None):
+        self.debug("Channel get_item %r @ %r" %(self.id,self.parent_id))
+        item = DIDLLite.VideoBroadcast(self.id,self.parent_id)
+        item.title = self.name
+        res = DIDLLite.Resource(self.stream_url, 'rtsp-rtp-udp:*:%s:*' % self.mimetype)
+        item.res.append(res)
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.name
+
+
 class Recording(BackendItem):
 
     logCategory = 'dvbd_store'
@@ -105,19 +148,21 @@ class Recording(BackendItem):
         self.id = 'recording.%s' % id
         self.parent_id = parent_id
         self.real_id = id
-
+    
         path = unicode(file)
         # make sure path is an absolute local path (and not an URL)
         if path.startswith("file://"):
-            path = path[7:]
-            
+        		path = path[7:]
         self.location = FilePath(path)
-        
+
         self.title = unicode(title)
         self.mimetype = str(mimetype)
         self.date = datetime.fromtimestamp(int(date))
         self.duration = int(duration)
-        self.size = self.location.getsize()
+        try:
+            self.size = self.location.getsize()
+        except Exception, msg:
+            self.size = 0
         self.bitrate = 0
         self.url = self.store.urlbase + str(self.id)
 
@@ -196,17 +241,24 @@ class DVBDStore(BackendStore):
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
 
         self.bus = dbus.SessionBus()
-        dvb_daemon = self.bus.get_object(BUS_NAME,OBJECT_PATH)
-        self.store_interface = dbus.Interface(dvb_daemon, 'org.gnome.DVB.RecordingsStore')
-
-        dvb_daemon.connect_to_signal('Changed', self.recording_changed, dbus_interface='org.gnome.DVB.RecordingsStore')
+        dvb_daemon_recordingsStore = self.bus.get_object(BUS_NAME,RECORDINGSSTORE_OBJECT_PATH)
+        dvb_daemon_manager = self.bus.get_object(BUS_NAME,MANAGER_OBJECT_PATH)
+    
+        self.store_interface = dbus.Interface(dvb_daemon_recordingsStore, 'org.gnome.DVB.RecordingsStore')
+        self.manager_interface = dbus.Interface(dvb_daemon_manager, 'org.gnome.DVB.Manager')
+    
+        dvb_daemon_recordingsStore.connect_to_signal('Changed', self.recording_changed, dbus_interface='org.gnome.DVB.RecordingsStore')
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                     Container(ROOT_CONTAINER_ID,-1,self.name,store=self)
         self.containers[RECORDINGS_CONTAINER_ID] = \
                     Container(RECORDINGS_CONTAINER_ID,ROOT_CONTAINER_ID,'Recordings',store=self)
+        self.containers[CHANNELS_CONTAINER_ID] = \
+                    Container(CHANNELS_CONTAINER_ID,ROOT_CONTAINER_ID,'Channels',store=self)
+
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[RECORDINGS_CONTAINER_ID])
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[CHANNELS_CONTAINER_ID])
 
         def query_finished(r):
             louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -215,10 +267,11 @@ class DVBDStore(BackendStore):
             error = ''
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
 
-        d = self.get_recordings()
+        d = defer.DeferredList((self.get_recordings(), self.get_channels()))
         d.addCallback(query_finished)
         d.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='Connection to DVB Daemon failed!'))
 
+    
 
     def __repr__(self):
         return "DVBDStore"
@@ -311,6 +364,7 @@ class DVBDStore(BackendStore):
         dl.addErrback(handle_error)
         return dl
 
+    
     def get_recordings(self):
         def handle_error(error):
             return error
@@ -331,7 +385,7 @@ class DVBDStore(BackendStore):
             for result,recording in results:
                 #print result, recording['name']
                 if result == True:
-                    print "add", recording['id'], recording['name'], recording['path'], recording['date'], recording['duration']
+                    #print "add", recording['id'], recording['name'], recording['path'], recording['date'], recording['duration']
                     video_item = Recording(self,
                                            recording['id'],
                                            RECORDINGS_CONTAINER_ID,
@@ -351,12 +405,129 @@ class DVBDStore(BackendStore):
                                            error_handler=lambda x: d.errback(x))
         return d
 
+    def get_channel_details(self, channelList_interface, id):
+
+        def get_name(id):
+            d = defer.Deferred()
+            channelList_interface.GetChannelName(id,
+                                         reply_handler=lambda x: d.callback(x),
+                                         error_handler=lambda x: d.errback(x))
+            return d
+
+        def get_network(id):
+            d = defer.Deferred()
+            channelList_interface.GetChannelNetwork(id,
+                                         reply_handler=lambda x: d.callback(x),
+                                         error_handler=lambda x: d.errback(x))
+            return d
+
+        def get_url(id):
+            d = defer.Deferred()
+            channelList_interface.GetChannelURL(id,
+                                         reply_handler=lambda x: d.callback(x),
+                                         error_handler=lambda x: d.errback(x))
+            return d
+        
+        def process_details(r, id):
+            name = r[0][1]
+            network = r[1][1]
+            url = r[2][1]
+            return {'id':id, 'name':name.encode('latin-1'), 'network':network, 'url':url}
+
+        def handle_error(error):
+            return error
+
+        dl = defer.DeferredList((get_name(id),get_network(id), get_url(id)))
+        dl.addCallback(process_details,id)
+        dl.addErrback(handle_error)
+        return dl
+
+    def get_channelGroup_details(self, id):
+        #print "GET CHANNEL GROUP:", id
+        def handle_error(error):
+            print "ERROR:",error
+            return error
+
+        def process_getChannels_result(result, channelList_interface):
+            #print "GetChannels:", result
+            channels = result
+            if len(channels) == 0:
+                    return
+            l = []
+            for channel_id in channels:
+                l.append(self.get_channel_details(channelList_interface, channel_id))
+            dl = defer.DeferredList(l)
+            return dl
+
+        def process_getChannelList_result(result):
+            #print "GetChannelList:", result
+            dvbd_channelList = self.bus.get_object(BUS_NAME,result)
+            channelList_interface = dbus.Interface (dvbd_channelList, 'org.gnome.DVB.ChannelList')
+        
+            d = defer.Deferred()
+            d.addCallback(process_getChannels_result, channelList_interface)
+            d.addErrback(handle_error)
+            channelList_interface.GetTVChannels(reply_handler=lambda x: d.callback(x),
+                                           error_handler=lambda x: d.errback(x))
+            return d
+        
+        def process_details(results):
+            #print 'process_details', results
+            for result,channel in results:
+                #print channel
+                if result == True:
+                    name = unicode(channel['name'], errors='ignore')
+                    #print "add", name, channel['url']
+                    video_item = Channel(self,
+                                         channel['id'],
+                                         CHANNELS_CONTAINER_ID,
+                                         name,
+                                         channel['url'],
+                    			         channel['network'],
+                                         'video/mpegts')
+                    self.containers[CHANNELS_CONTAINER_ID].add_child(video_item)                    
+
+        d = defer.Deferred()
+        d.addCallback(process_getChannelList_result)
+        d.addCallback(process_details)
+        d.addErrback(handle_error)
+        d.addErrback(handle_error)
+        self.manager_interface.GetChannelList(id, reply_handler=lambda x: d.callback(x),
+                                           error_handler=lambda x: d.errback(x))
+        return d
+
+
+    def get_channels(self):
+        #print "GET CHANNELS"
+        def handle_error(error):
+            return error
+
+        def process_query_result(ids):
+            #print "GetRegisteredDeviceGroups:", ids
+            if len(ids) == 0:
+                return
+            l = []
+            for id in ids:
+            #print id
+                l.append(self.get_channelGroup_details(id))
+
+            dl = defer.DeferredList(l)
+            return dl
+
+        d = defer.Deferred()
+        d.addCallback(process_query_result)
+        d.addErrback(handle_error)
+        self.manager_interface.GetRegisteredDeviceGroups(reply_handler=lambda x: d.callback(x),
+                                           error_handler=lambda x: d.errback(x))
+        return d
+
 
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                             ['http-get:*:video/mpegts:*',
-                             'internal:%s:video/mpegts:*' % self.server.coherence.hostname,])
+                             'internal:%s:video/mpegts:*' % self.server.coherence.hostname,],
+                             'rtsp-rtp-udp:*:video/mpegts:*',)
 
     def hidden_upnp_DestroyObject(self, *args, **kwargs):
         ObjectID = kwargs['ObjectID']
