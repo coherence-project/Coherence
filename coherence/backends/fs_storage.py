@@ -21,6 +21,7 @@ mimetypes.add_type('audio/x-m4a', '.m4a')
 mimetypes.add_type('video/mp4', '.mp4')
 mimetypes.add_type('video/mpegts', '.ts')
 mimetypes.add_type('video/divx', '.divx')
+mimetypes.add_type('video/x-matroska', '.mkv')
 
 from urlparse import urlsplit
 
