@@ -161,6 +161,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         enc.link(self.appsink)
         self.appsink.connect("new-preroll", self.new_preroll)
         self.appsink.connect("new-buffer", self.new_buffer)
+        self.appsink.connect("eos", self.eos)
         self.requests = []
         # if stream has a streamheader (something that has to be prepended
         # before any data), then it will be a tuple of GstBuffers
@@ -208,6 +209,11 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
                         r.write(h.data)
         for r in self.requests:
             r.write(buffer.data)
+
+    def eos(self, appsink):
+        for r in self.requests:
+            r.finish()
+        gobject.idle_add(self.cleanup)
 
     def getChild(self, name, request):
         self.info('getChild %s, %s' % (name, request))
@@ -263,6 +269,8 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
     def cleanup(self):
         self.info("pipeline cleanup")
         self.pipeline.set_state(gst.STATE_NULL)
+        self.requests = []
+        self.streamheader = None
 
 class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
