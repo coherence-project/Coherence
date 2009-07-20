@@ -152,6 +152,14 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
     def __init__(self,pipeline,mimetype):
         self.uri = pipeline
         self.contentType = mimetype
+        self.requests = []
+        # if stream has a streamheader (something that has to be prepended
+        # before any data), then it will be a tuple of GstBuffers
+        self.streamheader = None
+        self.parse_pipeline()
+        resource.Resource.__init__(self)
+
+    def parse_pipeline(self):
         self.pipeline = gst.parse_launch(
                             self.uri)
         self.appsink = gst.element_factory_make("appsink", "sink")
@@ -162,11 +170,6 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.appsink.connect("new-preroll", self.new_preroll)
         self.appsink.connect("new-buffer", self.new_buffer)
         self.appsink.connect("eos", self.eos)
-        self.requests = []
-        # if stream has a streamheader (something that has to be prepended
-        # before any data), then it will be a tuple of GstBuffers
-        self.streamheader = None
-        resource.Resource.__init__(self)
 
     def start(self,request=None):
         self.info("GStreamerPipeline start %r %r" % (request,self.uri))
@@ -191,7 +194,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
                     for h in self.streamheader:
                         r.write(h.data)
         for r in self.requests:
-            print "writing preroll"
+            self.debug("writing preroll")
             r.write(buffer.data)
 
     def new_buffer(self, appsink):
@@ -211,9 +214,10 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
             r.write(buffer.data)
 
     def eos(self, appsink):
+        self.info("eos")
         for r in self.requests:
             r.finish()
-        gobject.idle_add(self.cleanup)
+        self.cleanup()
 
     def getChild(self, name, request):
         self.info('getChild %s, %s' % (name, request))
@@ -237,6 +241,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
                     request.write(h.data)
             self.requests.append(request)
         else:
+            self.parse_pipeline()
             self.start(request)
         return server.NOT_DONE_YET
 
@@ -254,7 +259,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
         self.requests.remove(request)
         if not self.requests:
-            gobject.idle_add(self.cleanup)
+            self.cleanup()
 
     def on_message(self,bus,message):
         t = message.type
