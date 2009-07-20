@@ -152,20 +152,62 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
     def __init__(self,pipeline,mimetype):
         self.uri = pipeline
         self.contentType = mimetype
+        self.pipeline = gst.parse_launch(
+                            self.uri)
+        self.appsink = gst.element_factory_make("appsink", "sink")
+        self.appsink.set_property('emit-signals', True)
+        self.pipeline.add(self.appsink)
+        enc = self.pipeline.get_by_name("enc")
+        enc.link(self.appsink)
+        self.appsink.connect("new-preroll", self.new_preroll)
+        self.appsink.connect("new-buffer", self.new_buffer)
+        self.requests = []
+        # if stream has a streamheader (something that has to be prepended
+        # before any data), then it will be a tuple of GstBuffers
+        self.streamheader = None
         resource.Resource.__init__(self)
 
     def start(self,request=None):
         self.info("GStreamerPipeline start %r %r" % (request,self.uri))
-        self.pipeline = gst.parse_launch(
-                            self.uri)
-        sink = DataSink(request=request)
-        self.pipeline.add(sink)
-        enc = self.pipeline.get_by_name('enc')
-        enc.link(sink)
+        self.requests.append(request)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
         d = request.notifyFinish()
-        d.addBoth(self.requestFinished)
+        d.addBoth(self.requestFinished, request)
+
+    def new_preroll(self, appsink):
+        self.debug("new preroll")
+        buffer = appsink.emit('pull-preroll')
+        if not self.streamheader:
+            # check caps for streamheader buffer
+            caps = buffer.get_caps()
+            s = caps[0]
+            if s.has_key("streamheader"):
+                self.streamheader = s["streamheader"]
+                self.debug("setting streamheader")
+                for r in self.requests:
+                    self.debug("writing streamheader")
+                    for h in self.streamheader:
+                        r.write(h.data)
+        for r in self.requests:
+            print "writing preroll"
+            r.write(buffer.data)
+
+    def new_buffer(self, appsink):
+        buffer = appsink.emit('pull-buffer')
+        if not self.streamheader:
+            # check caps for streamheader buffers
+            caps = buffer.get_caps()
+            s = caps[0]
+            if s.has_key("streamheader"):
+                self.streamheader = s["streamheader"]
+                self.debug("setting streamheader")
+                for r in self.requests:
+                    self.debug("writing streamheader")
+                    for h in self.streamheader:
+                        r.write(h.data)
+        for r in self.requests:
+            r.write(buffer.data)
 
     def getChild(self, name, request):
         self.info('getChild %s, %s' % (name, request))
@@ -182,8 +224,14 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         if('connection' in headers and
            headers['connection'] == 'close'):
             pass
-
-        self.start(request)
+        if self.requests:
+            if self.streamheader:
+                self.debug("writing streamheader")
+                for h in self.streamheader:
+                    request.write(h.data)
+            self.requests.append(request)
+        else:
+            self.start(request)
         return server.NOT_DONE_YET
 
     def render_HEAD(self,request):
@@ -192,13 +240,15 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         request.setHeader('Content-Type', self.contentType)
         request.write('')
 
-    def requestFinished(self,result):
+    def requestFinished(self,result, request):
         self.info("requestFinished %r" % result)
         """ we need to find a way to destroy the pipeline here
         """
         #from twisted.internet import reactor
         #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
-        gobject.idle_add(self.cleanup)
+        self.requests.remove(request)
+        if not self.requests:
+            gobject.idle_add(self.cleanup)
 
     def on_message(self,bus,message):
         t = message.type
@@ -211,8 +261,8 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
             self.cleanup()
 
     def cleanup(self):
+        self.info("pipeline cleanup")
         self.pipeline.set_state(gst.STATE_NULL)
-
 
 class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
