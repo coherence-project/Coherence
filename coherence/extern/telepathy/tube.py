@@ -30,6 +30,7 @@ class TubePublisherMixin(object):
         self.info("offering my tube located at %r", tube.object_path)
         service_name = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
         params = self._tubes_to_offer[service_name]
+        params["initiator"] = self.account["account"]
         address = tube[CHANNEL_TYPE_DBUS_TUBE].Offer(params,
                                                      SOCKET_ACCESS_CONTROL_CREDENTIALS)
         tube.local_address = address

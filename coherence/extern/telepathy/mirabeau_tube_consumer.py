@@ -1,5 +1,7 @@
+from dbus import PROPERTIES_IFACE
+
 from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE, \
-     CHANNEL_INTERFACE
+     CHANNEL_INTERFACE, CHANNEL_INTERFACE_TUBE
 
 from coherence.extern.telepathy import client, tube
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
@@ -17,10 +19,10 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
         self._coherence_tubes = {}
 
     def pre_accept_tube(self, tube):
-        # TODO: reimplement me
-        ## initiator = tube.props["org.freedesktop.Telepathy.Channel.InitiatorHandle"]
-        ## return initiator in self.roster
-        return True
+        params = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'Parameters')
+        initiator = params.get("initiator")
+        can_accept = initiator and initiator in self.roster
+        return can_accept
 
     def post_tube_accept(self, tube, tube_conn, initiator_handle):
         service = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
