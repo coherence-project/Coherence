@@ -2,9 +2,11 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
 
 from twisted.python import failure
+from twisted.python.util import OrderedDict
+
 from coherence import log
 
 class Argument:
@@ -117,7 +119,12 @@ class Action(log.Loggable):
             self.info("action call with new/updated headers %r", kwargs['headers'])
 
         client = self._get_client()
-        d = client.callRemote(action_name, **kwargs)
+
+        ordered_request = OrderedDict()
+        for argument in self.get_in_arguments():
+            ordered_request[argument.name] = kwargs[argument.name]
+
+        d = client.callRemote(action_name, **ordered_request)
         d.addCallback(self.got_results, instance_id=instance_id, name=action_name)
         d.addErrback(got_error)
         return d
