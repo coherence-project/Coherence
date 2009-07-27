@@ -45,8 +45,11 @@ class PlaylistItem(BackendItem):
         if self.item == None:
             upnp_id = self.get_id()
             upnp_parent_id = self.parent.get_id()
-            item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.name)
-            
+            if (self.mimetype.startswith('video/')):
+                item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.name)
+            else:
+                item = DIDLLite.AudioItem(upnp_id, upnp_parent_id, self.name)
+                
             # what to do with MMS:// feeds?
             protocol = "http-get"
             if self.stream_url.startswith("rtsp://"):
