@@ -226,8 +226,8 @@ class TubeDeviceProxy(log.Loggable):
         self.uuid[1] = 'tube'
         self.uuid = '-'.join(self.uuid)
         self.friendly_name = self.device.get_friendly_name()
-        _,_,_,self.device_type,self.version = self.device.get_device_type().split(':')
-        self.version = int(self.version)
+        self.device_type = self.device.get_friendly_device_type()
+        self.version = int(self.device.get_device_type_version())
 
         self._services = []
         self._devices = []

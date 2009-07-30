@@ -642,16 +642,24 @@ class DBusDevice(dbus.service.Object,log.Loggable):
 
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='v')
     def get_info(self):
-        r = {'path':self.path(),
-             'device_type':self.device.get_device_type(),
-             'friendly_name':self.device.get_friendly_name(),
-             'udn':self.device.get_id(),
-             'services':[x.path for x in self.services]}
+        r = {'path': self.path(),
+             'device_type': self.device.get_device_type(),
+             'friendly_name': self.device.get_friendly_name(),
+             'udn': self.device.get_id(),
+             'services': [x.path for x in self.services]}
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_friendly_name(self):
         return self.device.get_friendly_name()
+
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
+    def get_friendly_device_type(self):
+        return self.device.get_friendly_device_type()
+
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='i')
+    def get_device_type_version(self):
+        return int(self.device.get_device_type_version())
 
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_id(self):
@@ -908,21 +916,18 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     """
     @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
     def getDMSList(self):
-        r = []
-        for device in self.devices.values():
-            #r.append(device.path())
-            if 'MediaServer' in device.get_device_type().split(':'):
-                r.append(device.get_info())
-        return dbus.Array(r,signature='v',variant_level=2)
+        return dbus.Array(self._get_devices_of_type('MediaServer'),
+                 signature='v', variant_level=2)
 
-    @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
+    def _get_devices_of_type(self, typ):
+        return [ device.get_info() for device in self.devices.itervalues()
+                if device.get_friendly_device_type() == typ ]
+
+    @dbus.service.method(DLNA_BUS_NAME + '.DMC', in_signature='',
+            out_signature='av')
     def getDMRList(self):
-        r = []
-        for device in self.devices.values():
-            #r.append(device.path())
-            if 'MediaRenderer' in device.get_device_type().split(':'):
-                r.append(device.get_info())
-        return dbus.Array(r,signature='v',variant_level=2)
+        return dbus.Array(self._get_devices_of_type('MediaRenderer'),
+                 signature='v', variant_level=2)
 
     @dbus.service.signal(BUS_NAME,
                          signature='vs')

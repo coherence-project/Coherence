@@ -26,6 +26,8 @@ class Device(log.Loggable):
         #self.uid = self.usn[:-len(self.st)-2]
         self.friendly_name = ""
         self.device_type = ""
+        self.friendly_device_type = "[unknown]"
+        self.device_type_version = 0
         self.udn = None
         self.detection_completed = False
         self.client = None
@@ -111,6 +113,20 @@ class Device(log.Loggable):
     def get_device_type(self):
         return self.device_type
 
+    def get_friendly_device_type(self):
+        return self.friendly_device_type
+
+    def get_markup_name(self):
+        try:
+            return self._markup_name
+        except AttributeError:
+            self._markup_name = u"%s:%s %s" % (self.friendly_device_type,
+                    self.device_type_version, self.friendly_name)
+            return self._markup_name
+
+    def get_device_type_version(self):
+        return self.device_type_version
+
     def set_client(self, client):
         self.client = client
 
@@ -144,6 +160,8 @@ class Device(log.Loggable):
 
     def parse_device(self, d):
         self.device_type = unicode(d.findtext('./{%s}deviceType' % ns))
+        self.friendly_device_type, self.device_type_version = \
+                self.device_type.split(':')[-2:]
         self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
         self.udn = d.findtext('.//{%s}UDN' % ns)
 

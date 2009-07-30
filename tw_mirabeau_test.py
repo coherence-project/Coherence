@@ -40,12 +40,7 @@ class TubeProxy(object):
 
     def got_devices(self,devices):
         for device in devices:
-            try:
-                name = '%s (%s)' % (device.get_friendly_name(),
-                                    ':'.join(device.get_device_type().split(':')[3:5]))
-            except:
-                continue
-            print "got_devices", name, device.get_id()
+            print "got_devices", device.get_markup_name(), device.get_id()
             #
             #print "  >",
             if device.get_id() == "uuid:d5a96478-ba4b-4bf8-813b-250755d8edde":

@@ -73,24 +73,23 @@ class SimpleRoot(resource.Resource, log.Loggable):
         self.info('listchilds %s' % uri)
         if uri[-1] != '/':
             uri += '/'
-        cl = ''
-        for c in self.coherence.children:
-            device = self.coherence.get_device_with_id(c)
-            if device != None:
-                _,_,_,device_type,version = device.get_device_type().split(':')
-                cl +=  '<li><a href=%s%s>%s:%s %s</a></li>' % (
-                                        uri,c,
-                                        device_type.encode('utf-8'), version.encode('utf-8'),
-                                        device.get_friendly_name().encode('utf-8'))
+        cl = []
+        for child in self.coherence.children:
+            device = self.coherence.get_device_with_id(child)
+            if device is not None:
+                cl.append('<li><a href=%s%s>%s:%s %s</a></li>' % (
+                        uri, child, device.get_friendly_device_type(),
+                        device.get_device_type_version(),
+                        device.get_friendly_name()))
 
-        for c in self.children:
-                cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
-        return cl
+        for child in self.children:
+                cl.append('<li><a href=%s%s>%s</a></li>' % (uri, child, child))
+        return "".join(cl)
 
     def render(self,request):
-        return """<html><head><title>Coherence</title></head><body>
+        result = """<html><head><title>Coherence</title></head><body>
 <a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
-
+        return result.encode('utf-8')
 
 class WebServer(log.Loggable):
     logCategory = 'webserver'

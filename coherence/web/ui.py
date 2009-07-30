@@ -91,21 +91,24 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         self.active = active
 
     def going_live(self):
-        self.info("add a view to the DevicesFragment",self._athenaID)
-        self.page.menu.add_tab('Devices',self.active,self._athenaID)
+        self.info("add a view to the DevicesFragment", self._athenaID)
+        self.page.menu.add_tab('Devices', self.active, self._athenaID)
         d = self.page.notifyOnDisconnect()
-        d.addCallback( self.remove_me)
-        d.addErrback( self.remove_me)
+        d.addCallback(self.remove_me)
+        d.addErrback(self.remove_me)
         devices = []
         for device in self.coherence.get_devices():
-            if device != None:
-                _,_,_,device_type,version = device.get_device_type().split(':')
-                name = unicode("%s:%s %s" % (device_type,version,device.get_friendly_name()))
-                usn = unicode(device.get_usn())
-                devices.append({u'name':name,u'usn':usn})
-        louie.connect( self.add_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
-        louie.connect( self.remove_device, 'Coherence.UPnP.Device.removed', louie.Any)
+            if device is not None:
+                devices.append({u'name': device.get_markup_name(),
+                        u'usn':unicode(device.get_usn())})
+
+        louie.connect(self.add_device,
+                'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect(self.remove_device,
+                'Coherence.UPnP.Device.removed', louie.Any)
+
         return devices
+
     athena.expose(going_live)
 
     def remove_me(self, result):
@@ -116,29 +119,26 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
                                                 device.get_usn(),
                                                 device.get_friendly_name(),
                                                 device.get_device_type()))
-        _,_,_,device_type,version = device.get_device_type().split(':')
-        name = unicode("%s:%s %s" % (device_type,version,device.get_friendly_name()))
-        usn = unicode(device.get_usn())
-        self.callRemote('addDevice', {u'name':name,u'usn':usn})
+        self.callRemote('addDevice',
+                {u'name': device.get_markup_name(),
+                u'usn':unicode(device.get_usn())})
 
     def remove_device(self, usn):
-        self.info("DevicesFragment remove device",usn)
+        self.info("DevicesFragment remove device %s", usn)
         self.callRemote('removeDevice', unicode(usn))
 
     def render_devices(self, ctx, data):
         cl = []
         self.info('children: %s' % self.coherence.children)
-        for c in self.coherence.children:
-            device = self.coherence.get_device_with_id(c)
-            if device != None:
-                _,_,_,device_type,version = device.get_device_type().split(':')
-                cl.append( tags.li[tags.a(href='/'+c)[device_type,
-                                                      ':',
-                                                      version,
-                                                      ' ',
-                                                      device.get_friendly_name()]])
+        for child in self.coherence.children:
+            device = self.coherence.get_device_with_id(child)
+            if device is not None:
+                cl.append( tags.li[tags.a(href='/' + child)[
+                    device.get_friendly_device_type, ':',
+                    device.get_device_type_version, ' ',
+                    device.get_friendly_name()]])
             else:
-                cl.append( tags.li[c])
+                cl.append( tags.li[child])
         return ctx.tag[tags.ul[cl]]
 
 class LoggingFragment(athena.LiveElement, log.Loggable):

@@ -16,7 +16,8 @@ class MediaServerClient(log.Loggable):
 
     def __init__(self, device):
         self.device = device
-        self.device_type,self.version = device.get_device_type().split(':')[3:5]
+        self.device_type = self.device.get_friendly_device_type()
+        self.version = int(self.device.get_device_type_version())
         self.icons = device.icons
         self.scheduled_recording = None
         self.content_directory = None

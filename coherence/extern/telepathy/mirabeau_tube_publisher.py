@@ -33,13 +33,12 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                 return
 
     def _register_device(self, device):
-        name = '%s (%s)' % (device.get_friendly_name(),
-                            ':'.join(device.get_device_type().split(':')[3:5]))
-        if self.allowed_devices != None and device.uuid not in self.allowed_devices:
+        if self.allowed_devices is not None and device.uuid not in self.allowed_devices:
             self.info("device not allowed: %r", device.uuid)
             return
         device.add_to_connection(self.device_tube, device.path())
-        self.info("adding device %s to connection: %s", name, self.device_tube)
+        self.info("adding device %s to connection: %s",
+                device.get_markup_name(), self.device_tube)
         for service in device.services:
             service.add_to_connection(self.service_tube, service.path)
 
