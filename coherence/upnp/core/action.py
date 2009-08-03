@@ -120,11 +120,11 @@ class Action(log.Loggable):
 
         client = self._get_client()
 
-        ordered_request = OrderedDict()
+        ordered_arguments = OrderedDict()
         for argument in self.get_in_arguments():
-            ordered_request[argument.name] = kwargs[argument.name]
+            ordered_arguments[argument.name] = kwargs[argument.name]
 
-        d = client.callRemote(action_name, **ordered_request)
+        d = client.callRemote(action_name, ordered_arguments)
         d.addCallback(self.got_results, instance_id=instance_id, name=action_name)
         d.addErrback(got_error)
         return d
