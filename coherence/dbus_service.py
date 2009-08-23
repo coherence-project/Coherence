@@ -650,6 +650,10 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
+    def get_markup_name(self):
+        return self.device.get_markup_name()
+
+    @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
     def get_friendly_name(self):
         return self.device.get_friendly_name()
 
