@@ -51,6 +51,18 @@ def is_audio(mimetype):
         return True
     return False
 
+def is_video(mimetype):
+    """ checks for type video,
+        expects a mimetype or an UPnP
+        protocolInfo
+    """
+    test = mimetype.split(':')
+    if len(test) == 4:
+        mimetype = test[2]
+    if mimetype.startswith('video/'):
+        return True
+    return False
+
 class Resources(list):
 
     """ a list of resources, always sorted after an append """
@@ -217,7 +229,7 @@ class Resource(object):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
         if upnp_client  in ('XBox','Philips-TV',):
             """ we don't need the DLNA tags there,
-                and maybe they irritates these poor things anyway
+                and maybe they irritate these poor things anyway
             """
             additional_info = '*'
         elif upnp_client  in ('PLAYSTATION3',):
@@ -302,6 +314,11 @@ class Resource(object):
         elif format == 'lpcm':
             dlna_pn = 'DLNA.ORG_PN=LPCM'
             content_format='audio/L16;rate=44100;channels=2'
+        elif format == 'mp2ts':
+            if content_format == 'video/mpeg':
+                return None
+            dlna_pn = 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
+            content_format='video/mpeg'
         else:
             return None
 
@@ -586,6 +603,13 @@ class Item(Object):
                     transcoded_res = old_res.transcoded('lpcm')
                     if transcoded_res != None:
                         root.append(transcoded_res.toElement(**kwargs))
+            elif len(res) > 0 and is_video(res[0].protocolInfo):
+                old_res = res[0]
+                for res in self.res:
+                    root.append(res.toElement(**kwargs))
+                transcoded_res = old_res.transcoded('mp2ts')
+                if transcoded_res != None:
+                    root.append(transcoded_res.toElement(**kwargs))
             else:
                 for res in self.res:
                     root.append(res.toElement(**kwargs))
