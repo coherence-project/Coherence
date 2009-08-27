@@ -221,9 +221,9 @@ def main():
     #c.save(new_filename='config.new.xml')
     print c.config['interface']
 
-    for plugin in c.config.pluginlist.plugin:
-        if plugin.active != 'no':
-            print '%r' % plugin
+    #for plugin in c.config.pluginlist.plugin:
+    #    if plugin.active != 'no':
+    #        print '%r' % plugin
 
 
 if __name__ == '__main__':

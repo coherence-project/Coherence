@@ -1,5 +1,5 @@
 
-from twisted.internet import defer, reactor
+from twisted.internet import defer
 
 class Receiver(object):
     def __init__(self, signal, callback, args, kwargs):
@@ -93,6 +93,7 @@ class Dispatcher(object):
         deferred.addCallback(self.deferred_emit, *args, **kwargs)
         # and callback the deferred with the signal as the 'result' in the
         # next mainloop iteration
+        from twisted.internet import reactor
         reactor.callLater(0, deferred.callback, signal)
         return deferred
 
