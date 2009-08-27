@@ -418,6 +418,25 @@ class MP4Transcoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
+class MP2TSTranscoder(BaseTranscoder):
+
+    contentType = 'video/mpeg'
+
+    def start(self,request=None):
+        self.info("start %r", request)
+        ### FIXME
+        self.pipeline = gst.parse_launch(
+            "%s ! decodebin2 ! insert proper pipeline here ! mpegtsmux name=mux" % self.source)
+        enc = self.pipeline.get_by_name('mux')
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
+        enc.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+        d = request.notifyFinish()
+        d.addBoth(self.requestFinished)
+
+
 class JPEGThumbTranscoder(BaseTranscoder):
     """ should create a valid thumbnail according to the DLNA spec
         neither width nor height must exceed 160px
