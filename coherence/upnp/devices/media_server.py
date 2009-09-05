@@ -130,56 +130,15 @@ class MSRoot(resource.Resource, log.Loggable):
                 #FIXME create a generic transcoder class and sort the details there
                 format = request.uri.split('/')[-1] #request.args['transcoded'][0]
                 uri = ch.get_path()
-                if format == 'lpcm':
-                    try:
-                        from coherence.transcoder import PCMTranscoder
-                        return PCMTranscoder(uri)
-                    except:
-                        self.debug(traceback.format_exc())
-                        request.setResponseCode(404)
-                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
-                if format == 'wav':
-                    try:
-                        from coherence.transcoder import WAVTranscoder
-                        return WAVTranscoder(uri)
-                    except:
-                        self.debug(traceback.format_exc())
-                        request.setResponseCode(404)
-                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
-                if format == 'mp3':
-                    try:
-                        from coherence.transcoder import MP3Transcoder
-                        return MP3Transcoder(uri)
-                    except:
-                        self.debug(traceback.format_exc())
-                        request.setResponseCode(404)
-                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
-                if format == 'mp4':
-                    try:
-                        from coherence.transcoder import MP4Transcoder
-                        return MP4Transcoder(uri)
-                    except:
-                        self.debug(traceback.format_exc())
-                        request.setResponseCode(404)
-                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
-                if format == 'mp2ts':
-                    try:
-                        from coherence.transcoder import MP2TSTranscoder
-                        return MP2TSTranscoder(uri)
-                    except:
-                        self.debug(traceback.format_exc())
-                        request.setResponseCode(404)
-                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
-                if format == 'thumb':
-                    type = request.args['type'][0]
-                    if type == 'jpeg':
-                        try:
-                            from coherence.transcoder import JPEGThumbTranscoder
-                            return JPEGThumbTranscoder(uri)
-                        except:
-                            self.debug(traceback.format_exc())
-                            request.setResponseCode(404)
-                            return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                try:
+                    from coherence.transcoder import TranscoderManager
+                    manager = TranscoderManager(self.server.coherence)
+                    return manager.select(format,uri)
+                except:
+                    self.debug(traceback.format_exc())
+                    request.setResponseCode(404)
+                    return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+
             request.setResponseCode(404)
             return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
 

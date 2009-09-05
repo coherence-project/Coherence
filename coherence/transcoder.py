@@ -26,6 +26,12 @@ from coherence import log
 
 import struct
 
+class InternalTranscoder(object):
+    """ just a class to inherit from and
+        which we can look for upon creating our
+        list of available transcoders
+    """
+
 class FakeTransformer(gst.Element, log.Loggable):
     logCategory = 'faker_datasink'
 
@@ -150,7 +156,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
     addSlash = True
 
     def __init__(self,pipeline,mimetype):
-        self.uri = pipeline
+        self.pipeline_description = pipeline
         self.contentType = mimetype
         self.requests = []
         # if stream has a streamheader (something that has to be prepended
@@ -161,7 +167,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
 
     def parse_pipeline(self):
         self.pipeline = gst.parse_launch(
-                            self.uri)
+                            self.pipeline_description)
         self.appsink = gst.element_factory_make("appsink", "sink")
         self.appsink.set_property('emit-signals', True)
         self.pipeline.add(self.appsink)
@@ -172,7 +178,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.appsink.connect("eos", self.eos)
 
     def start(self,request=None):
-        self.info("GStreamerPipeline start %r %r" % (request,self.uri))
+        self.info("GStreamerPipeline start %r %r" % (request,self.pipeline_description))
         self.requests.append(request)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
@@ -277,6 +283,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.requests = []
         self.streamheader = None
 
+
 class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
     addSlash = True
@@ -336,8 +343,9 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         self.pipeline.set_state(gst.STATE_NULL)
 
 
-class PCMTranscoder(BaseTranscoder):
+class PCMTranscoder(BaseTranscoder,InternalTranscoder):
     contentType = 'audio/L16;rate=44100;channels=2'
+    id = 'lpcm'
 
     def start(self,request=None):
         self.info("PCMTranscoder start %r %r" % (request,self.source))
@@ -360,9 +368,10 @@ class PCMTranscoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class WAVTranscoder(BaseTranscoder):
+class WAVTranscoder(BaseTranscoder,InternalTranscoder):
 
     contentType = 'audio/x-wav'
+    id = 'wav'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -380,9 +389,10 @@ class WAVTranscoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class MP3Transcoder(BaseTranscoder):
+class MP3Transcoder(BaseTranscoder,InternalTranscoder):
 
     contentType = 'audio/mpeg'
+    id = 'mp3'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -398,11 +408,12 @@ class MP3Transcoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class MP4Transcoder(BaseTranscoder):
+class MP4Transcoder(BaseTranscoder,InternalTranscoder):
     """ Only works if H264 inside Quicktime/MP4 container is input
         Source has to be a valid uri
     """
     contentType = 'video/mp4'
+    id = 'mp4'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -418,13 +429,14 @@ class MP4Transcoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class MP2TSTranscoder(BaseTranscoder):
+class MP2TSTranscoder(BaseTranscoder,InternalTranscoder):
 
     contentType = 'video/mpeg'
+    id = 'mpegts'
 
     def start(self,request=None):
         self.info("start %r", request)
-        ### FIXME
+        ### FIXME mpeg2enc
         self.pipeline = gst.parse_launch(
             "mpegtsmux name=mux %s ! decodebin2 name=d ! queue ! ffmpegcolorspace ! mpeg2enc ! queue ! mux. d. ! queue ! audioconvert ! twolame ! queue ! mux."  % self.source)
         enc = self.pipeline.get_by_name('mux')
@@ -437,11 +449,12 @@ class MP2TSTranscoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class JPEGThumbTranscoder(BaseTranscoder):
+class ThumbTranscoder(BaseTranscoder,InternalTranscoder):
     """ should create a valid thumbnail according to the DLNA spec
         neither width nor height must exceed 160px
     """
     contentType = 'image/jpeg'
+    id = 'thumb'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -459,8 +472,16 @@ class JPEGThumbTranscoder(BaseTranscoder):
             elif original_height > 160:
                 new_width = int(float(original_width) * (160.0/float(original_height)))
         """
-        self.pipeline = gst.parse_launch(
-            "%s ! jpegdec ! videoscale ! video/x-raw-yuv,width=160,height=160 ! jpegenc name=enc" % self.source)
+        try:
+            type = request.args['type'][0]
+        except:
+            type = 'jpeg'
+        if type == 'png':
+            self.pipeline = gst.parse_launch(
+                "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! pngenc name=enc" % self.source)
+        else:
+            self.pipeline = gst.parse_launch(
+                "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! jpegenc name=enc" % self.source)
         enc = self.pipeline.get_by_name('enc')
         sink = DataSink(destination=self.destination,request=request)
         self.pipeline.add(sink)
@@ -469,3 +490,124 @@ class JPEGThumbTranscoder(BaseTranscoder):
 
         d = request.notifyFinish()
         d.addBoth(self.requestFinished)
+
+
+class GStreamerTranscoder(BaseTranscoder):
+    """ a generic Transcode based on GStreamer
+
+        the pipeline which will be parsed upon
+        calling the start method, as to be set as
+        the attribute pipeline_description to the
+        instantiated class
+
+        same for the attribute contentType
+    """
+
+    def start(self,request=None):
+        self.info("start %r", request)
+        self.pipeline = gst.parse_launch(self.pipeline_description % self.source)
+        enc = self.pipeline.get_by_name('mux')
+        sink = DataSink(destination=self.destination,request=request)
+        self.pipeline.add(sink)
+        enc.link(sink)
+        self.pipeline.set_state(gst.STATE_PLAYING)
+
+        d = request.notifyFinish()
+        d.addBoth(self.requestFinished)
+
+
+class TranscoderManager(log.Loggable):
+
+    """ singleton class which holds information
+        about all available transcoders
+
+        they are put into a transcoders dict with
+        their id as the key
+
+        we collect all internal transcoders by searching
+        for all subclasses of InternalTranscoder, the class
+        will be the value
+
+        transcoders defined in the config are parsed and
+        stored as a dict in the transcoders dict
+
+        in the config a transcoder description has to look like this:
+
+        *** preliminary, will be extended and might even change without further notice ***
+
+        <transcoder>
+          <pipeline>%s ...</pipeline> <!-- we need a %s here to insert the source uri
+                                           (or can we have all the times pipelines we can prepend
+                                            with a '%s !')
+                                           and an element named mux where we can attach
+                                           our sink -->
+          <type>gstreamer</type>
+          <id>mpegts</id>
+          <target>video/mpeg</target>
+        </transcoder>
+
+    """
+
+    logCategory = 'transcoder_manager'
+    _instance_ = None  # Singleton
+
+    def __new__(cls, *args, **kwargs):
+        """ creates the singleton """
+        obj = getattr(cls,'_instance_',None)
+        if obj is not None:
+            return obj
+        else:
+            obj = super(TranscoderManager, cls).__new__(cls, *args, **kwargs)
+            cls._instance_ = obj
+            cls.transcoders = {}
+            return obj
+
+    def __init__(self,coherence=None):
+        """ initializes the class
+
+            it should be called at least once called
+            with the main coherence class passed as an argument,
+            so we can access the config
+        """
+        if coherence != None:
+            self.coherence = coherence
+        if len(self.transcoders) == 0:
+            for transcoder in InternalTranscoder.__subclasses__():
+                self.transcoders[transcoder.id] = transcoder
+
+        if coherence != None:
+            transcoders_from_config = self.coherence.config['transcoder']
+            if isinstance(transcoders_from_config,dict):
+                transcoders_from_config=[transcoders_from_config]
+            for transcoder in transcoders_from_config:
+                if transcoder['type'].lower() == 'gstreamer':
+                    #XXX check if the pipeline has a '%s' in it
+                    self.transcoders[transcoder['id']] = {'class':GStreamerTranscoder,'pipeline':transcoder['pipeline'],'mimetype':transcoder['target']}
+
+        #XXX reduce that to info later
+        self.warning("available transcoders %r" % self.transcoders)
+
+
+    def select(self,id,uri,type=None,backend=None):
+
+        if backend != None:
+            """ try to find a transcoder provided by the backend
+                and return that here,
+                if there isn't one continue with the ones
+                provided by the config or the internal ones
+            """
+            pass
+
+        transcoder_class = self.transcoders[id]
+        if isinstance(transcoder_class,dict):
+            r=transcoder['class'](uri,type=type)
+            r.contentType = transcoder['mimetype']
+            r.pipeline_description = transcoder['pipeline']
+        else:
+            r=transcoder_class(uri,type=type)
+        print r
+        return r
+
+
+if __name__ == '__main__':
+    t = Transcoder(None)

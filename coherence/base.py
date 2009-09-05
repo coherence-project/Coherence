@@ -391,6 +391,11 @@ class Coherence(log.Loggable):
         if self.config.get('controlpoint', 'no') == 'yes':
             self.ctrl = ControlPoint(self)
 
+        if self.config.get('transcoding', 'no') == 'yes':
+            from coherence.transcoder import TranscoderManager
+            self.transcoder_manager = TranscoderManager(self)
+
+
         if self.config.get('use_dbus', 'no') == 'yes':
             try:
                 from coherence import dbus_service
