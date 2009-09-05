@@ -607,7 +607,7 @@ class Item(Object):
                 old_res = res[0]
                 for res in self.res:
                     root.append(res.toElement(**kwargs))
-                transcoded_res = old_res.transcoded('mp2ts')
+                transcoded_res = old_res.transcoded('mpeg2ts')
                 if transcoded_res != None:
                     root.append(transcoded_res.toElement(**kwargs))
             else:
