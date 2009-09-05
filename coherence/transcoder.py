@@ -578,13 +578,20 @@ class TranscoderManager(log.Loggable):
                 self.transcoders[transcoder.id] = transcoder
 
         if coherence != None:
-            transcoders_from_config = self.coherence.config['transcoder']
+            try:
+                transcoders_from_config = self.coherence.config['transcoder']
+            except KeyError:
+                transcoders_from_config = []
             if isinstance(transcoders_from_config,dict):
                 transcoders_from_config=[transcoders_from_config]
             for transcoder in transcoders_from_config:
                 if transcoder['type'].lower() == 'gstreamer':
                     #XXX check if the pipeline has a '%s' in it
                     self.transcoders[transcoder['id']] = {'class':GStreamerTranscoder,'pipeline':transcoder['pipeline'],'mimetype':transcoder['target']}
+                elif transcoder['type'].lower() == 'process':
+                    pass
+                else:
+                    self.warning("unknown transcoder type %r" % transcoder['type'])
 
         #XXX reduce that to info later
         self.warning("available transcoders %r" % self.transcoders)
