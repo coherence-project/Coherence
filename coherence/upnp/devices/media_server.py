@@ -96,12 +96,12 @@ class MSRoot(resource.Resource, log.Loggable):
                             format = request.args['transcoded'][0]
                             type = request.args['type'][0]
                             self.info("request transcoding %r %r" % (format, type))
-                            if format == 'thumb' and type == 'jpeg':
-                                try:
-                                    from coherence.transcoder import JPEGThumbTranscoder
-                                    return JPEGThumbTranscoder(ch.item.attachments[request.args['attachment'][0]])
-                                except:
-                                    self.debug(traceback.format_exc())
+                            try:
+                                from coherence.transcoder import TranscoderManager
+                                manager = TranscoderManager(self.server.coherence)
+                                return manager.select(format,ch.item.attachments[request.args['attachment'][0]])
+                            except:
+                                self.debug(traceback.format_exc())
                             request.setResponseCode(404)
                             return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
                         else:
