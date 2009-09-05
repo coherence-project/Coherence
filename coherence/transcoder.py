@@ -479,9 +479,11 @@ class ThumbTranscoder(BaseTranscoder,InternalTranscoder):
         if type == 'png':
             self.pipeline = gst.parse_launch(
                 "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! pngenc name=enc" % self.source)
+            self.contentType = 'image/png'
         else:
             self.pipeline = gst.parse_launch(
                 "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! jpegenc name=enc" % self.source)
+            self.contentType = 'image/jpeg'
         enc = self.pipeline.get_by_name('enc')
         sink = DataSink(destination=self.destination,request=request)
         self.pipeline.add(sink)
@@ -565,9 +567,9 @@ class TranscoderManager(log.Loggable):
     def __init__(self,coherence=None):
         """ initializes the class
 
-            it should be called at least once called
+            it should be called at least once
             with the main coherence class passed as an argument,
-            so we can access the config
+            so we have access to the config
         """
         if coherence != None:
             self.coherence = coherence
@@ -588,7 +590,7 @@ class TranscoderManager(log.Loggable):
         self.warning("available transcoders %r" % self.transcoders)
 
 
-    def select(self,id,uri,type=None,backend=None):
+    def select(self,id,uri,backend=None):
 
         if backend != None:
             """ try to find a transcoder provided by the backend
@@ -600,11 +602,11 @@ class TranscoderManager(log.Loggable):
 
         transcoder_class = self.transcoders[id]
         if isinstance(transcoder_class,dict):
-            r=transcoder['class'](uri,type=type)
+            r=transcoder['class'](uri)
             r.contentType = transcoder['mimetype']
             r.pipeline_description = transcoder['pipeline']
         else:
-            r=transcoder_class(uri,type=type)
+            r=transcoder_class(uri)
         print r
         return r
 
