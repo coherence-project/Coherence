@@ -314,7 +314,7 @@ class Resource(object):
         elif format == 'lpcm':
             dlna_pn = 'DLNA.ORG_PN=LPCM'
             content_format='audio/L16;rate=44100;channels=2'
-        elif format == 'mp2ts':
+        elif format == 'mpegts':
             if content_format == 'video/mpeg':
                 return None
             dlna_pn = 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
@@ -607,7 +607,7 @@ class Item(Object):
                 old_res = res[0]
                 for res in self.res:
                     root.append(res.toElement(**kwargs))
-                transcoded_res = old_res.transcoded('mpeg2ts')
+                transcoded_res = old_res.transcoded('mpegts')
                 if transcoded_res != None:
                     root.append(transcoded_res.toElement(**kwargs))
             else:

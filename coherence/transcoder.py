@@ -609,9 +609,9 @@ class TranscoderManager(log.Loggable):
 
         transcoder_class = self.transcoders[id]
         if isinstance(transcoder_class,dict):
-            r=transcoder['class'](uri)
-            r.contentType = transcoder['mimetype']
-            r.pipeline_description = transcoder['pipeline']
+            r=transcoder_class['class'](uri)
+            r.contentType = transcoder_class['mimetype']
+            r.pipeline_description = transcoder_class['pipeline']
         else:
             r=transcoder_class(uri)
         print r
