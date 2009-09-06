@@ -18,9 +18,11 @@ import gst
 import gobject
 gobject.threads_init()
 
+import os.path
 import urllib
 
 from twisted.web import resource, server
+from twisted.internet import protocol
 
 from coherence import log
 
@@ -518,6 +520,107 @@ class GStreamerTranscoder(BaseTranscoder):
         d.addBoth(self.requestFinished)
 
 
+class ExternalProcessProtocol(protocol.ProcessProtocol):
+
+    def __init__(self,caller):
+        self.caller = caller
+
+    def connectionMade(self):
+        print "pp connection made"
+
+    def outReceived(self, data):
+        #print "outReceived with %d bytes!" % len(data)
+        self.caller.write_data(data)
+
+    def errReceived(self, data):
+        #print "errReceived! with %d bytes!" % len(data)
+        print "pp (err):", data.strip()
+
+    def inConnectionLost(self):
+        #print "inConnectionLost! stdin is closed! (we probably did it)"
+        pass
+
+    def outConnectionLost(self):
+        #print "outConnectionLost! The child closed their stdout!"
+        pass
+
+    def errConnectionLost(self):
+        #print "errConnectionLost! The child closed their stderr."
+        pass
+
+    def processEnded(self, status_object):
+        print "processEnded, status %d" % status_object.value.exitCode
+        print "processEnded quitting"
+        self.caller.ended = True
+        self.caller.write_data('')
+
+
+class ExternalProcessProducer(object):
+    logCategory = 'externalprocess'
+
+    def __init__(self,pipeline,request):
+        self.pipeline = pipeline
+        self.request = request
+        self.process = None
+        self.written = 0
+        self.data = ''
+        self.ended = False
+        request.registerProducer(self, 0)
+
+    def write_data(self,data):
+        if data:
+            #print "write %d bytes of data" % len(data)
+            self.written += len(data)
+            # this .write will spin the reactor, calling .doWrite and then
+            # .resumeProducing again, so be prepared for a re-entrant call
+            self.request.write(data)
+        if self.request and self.ended == True:
+            print "closing"
+            self.request.unregisterProducer()
+            self.request.finish()
+            self.request = None
+
+    def resumeProducing(self):
+        #print "resumeProducing", self.request
+        if not self.request:
+            return
+        if self.process == None:
+            argv = self.pipeline.split()
+            executable = argv[0]
+            argv[0] = os.path.basename(argv[0])
+            from twisted.internet import reactor
+            self.process = reactor.spawnProcess(ExternalProcessProtocol(self), executable, argv, {})
+
+    def pauseProducing(self):
+        pass
+
+    def stopProducing(self):
+        print "stopProducing",self.request
+        self.request.unregisterProducer()
+        self.process.loseConnection()
+        self.request.finish()
+        self.request = None
+
+
+class ExternalProcessPipeline(resource.Resource, log.Loggable):
+    logCategory = 'externalprocess'
+    addSlash = False
+
+    def __init__(self,uri):
+        self.uri = uri
+
+    def getChildWithDefault(self, path, request):
+        return self
+
+    def render(self, request):
+        print "ExternalProcessPipeline render",self.contentType
+        if hasattr(self,'contentType') and self.contentType:
+            request.setHeader('Content-Type', self.contentType)
+
+        ExternalProcessProducer(self.pipeline_description % self.uri,request)
+        return server.NOT_DONE_YET
+
+
 class TranscoderManager(log.Loggable):
 
     """ singleton class which holds information
@@ -589,7 +692,7 @@ class TranscoderManager(log.Loggable):
                     #XXX check if the pipeline has a '%s' in it
                     self.transcoders[transcoder['id']] = {'class':GStreamerTranscoder,'pipeline':transcoder['pipeline'],'mimetype':transcoder['target']}
                 elif transcoder['type'].lower() == 'process':
-                    pass
+                    self.transcoders[transcoder['id']] = {'class':ExternalProcessPipeline,'pipeline':transcoder['pipeline'],'mimetype':transcoder['target']}
                 else:
                     self.warning("unknown transcoder type %r" % transcoder['type'])
 
