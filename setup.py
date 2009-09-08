@@ -11,7 +11,7 @@ except:
 
     import os
 
-    packages = []
+    packages = ['coherence',]
 
     def find_packages(path):
         for f in os.listdir(path):
