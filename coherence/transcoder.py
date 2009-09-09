@@ -28,6 +28,9 @@ from coherence import log
 
 import struct
 
+def get_transcoders_name(transcoder):
+    return transcoder.id
+
 class InternalTranscoder(object):
     """ just a class to inherit from and
         which we can look for upon creating our
