@@ -81,6 +81,17 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertEquals(transcoder.pipeline_description, 'uiuiuiui')
         self.assertEquals(transcoder.uri, 'http://another/uri')
 
+    def test_placeholdercheck_in_config(self):
+        # this pipeline does not contain the '%s' placeholder and because
+        # of that should not be created
+        failing_config = {'name': 'failing', 'pipeline': 'wrong',
+                     'type': 'process', 'target': 'yay'}
+
+        coherence = self.CoherenceStump(transcoder=failing_config)
+        self.manager = TranscoderManager(coherence)
+        self._check_for_transcoders(known_transcoders)
+        self.assertRaises(KeyError, self.manager.select, 'failing', 'http://another/uri')
+
     def test_is_loading_multiple_from_config(self):
         megaprocess_config = {'name': 'megaprocess', 'pipeline': 'uiuiuiui',
                      'type': 'process', 'target': 'yay'}
