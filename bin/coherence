@@ -252,6 +252,7 @@ def main(config):
     #                       'Player': {})
     #c.add_plugin('FSStore', content_directory='tests/content', version=1)
 
+
 if __name__ == '__main__':
 
     options = Options()
@@ -262,8 +263,11 @@ if __name__ == '__main__':
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(0)
 
-    if options['daemon'] == 1:
-        daemonize()
+    try:
+        if options['daemon'] == 1:
+            daemonize()
+    except:
+        print traceback.format_exc()
 
     config = {}
 
@@ -283,25 +287,36 @@ if __name__ == '__main__':
             print "no config file %r found" % options['configfile']
             pass
 
-    for k,v in options['options'].items():
-        config[k] = v
-
-
     if options['logfile'] != None:
-        if isinstance(config,ConfigItem):
-            config['logging'] = {}
+        if isinstance(config,(ConfigItem,dict)):
+            if 'logging' not in config:
+                config['logging'] = {}
             config['logging']['logfile'] = options['logfile']
         else:
             config['logfile'] = options['logfile']
 
-    if options['daemon'] == 1:
-        if options['logfile'] == None:
-            if isinstance(config,ConfigItem):
-                config.get('logging').get('level','none')
-            else:
-                config.set('logmode','none')
+    for k,v in options['options'].items():
+        if k == 'logfile':
+            continue
+        config[k] = v
 
-    #print config
+    if options['daemon'] == 1:
+        if isinstance(config,(ConfigItem,dict)):
+            if config.get('logging',None) == None:
+                config['logging'] = {}
+            if config['logging'].get('logfile',None) == None:
+                config['logging']['level'] = 'none'
+                try:
+                    del config['logging']['logfile']
+                except KeyError:
+                    pass
+        else:
+            if config.get('logfile',None) == None:
+                config.set('logmode','none')
+                try:
+                    del config['logfile']
+                except KeyError:
+                    pass
 
     if(config.get('use_dbus', 'no') == 'yes' or
        config.get('glib', 'no') == 'yes' or
