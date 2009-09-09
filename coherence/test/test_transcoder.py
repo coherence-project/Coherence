@@ -115,3 +115,23 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self._check_transcoder_attrs(transcoder, 'pp%spppl',
                 'http://another/uri2')
 
+    def test_loaded_gst_always_new_instance(self):
+        coherence = self.CoherenceStump(transcoder=self.gst_config)
+        self.manager = TranscoderManager(coherence)
+        self._check_for_transcoders(known_transcoders)
+        transcoder_a = self.manager.select('supertest', 'http://my_uri')
+        self.assertTrue(isinstance(transcoder_a, GStreamerTranscoder))
+        self._check_transcoder_attrs(transcoder_a,
+                pipeline='pp%spppl', uri="http://my_uri")
+
+        transcoder_b = self.manager.select('supertest', 'http://another/uri')
+        self.assertTrue(isinstance(transcoder_b, GStreamerTranscoder))
+        self._check_transcoder_attrs(transcoder_b,
+                pipeline='pp%spppl', uri="http://another/uri")
+
+
+        self.assertNotEquals(transcoder_a, transcoder_b)
+        self.assertNotEquals(id(transcoder_a), id(transcoder_b))
+
+
+
