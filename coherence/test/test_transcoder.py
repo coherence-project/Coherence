@@ -4,7 +4,7 @@ from twisted.trial.unittest import TestCase
 from coherence.transcoder import TranscoderManager
 
 from coherence.transcoder import (PCMTranscoder, WAVTranscoder, MP3Transcoder,
-        MP4Transcoder, MP2TSTranscoder, ThumbTranscoder)
+        MP4Transcoder, MP2TSTranscoder, ThumbTranscoder, GStreamerTranscoder)
 
 known_transcoders = [PCMTranscoder, WAVTranscoder, MP3Transcoder, MP4Transcoder,
         MP2TSTranscoder, ThumbTranscoder]
@@ -33,10 +33,38 @@ class TestTranscoderManagerSingletony(TranscoderTestMixin, TestCase):
 
 class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
 
+    class CoherenceStump(object):
+        def __init__(self, **kwargs):
+            self.config = kwargs
+
     def setUp(self):
         self.manager = None
 
     def test_is_loading_all_known_transcoders(self):
         self.manager = TranscoderManager()
-        for klass in known_transcoders:
-            self.assertEquals(self.manager.transcoders[getuniquename(klass)], klass)
+        self._check_for_transcoders(known_transcoders)
+
+    def _check_for_transcoders(self, transcoders):
+        for klass in transcoders:
+            loaded_transcoder = self.manager.transcoders[getuniquename(klass)]
+            self.assertEquals(loaded_transcoder, klass)
+
+    def test_is_loading_no_config(self):
+        coherence = self.CoherenceStump()
+        self.manager = TranscoderManager(coherence)
+        self._check_for_transcoders(known_transcoders)
+
+    def test_is_loading_one_gst_from_config(self):
+        my_config = {'id': 'supertest', 'pipeline': 'pppppl',
+                     'type': 'gstreamer',
+                     'mimetype': 'yay', 'target': 'xbox360'}
+        coherence = self.CoherenceStump(transcoder=my_config)
+        self.manager = TranscoderManager(coherence)
+        self._check_for_transcoders(known_transcoders)
+        my_pipe = self.manager.select('supertest', 'http://my_uri')
+        self.assertTrue(isinstance(my_pipe, GStreamerTranscoder))
+
+        # bahh... relying on implementation details of the basetranscoder/gsttranscoder here.
+
+        self.assertEquals(my_pipe.pipeline_description, 'pppppl')
+        self.assertEquals(my_pipe.source, 'http://my_uri')
