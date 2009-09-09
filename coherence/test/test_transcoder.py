@@ -34,6 +34,15 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         def __init__(self, **kwargs):
             self.config = kwargs
 
+    failing_config = {'name': 'failing', 'pipeline': 'wrong',
+                     'type': 'process', 'target': 'yay'}
+
+    gst_config = {'name': 'supertest', 'pipeline': 'pp%spppl',
+                     'type': 'gstreamer', 'target': 'yay'}
+
+
+    process_config = {'name': 'megaprocess', 'pipeline': 'uiui%suiui',
+                     'type': 'process', 'target': 'yay'}
     def setUp(self):
         self.manager = None
 
@@ -52,15 +61,13 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self._check_for_transcoders(known_transcoders)
 
     def test_is_loading_one_gst_from_config(self):
-        my_config = {'name': 'supertest', 'pipeline': 'pppppl',
-                     'type': 'gstreamer', 'target': 'yay'}
-        coherence = self.CoherenceStump(transcoder=my_config)
+        coherence = self.CoherenceStump(transcoder=self.gst_config)
         self.manager = TranscoderManager(coherence)
         self._check_for_transcoders(known_transcoders)
         my_pipe = self.manager.select('supertest', 'http://my_uri')
         self.assertTrue(isinstance(my_pipe, GStreamerTranscoder))
         self._check_transcoder_attrs(my_pipe,
-                pipeline='pppppl', uri="http://my_uri")
+                pipeline='pp%spppl', uri="http://my_uri")
 
 
     def _check_transcoder_attrs(self, transcoder, pipeline=None, uri=None):
@@ -69,36 +76,28 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertEquals(transcoder.source, uri)
 
     def test_is_loading_one_process_from_config(self):
-        my_config = {'name': 'megaprocess', 'pipeline': 'uiuiuiui',
-                     'type': 'process', 'target': 'yay'}
-        coherence = self.CoherenceStump(transcoder=my_config)
+        coherence = self.CoherenceStump(transcoder=self.process_config)
         self.manager = TranscoderManager(coherence)
         self._check_for_transcoders(known_transcoders)
         transcoder = self.manager.select('megaprocess', 'http://another/uri')
         self.assertTrue(isinstance(transcoder, ExternalProcessPipeline))
 
         # SUCKS. Why is the API for the external process different?
-        self.assertEquals(transcoder.pipeline_description, 'uiuiuiui')
+        self.assertEquals(transcoder.pipeline_description, 'uiui%suiui')
         self.assertEquals(transcoder.uri, 'http://another/uri')
 
     def test_placeholdercheck_in_config(self):
         # this pipeline does not contain the '%s' placeholder and because
         # of that should not be created
-        failing_config = {'name': 'failing', 'pipeline': 'wrong',
-                     'type': 'process', 'target': 'yay'}
 
-        coherence = self.CoherenceStump(transcoder=failing_config)
+        coherence = self.CoherenceStump(transcoder=self.failing_config)
         self.manager = TranscoderManager(coherence)
         self._check_for_transcoders(known_transcoders)
         self.assertRaises(KeyError, self.manager.select, 'failing', 'http://another/uri')
 
     def test_is_loading_multiple_from_config(self):
-        megaprocess_config = {'name': 'megaprocess', 'pipeline': 'uiuiuiui',
-                     'type': 'process', 'target': 'yay'}
-
-        gst_config = {'name': 'supertest', 'pipeline': 'pppppl',
-                     'type': 'gstreamer', 'target': 'yay'}
-        coherence = self.CoherenceStump(transcoder=[gst_config, megaprocess_config])
+        coherence = self.CoherenceStump(transcoder=[self.gst_config,
+                self.process_config])
         self.manager = TranscoderManager(coherence)
         self._check_for_transcoders(known_transcoders)
 
@@ -107,14 +106,13 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertTrue(isinstance(transcoder, ExternalProcessPipeline))
 
         # SUCKS. Why is the API for the external process different?
-        self.assertEquals(transcoder.pipeline_description, 'uiuiuiui')
+        self.assertEquals(transcoder.pipeline_description, 'uiui%suiui')
         self.assertEquals(transcoder.uri, 'http://another/uri')
 
         # check the gstreamer transcoder
-        transcoder = self.manager.select('megaprocess', 'http://another/uri')
-        self.assertTrue(isinstance(transcoder, ExternalProcessPipeline))
+        transcoder = self.manager.select('supertest', 'http://another/uri2')
+        self.assertTrue(isinstance(transcoder, GStreamerTranscoder))
 
-        # SUCKS. Why is the API for the external process different?
-        self.assertEquals(transcoder.pipeline_description, 'uiuiuiui')
-        self.assertEquals(transcoder.uri, 'http://another/uri')
+        self.assertEquals(transcoder.pipeline_description, 'pp%spppl')
+        self.assertEquals(transcoder.source, 'http://another/uri2')
 
