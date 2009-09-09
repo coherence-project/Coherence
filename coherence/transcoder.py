@@ -45,12 +45,12 @@ class FakeTransformer(gst.Element, log.Loggable):
                                         gst.PAD_ALWAYS,
                                         gst.caps_new_any())
 
-    _srcpadtemplate =  gst.PadTemplate ("srcpadtemplate",
+    _srcpadtemplate = gst.PadTemplate ("srcpadtemplate",
                                         gst.PAD_SRC,
                                         gst.PAD_ALWAYS,
                                         gst.caps_new_any())
 
-    def __init__(self,destination=None,request=None):
+    def __init__(self, destination=None, request=None):
         gst.Element.__init__(self)
         self.sinkpad = gst.Pad(self._sinkpadtemplate, "sink")
         self.srcpad = gst.Pad(self._srcpadtemplate, "src")
@@ -105,7 +105,7 @@ class DataSink(gst.Element, log.Loggable):
                                         gst.PAD_ALWAYS,
                                         gst.caps_new_any())
 
-    def __init__(self,destination=None,request=None):
+    def __init__(self, destination=None, request=None):
         gst.Element.__init__(self)
         self.sinkpad = gst.Pad(self._sinkpadtemplate, "sink")
         self.add_pad(self.sinkpad)
@@ -115,7 +115,7 @@ class DataSink(gst.Element, log.Loggable):
         self.destination = destination
         self.request = request
 
-        if self.destination != None:
+        if self.destination is not None:
             self.destination = open(self.destination, 'wb')
         self.buffer = ''
         self.data_size = 0
@@ -123,11 +123,11 @@ class DataSink(gst.Element, log.Loggable):
         self.closed = False
 
     def chainfunc(self, pad, buffer):
-        if self.closed == True:
+        if self.closed:
             return gst.FLOW_OK
-        if self.destination != None:
+        if self.destination is not None:
             self.destination.write(buffer.data)
-        elif self.request != None:
+        elif self.request is not None:
             self.buffer += buffer.data
             if len(self.buffer) > 200000:
                 self.request.write(self.buffer)
@@ -140,14 +140,14 @@ class DataSink(gst.Element, log.Loggable):
 
     def eventfunc(self, pad, event):
         if event.type == gst.EVENT_NEWSEGMENT:
-            if self.got_new_segment == False:
+            if not self.got_new_segment:
                 self.got_new_segment = True
             else:
                 self.closed = True
         elif event.type == gst.EVENT_EOS:
-            if self.destination != None:
+            if self.destination is not None:
                 self.destination.close()
-            elif self.request != None:
+            elif self.request is not None:
                 if len(self.buffer) > 0:
                     self.request.write(self.buffer)
                 self.request.finish()
@@ -160,7 +160,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
     logCategory = 'gstreamer'
     addSlash = True
 
-    def __init__(self,pipeline,mimetype):
+    def __init__(self, pipeline, mimetype):
         self.pipeline_description = pipeline
         self.contentType = mimetype
         self.requests = []
@@ -171,8 +171,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         resource.Resource.__init__(self)
 
     def parse_pipeline(self):
-        self.pipeline = gst.parse_launch(
-                            self.pipeline_description)
+        self.pipeline = gst.parse_launch(self.pipeline_description)
         self.appsink = gst.element_factory_make("appsink", "sink")
         self.appsink.set_property('emit-signals', True)
         self.pipeline.add(self.appsink)
@@ -182,8 +181,9 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.appsink.connect("new-buffer", self.new_buffer)
         self.appsink.connect("eos", self.eos)
 
-    def start(self,request=None):
-        self.info("GStreamerPipeline start %r %r" % (request,self.pipeline_description))
+    def start(self, request=None):
+        self.info("GStreamerPipeline start %r %r", request,
+                self.pipeline_description)
         self.requests.append(request)
         self.pipeline.set_state(gst.STATE_PLAYING)
 
@@ -234,10 +234,10 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.info('getChild %s, %s' % (name, request))
         return self
 
-    def render_GET(self,request):
+    def render_GET(self, request):
         self.info('render GET %r' % (request))
         request.setResponseCode(200)
-        if hasattr(self,'contentType'):
+        if hasattr(self, 'contentType'):
             request.setHeader('Content-Type', self.contentType)
         request.write('')
 
@@ -256,13 +256,13 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
             self.start(request)
         return server.NOT_DONE_YET
 
-    def render_HEAD(self,request):
+    def render_HEAD(self, request):
         self.info('render HEAD %r' % (request))
         request.setResponseCode(200)
         request.setHeader('Content-Type', self.contentType)
         request.write('')
 
-    def requestFinished(self,result, request):
+    def requestFinished(self, result, request):
         self.info("requestFinished %r" % result)
         """ we need to find a way to destroy the pipeline here
         """
@@ -272,7 +272,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         if not self.requests:
             self.cleanup()
 
-    def on_message(self,bus,message):
+    def on_message(self, bus, message):
         t = message.type
         print "on_message", t
         if t == gst.MESSAGE_ERROR:
@@ -293,11 +293,11 @@ class BaseTranscoder(resource.Resource, log.Loggable):
     logCategory = 'transcoder'
     addSlash = True
 
-    def __init__(self,uri,destination=None):
+    def __init__(self, uri, destination=None):
         self.info('uri %s %r' % (uri, type(uri)))
-        if uri[:7] not in ['file://','http://']:
+        if uri[:7] not in ['file://', 'http://']:
             uri = 'file://' + urllib.quote(uri)   #FIXME
-        self.source = uri
+        self.uri = uri
         self.destination = destination
         resource.Resource.__init__(self)
 
@@ -305,10 +305,10 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         self.info('getChild %s, %s' % (name, request))
         return self
 
-    def render_GET(self,request):
+    def render_GET(self, request):
         self.info('render GET %r' % (request))
         request.setResponseCode(200)
-        if hasattr(self,'contentType'):
+        if hasattr(self, 'contentType'):
             request.setHeader('Content-Type', self.contentType)
         request.write('')
 
@@ -320,13 +320,13 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         self.start(request)
         return server.NOT_DONE_YET
 
-    def render_HEAD(self,request):
+    def render_HEAD(self, request):
         self.info('render HEAD %r' % (request))
         request.setResponseCode(200)
         request.setHeader('Content-Type', self.contentType)
         request.write('')
 
-    def requestFinished(self,result):
+    def requestFinished(self, result):
         self.info("requestFinished %r" % result)
         """ we need to find a way to destroy the pipeline here
         """
@@ -334,7 +334,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         #reactor.callLater(0, self.pipeline.set_state, gst.STATE_NULL)
         gobject.idle_add(self.cleanup)
 
-    def on_message(self,bus,message):
+    def on_message(self, bus, message):
         t = message.type
         print "on_message", t
         if t == gst.MESSAGE_ERROR:
@@ -348,23 +348,24 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         self.pipeline.set_state(gst.STATE_NULL)
 
 
-class PCMTranscoder(BaseTranscoder,InternalTranscoder):
+class PCMTranscoder(BaseTranscoder, InternalTranscoder):
     contentType = 'audio/L16;rate=44100;channels=2'
     name = 'lpcm'
 
-    def start(self,request=None):
-        self.info("PCMTranscoder start %r %r" % (request,self.source))
+    def start(self, request=None):
+        self.info("PCMTranscoder start %r %r", request, self.uri)
         self.pipeline = gst.parse_launch(
-            "%s ! decodebin ! audioconvert name=conv" % self.source)
+            "%s ! decodebin ! audioconvert name=conv" % self.uri)
 
         conv = self.pipeline.get_by_name('conv')
         caps = gst.Caps("audio/x-raw-int,rate=44100,endianness=4321,channels=2,width=16,depth=16,signed=true")
+        #FIXME: UGLY. 'filter' is a python builtin!
         filter = gst.element_factory_make("capsfilter", "filter")
         filter.set_property("caps", caps)
         self.pipeline.add(filter)
         conv.link(filter)
 
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         filter.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
@@ -373,17 +374,17 @@ class PCMTranscoder(BaseTranscoder,InternalTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class WAVTranscoder(BaseTranscoder,InternalTranscoder):
+class WAVTranscoder(BaseTranscoder, InternalTranscoder):
 
     contentType = 'audio/x-wav'
     name = 'wav'
 
-    def start(self,request=None):
+    def start(self, request=None):
         self.info("start %r", request)
         self.pipeline = gst.parse_launch(
-            "%s ! decodebin ! audioconvert ! wavenc name=enc" % self.source)
+            "%s ! decodebin ! audioconvert ! wavenc name=enc" % self.uri)
         enc = self.pipeline.get_by_name('enc')
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         enc.link(sink)
         #bus = self.pipeline.get_bus()
@@ -394,17 +395,17 @@ class WAVTranscoder(BaseTranscoder,InternalTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class MP3Transcoder(BaseTranscoder,InternalTranscoder):
+class MP3Transcoder(BaseTranscoder, InternalTranscoder):
 
     contentType = 'audio/mpeg'
     name = 'mp3'
 
-    def start(self,request=None):
+    def start(self, request=None):
         self.info("start %r", request)
         self.pipeline = gst.parse_launch(
-            "%s ! decodebin ! audioconvert ! lame name=enc" % self.source)
+            "%s ! decodebin ! audioconvert ! lame name=enc" % self.uri)
         enc = self.pipeline.get_by_name('enc')
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         enc.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
@@ -413,19 +414,19 @@ class MP3Transcoder(BaseTranscoder,InternalTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class MP4Transcoder(BaseTranscoder,InternalTranscoder):
+class MP4Transcoder(BaseTranscoder, InternalTranscoder):
     """ Only works if H264 inside Quicktime/MP4 container is input
         Source has to be a valid uri
     """
     contentType = 'video/mp4'
     name = 'mp4'
 
-    def start(self,request=None):
+    def start(self, request=None):
         self.info("start %r", request)
         self.pipeline = gst.parse_launch(
-            "%s ! qtdemux name=d ! queue ! h264parse ! mp4mux name=mux d. ! queue ! mux." % self.source)
+            "%s ! qtdemux name=d ! queue ! h264parse ! mp4mux name=mux d. ! queue ! mux." % self.uri)
         mux = self.pipeline.get_by_name('mux')
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         mux.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
@@ -434,18 +435,18 @@ class MP4Transcoder(BaseTranscoder,InternalTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class MP2TSTranscoder(BaseTranscoder,InternalTranscoder):
+class MP2TSTranscoder(BaseTranscoder, InternalTranscoder):
 
     contentType = 'video/mpeg'
     name = 'mpegts'
 
-    def start(self,request=None):
+    def start(self, request=None):
         self.info("start %r", request)
         ### FIXME mpeg2enc
         self.pipeline = gst.parse_launch(
-            "mpegtsmux name=mux %s ! decodebin2 name=d ! queue ! ffmpegcolorspace ! mpeg2enc ! queue ! mux. d. ! queue ! audioconvert ! twolame ! queue ! mux."  % self.source)
+            "mpegtsmux name=mux %s ! decodebin2 name=d ! queue ! ffmpegcolorspace ! mpeg2enc ! queue ! mux. d. ! queue ! audioconvert ! twolame ! queue ! mux."  % self.uri)
         enc = self.pipeline.get_by_name('mux')
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         enc.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
@@ -454,14 +455,14 @@ class MP2TSTranscoder(BaseTranscoder,InternalTranscoder):
         d.addBoth(self.requestFinished)
 
 
-class ThumbTranscoder(BaseTranscoder,InternalTranscoder):
+class ThumbTranscoder(BaseTranscoder, InternalTranscoder):
     """ should create a valid thumbnail according to the DLNA spec
         neither width nor height must exceed 160px
     """
     contentType = 'image/jpeg'
     name = 'thumb'
 
-    def start(self,request=None):
+    def start(self, request=None):
         self.info("start %r", request)
         """ what we actually want here is a pipeline that calls
             us when it knows about the size of the original image,
@@ -483,14 +484,14 @@ class ThumbTranscoder(BaseTranscoder,InternalTranscoder):
             type = 'jpeg'
         if type == 'png':
             self.pipeline = gst.parse_launch(
-                "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! pngenc name=enc" % self.source)
+                "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! pngenc name=enc" % self.uri)
             self.contentType = 'image/png'
         else:
             self.pipeline = gst.parse_launch(
-                "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! jpegenc name=enc" % self.source)
+                "%s ! decodebin2 ! videoscale ! video/x-raw-yuv,width=160,height=160 ! jpegenc name=enc" % self.uri)
             self.contentType = 'image/jpeg'
         enc = self.pipeline.get_by_name('enc')
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         enc.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
@@ -510,11 +511,11 @@ class GStreamerTranscoder(BaseTranscoder):
         same for the attribute contentType
     """
 
-    def start(self,request=None):
+    def start(self, request=None):
         self.info("start %r", request)
-        self.pipeline = gst.parse_launch(self.pipeline_description % self.source)
+        self.pipeline = gst.parse_launch(self.pipeline_description % self.uri)
         enc = self.pipeline.get_by_name('mux')
-        sink = DataSink(destination=self.destination,request=request)
+        sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)
         enc.link(sink)
         self.pipeline.set_state(gst.STATE_PLAYING)
@@ -525,7 +526,7 @@ class GStreamerTranscoder(BaseTranscoder):
 
 class ExternalProcessProtocol(protocol.ProcessProtocol):
 
-    def __init__(self,caller):
+    def __init__(self, caller):
         self.caller = caller
 
     def connectionMade(self):
@@ -561,7 +562,7 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
 class ExternalProcessProducer(object):
     logCategory = 'externalprocess'
 
-    def __init__(self,pipeline,request):
+    def __init__(self, pipeline, request):
         self.pipeline = pipeline
         self.request = request
         self.process = None
@@ -570,14 +571,14 @@ class ExternalProcessProducer(object):
         self.ended = False
         request.registerProducer(self, 0)
 
-    def write_data(self,data):
+    def write_data(self, data):
         if data:
             #print "write %d bytes of data" % len(data)
             self.written += len(data)
             # this .write will spin the reactor, calling .doWrite and then
             # .resumeProducing again, so be prepared for a re-entrant call
             self.request.write(data)
-        if self.request and self.ended == True:
+        if self.request and self.ended:
             print "closing"
             self.request.unregisterProducer()
             self.request.finish()
@@ -587,18 +588,19 @@ class ExternalProcessProducer(object):
         #print "resumeProducing", self.request
         if not self.request:
             return
-        if self.process == None:
+        if self.process is None:
             argv = self.pipeline.split()
             executable = argv[0]
             argv[0] = os.path.basename(argv[0])
             from twisted.internet import reactor
-            self.process = reactor.spawnProcess(ExternalProcessProtocol(self), executable, argv, {})
+            self.process = reactor.spawnProcess(ExternalProcessProtocol(self),
+                    executable, argv, {})
 
     def pauseProducing(self):
         pass
 
     def stopProducing(self):
-        print "stopProducing",self.request
+        print "stopProducing", self.request
         self.request.unregisterProducer()
         self.process.loseConnection()
         self.request.finish()
@@ -609,18 +611,21 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
     logCategory = 'externalprocess'
     addSlash = False
 
-    def __init__(self,uri):
+    def __init__(self, uri):
         self.uri = uri
 
     def getChildWithDefault(self, path, request):
         return self
 
     def render(self, request):
-        print "ExternalProcessPipeline render",self.contentType
-        if hasattr(self,'contentType') and self.contentType:
-            request.setHeader('Content-Type', self.contentType)
+        print "ExternalProcessPipeline render"
+        try:
+            if self.contentType:
+                request.setHeader('Content-Type', self.contentType)
+        except AttributeError:
+            pass
 
-        ExternalProcessProducer(self.pipeline_description % self.uri,request)
+        ExternalProcessProducer(self.pipeline_description % self.uri, request)
         return server.NOT_DONE_YET
 
 def transcoder_class_wrapper(klass, mime_type, pipeline):
