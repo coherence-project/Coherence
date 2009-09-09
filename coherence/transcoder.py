@@ -160,9 +160,9 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
     logCategory = 'gstreamer'
     addSlash = True
 
-    def __init__(self, pipeline, mimetype):
+    def __init__(self, pipeline, content_type):
         self.pipeline_description = pipeline
-        self.contentType = mimetype
+        self.contentType = conten_type
         self.requests = []
         # if stream has a streamheader (something that has to be prepended
         # before any data), then it will be a tuple of GstBuffers
@@ -628,10 +628,10 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         ExternalProcessProducer(self.pipeline_description % self.uri, request)
         return server.NOT_DONE_YET
 
-def transcoder_class_wrapper(klass, mime_type, pipeline):
+def transcoder_class_wrapper(klass, content_type, pipeline):
     def create_object(uri):
         transcoder = klass(uri)
-        transcoder.contentType = mime_type
+        transcoder.contentType = content_type
         transcoder.pipeline_description = pipeline
         return transcoder
     return create_object
