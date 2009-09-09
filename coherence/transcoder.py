@@ -690,11 +690,10 @@ class TranscoderManager(log.Loggable):
             self.coherence = coherence
             try:
                 transcoders_from_config = self.coherence.config['transcoder']
-            except KeyError:
-                transcoders_from_config = []
-            else:
                 if isinstance(transcoders_from_config, dict):
                     transcoders_from_config = [transcoders_from_config]
+            except KeyError:
+                transcoders_from_config = []
 
             for transcoder in transcoders_from_config:
                 transcoder_type = transcoder['type'].lower()
