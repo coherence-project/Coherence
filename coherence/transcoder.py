@@ -696,8 +696,15 @@ class TranscoderManager(log.Loggable):
                 transcoders_from_config = []
 
             for transcoder in transcoders_from_config:
+                # FIXME: is anyone checking if all keys are given ?
+                pipeline = transcoder['pipeline']
+                if not '%s' in pipeline:
+                    self.warning("Can't created transcoder %r:"
+                            " missing placehoder '%%s' in 'pipeline'""",
+                            transcoder)
+                    continue
+
                 transcoder_type = transcoder['type'].lower()
-                #FIXME: check if the pipeline has a '%s' in it
                 if transcoder_type == 'gstreamer':
                     wrapped = transcoder_class_wrapper(GStreamerTranscoder,
                             transcoder['target'], transcoder['pipeline'])
