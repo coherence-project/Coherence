@@ -704,12 +704,22 @@ class TranscoderManager(log.Loggable):
                 # FIXME: is anyone checking if all keys are given ?
                 pipeline = transcoder['pipeline']
                 if not '%s' in pipeline:
-                    self.warning("Can't created transcoder %r:"
-                            " missing placehoder '%%s' in 'pipeline'""",
+                    self.warning("Can't create transcoder %r:"
+                            " missing placehoder '%%s' in 'pipeline'",
                             transcoder)
                     continue
 
+                try:
+                    transcoder_name = transcoder['name'].decode('ascii')
+                except UnicodeEncodeError:
+                    self.warning("Can't create transcoder %r:"
+                            " the 'name' contains non-ascii letters",
+                            transcoder)
+                    continue
+
+
                 transcoder_type = transcoder['type'].lower()
+
                 if transcoder_type == 'gstreamer':
                     wrapped = transcoder_class_wrapper(GStreamerTranscoder,
                             transcoder['target'], transcoder['pipeline'])
@@ -720,7 +730,7 @@ class TranscoderManager(log.Loggable):
                     self.warning("unknown transcoder type %r", transcoder_type)
                     continue
 
-                self.transcoders[transcoder['name']] = wrapped
+                self.transcoders[transcoder_name] = wrapped
 
         #FIXME reduce that to info later
         self.warning("available transcoders %r" % self.transcoders)
