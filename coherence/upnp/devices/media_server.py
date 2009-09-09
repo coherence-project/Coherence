@@ -69,6 +69,24 @@ class MSRoot(resource.Resource, log.Loggable):
         headers = request.getAllHeaders()
         self.msg( request.getAllHeaders())
 
+
+        if request.method == 'HEAD':
+            if 'getcaptioninfo.sec' in headers:
+                self.warning("requesting srt file for id %s" % path)
+                ch = self.store.get_by_id(path)
+                try:
+                    location = ch.get_path()
+                    caption = ch.caption
+                    if caption == None:
+                        raise KeyError
+                    request.setResponseCode(200)
+                    request.setHeader('CaptionInfo.sec', caption)
+                    return static.Data('','text/html')
+                except:
+                    print traceback.format_exc()
+                    request.setResponseCode(404)
+                    return static.Data('<html><p>the requested srt file was not found</p></html>','text/html')
+
         try:
             request._dlna_transfermode = headers['transfermode.dlna.org']
         except KeyError:

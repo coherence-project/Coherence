@@ -90,6 +90,7 @@ class FSItem(BackendItem):
         self.child_count = 0
         self.children = []
         self.sorted = False
+        self.caption = None
 
 
         if mimetype in ['directory','root']:
@@ -231,6 +232,21 @@ class FSItem(BackendItem):
                             self.item.attachments = {}
                         self.item.attachments[hash_from_path] = utils.StaticFile(urllib.quote(thumbnail))
 
+            if self.mimetype.startswith('video/'):
+                path = self.get_path()
+                caption,_ =  os.path.splitext(path)
+                caption = caption + '.srt'
+                if os.path.exists(caption):
+                    hash_from_path = str(id(caption))
+                    mimetype = 'smi/caption'
+                    new_res = Resource(self.url+'?attachment='+hash_from_path,
+                        'http-get:*:%s:%s' % (mimetype, '*'))
+                    new_res.size = os.path.getsize(caption)
+                    self.caption = new_res.data
+                    self.item.res.append(new_res)
+                    if not hasattr(self.item, 'attachments'):
+                        self.item.attachments = {}
+                    self.item.attachments[hash_from_path] = utils.StaticFile(urllib.quote(caption))
 
             try:
                 # FIXME: getmtime is deprecated in Twisted 2.6
