@@ -15,12 +15,12 @@ import os, sys
 
 import string
 
-from twisted.python import usage, text
-
-
 from coherence import __version__
 
 from coherence.extern.simple_config import Config,ConfigItem
+
+from twisted.python import usage, text
+
 
 """
  thankfully taken from twisted.scripts._twistd_unix.py

@@ -93,17 +93,6 @@ if haz_setuptools == True:
         from configobj import ConfigObj
     except ImportError:
         setup_args['install_requires'].append('ConfigObj >= 4.3')
-    try:
-        from twisted import __version__ as twisted_version
-        twisted_version = map(int, twisted_version.split('.'))
-        if twisted_version < [2,5,0]:
-            raise ImportError
-        from twisted.web import __version__ as twisted_web_version
-        twisted_web_version = map(int, twisted_web_version.split('.'))
-        if twisted_web_version < [2,5,0]:
-            raise ImportError
-    except ImportError:
-        setup_args['install_requires'].append('Twisted >= 2.5.0')
 
     setup_args['entry_points'] = """
         [coherence.plugins.backend.media_server]
