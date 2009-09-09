@@ -28,8 +28,8 @@ from coherence import log
 
 import struct
 
-def get_transcoders_name(transcoder):
-    return transcoder.id
+def get_transcoder_name(transcoder):
+    return transcoder.name
 
 class InternalTranscoder(object):
     """ just a class to inherit from and
@@ -350,7 +350,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
 
 class PCMTranscoder(BaseTranscoder,InternalTranscoder):
     contentType = 'audio/L16;rate=44100;channels=2'
-    id = 'lpcm'
+    name = 'lpcm'
 
     def start(self,request=None):
         self.info("PCMTranscoder start %r %r" % (request,self.source))
@@ -376,7 +376,7 @@ class PCMTranscoder(BaseTranscoder,InternalTranscoder):
 class WAVTranscoder(BaseTranscoder,InternalTranscoder):
 
     contentType = 'audio/x-wav'
-    id = 'wav'
+    name = 'wav'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -397,7 +397,7 @@ class WAVTranscoder(BaseTranscoder,InternalTranscoder):
 class MP3Transcoder(BaseTranscoder,InternalTranscoder):
 
     contentType = 'audio/mpeg'
-    id = 'mp3'
+    name = 'mp3'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -418,7 +418,7 @@ class MP4Transcoder(BaseTranscoder,InternalTranscoder):
         Source has to be a valid uri
     """
     contentType = 'video/mp4'
-    id = 'mp4'
+    name = 'mp4'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -437,7 +437,7 @@ class MP4Transcoder(BaseTranscoder,InternalTranscoder):
 class MP2TSTranscoder(BaseTranscoder,InternalTranscoder):
 
     contentType = 'video/mpeg'
-    id = 'mpegts'
+    name = 'mpegts'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -459,7 +459,7 @@ class ThumbTranscoder(BaseTranscoder,InternalTranscoder):
         neither width nor height must exceed 160px
     """
     contentType = 'image/jpeg'
-    id = 'thumb'
+    name = 'thumb'
 
     def start(self,request=None):
         self.info("start %r", request)
@@ -623,6 +623,15 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         ExternalProcessProducer(self.pipeline_description % self.uri,request)
         return server.NOT_DONE_YET
 
+def transcoder_class_wrapper(klass, mime_type, pipeline):
+    def create_object(uri):
+        transcoder = klass(uri)
+        transcoder.contentType = mime_type
+        transcoder.pipeline_description = pipeline
+        return transcoder
+    return create_object
+
+
 
 class TranscoderManager(log.Loggable):
 
@@ -661,51 +670,55 @@ class TranscoderManager(log.Loggable):
 
     def __new__(cls, *args, **kwargs):
         """ creates the singleton """
-        obj = getattr(cls,'_instance_',None)
-        if obj is not None:
-            return obj
-        else:
+        if cls._instance_ is None:
             obj = super(TranscoderManager, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
-            cls.transcoders = {}
-            return obj
+        return cls._instance_
 
-    def __init__(self,coherence=None):
+    def __init__(self, coherence=None):
         """ initializes the class
 
             it should be called at least once
             with the main coherence class passed as an argument,
             so we have access to the config
         """
-        if coherence != None:
-            self.coherence = coherence
-        if len(self.transcoders) == 0:
-            for transcoder in InternalTranscoder.__subclasses__():
-                self.transcoders[transcoder.id] = transcoder
+        self.transcoders = {}
+        for transcoder in InternalTranscoder.__subclasses__():
+            self.transcoders[get_transcoder_name(transcoder)] = transcoder
 
-        if coherence != None:
+        if coherence is not None:
+            self.coherence = coherence
             try:
                 transcoders_from_config = self.coherence.config['transcoder']
             except KeyError:
                 transcoders_from_config = []
-            if isinstance(transcoders_from_config,dict):
-                transcoders_from_config=[transcoders_from_config]
-            for transcoder in transcoders_from_config:
-                if transcoder['type'].lower() == 'gstreamer':
-                    #XXX check if the pipeline has a '%s' in it
-                    self.transcoders[transcoder['id']] = {'class':GStreamerTranscoder,'pipeline':transcoder['pipeline'],'mimetype':transcoder['target']}
-                elif transcoder['type'].lower() == 'process':
-                    self.transcoders[transcoder['id']] = {'class':ExternalProcessPipeline,'pipeline':transcoder['pipeline'],'mimetype':transcoder['target']}
-                else:
-                    self.warning("unknown transcoder type %r" % transcoder['type'])
+            else:
+                if isinstance(transcoders_from_config, dict):
+                    transcoders_from_config = [transcoders_from_config]
 
-        #XXX reduce that to info later
+            for transcoder in transcoders_from_config:
+                transcoder_type = transcoder['type'].lower()
+                #FIXME: check if the pipeline has a '%s' in it
+                if transcoder_type == 'gstreamer':
+                    wrapped = transcoder_class_wrapper(GStreamerTranscoder,
+                            transcoder['target'], transcoder['pipeline'])
+                elif transcoder_type == 'process':
+                    wrapped = transcoder_class_wrapper(ExternalProcessPipeline,
+                            transcoder['target'], transcoder['pipeline'])
+                else:
+                    self.warning("unknown transcoder type %r", transcoder_type)
+                    continue
+
+                self.transcoders[transcoder['name']] = wrapped
+
+        #FIXME reduce that to info later
         self.warning("available transcoders %r" % self.transcoders)
 
 
-    def select(self,id,uri,backend=None):
+    def select(self, name, uri, backend=None):
+        # FIXME:why do we specify the name when trying to get it?
 
-        if backend != None:
+        if backend is not None:
             """ try to find a transcoder provided by the backend
                 and return that here,
                 if there isn't one continue with the ones
@@ -713,16 +726,8 @@ class TranscoderManager(log.Loggable):
             """
             pass
 
-        transcoder_class = self.transcoders[id]
-        if isinstance(transcoder_class,dict):
-            r=transcoder_class['class'](uri)
-            r.contentType = transcoder_class['mimetype']
-            r.pipeline_description = transcoder_class['pipeline']
-        else:
-            r=transcoder_class(uri)
-        print r
-        return r
-
+        transcoder = self.transcoders[name](uri)
+        return transcoder
 
 if __name__ == '__main__':
     t = Transcoder(None)

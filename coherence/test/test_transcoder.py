@@ -1,7 +1,7 @@
 
 from twisted.trial.unittest import TestCase
 
-from coherence.transcoder import TranscoderManager, get_transcoders_name
+from coherence.transcoder import TranscoderManager, get_transcoder_name
 
 from coherence.transcoder import (PCMTranscoder, WAVTranscoder, MP3Transcoder,
         MP4Transcoder, MP2TSTranscoder, ThumbTranscoder, GStreamerTranscoder,
@@ -43,7 +43,7 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
 
     def _check_for_transcoders(self, transcoders):
         for klass in transcoders:
-            loaded_transcoder = self.manager.transcoders[get_transcoders_name(klass)]
+            loaded_transcoder = self.manager.transcoders[get_transcoder_name(klass)]
             self.assertEquals(loaded_transcoder, klass)
 
     def test_is_loading_no_config(self):
@@ -52,7 +52,7 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self._check_for_transcoders(known_transcoders)
 
     def test_is_loading_one_gst_from_config(self):
-        my_config = {'id': 'supertest', 'pipeline': 'pppppl',
+        my_config = {'name': 'supertest', 'pipeline': 'pppppl',
                      'type': 'gstreamer', 'target': 'yay'}
         coherence = self.CoherenceStump(transcoder=my_config)
         self.manager = TranscoderManager(coherence)
@@ -69,7 +69,7 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertEquals(transcoder.source, uri)
 
     def test_is_loading_one_process_from_config(self):
-        my_config = {'id': 'megaprocess', 'pipeline': 'uiuiuiui',
+        my_config = {'name': 'megaprocess', 'pipeline': 'uiuiuiui',
                      'type': 'process', 'target': 'yay'}
         coherence = self.CoherenceStump(transcoder=my_config)
         self.manager = TranscoderManager(coherence)
@@ -82,10 +82,10 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertEquals(transcoder.uri, 'http://another/uri')
 
     def test_is_loading_multiple_from_config(self):
-        megaprocess_config = {'id': 'megaprocess', 'pipeline': 'uiuiuiui',
+        megaprocess_config = {'name': 'megaprocess', 'pipeline': 'uiuiuiui',
                      'type': 'process', 'target': 'yay'}
 
-        gst_config = {'id': 'supertest', 'pipeline': 'pppppl',
+        gst_config = {'name': 'supertest', 'pipeline': 'pppppl',
                      'type': 'gstreamer', 'target': 'yay'}
         coherence = self.CoherenceStump(transcoder=[gst_config, megaprocess_config])
         self.manager = TranscoderManager(coherence)
