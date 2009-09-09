@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 from twisted.trial.unittest import TestCase
 
@@ -43,6 +44,10 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
 
     process_config = {'name': 'megaprocess', 'pipeline': 'uiui%suiui',
                      'type': 'process', 'target': 'yay'}
+
+    bad_name_config = {'name': u'so bäd', 'pipeline': 'fake %s',
+                        'type': 'process', 'target': 'norway'}
+
     def setUp(self):
         self.manager = None
 
@@ -94,6 +99,18 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self._check_for_transcoders(known_transcoders)
         self.assertRaises(KeyError, self.manager.select, 'failing',
                 'http://another/uri')
+
+    def test_badname_in_config(self):
+        # this pipeline does not contain the '%s' placeholder and because
+        # of that should not be created
+
+        coherence = self.CoherenceStump(transcoder=self.bad_name_config)
+        self.manager = TranscoderManager(coherence)
+        self._check_for_transcoders(known_transcoders)
+        self.assertRaises(KeyError, self.manager.select, u'so bäd',
+                'http://another/uri')
+
+
 
     def test_is_loading_multiple_from_config(self):
         coherence = self.CoherenceStump(transcoder=[self.gst_config,
