@@ -69,6 +69,12 @@ class MSRoot(resource.Resource, log.Loggable):
         headers = request.getAllHeaders()
         self.msg( request.getAllHeaders())
 
+        try:
+            if headers['getcontentfeatures.dlna.org'] != '1':
+                request.setResponseCode(400)
+                return static.Data('<html><p>wrong value for getcontentFeatures.dlna.org</p></html>','text/html')
+        except:
+            pass
 
         if request.method == 'HEAD':
             if 'getcaptioninfo.sec' in headers:
@@ -204,6 +210,25 @@ class MSRoot(resource.Resource, log.Loggable):
 
         request.setResponseCode(404)
 
+    def prepare_connection(self,request):
+        new_id,_,_ = self.server.connection_manager_server.add_connection('',
+                                                                    'Output',
+                                                                    -1,
+                                                                    '')
+        self.info("startup, add %d to connection table" % new_id)
+        d = request.notifyFinish()
+        d.addBoth(self.requestFinished, new_id, request)
+
+    def prepare_headers(self,ch,request):
+        request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
+        if hasattr(ch,'item') and hasattr(ch.item, 'res'):
+            if ch.item.res[0].protocolInfo is not None:
+                additional_info = ch.item.res[0].get_additional_info()
+                if additional_info != '*':
+                    request.setHeader('contentFeatures.dlna.org', additional_info)
+                elif 'getcontentfeatures.dlna.org' in request.getAllHeaders():
+                    request.setHeader('contentFeatures.dlna.org', "DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01500000000000000000000000000000")
+
     def process_child(self,ch,name,request):
         if ch != None:
             self.info('Child found', ch)
@@ -230,19 +255,8 @@ class MSRoot(resource.Resource, log.Loggable):
                 if(isinstance(ch.location, ReverseProxyResource) or
                    isinstance(ch.location, resource.Resource)):
                     self.info('getChild proxy %s to %s' % (name, ch.location.uri))
-                    new_id,_,_ = self.server.connection_manager_server.add_connection('',
-                                                                                'Output',
-                                                                                -1,
-                                                                                '')
-                    self.info("startup, add %d to connection table" % new_id)
-                    d = request.notifyFinish()
-                    d.addBoth(self.requestFinished, new_id, request)
-                    request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
-                    if hasattr(ch,'item') and hasattr(ch.item, 'res'):
-                        if ch.item.res[0].protocolInfo is not None:
-                            additional_info = ch.item.res[0].get_additional_info()
-                            if additional_info != '*':
-                                request.setHeader('contentFeatures.dlna.org', additional_info)
+                    self.prepare_connection(request)
+                    self.prepare_headers(ch,request)
                     return ch.location
             try:
                 p = ch.get_path()
@@ -254,19 +268,8 @@ class MSRoot(resource.Resource, log.Loggable):
                 return self.list_content(name, ch, request)
             if p != None and os.path.exists(p):
                 self.info("accessing path %r" % p)
-                new_id,_,_ = self.server.connection_manager_server.add_connection('',
-                                                                            'Output',
-                                                                            -1,
-                                                                            '')
-                self.info("startup, add %d to connection table" % new_id)
-                d = request.notifyFinish()
-                d.addBoth(self.requestFinished, new_id, request)
-                request.setHeader('transferMode.dlna.org', request._dlna_transfermode)
-                if hasattr(ch, 'item') and hasattr(ch.item, 'res'):
-                    if ch.item.res[0].protocolInfo is not None:
-                        additional_info = ch.item.res[0].get_additional_info()
-                        if additional_info != '*':
-                            request.setHeader('contentFeatures.dlna.org', additional_info)
+                self.prepare_connection(request)
+                self.prepare_headers(ch,request)
                 ch = StaticFile(p)
             else:
                 self.debug("accessing path %r failed" % p)
