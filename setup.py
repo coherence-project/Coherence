@@ -94,6 +94,13 @@ if haz_setuptools == True:
     except ImportError:
         setup_args['install_requires'].append('ConfigObj >= 4.3')
 
+    try:
+        import netifaces
+    except ImportError:
+        import sys
+        if sys.platform in ('win32','sunos5'):
+            setup_args['install_requires'].append('Netifaces >= 0.4')
+
     setup_args['entry_points'] = """
         [coherence.plugins.backend.media_server]
         FSStore = coherence.backends.fs_storage:FSStore
