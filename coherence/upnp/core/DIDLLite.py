@@ -185,7 +185,7 @@ def build_dlna_additional_info(content_format,does_playcontainer=False):
         content_format = 'video/mpeg'
     if content_format in ['video/mp4','video/x-m4a']:
         additional_info = ['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC']+simple_dlna_tags
-    if content_format == 'video/x-msvideo':
+    if content_format in ['video/x-msvideo','video/avi','video/divx']:
         #additional_info = ';'.join(['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC']+simple_dlna_tags)
         additional_info = ['*']
     if content_format == 'video/x-ms-wmv':
@@ -257,7 +257,7 @@ class Resource(object):
         else:
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format == 'video/x-msvideo':
-                content_format = 'video/avi'
+                content_format = 'video/divx'
             additional_info = self.get_additional_info(upnp_client=kwargs.get('upnp_client',''))
             root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
 
