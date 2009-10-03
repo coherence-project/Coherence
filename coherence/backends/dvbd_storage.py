@@ -299,10 +299,9 @@ class DVBDStore(BackendStore):
         self.containers[RECORDINGS_CONTAINER_ID].remove_children()
 
         def handle_result(r):
-            print "recording changed, handle_result"
-            print self.containers[RECORDINGS_CONTAINER_ID].update_id
+            self.debug("recording changed, handle_result: %s",
+                self.containers[RECORDINGS_CONTAINER_ID].update_id)
             self.containers[RECORDINGS_CONTAINER_ID].update_id += 1
-            print self.containers[RECORDINGS_CONTAINER_ID].update_id
 
             if( self.server and
                 hasattr(self.server,'content_directory_server')):
@@ -310,67 +309,47 @@ class DVBDStore(BackendStore):
                     self.update_id += 1
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
                 value = (RECORDINGS_CONTAINER_ID,self.containers[RECORDINGS_CONTAINER_ID].update_id)
-                print "ContainerUpdateIDs new value", value
+                self.debug("ContainerUpdateIDs new value: %s", value)
                 self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         def handle_error(error):
-            print error
+            self.error("ERROR: %s", error)
+            return error
 
         d = self.get_recordings()
         d.addCallback(handle_result)
         d.addErrback(handle_error)
 
-    def get_recording_details(self,id):
-
-        def get_title(id):
-            d = defer.Deferred()
-            self.store_interface.GetName(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
-            return d
-
-        def get_path(id):
-            d = defer.Deferred()
-            self.store_interface.GetLocation(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
-            return d
-
-        def get_date(id):
-            d = defer.Deferred()
-            self.store_interface.GetStartTimestamp(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
-            return d
-
-        def get_duration(id):
-            d = defer.Deferred()
-            self.store_interface.GetLength(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
-            return d
-
-        def process_details(r, id):
-            name = r[0][1]
+    def get_recording_details(self, id):
+        self.debug("GET RECORDING DETAILS")
+        def process_details(data):
+            self.debug("GOT RECORDING DETAILS %s", data)
+            rid, name, desc, length, start, channel, location = data
             if len(name) == 0:
-                name = 'Recording ' + str(id)
-            return {'id':id,'name':name,'path':r[1][1],'date':r[2][1],'duration':r[3][1]}
+                name = 'Recording ' + str(rid)
+            return {'id':rid,'name':name,'path':location,'date': start,'duration':length}
 
         def handle_error(error):
+            self.error("ERROR: %s", error)
             return error
 
-        dl = defer.DeferredList((get_title(id),get_path(id),get_date(id),get_duration(id)))
-        dl.addCallback(process_details,id)
-        dl.addErrback(handle_error)
-        return dl
+        d = defer.Deferred()
+        d.addCallback(process_details)
+        d.addErrback(handle_error)
+        self.store_interface.GetAllInformations(id,
+            reply_handler=lambda x, success: d.callback(x),
+            error_handler=lambda x, success: d.errback(x))
+        return d
 
     
     def get_recordings(self):
+        self.debug("GET RECORDINGS")
         def handle_error(error):
+            self.error("ERROR: %s", error)
             return error
 
         def process_query_result(ids):
-            #print "process_query_result", ids
+            self.debug("GOT RECORDINGS: %s", ids)
             if len(ids) == 0:
                 return
             l = []
@@ -406,29 +385,30 @@ class DVBDStore(BackendStore):
         return d
 
     def get_channel_details(self, channelList_interface, id):
-
+        self.debug("GET CHANNEL DETAILS %s" , id)
         def get_name(id):
             d = defer.Deferred()
             channelList_interface.GetChannelName(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
+                                         reply_handler=lambda x,success: d.callback(x),
+                                         error_handler=lambda x,success: d.errback(x))
             return d
 
         def get_network(id):
             d = defer.Deferred()
             channelList_interface.GetChannelNetwork(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
+                                         reply_handler=lambda x,success: d.callback(x),
+                                         error_handler=lambda x,success: d.errback(x))
             return d
 
         def get_url(id):
             d = defer.Deferred()
             channelList_interface.GetChannelURL(id,
-                                         reply_handler=lambda x: d.callback(x),
-                                         error_handler=lambda x: d.errback(x))
+                                         reply_handler=lambda x,success: d.callback(x),
+                                         error_handler=lambda x,success: d.errback(x))
             return d
         
         def process_details(r, id):
+            self.debug("GOT DETAILS %d: %s", id, r)
             name = r[0][1]
             network = r[1][1]
             url = r[2][1]
@@ -442,14 +422,14 @@ class DVBDStore(BackendStore):
         dl.addErrback(handle_error)
         return dl
 
-    def get_channelGroup_details(self, id):
-        #print "GET CHANNEL GROUP:", id
+    def get_channelGroup_details(self, channelgroup_interface):
+        self.debug("GET CHANNEL GROUP DETAILS")
         def handle_error(error):
-            print "ERROR:",error
+            self.error("ERROR: %s", error)
             return error
 
         def process_getChannels_result(result, channelList_interface):
-            #print "GetChannels:", result
+            self.debug("GetChannels: %s", result)
             channels = result
             if len(channels) == 0:
                     return
@@ -460,7 +440,7 @@ class DVBDStore(BackendStore):
             return dl
 
         def process_getChannelList_result(result):
-            #print "GetChannelList:", result
+            self.debug("GetChannelList: %s", result)
             dvbd_channelList = self.bus.get_object(BUS_NAME,result)
             channelList_interface = dbus.Interface (dvbd_channelList, 'org.gnome.DVB.ChannelList')
         
@@ -472,7 +452,7 @@ class DVBDStore(BackendStore):
             return d
         
         def process_details(results):
-            #print 'process_details', results
+            self.debug('GOT CHANNEL GROUP DETAILS %s', results)
             for result,channel in results:
                 #print channel
                 if result == True:
@@ -485,31 +465,33 @@ class DVBDStore(BackendStore):
                                          channel['url'],
                     			         channel['network'],
                                          'video/mpegts')
-                    self.containers[CHANNELS_CONTAINER_ID].add_child(video_item)                    
+                    self.containers[CHANNELS_CONTAINER_ID].add_child(video_item)
 
         d = defer.Deferred()
         d.addCallback(process_getChannelList_result)
         d.addCallback(process_details)
         d.addErrback(handle_error)
         d.addErrback(handle_error)
-        self.manager_interface.GetChannelList(id, reply_handler=lambda x: d.callback(x),
+        channelgroup_interface.GetChannelList(reply_handler=lambda x: d.callback(x),
                                            error_handler=lambda x: d.errback(x))
         return d
 
 
     def get_channels(self):
-        #print "GET CHANNELS"
+        self.debug("GET CHANNEL GROUPS")
         def handle_error(error):
+            self.error("ERROR: %s", error)
             return error
 
         def process_query_result(ids):
-            #print "GetRegisteredDeviceGroups:", ids
+            self.debug("GetRegisteredDeviceGroups: %s", ids)
             if len(ids) == 0:
                 return
             l = []
-            for id in ids:
-            #print id
-                l.append(self.get_channelGroup_details(id))
+            for group_object_path in ids:
+                dvbd_channelgroup = self.bus.get_object(BUS_NAME, group_object_path)
+                channelgroup_interface = dbus.Interface(dvbd_channelgroup, 'org.gnome.DVB.DeviceGroup')
+                l.append(self.get_channelGroup_details(channelgroup_interface))
 
             dl = defer.DeferredList(l)
             return dl
