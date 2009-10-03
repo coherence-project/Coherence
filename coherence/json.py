@@ -8,7 +8,7 @@
 import simplejson as json
 from twisted.web import resource,static
 
-from hifimedia import log
+from coherence import log
 
 class JsonInterface(resource.Resource,log.Loggable):
     logCategory = 'json'
