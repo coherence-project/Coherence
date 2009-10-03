@@ -49,6 +49,8 @@ class Backend(log.Loggable,Plugin):
             start up the backend
             after that's done, tell Coherence about it
         """
+        log.Loggable.__init__(self)
+        Plugin.__init__(self)
         self.init_completed()
 
     def init_completed(self, *args, **kwargs):
@@ -83,6 +85,7 @@ class BackendStore(Backend):
             the device will then setup and announce itself,
             after that it calls the backends upnp_init method
         """
+        Backend.__init__(self, server, *args)
         self.config = kwargs
         self.server = server # the UPnP device that's hosting that backend
         self.update_id = 0
