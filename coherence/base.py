@@ -388,8 +388,13 @@ class Coherence(log.Loggable):
         self.external_address = ':'.join((self.hostname,str(self.web_server_port)))
 
 
-        if self.config.get('controlpoint', 'no') == 'yes':
+        if(self.config.get('controlpoint', 'no') == 'yes' or
+           self.config.get('json','no') == 'yes'):
             self.ctrl = ControlPoint(self)
+
+        if self.config.get('json','no') == 'yes':
+            from coherence.json import JsonInterface
+            self.json = JsonInterface(self.ctrl)
 
         if self.config.get('transcoding', 'no') == 'yes':
             from coherence.transcoder import TranscoderManager

@@ -127,6 +127,11 @@ class Service(log.Loggable):
 
         return r
 
+    def as_dict(self):
+        d = {'type':self.service_type}
+        d['actions'] = [a.as_dict() for a in self._actions.values()]
+        return d
+
     def __repr__(self):
         return "Service %s %s" % (self.service_type,self.id)
 

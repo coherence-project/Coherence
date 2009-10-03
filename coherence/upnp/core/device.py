@@ -44,6 +44,18 @@ class Device(log.Loggable):
     #    #print "Device removal completed"
     #    pass
 
+    def as_dict(self):
+        import copy
+        d = {'device_type': self.get_device_type(),
+             'friendly_name': self.get_friendly_name(),
+             'udn': self.get_id(),
+             'services': [x.as_dict() for x in self.services]}
+        icons = []
+        for icon in self.icons:
+            icons.append({"mimetype":icon['mimetype'],"url":icon['url'], "height":icon['height'], "width":icon['width'], "depth":icon['depth']})
+        d['icons'] = icons
+        return d
+
     def remove(self,*args):
         self.info("removal of ", self.friendly_name, self.udn)
         while len(self.devices)>0:

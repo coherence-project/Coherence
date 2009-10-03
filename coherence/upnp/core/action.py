@@ -36,6 +36,9 @@ class Argument:
         r.append(('Related State Variable',self.state_variable))
         return r
 
+    def as_dict(self):
+        return {'name':self.name,'direction':self.direction,'related_state_variable':self.state_variable}
+
 
 class Action(log.Loggable):
     logCategory = 'action'
@@ -159,3 +162,6 @@ class Action(log.Loggable):
         r.append(("Number of 'in' arguments",len(self.get_in_arguments())))
         r.append(("Number of 'out' arguments",len(self.get_out_arguments())))
         return r
+
+    def as_dict(self):
+        return {'name': self.get_name(),'arguments':[a.as_dict() for a in self.arguments_list]}
