@@ -758,7 +758,8 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
-        #louie.connect(self.device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect(self.device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect(self.device_removed, 'Coherence.UPnP.Device.removed', louie.Any)
 
         self.debug("D-Bus pontoon started")
 
@@ -910,6 +911,25 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addCallback(reply)
         d.addErrback(dbus_async_err_cb)
 
+    def device_detected(self,device):
+        if device.get_id() not in self.devices:
+            new_device = DBusDevice(device,self.bus)
+            self.devices[device.get_id()] = new_device
+            self.UPnP_ControlPoint_Device_detected(new_device.get_info(),device.get_id())
+            if device.get_friendly_device_type() == 'MediaServer':
+                self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),device.get_id())
+            elif device.get_friendly_device_type() == 'MediaRenderer':
+                self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info,device.get_id())
+
+
+    def device_removed(self,usn=''):
+        self.UPnP_ControlPoint_Device_removed(usn)
+        if device.get_friendly_device_type() == 'MediaServer':
+            self.UPnP_ControlPoint_MediaServer_removed(usn)
+        if device.get_friendly_device_type() == 'MediaRenderer':
+            self.UPnP_ControlPoint_MediaServer_removed(usn)
+        reactor.callLater(1, self.remove, usn)
+
     def cp_ms_detected(self,client,udn=''):
         #print "cp_ms_detected", udn
         if client.device.get_id() not in self.devices:
@@ -955,6 +975,16 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                          signature='s')
     def UPnP_ControlPoint_MediaRenderer_removed(self,udn):
         self.info("emitting signal UPnP_ControlPoint_MediaRenderer_removed")
+
+    @dbus.service.signal(BUS_NAME,
+                         signature='s')
+    def UPnP_ControlPoint_Device_detected(self,udn):
+        self.info("emitting signal UPnP_ControlPoint_Device_detected")
+
+    @dbus.service.signal(BUS_NAME,
+                         signature='s')
+    def UPnP_ControlPoint_Device_removed(self,udn):
+        self.info("emitting signal UPnP_ControlPoint_Device_removed")
 
     """ org.DLNA related methods and signals
     """
