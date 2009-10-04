@@ -162,7 +162,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
 
     def __init__(self, pipeline, content_type):
         self.pipeline_description = pipeline
-        self.contentType = conten_type
+        self.contentType = content_type
         self.requests = []
         # if stream has a streamheader (something that has to be prepended
         # before any data), then it will be a tuple of GstBuffers
