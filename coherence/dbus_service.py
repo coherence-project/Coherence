@@ -221,22 +221,23 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         def convert_reply(data):
             et = parse_xml(data['Result'], 'utf-8')
             et = et.getroot()
-            items = dbus.Dictionary({},signature='sv')
+            items = dbus.Array([],signature='av')
 
             def append(item):
                 i = dbus.Dictionary({},signature='sv')
                 for k,v in item.attrib.items():
                     i[un_namespace(k)] = v
-                res = dbus.Dictionary({},signature='sv')
+                res = dbus.Array([],signature='av')
                 for child in item:
                     if un_namespace(child.tag) == 'DIDL-Lite:res':
                         res_dict = dbus.Dictionary({},signature='sv')
+                        res_dict['url'] = unicode(child.text)
                         for k,v in child.attrib.items():
                             res_dict[un_namespace(k)] = v
-                        res[child.text] = res_dict
+                        res.append(res_dict)
                     else:
                        i[un_namespace(child.tag)] = child.text
-                items[i['id']] = i
+                items.append(i)
 
             for item in et:
                 append(item)
