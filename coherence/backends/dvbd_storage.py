@@ -26,6 +26,8 @@ ROOT_CONTAINER_ID = 0
 
 RECORDINGS_CONTAINER_ID = 100
 CHANNELS_CONTAINER_ID = 200
+CHANNEL_GROUPS_CONTAINER_ID = 300
+BASE_CHANNEL_GROUP_ID = 1000
 
 BUS_NAME = 'org.gnome.DVB'
 RECORDINGSSTORE_OBJECT_PATH = '/org/gnome/DVB/RecordingsStore'
@@ -236,6 +238,7 @@ class DVBDStore(BackendStore):
         self.name = kwargs.get('name','TV')
 
         self.update_id = 0
+        self.channel_groups = []
 
         if kwargs.get('enable_destroy','no') == 'yes':
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
@@ -247,7 +250,8 @@ class DVBDStore(BackendStore):
         self.store_interface = dbus.Interface(dvb_daemon_recordingsStore, 'org.gnome.DVB.RecordingsStore')
         self.manager_interface = dbus.Interface(dvb_daemon_manager, 'org.gnome.DVB.Manager')
     
-        dvb_daemon_recordingsStore.connect_to_signal('Changed', self.recording_changed, dbus_interface='org.gnome.DVB.RecordingsStore')
+        dvb_daemon_recordingsStore.connect_to_signal('Changed', self.recording_changed,
+                dbus_interface='org.gnome.DVB.RecordingsStore')
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
@@ -256,22 +260,31 @@ class DVBDStore(BackendStore):
                     Container(RECORDINGS_CONTAINER_ID,ROOT_CONTAINER_ID,'Recordings',store=self)
         self.containers[CHANNELS_CONTAINER_ID] = \
                     Container(CHANNELS_CONTAINER_ID,ROOT_CONTAINER_ID,'Channels',store=self)
+        self.containers[CHANNEL_GROUPS_CONTAINER_ID] = \
+                    Container(CHANNEL_GROUPS_CONTAINER_ID, ROOT_CONTAINER_ID, 'Channel Groups',
+                    store=self)
 
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[RECORDINGS_CONTAINER_ID])
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[CHANNELS_CONTAINER_ID])
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[CHANNEL_GROUPS_CONTAINER_ID])
 
         def query_finished(r):
             louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
-        def query_failed(r):
-            error = ''
+        def query_failed(error):
+            self.error("ERROR: %s", error)
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=error)
 
-        d = defer.DeferredList((self.get_recordings(), self.get_channels()))
-        d.addCallback(query_finished)
-        d.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='Connection to DVB Daemon failed!'))
+        # get_device_groups is called after get_channel_groups,
+        # because we need channel groups first
+        channel_d = self.get_channel_groups()
+        channel_d.addCallback(self.get_device_groups)
+        channel_d.addErrback(query_failed)
 
-    
+        d = defer.DeferredList((channel_d, self.get_recordings()))
+        d.addCallback(query_finished)
+        d.addErrback(query_failed)
+
 
     def __repr__(self):
         return "DVBDStore"
@@ -422,37 +435,57 @@ class DVBDStore(BackendStore):
         dl.addErrback(handle_error)
         return dl
 
-    def get_channelGroup_details(self, channelgroup_interface):
-        self.debug("GET CHANNEL GROUP DETAILS")
+    def get_channelgroup_members(self, channel_items, channelList_interface):
+        self.debug("GET ALL CHANNEL GROUP MEMBERS")
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
 
-        def process_getChannels_result(result, channelList_interface):
-            self.debug("GetChannels: %s", result)
-            channels = result
+        def process_getChannelsOfGroup(results, group_id):
+            for channel_id in results:
+                channel_id = int(channel_id)
+                if channel_id in channel_items:
+                    item = channel_items[channel_id]
+                    container_id = BASE_CHANNEL_GROUP_ID + group_id
+                    self.containers[container_id].add_child(item)
+
+        def get_members(channelList_interface, group_id):
+            self.debug("GET CHANNEL GROUP MEMBERS %d", group_id)
+            d = defer.Deferred()            
+            d.addCallback(process_getChannelsOfGroup, group_id)
+            d.addErrback(handle_error)
+            channelList_interface.GetChannelsOfGroup(group_id,
+                reply_handler=lambda x, success: d.callback(x),
+                error_handler=lambda x, success: d.callback(x))
+            return d
+        
+        l = []
+        for group_id, group_name in self.channel_groups:
+            l.append(get_members(channelList_interface, group_id))
+        dl = defer.DeferredList(l)
+        return dl
+
+    def get_tv_channels(self, channelList_interface):
+        self.debug("GET TV CHANNELS")
+        
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+
+        def process_getChannels_result(channels, channelList_interface):
+            self.debug("GetChannels: %s", channels)
             if len(channels) == 0:
-                    return
+                return
             l = []
             for channel_id in channels:
                 l.append(self.get_channel_details(channelList_interface, channel_id))
             dl = defer.DeferredList(l)
             return dl
 
-        def process_getChannelList_result(result):
-            self.debug("GetChannelList: %s", result)
-            dvbd_channelList = self.bus.get_object(BUS_NAME,result)
-            channelList_interface = dbus.Interface (dvbd_channelList, 'org.gnome.DVB.ChannelList')
-        
-            d = defer.Deferred()
-            d.addCallback(process_getChannels_result, channelList_interface)
-            d.addErrback(handle_error)
-            channelList_interface.GetTVChannels(reply_handler=lambda x: d.callback(x),
-                                           error_handler=lambda x: d.errback(x))
-            return d
-        
         def process_details(results):
-            self.debug('GOT CHANNEL GROUP DETAILS %s', results)
+            self.debug('GOT DEVICE GROUP DETAILS %s', results)
+            channels = {}
             for result,channel in results:
                 #print channel
                 if result == True:
@@ -466,19 +499,43 @@ class DVBDStore(BackendStore):
                     			         channel['network'],
                                          'video/mpegts')
                     self.containers[CHANNELS_CONTAINER_ID].add_child(video_item)
+                    channels[int(channel['id'])] = video_item
+            return channels
 
         d = defer.Deferred()
-        d.addCallback(process_getChannelList_result)
+        d.addCallback(process_getChannels_result, channelList_interface)
         d.addCallback(process_details)
+        d.addCallback(self.get_channelgroup_members, channelList_interface)
         d.addErrback(handle_error)
         d.addErrback(handle_error)
-        channelgroup_interface.GetChannelList(reply_handler=lambda x: d.callback(x),
+        d.addErrback(handle_error)
+        channelList_interface.GetTVChannels(reply_handler=lambda x: d.callback(x),
+                                       error_handler=lambda x: d.errback(x))
+        return d
+
+    def get_deviceGroup_details(self, devicegroup_interface):
+        self.debug("GET DEVICE GROUP DETAILS")
+
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+
+        def process_getChannelList_result(result):
+            self.debug("GetChannelList: %s", result)
+            dvbd_channelList = self.bus.get_object(BUS_NAME,result)
+            channelList_interface = dbus.Interface (dvbd_channelList, 'org.gnome.DVB.ChannelList')
+            
+            return self.get_tv_channels(channelList_interface)
+        
+        d = defer.Deferred()
+        d.addCallback(process_getChannelList_result)
+        d.addErrback(handle_error)
+        devicegroup_interface.GetChannelList(reply_handler=lambda x: d.callback(x),
                                            error_handler=lambda x: d.errback(x))
         return d
 
-
-    def get_channels(self):
-        self.debug("GET CHANNEL GROUPS")
+    def get_device_groups(self, results):
+        self.debug("GET DEVICE GROUPS")
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
@@ -489,9 +546,9 @@ class DVBDStore(BackendStore):
                 return
             l = []
             for group_object_path in ids:
-                dvbd_channelgroup = self.bus.get_object(BUS_NAME, group_object_path)
-                channelgroup_interface = dbus.Interface(dvbd_channelgroup, 'org.gnome.DVB.DeviceGroup')
-                l.append(self.get_channelGroup_details(channelgroup_interface))
+                dvbd_devicegroup = self.bus.get_object(BUS_NAME, group_object_path)
+                devicegroup_interface = dbus.Interface(dvbd_devicegroup, 'org.gnome.DVB.DeviceGroup')
+                l.append(self.get_deviceGroup_details(devicegroup_interface))
 
             dl = defer.DeferredList(l)
             return dl
@@ -503,6 +560,30 @@ class DVBDStore(BackendStore):
                                            error_handler=lambda x: d.errback(x))
         return d
 
+    def get_channel_groups(self):
+        self.debug("GET CHANNEL GROUPS")
+
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+
+        def process_GetChannelGroups_result(data):
+            self.debug("GOT CHANNEL GROUPS %s", data)
+            for group in data:
+                self.channel_groups.append(group) # id, name
+                container_id = BASE_CHANNEL_GROUP_ID + group[0]
+                group_item = Container(container_id, CHANNEL_GROUPS_CONTAINER_ID,
+                    group[1], store=self)
+                self.containers[container_id] = group_item
+                self.containers[CHANNEL_GROUPS_CONTAINER_ID].add_child(group_item)
+
+        d = defer.Deferred()
+        d.addCallback(process_GetChannelGroups_result)
+        d.addErrback(handle_error)
+        self.manager_interface.GetChannelGroups(reply_handler=lambda x: d.callback(x),
+            error_handler=lambda x: d.errback(x))
+
+        return d
 
     def upnp_init(self):
         if self.server:
