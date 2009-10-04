@@ -758,8 +758,8 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
-        louie.connect(self.new_device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
-        louie.connect(self.device_removed, 'Coherence.UPnP.Device.removed', louie.Any)
+        louie.connect(self._device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.connect(self._device_removed, 'Coherence.UPnP.Device.removed', louie.Any)
 
         self.debug("D-Bus pontoon started")
 
@@ -911,7 +911,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addCallback(reply)
         d.addErrback(dbus_async_err_cb)
 
-    def new_device_detected(self,device):
+    def _device_detected(self,device):
         #print "new_device_detected",device,device.get_id()
         if device.get_id() not in self.devices:
             new_device = DBusDevice(device,self.bus)
@@ -922,8 +922,8 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             elif device.get_friendly_device_type() == 'MediaRenderer':
                 self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),device.get_id())
 
-    def device_removed(self,usn=''):
-        self.UPnP_ControlPoint_Device_removed(usn)
+    def _device_removed(self,usn=''):
+        self.device_removed(usn)
         if device.get_friendly_device_type() == 'MediaServer':
             self.UPnP_ControlPoint_MediaServer_removed(usn)
         if device.get_friendly_device_type() == 'MediaRenderer':
