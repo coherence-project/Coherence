@@ -237,6 +237,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                         res.append(res_dict)
                     else:
                        i[un_namespace(child.tag)] = child.text
+                i['res'] = res
                 items.append(i)
 
             for item in et:
