@@ -120,7 +120,7 @@ class ControlPoint(log.Loggable):
         if device.client == None:
             short_type = device.get_friendly_device_type()
             if short_type in self.auto_client and short_type is not None:
-                self.info("identified %s %r",
+                self.info("identified %s %r" %
                         (short_type, device.get_friendly_name()))
 
                 if short_type == 'MediaServer':
