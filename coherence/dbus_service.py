@@ -912,6 +912,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addErrback(dbus_async_err_cb)
 
     def new_device_detected(self,device):
+        #print "new_device_detected",device,device.get_id()
         if device.get_id() not in self.devices:
             new_device = DBusDevice(device,self.bus)
             self.devices[device.get_id()] = new_device
@@ -919,8 +920,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             if device.get_friendly_device_type() == 'MediaServer':
                 self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),device.get_id())
             elif device.get_friendly_device_type() == 'MediaRenderer':
-                self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info,device.get_id())
-
+                self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),device.get_id())
 
     def device_removed(self,usn=''):
         self.UPnP_ControlPoint_Device_removed(usn)
@@ -977,7 +977,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         self.info("emitting signal UPnP_ControlPoint_MediaRenderer_removed")
 
     @dbus.service.signal(BUS_NAME,
-                         signature='s')
+                         signature='vs')
     def device_detected(self,device,udn):
         self.info("emitting signal device_detected")
 
