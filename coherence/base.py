@@ -319,7 +319,7 @@ class Coherence(log.Loggable):
         else:
             unittest = True
 
-        self.ssdp_server = SSDPServer(test=unittest)
+        self.ssdp_server = SSDPServer(test=unittest,interface=self.hostname)
         louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
         louie.connect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
@@ -673,10 +673,10 @@ class Coherence(log.Loggable):
         self.info("removed device",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
+            louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
             self.devices.remove(device)
             device.remove()
             if infos['ST'] == 'upnp:rootdevice':
-                louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
                 louie.send('Coherence.UPnP.RootDevice.removed', None, usn=infos['USN'])
                 self.callback("removed_device", infos['ST'], infos['USN'])
 

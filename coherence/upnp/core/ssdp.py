@@ -36,7 +36,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     _callbacks = {}
 
-    def __init__(self,test=False):
+    def __init__(self,test=False,interface=''):
         # Create SSDP server
         self.test = test
         if self.test == False:
@@ -44,7 +44,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
                 #self.port.setLoopbackMode(1)
 
-                self.port.joinGroup(SSDP_ADDR)
+                self.port.joinGroup(SSDP_ADDR,interface=interface)
 
                 self.resend_notify_loop = task.LoopingCall(self.resendNotify)
                 self.resend_notify_loop.start(777.0, now=False)
