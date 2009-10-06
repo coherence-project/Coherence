@@ -77,6 +77,8 @@ class Device(log.Loggable):
         for s in self.services:
             if s.detection_completed == False:
                 return
+        if self.udn == None:
+            return
         self.detection_completed = True
         if self.parent != None:
             self.info("embedded device %r %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
@@ -171,6 +173,7 @@ class Device(log.Loggable):
         return dl
 
     def parse_device(self, d):
+        self.info("parse_device %r" %d)
         self.device_type = unicode(d.findtext('./{%s}deviceType' % ns))
         self.friendly_device_type, self.device_type_version = \
                 self.device_type.split(':')[-2:]
@@ -290,6 +293,8 @@ class Device(log.Loggable):
                     self.add_device(embedded_device)
                     embedded_device.parse_device(d)
 
+        self.receiver()
+
     def get_location(self):
         return self.parent.get_location()
 
@@ -304,6 +309,115 @@ class Device(log.Loggable):
 
     def make_fullyqualified(self,url):
         return self.parent.make_fullyqualified(url)
+
+    def as_tuples(self):
+        r = []
+
+        def append(name,attribute):
+            try:
+                if isinstance(attribute,tuple):
+                    if callable(attribute[0]):
+                        v1 = attribute[0]()
+                    else:
+                        v1 = getattr(self,attribute[0])
+                    if v1 in [None,'None']:
+                        return
+                    if callable(attribute[1]):
+                        v2 = attribute[1]()
+                    else:
+                        v2 = getattr(self,attribute[1])
+                    if v2 in [None,'None']:
+                        return
+                    r.append((name,(v1,v2)))
+                    return
+                elif callable(attribute):
+                    v = attribute()
+                else:
+                    v = getattr(self,attribute)
+                if v not in [None,'None']:
+                    r.append((name,v))
+            except:
+                import traceback
+                self.debug(traceback.format_exc())
+
+        try:
+            r.append(('Location',(self.get_location(),self.get_location())))
+        except:
+            pass
+        try:
+            append('URL base',self.get_urlbase)
+        except:
+            pass
+        try:
+            r.append(('UDN',self.get_id()))
+        except:
+            pass
+        try:
+            r.append(('Type',self.device_type))
+        except:
+            pass
+        try:
+            r.append(('UPnP Version',self.upnp_version))
+        except:
+            pass
+        try:
+            r.append(('DLNA Device Class',','.join(self.dlna_dc)))
+        except:
+            pass
+        try:
+            r.append(('DLNA Device Capability',','.join(self.dlna_cap)))
+        except:
+            pass
+        try:
+            r.append(('Friendly Name',self.friendly_name))
+        except:
+            pass
+        try:
+            append('Manufacturer','manufacturer')
+        except:
+            pass
+        try:
+            append('Manufacturer URL',('manufacturer_url','manufacturer_url'))
+        except:
+            pass
+        try:
+            append('Model Description','model_description')
+        except:
+            pass
+        try:
+            append('Model Name','model_name')
+        except:
+            pass
+        try:
+            append('Model Number','model_number')
+        except:
+            pass
+        try:
+            append('Model URL',('model_url','model_url'))
+        except:
+            pass
+        try:
+            append('Serial Number','serial_number')
+        except:
+            pass
+        try:
+            append('UPC','upc')
+        except:
+            pass
+        try:
+            append('Presentation URL',('presentation_url',lambda: self.make_fullyqualified(getattr(self,'presentation_url'))))
+        except:
+            pass
+
+        for icon in self.icons:
+            r.append(('Icon', (icon['realurl'],
+                               self.make_fullyqualified(icon['realurl']),
+                               {'Mimetype': icon['mimetype'],
+                                'Width':icon['width'],
+                                'Height':icon['height'],
+                                'Depth':icon['depth']})))
+
+        return r
 
 
 class RootDevice(Device):
@@ -323,7 +437,7 @@ class RootDevice(Device):
         self.parse_description()
 
     def __repr__(self):
-        return "rootdevice %r %r %r, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation)
+        return "rootdevice %r %r %r %r, manifestation %r" % (self.friendly_name,self.udn,self.st,self.host,self.manifestation)
 
     def get_usn(self):
         return self.usn
@@ -421,70 +535,4 @@ class RootDevice(Device):
             r = urlparse.urljoin(base,url)
         else:
             r = urlparse.urljoin(self.get_location(),url)
-        return r
-
-
-    def as_tuples(self):
-        r = []
-
-        def append(name,attribute):
-            try:
-                if isinstance(attribute,tuple):
-                    if callable(attribute[0]):
-                        v1 = attribute[0]()
-                    else:
-                        v1 = getattr(self,attribute[0])
-                    if v1 in [None,'None']:
-                        return
-                    if callable(attribute[1]):
-                        v2 = attribute[1]()
-                    else:
-                        v2 = getattr(self,attribute[1])
-                    if v2 in [None,'None']:
-                        return
-                    r.append((name,(v1,v2)))
-                    return
-                elif callable(attribute):
-                    v = attribute()
-                else:
-                    v = getattr(self,attribute)
-                if v not in [None,'None']:
-                    r.append((name,v))
-            except:
-                import traceback
-                self.debug(traceback.format_exc())
-
-        r.append(('Location',(self.get_location(),self.get_location())))
-        append('URL base',self.get_urlbase)
-        r.append(('UDN',self.get_id()))
-        r.append(('Type',self.device_type))
-        r.append(('UPnP Version',self.upnp_version))
-        try:
-            r.append(('DLNA Device Class',','.join(self.dlna_dc)))
-        except:
-            pass
-        try:
-            r.append(('DLNA Device Capability',','.join(self.dlna_cap)))
-        except:
-            pass
-        r.append(('Friendly Name',self.friendly_name))
-
-        append('Manufacturer','manufacturer')
-        append('Manufacturer URL',('manufacturerURL','manufacturerURL'))
-        append('Model Name','model_name')
-        append('Model Description','model_description')
-        append('Model Number','model_number')
-        append('Model URL',('model_url','model_url'))
-        append('Serial Number','serial_number')
-        append('UPC','upc')
-        append('Presentation URL',('presentation_url',lambda: self.make_fullyqualified(getattr(self,'presentation_url'))))
-
-        for icon in self.icons:
-            r.append(('Icon', (icon['realurl'],
-                               self.make_fullyqualified(icon['realurl']),
-                               {'Mimetype': icon['mimetype'],
-                                'Width':icon['width'],
-                                'Height':icon['height'],
-                                'Depth':icon['depth']})))
-
         return r
