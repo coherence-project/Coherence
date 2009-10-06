@@ -10,7 +10,6 @@
 import time
 import urllib, urlparse
 
-
 #import gtk
 import dbus
 
@@ -684,6 +683,7 @@ class DBusDevice(dbus.service.Object,log.Loggable):
              'device_type': self.device.get_device_type(),
              'friendly_name': self.device.get_friendly_name(),
              'udn': self.device.get_id(),
+             'uri': list(urlparse.urlsplit(self.device.get_location())),
              'services': [x.path for x in self.services]}
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
@@ -752,11 +752,11 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         for device in self.controlpoint.get_devices():
             self.devices[device.get_id()] = DBusDevice(device,self.bus_name)
 
-        louie.connect(self.cp_ms_detected, 'Coherence.UPnP.ControlPoint.MediaServer.detected', louie.Any)
-        louie.connect(self.cp_ms_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
-        louie.connect(self.cp_mr_detected, 'Coherence.UPnP.ControlPoint.MediaRenderer.detected', louie.Any)
-        louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
-        louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
+        #louie.connect(self.cp_ms_detected, 'Coherence.UPnP.ControlPoint.MediaServer.detected', louie.Any)
+        #louie.connect(self.cp_ms_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
+        #louie.connect(self.cp_mr_detected, 'Coherence.UPnP.ControlPoint.MediaRenderer.detected', louie.Any)
+        #louie.connect(self.cp_mr_removed, 'Coherence.UPnP.ControlPoint.MediaRenderer.removed', louie.Any)
+        #louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
 
         louie.connect(self._device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.connect(self._device_removed, 'Coherence.UPnP.Device.removed', louie.Any)
@@ -833,13 +833,9 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_device_with_id(self,id):
-        r = {}
-        device = self.controlpoint.get_device_with_id(id)
-        r['id'] = device.get_id()
-        r['udn'] = device.udn
-        r['name'] = device.get_friendly_name()
-        r['type'] = device.get_device_type()
-        return r
+        for device in self.devices.values():
+            if id == device.device.get_id():
+                return device.get_info()
 
     @dbus.service.method(BUS_NAME,in_signature='sa{ss}',out_signature='s')
     def add_plugin(self,backend,arguments):
@@ -912,10 +908,11 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addErrback(dbus_async_err_cb)
 
     def _device_detected(self,device):
-        #print "new_device_detected",device,device.get_id()
+        #print "new_device_detected",device.get_usn(),device.friendly_device_type,device.get_id()
         if device.get_id() not in self.devices:
             new_device = DBusDevice(device,self.bus)
             self.devices[device.get_id()] = new_device
+            #print self.devices, device.get_id()
             self.device_detected(new_device.get_info(),device.get_id())
             if device.get_friendly_device_type() == 'MediaServer':
                 self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),device.get_id())
@@ -923,12 +920,16 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                 self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),device.get_id())
 
     def _device_removed(self,usn=''):
-        self.device_removed(usn)
+        #print "_device_removed", usn
+        id = usn.split('::')[0]
+        device = self.devices[id]
+        self.device_removed(id)
+        #print device.get_friendly_device_type()
         if device.get_friendly_device_type() == 'MediaServer':
-            self.UPnP_ControlPoint_MediaServer_removed(usn)
+            self.UPnP_ControlPoint_MediaServer_removed(id)
         if device.get_friendly_device_type() == 'MediaRenderer':
-            self.UPnP_ControlPoint_MediaServer_removed(usn)
-        reactor.callLater(1, self.remove, usn)
+            self.UPnP_ControlPoint_MediaServer_removed(id)
+        reactor.callLater(1, self.remove, id)
 
     def cp_ms_detected(self,client,udn=''):
         #print "cp_ms_detected", udn
@@ -951,6 +952,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         reactor.callLater(1, self.remove, udn)
 
     def cp_mr_removed(self,udn):
+        #print "cp_mr_removed", udn
         self.UPnP_ControlPoint_MediaRenderer_removed(udn)
         # schedule removal of device from our cache after signal has
         # been called. Let's assume one second is long enough...
