@@ -364,7 +364,7 @@ class DVBDStore(BackendStore):
         def process_query_result(ids):
             self.debug("GOT RECORDINGS: %s", ids)
             if len(ids) == 0:
-                return
+                return []
             l = []
             for id in ids:
                 l.append(self.get_recording_details(id))
@@ -476,7 +476,7 @@ class DVBDStore(BackendStore):
         def process_getChannels_result(channels, channelList_interface):
             self.debug("GetChannels: %s", channels)
             if len(channels) == 0:
-                return
+                return []
             l = []
             for channel_id in channels:
                 l.append(self.get_channel_details(channelList_interface, channel_id))
@@ -615,3 +615,179 @@ class DVBDStore(BackendStore):
         d.addCallback(handle_success)
         d.addErrback(handle_error)
         return d
+
+class DVBDScheduledRecording(BackendStore):
+
+    logCategory = 'dvbd_store'
+
+    def __init__(self, server, **kwargs):
+
+        if server.coherence.config.get('use_dbus','no') != 'yes':
+            raise Exception, 'this backend needs use_dbus enabled in the configuration'
+
+        BackendStore.__init__(self, server, **kwargs)
+        
+        self.state_update_id = 0
+
+        self.bus = dbus.SessionBus()
+        # We have one ScheduleRecording service for each device group
+        # TODO use one ScheduledRecording for each device group
+        self.device_group_interface = None
+
+        dvbd_recorder = self.device_group_interface.GetRecorder()
+        self.recorder_interface = self.bus.get_object(BUS_NAME, dvdb_recorder)
+        
+    def __repr__(self):
+        return "DVBDScheduledRecording"
+
+    def get_timer_details(self, tid):
+        self.debug("GET TIMER DETAILS %d", tid)
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+
+        def get_infos(tid):
+            d = defer.Callback()
+            self.recorder_interface.GetAllInformations(tid,
+                reply_handler=lambda x, success: d.callback(x),
+                error_handler=lambda x, success: d.errback(x))
+            return d
+        
+        def get_start_time(tid):
+            d = defer.Callback()
+            self.recorder_interface.GetStartTime(tid,
+                reply_handler=lambda x, success: d.callback(x),
+                error_handler=lambda x, success: d.errback(x))
+            return d
+        
+        def process_details(results):
+            tid, duration, active, channel_name, title = results[0][1]
+            start = results[1][1]
+            start_datetime = datetime (*start)
+            # TODO return what we actually need
+            # FIXME we properly want the channel id here rather than the name
+            return {'id': tid, 'duration': duration, 'channel': channel,
+                'start': start_datetime}
+
+        d = defer.DeferredList((self.get_infos(tid), self.get_start_time(tid)))
+        d.addCallback(process_details)
+        d.addErrback(handle_error)
+        return d
+
+    def get_timers(self):
+        self.debug("GET TIMERS")
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+
+        def process_GetTimers_results(timer_ids):
+            l = []
+            for tid in timer_ids:
+                l.append(self.get_timer_details(tid))
+            dl = defer.DeferredList(l)
+            return dl
+
+        d = defer.Deferred()
+        d.addCallback(process_GetTimers_result)
+        d.addErrback(handle_error)
+        self.recorder_interface.GetTimers(reply_handler=lambda x: d.callback(x),
+            error_handler=lambda x: d.errback(x))
+        return d
+
+    def add_timer(self, channel_id, start_datetime, duration):
+        self.debug("ADD TIMER")
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+
+        def process_AddTimer_result(timer_id):
+            self.state_update_id += 1
+            return timer_id
+
+        d = defer.Deferred()
+        d.addCallback(process_AddTimer_result)
+        d.addErrback(handle_error)
+        
+        self.recorder_interface.AddTimer(channel_id, start_datetime.year,
+            start_datetime.month, start_datetime.day, start_datetime.hour,
+            start_datetime.minute, duration,
+            reply_handler=lambda x, success: d.callback(x),
+            error_handler=lambda x, success: d.errback(x))
+        return d
+        
+    def delete_timer(self, tid):
+        self.debug("DELETE TIMER %d", tid)
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+        d = defer.Deferred()
+        d.addCallback(process_DeleteTimer_result)
+        d.addErrback(handle_error)
+        self.recorder_interface.DeleteTimer(tid,
+            reply_handler=lambda x, success: d.callback(x),
+            error_handler=lambda x, success: d.errback(x))
+        return d
+        
+    def upnp_GetPropertyList(self, *args, **kwargs):
+        pass
+        
+    def upnp_GetAllowedValues(self, *args, **kwargs):
+        pass
+        
+    def upnp_GetStateUpdateID(self, *args, **kwargs):
+        return self.state_update_id
+
+    def upnp_BrowseRecordSchedules(self, *args, **kwargs):
+        schedules = []
+        sched = RecordSchedule() # ChannelID, StartDateTime, Duration
+
+        return self.get_timers()
+
+    def upnp_BrowseRecordTasks(self, *args, **kwargs):
+        rec_sched_id = int(kwargs['RecordScheduleID'])
+        tasks = []
+        task = RecordTask() # ScheduleID, ChannelID, StartDateTime, Duration
+        
+        return self.get_timer_details(rec_sched_id)
+
+    def upnp_CreateRecordSchedule(self, *args, **kwargs):
+        schedule = kwargs['RecordScheduleParts']
+        channel_id = schedule.getChannelID()
+        # returns a python datetime object
+        start = schedule.getStartDateTime()
+        # duration in minutes
+        duration = schedule.getDuration()
+        return self.add_timer(channel_id, start, duration)
+
+    def upnp_DeleteRecordSchedule(self, *args, **kwargs):
+        rec_sched_id = int(kwargs['RecordScheduleID'])
+        
+        def handle_error(error):
+            self.error("ERROR: %s", error)
+            return error
+            
+        def process_IsTimerActive_result(is_active, rec_sched_id):
+            if is_active:
+                # TODO: Return 705
+                return
+            else:
+                return self.delete_timer(rec_sched_id)
+        
+        d = defer.Deferred()
+        d.addCallback(process_IsTimerActive_result, rec_sched_id)
+        d.addErrback(handle_error)
+        self.recorder_interface.IsTimerActive(rec_sched_id,
+            reply_handler=lambda x: d.callback(x),
+            error_handler=lambda x: d.errback(x))
+        return d
+
+    def upnp_GetRecordSchedule(self, *args, **kwargs):
+        rec_sched_id = int(kwargs['RecordScheduleID'])
+        
+        return self.get_timer_details(rec_sched_id)
+
+    def upnp_GetRecordTask(self, *args, **kwargs):
+        rec_task_id = int(kwargs['RecordTaskID'])
+        
+        return self.get_timer_details(rec_task_id)
+
