@@ -720,6 +720,13 @@ class DVBDScheduledRecording(BackendStore):
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
+            
+        def process_DeleteTimer_result(success):
+            if not success:
+                # TODO: return 704
+                return
+            self.state_update_id += 1
+            
         d = defer.Deferred()
         d.addCallback(process_DeleteTimer_result)
         d.addErrback(handle_error)
