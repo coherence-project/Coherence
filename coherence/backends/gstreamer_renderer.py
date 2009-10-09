@@ -27,13 +27,13 @@ from coherence import log
 
 class Player(log.Loggable):
     logCategory = 'gstreamer_player'
-    max_playbin_volume = 3.
 
     def __init__(self, default_mimetype='audio/mpeg'):
         self.player = None
         self.source = None
         self.sink = None
         self.bus = None
+        self.poll_LC = None
 
         self.views = []
 
@@ -42,6 +42,7 @@ class Player(log.Loggable):
 
         self.mimetype = default_mimetype
         self.create_pipeline(self.mimetype)
+        self.create_poll()
 
     def add_view(self,view):
         self.views.append(view)
@@ -73,31 +74,26 @@ class Player(log.Loggable):
             self.source = self.player.get_by_name('source')
             self.sink = self.player.get_by_name('sink')
             self.player_uri = 'location'
-            self.mute = self.mute_hack
-            self.unmute = self.unmute_hack
-            self.get_mute = self.get_mute_hack
         else:
-            self.player = gst.element_factory_make('playbin2', 'player')
+            self.player = gst.element_factory_make('playbin', 'player')
             self.player_uri = 'uri'
             self.source = self.sink = self.player
             self.set_volume = self.set_volume_playbin
             self.get_volume = self.get_volume_playbin
-            self.mute = self.mute_playbin
-            self.unmute = self.unmute_playbin
-            self.get_mute = self.get_mute_playbin
 
         self.bus = self.player.get_bus()
         self.player_clean = True
-        self.bus.connect('message', self.on_message)
-        self.bus.add_signal_watch()
 
-
+    def create_poll(self):
+        self.poll_LC = LoopingCall( self.poll_gst_bus)
+        self.poll_LC.start( 0.3)
+        self.update_LC = LoopingCall( self.update)
 
     def get_volume_playbin(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
         volume = self.sink.get_property('volume')
-        return int((volume*100) / self.max_playbin_volume)
+        return int(volume*10)
 
     def set_volume_playbin(self, volume):
         volume = int(volume)
@@ -105,8 +101,7 @@ class Player(log.Loggable):
             volume=0
         if volume > 100:
             volume=100
-        volume = (volume * self.max_playbin_volume) / 100.
-        self.sink.set_property('volume', volume)
+        self.sink.set_property('volume', float(volume)/10)
 
     def get_volume_dsp_mp3_sink(self):
         """ dspmp3sink volume is a n in from 0 to 65535
@@ -136,29 +131,20 @@ class Player(log.Loggable):
             volume=100
         self.sink.set_property('volume',  volume*65535/100)
 
-    def mute_playbin(self):
-        self.player.set_property('mute', True)
-
-    def unmute_playbin(self):
-        self.player.set_property('mute', False)
-
-    def get_mute_playbin(self):
-        return self.player.get_property('mute')
-
-    def mute_hack(self):
+    def mute(self):
         if hasattr(self,'stored_volume'):
             self.stored_volume = self.sink.get_property('volume')
             self.sink.set_property('volume', 0)
         else:
             self.sink.set_property('mute', True)
 
-    def unmute_hack(self):
+    def unmute(self):
         if hasattr(self,'stored_volume'):
             self.sink.set_property('volume', self.stored_volume)
         else:
             self.sink.set_property('mute', False)
 
-    def get_mute_hack(self):
+    def get_mute(self):
         if hasattr(self,'stored_volume'):
             muted = self.sink.get_property('volume') == 0
         else:
@@ -179,6 +165,19 @@ class Player(log.Loggable):
     def get_uri(self):
         return self.source.get_property(self.player_uri)
 
+    def poll_gst_bus( self):
+        # FIXME: isn't there any better way to do this?
+        #print 'poll_gst_bus'
+        if self.bus == None:
+            return
+        while True:
+            # FIXME: maybe a counter, so we don't stay to long in here?
+            message = self.bus.poll(gst.MESSAGE_ERROR|gst.MESSAGE_EOS| \
+                                        gst.MESSAGE_TAG|gst.MESSAGE_STATE_CHANGED,
+                                    timeout=1)
+            if message == None:
+                return
+            self.on_message(self.bus, message)
 
     def on_message(self, bus, message):
         #print "on_message", message
@@ -201,9 +200,14 @@ class Player(log.Loggable):
                 #print "player (%s) state_change:" %(message.src.get_path_string()), old, new, pending
                 if new == gst.STATE_PLAYING:
                     self.playing = True
+                    self.update_LC.start( 1, False)
                     self.update()
                 elif old == gst.STATE_PLAYING:
                     self.playing = False
+                    try:
+                        self.update_LC.stop()
+                    except:
+                        pass
                     self.update()
                 #elif new == gst.STATE_READY:
                 #    self.update()
@@ -237,7 +241,6 @@ class Player(log.Loggable):
         r = {}
         if self.duration == 0:
             self.duration = None
-            self.debug("duration unknown")
             return r
         r[u'raw'] = {u'position':unicode(str(position)), u'remaining':unicode(str(self.duration - position)), u'duration':unicode(str(self.duration))}
 
@@ -270,7 +273,8 @@ class Player(log.Loggable):
         self.player.set_state(gst.STATE_READY)
         self.update()
         self.debug("load <--")
-        self.play()
+        if state == gst.STATE_PLAYING:
+            self.play()
 
     def play( self):
         uri = self.get_uri()
@@ -345,12 +349,18 @@ class Player(log.Loggable):
             print "seek to %r failed" % location
 
         if location == '-0':
-            if self.player.get_name() != 'player':
+
+            try:
+                self.update_LC.stop()
+            except:
+                pass
+            if self.player.get_name != 'player':
                 self.player.set_state(gst.STATE_NULL)
                 self.player_clean = False
-            # FIXME: I am doubtful about the comment below
-            ## else:
-            ##     self.player.set_state(gst.STATE_NULL)
+            else:
+                self.player.set_state(gst.STATE_NULL)
+                #self.player.set_state(gst.STATE_READY)
+            #self.playing = False
             self.update()
         else:
             self.player.set_state(state)
@@ -383,8 +393,6 @@ class GStreamerPlayer(log.Loggable,Plugin):
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, device, **kwargs):
-        if device.coherence.config.get('use_dbus','no') != 'yes':
-            raise Exception, 'this media renderer needs use_dbus enabled in the configuration'
         self.name = kwargs.get('name','GStreamer Audio Player')
 
         self.player = Player()
@@ -409,6 +417,14 @@ class GStreamerPlayer(log.Loggable,Plugin):
     def update( self,message=None):
         _, current,_ = self.player.get_state()
         self.debug("update current %r" % current)
+        """
+        if current == gst.STATE_NULL:
+            return
+        if current not in (gst.STATE_PLAYING, gst.STATE_PAUSED,
+                           gst.STATE_READY):
+            print "I'm out"
+            return
+        """
         if current == gst.STATE_PLAYING:
             state = 'playing'
             self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
