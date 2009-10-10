@@ -27,13 +27,13 @@ from coherence import log
 
 class Player(log.Loggable):
     logCategory = 'gstreamer_player'
+    max_playbin_volume = 3.
 
     def __init__(self, default_mimetype='audio/mpeg'):
         self.player = None
         self.source = None
         self.sink = None
         self.bus = None
-        self.poll_LC = None
 
         self.views = []
 
@@ -42,7 +42,6 @@ class Player(log.Loggable):
 
         self.mimetype = default_mimetype
         self.create_pipeline(self.mimetype)
-        self.create_poll()
 
     def add_view(self,view):
         self.views.append(view)
@@ -55,6 +54,7 @@ class Player(log.Loggable):
             v(message=message)
 
     def create_pipeline(self, mimetype):
+        self.debug("creating pipeline")
         if platform.uname()[1].startswith('Nokia'):
             self.bus = None
             self.player = None
@@ -74,26 +74,31 @@ class Player(log.Loggable):
             self.source = self.player.get_by_name('source')
             self.sink = self.player.get_by_name('sink')
             self.player_uri = 'location'
+            self.mute = self.mute_hack
+            self.unmute = self.unmute_hack
+            self.get_mute = self.get_mute_hack
         else:
-            self.player = gst.element_factory_make('playbin', 'player')
+            self.player = gst.element_factory_make('playbin2', 'player')
             self.player_uri = 'uri'
             self.source = self.sink = self.player
             self.set_volume = self.set_volume_playbin
             self.get_volume = self.get_volume_playbin
+            self.mute = self.mute_playbin
+            self.unmute = self.unmute_playbin
+            self.get_mute = self.get_mute_playbin
 
         self.bus = self.player.get_bus()
         self.player_clean = True
+        self.bus.connect('message', self.on_message)
+        self.bus.add_signal_watch()
+        self.update_LC = LoopingCall(self.update)
 
-    def create_poll(self):
-        self.poll_LC = LoopingCall( self.poll_gst_bus)
-        self.poll_LC.start( 0.3)
-        self.update_LC = LoopingCall( self.update)
 
     def get_volume_playbin(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
         volume = self.sink.get_property('volume')
-        return int(volume*10)
+        return int((volume*100) / self.max_playbin_volume)
 
     def set_volume_playbin(self, volume):
         volume = int(volume)
@@ -101,7 +106,8 @@ class Player(log.Loggable):
             volume=0
         if volume > 100:
             volume=100
-        self.sink.set_property('volume', float(volume)/10)
+        volume = (volume * self.max_playbin_volume) / 100.
+        self.sink.set_property('volume', volume)
 
     def get_volume_dsp_mp3_sink(self):
         """ dspmp3sink volume is a n in from 0 to 65535
@@ -131,20 +137,29 @@ class Player(log.Loggable):
             volume=100
         self.sink.set_property('volume',  volume*65535/100)
 
-    def mute(self):
+    def mute_playbin(self):
+        self.player.set_property('mute', True)
+
+    def unmute_playbin(self):
+        self.player.set_property('mute', False)
+
+    def get_mute_playbin(self):
+        return self.player.get_property('mute')
+
+    def mute_hack(self):
         if hasattr(self,'stored_volume'):
             self.stored_volume = self.sink.get_property('volume')
             self.sink.set_property('volume', 0)
         else:
             self.sink.set_property('mute', True)
 
-    def unmute(self):
+    def unmute_hack(self):
         if hasattr(self,'stored_volume'):
             self.sink.set_property('volume', self.stored_volume)
         else:
             self.sink.set_property('mute', False)
 
-    def get_mute(self):
+    def get_mute_hack(self):
         if hasattr(self,'stored_volume'):
             muted = self.sink.get_property('volume') == 0
         else:
@@ -165,19 +180,6 @@ class Player(log.Loggable):
     def get_uri(self):
         return self.source.get_property(self.player_uri)
 
-    def poll_gst_bus( self):
-        # FIXME: isn't there any better way to do this?
-        #print 'poll_gst_bus'
-        if self.bus == None:
-            return
-        while True:
-            # FIXME: maybe a counter, so we don't stay to long in here?
-            message = self.bus.poll(gst.MESSAGE_ERROR|gst.MESSAGE_EOS| \
-                                        gst.MESSAGE_TAG|gst.MESSAGE_STATE_CHANGED,
-                                    timeout=1)
-            if message == None:
-                return
-            self.on_message(self.bus, message)
 
     def on_message(self, bus, message):
         #print "on_message", message
@@ -241,6 +243,7 @@ class Player(log.Loggable):
         r = {}
         if self.duration == 0:
             self.duration = None
+            self.debug("duration unknown")
             return r
         r[u'raw'] = {u'position':unicode(str(position)), u'remaining':unicode(str(self.duration - position)), u'duration':unicode(str(self.duration))}
 
@@ -264,17 +267,17 @@ class Player(log.Loggable):
         if self.player.get_name() != 'player':
             self.create_pipeline(mimetype)
 
+
+        self.player.set_state(gst.STATE_READY)
         self.source.set_property(self.player_uri, uri.encode('utf-8'))
         self.player_clean = True
         self.duration = None
         self.mimetype = mimetype
         self.tags = {}
         #self.player.set_state(gst.STATE_PAUSED)
-        self.player.set_state(gst.STATE_READY)
-        self.update()
+        #self.update()
         self.debug("load <--")
-        if state == gst.STATE_PLAYING:
-            self.play()
+        self.play()
 
     def play( self):
         uri = self.get_uri()
@@ -296,10 +299,14 @@ class Player(log.Loggable):
         self.debug("play <--")
 
     def pause(self):
+        self.debug("pause <--")
         self.player.set_state(gst.STATE_PAUSED)
 
     def stop(self):
+        self.debug("stop <--")
         self.seek('-0')
+        self.player.set_state(gst.STATE_READY)
+        self.update(message=gst.MESSAGE_EOS)
 
     def seek(self, location):
         """
@@ -349,18 +356,16 @@ class Player(log.Loggable):
             print "seek to %r failed" % location
 
         if location == '-0':
-
+            content_type, _ = self.mimetype.split("/")
             try:
                 self.update_LC.stop()
             except:
                 pass
-            if self.player.get_name != 'player':
+            if self.player.get_name() != 'player':
                 self.player.set_state(gst.STATE_NULL)
                 self.player_clean = False
-            else:
-                self.player.set_state(gst.STATE_NULL)
-                #self.player.set_state(gst.STATE_READY)
-            #self.playing = False
+            elif content_type != "image":
+                self.player.set_state(gst.STATE_READY)
             self.update()
         else:
             self.player.set_state(state)
@@ -393,6 +398,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, device, **kwargs):
+        if device.coherence.config.get('use_dbus','no') != 'yes':
+            raise Exception, 'this media renderer needs use_dbus enabled in the configuration'
         self.name = kwargs.get('name','GStreamer Audio Player')
 
         self.player = Player()
@@ -414,118 +421,137 @@ class GStreamerPlayer(log.Loggable,Plugin):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def update( self,message=None):
+    def update(self, message=None):
         _, current,_ = self.player.get_state()
-        self.debug("update current %r" % current)
-        """
-        if current == gst.STATE_NULL:
-            return
-        if current not in (gst.STATE_PLAYING, gst.STATE_PAUSED,
-                           gst.STATE_READY):
-            print "I'm out"
-            return
-        """
+        self.debug("update current %r", current)
+        connection_manager = self.server.connection_manager_server
+        av_transport = self.server.av_transport_server
+        conn_id = connection_manager.lookup_avt_id(self.current_connection_id)
         if current == gst.STATE_PLAYING:
             state = 'playing'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
+            av_transport.set_variable(conn_id, 'TransportState', 'PLAYING')
         elif current == gst.STATE_PAUSED:
             state = 'paused'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
-        elif(self.playcontainer != None and
-             message == gst.MESSAGE_EOS and
-             self.playcontainer[0]+1 < len(self.playcontainer[2])):
+            av_transport.set_variable(conn_id, 'TransportState',
+                                      'PAUSED_PLAYBACK')
+        elif self.playcontainer != None and message == gst.MESSAGE_EOS and \
+             self.playcontainer[0]+1 < len(self.playcontainer[2]):
             state = 'transitioning'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
+            av_transport.set_variable(conn_id, 'TransportState', 'TRANSITIONING')
 
             next_track = ()
             item = self.playcontainer[2][self.playcontainer[0]+1]
-            local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
-            res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
+            infos = connection_manager.get_variable('SinkProtocolInfo')
+            local_protocol_infos = infos.value.split(',')
+            res = item.res.get_matching(local_protocol_infos,
+                                        protocol_type='internal')
             if len(res) == 0:
                 res = item.res.get_matching(local_protocol_infos)
             if len(res) > 0:
                 res = res[0]
-                remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                infos = res.protocolInfo.split(':')
+                remote_protocol, remote_network, remote_content_format, _ = infos
                 didl = DIDLLite.DIDLElement()
                 didl.addItem(item)
-                next_track = (res.data,didl.toString(),remote_content_format)
+                next_track = (res.data, didl.toString(), remote_content_format)
                 self.playcontainer[0] = self.playcontainer[0]+1
 
             if len(next_track) == 3:
-                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack',self.playcontainer[0]+1)
-                self.load(next_track[0],next_track[1],next_track[2])
+                av_transport.set_variable(conn_id, 'CurrentTrack',
+                                          self.playcontainer[0]+1)
+                self.load(next_track[0], next_track[1], next_track[2])
                 self.play()
             else:
                 state = 'idle'
-                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
-        elif (message == gst.MESSAGE_EOS and
-              len(self.server.av_transport_server.get_variable('NextAVTransportURI').value) > 0):
+                av_transport.set_variable(conn_id, 'TransportState', 'STOPPED')
+        elif message == gst.MESSAGE_EOS and \
+             len(av_transport.get_variable('NextAVTransportURI').value) > 0:
             state = 'transitioning'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'TRANSITIONING')
-            CurrentURI = self.server.av_transport_server.get_variable('NextAVTransportURI').value
-            CurrentURIMetaData = self.server.av_transport_server.get_variable('NextAVTransportURIMetaData').value
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NextAVTransportURI', '')
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'NextAVTransportURIMetaData', '')
-            r = self.upnp_SetAVTransportURI(self, InstanceID=0,CurrentURI=CurrentURI,CurrentURIMetaData=CurrentURIMetaData)
+            av_transport.set_variable(conn_id, 'TransportState', 'TRANSITIONING')
+            CurrentURI = av_transport.get_variable('NextAVTransportURI').value
+            metadata = av_transport.get_variable('NextAVTransportURIMetaData')
+            CurrentURIMetaData = metadata.value
+            av_transport.set_variable(conn_id, 'NextAVTransportURI', '')
+            av_transport.set_variable(conn_id, 'NextAVTransportURIMetaData', '')
+            r = self.upnp_SetAVTransportURI(self, InstanceID=0,
+                                            CurrentURI=CurrentURI,
+                                            CurrentURIMetaData=CurrentURIMetaData)
             if r == {}:
                 self.play()
             else:
                 state = 'idle'
-                self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
+                av_transport.set_variable(conn_id, 'TransportState', 'STOPPED')
         else:
             state = 'idle'
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
+            av_transport.set_variable(conn_id, 'TransportState', 'STOPPED')
 
         self.info("update %r" % state)
+        self._update_transport_position(state)
+
+    def _update_transport_position(self, state):
+        connection_manager = self.server.connection_manager_server
+        av_transport = self.server.av_transport_server
+        conn_id = connection_manager.lookup_avt_id(self.current_connection_id)
+
         position = self.player.query_position()
         #print position
 
         for view in self.view:
-            view.status( self.status( position))
+            view.status(self.status(position))
 
         if position.has_key(u'raw'):
 
-            if(self.duration == None and
-               position[u'raw'].has_key(u'duration')):
+            if self.duration == None and 'duration' in position[u'raw']:
                 self.duration = int(position[u'raw'][u'duration'])
                 if self.metadata != None and len(self.metadata)>0:
                     # FIXME: duration breaks client parsing MetaData?
                     elt = DIDLLite.DIDLElement.fromString(self.metadata)
                     for item in elt:
                         for res in item.findall('res'):
-                            m,s = divmod( self.duration/1000000000, 60)
-                            h,m = divmod(m,60)
-                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                            formatted_duration = self._format_time(self.duration)
+                            res.attrib['duration'] = formatted_duration
 
                     self.metadata = elt.toString()
                     #print self.metadata
                     if self.server != None:
-                        connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-                        self.server.av_transport_server.set_variable(connection_id,
-                                                    'AVTransportURIMetaData',self.metadata)
-                        self.server.av_transport_server.set_variable(connection_id,
-                                                    'CurrentTrackMetaData',self.metadata)
+                        av_transport.set_variable(conn_id,
+                                                  'AVTransportURIMetaData',
+                                                  self.metadata)
+                        av_transport.set_variable(conn_id,
+                                                  'CurrentTrackMetaData',
+                                                  self.metadata)
 
 
-            self.info("%s %d/%d/%d - %d%%/%d%% - %s/%s/%s" % (state,
-                            string.atol(position[u'raw'][u'position'])/1000000000,
-                            string.atol(position[u'raw'][u'remaining'])/1000000000,
-                            string.atol(position[u'raw'][u'duration'])/1000000000,
-                            position[u'percent'][u'position'],
-                            position[u'percent'][u'remaining'],
-                            position[u'human'][u'position'],
-                            position[u'human'][u'remaining'],
-                            position[u'human'][u'duration']))
+            self.info("%s %d/%d/%d - %d%%/%d%% - %s/%s/%s", state,
+                      string.atol(position[u'raw'][u'position'])/1000000000,
+                      string.atol(position[u'raw'][u'remaining'])/1000000000,
+                      string.atol(position[u'raw'][u'duration'])/1000000000,
+                      position[u'percent'][u'position'],
+                      position[u'percent'][u'remaining'],
+                      position[u'human'][u'position'],
+                      position[u'human'][u'remaining'],
+                      position[u'human'][u'duration'])
+
             duration = string.atol(position[u'raw'][u'duration'])
-            m,s = divmod( duration/1000000000, 60)
-            h,m = divmod(m,60)
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
+            formatted = self._format_time(duration)
+            av_transport.set_variable(conn_id, 'CurrentTrackDuration', formatted)
+            av_transport.set_variable(conn_id, 'CurrentMediaDuration', formatted)
+
             position = string.atol(position[u'raw'][u'position'])
-            m,s = divmod( position/1000000000, 60)
-            h,m = divmod(m,60)
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-            self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+            formatted = self._format_time(position)
+            av_transport.set_variable(conn_id, 'RelativeTimePosition', formatted)
+            av_transport.set_variable(conn_id, 'AbsoluteTimePosition', formatted)
+
+    def _format_time(self, time):
+        fmt = '%d:%02d:%02d'
+        try:
+            m, s = divmod(time / 1000000000, 60)
+            h, m = divmod(m, 60)
+        except:
+            h = m = s = 0
+            fmt = '%02d:%02d:%02d'
+        formatted = fmt % (h, m, s)
+        return formatted
 
     def load( self, uri,metadata, mimetype=None):
         self.info("loading: %r %r " % (uri, mimetype))
