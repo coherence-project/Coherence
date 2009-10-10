@@ -746,10 +746,13 @@ class FlickrStore(BackendStore):
         return d
 
     def flickr_photos_getSizes(self, photo_id=None):
-        api_sig = self.flickr_create_api_signature(auth_token=self.flickr_authtoken,method='flickr.photos.getSizes', photo_id=photo_id)
-        d = self.flickr_call('flickr.photos.getSizes', auth_token=self.flickr_authtoken, photo_id=photo_id,api_sig=api_sig)
+        if self.flickr_authtoken != None:
+            api_sig = self.flickr_create_api_signature(auth_token=self.flickr_authtoken,method='flickr.photos.getSizes', photo_id=photo_id)
+            d = self.flickr_call('flickr.photos.getSizes', auth_token=self.flickr_authtoken, photo_id=photo_id,api_sig=api_sig)
+        else:
+            api_sig = self.flickr_create_api_signature(method='flickr.photos.getSizes', photo_id=photo_id)
+            d = self.flickr_call('flickr.photos.getSizes',photo_id=photo_id,api_sig=api_sig)
         return d
-
 
     def flickr_interestingness(self, date=None, per_page=100):
         if date == None:
