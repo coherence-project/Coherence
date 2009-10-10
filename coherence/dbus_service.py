@@ -203,7 +203,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(CDS_SERVICE,in_signature='sssiis',out_signature='viii',
+    @dbus.service.method(CDS_SERVICE,in_signature='sssiis',out_signature='aa{sv}iii',  # was viii
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def Browse(self,ObjectID, BrowseFlag, Filter, StartingIndex, RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
@@ -247,7 +247,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
-    @dbus.service.method(CDS_SERVICE,in_signature='sssiis',out_signature='siii',
+    @dbus.service.method(CDS_SERVICE,in_signature='sssiis',out_signature='aa{sv}iii',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def Search(self,ContainerID,SearchCriteria,Filter,StartingIndex,RequestedCount,SortCriteria,
                     dbus_async_cb,dbus_async_err_cb):
@@ -261,8 +261,35 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         r = self.callAction('Search',arguments)
         if r == '':
             return r
+
         def convert_reply(data):
-            dbus_async_cb(unicode(data['Result']),int(data['NumberReturned']),int(data['TotalMatches']),int(data['UpdateID']))
+            et = parse_xml(data['Result'], 'utf-8')
+            et = et.getroot()
+            items = dbus.Array([],signature='v')
+
+            def append(item):
+                i = dbus.Dictionary({},signature='sv')
+                for k,v in item.attrib.items():
+                    i[un_namespace(k)] = v
+                res = dbus.Array([],signature='v')
+                for child in item:
+                    if un_namespace(child.tag) == 'DIDL-Lite:res':
+                        res_dict = dbus.Dictionary({},signature='sv')
+                        res_dict['url'] = unicode(child.text)
+                        for k,v in child.attrib.items():
+                            res_dict[un_namespace(k)] = v
+                        res.append(res_dict)
+                    else:
+                       i[un_namespace(child.tag)] = child.text
+                if len(res):
+                    i['res'] = res
+                items.append(i)
+
+            for item in et:
+                append(item)
+
+            dbus_async_cb(items,int(data['NumberReturned']),int(data['TotalMatches']),int(data['UpdateID']))
+
         r.addCallback(convert_reply)
         r.addErrback(dbus_async_err_cb)
 
