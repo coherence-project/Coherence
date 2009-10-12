@@ -711,6 +711,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
              'friendly_name': self.device.get_friendly_name(),
              'udn': self.device.get_id(),
              'uri': list(urlparse.urlsplit(self.device.get_location())),
+             'presentation_url': self.device.get_presentation_url(),
+             'parent_udn': self.device.get_parent_id(),
              'services': [x.path for x in self.services]}
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
@@ -935,16 +937,18 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         d.addErrback(dbus_async_err_cb)
 
     def _device_detected(self,device):
-        #print "new_device_detected",device.get_usn(),device.friendly_device_type,device.get_id()
-        if device.get_id() not in self.devices:
+        id = device.get_id()
+        #print "new_device_detected",device.get_usn(),device.friendly_device_type,id
+        if id not in self.devices:
             new_device = DBusDevice(device,self.bus)
-            self.devices[device.get_id()] = new_device
-            #print self.devices, device.get_id()
-            self.device_detected(new_device.get_info(),device.get_id())
+            self.devices[id] = new_device
+            #print self.devices, id
+            info = new_device.get_info()
+            self.device_detected(info,id)
             if device.get_friendly_device_type() == 'MediaServer':
-                self.UPnP_ControlPoint_MediaServer_detected(new_device.get_info(),device.get_id())
+                self.UPnP_ControlPoint_MediaServer_detected(info,id)
             elif device.get_friendly_device_type() == 'MediaRenderer':
-                self.UPnP_ControlPoint_MediaRenderer_detected(new_device.get_info(),device.get_id())
+                self.UPnP_ControlPoint_MediaRenderer_detected(info,id)
 
     def _device_removed(self,usn=''):
         #print "_device_removed", usn

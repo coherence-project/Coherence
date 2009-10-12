@@ -178,42 +178,43 @@ class Device(log.Loggable):
         self.friendly_device_type, self.device_type_version = \
                 self.device_type.split(':')[-2:]
         self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
-        self.udn = d.findtext('.//{%s}UDN' % ns)
+        self.udn = d.findtext('./{%s}UDN' % ns)
+        self.info("found udn %r %r" % (self.udn,self.friendly_name))
 
         try:
-            self.manufacturer = d.findtext('.//{%s}manufacturer' % ns)
+            self.manufacturer = d.findtext('./{%s}manufacturer' % ns)
         except:
             pass
         try:
-            self.manufacturer_url = d.findtext('.//{%s}manufacturerURL' % ns)
+            self.manufacturer_url = d.findtext('./{%s}manufacturerURL' % ns)
         except:
             pass
         try:
-            self.model_name = d.findtext('.//{%s}modelName' % ns)
+            self.model_name = d.findtext('./{%s}modelName' % ns)
         except:
             pass
         try:
-            self.model_description = d.findtext('.//{%s}modelDescription' % ns)
+            self.model_description = d.findtext('./{%s}modelDescription' % ns)
         except:
             pass
         try:
-            self.model_number = d.findtext('.//{%s}modelNumber' % ns)
+            self.model_number = d.findtext('./{%s}modelNumber' % ns)
         except:
             pass
         try:
-            self.model_url = d.findtext('.//{%s}modelURL' % ns)
+            self.model_url = d.findtext('./{%s}modelURL' % ns)
         except:
             pass
         try:
-            self.serial_number = d.findtext('.//{%s}serialNumber' % ns)
+            self.serial_number = d.findtext('./{%s}serialNumber' % ns)
         except:
             pass
         try:
-            self.upc = d.findtext('.//{%s}UPC' % ns)
+            self.upc = d.findtext('./{%s}UPC' % ns)
         except:
             pass
         try:
-            self.presentation_url = d.findtext('.//{%s}presentationURL' % ns)
+            self.presentation_url = d.findtext('./{%s}presentationURL' % ns)
         except:
             pass
 
@@ -306,6 +307,18 @@ class Device(log.Loggable):
 
     def get_urlbase(self):
         return self.parent.get_urlbase()
+
+    def get_presentation_url(self):
+        try:
+            return self.make_fullyqualified(self.presentation_url)
+        except:
+            return ''
+
+    def get_parent_id(self):
+        try:
+            return self.parent.get_id()
+        except:
+            return ''
 
     def make_fullyqualified(self,url):
         return self.parent.make_fullyqualified(url)
@@ -502,19 +515,19 @@ class RootDevice(Device):
             data, headers = x
             tree = utils.parse_xml(data, 'utf-8').getroot()
 
-            major = tree.findtext('.//{%s}specVersion/{%s}major' % (ns,ns))
-            minor = tree.findtext('.//{%s}specVersion/{%s}minor' % (ns,ns))
+            major = tree.findtext('./{%s}specVersion/{%s}major' % (ns,ns))
+            minor = tree.findtext('./{%s}specVersion/{%s}minor' % (ns,ns))
             try:
                 self.upnp_version = '.'.join((major,minor))
             except:
                 self.upnp_version = 'n/a'
             try:
-                self.urlbase = tree.findtext('.//{%s}URLBase' % ns)
+                self.urlbase = tree.findtext('./{%s}URLBase' % ns)
             except:
                 import traceback
                 self.debug(traceback.format_exc())
 
-            d = tree.find('.//{%s}device' % ns)
+            d = tree.find('./{%s}device' % ns)
             if d is not None:
                 self.parse_device(d) # root device
 
