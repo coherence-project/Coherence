@@ -398,7 +398,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
 
     def __init__(self, device, **kwargs):
-        if device.coherence.config.get('use_dbus','no') != 'yes':
+        if(device.coherence.config.get('use_dbus','no') != 'yes' and
+           device.coherence.config.get('glib','no') != 'yes'):
             raise Exception, 'this media renderer needs use_dbus enabled in the configuration'
         self.name = kwargs.get('name','GStreamer Audio Player')
 
