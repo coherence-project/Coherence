@@ -10,6 +10,7 @@ import traceback
 import copy
 
 from twisted.python import filepath, util
+from twisted.internet.tcp import CannotListenError
 from twisted.internet import task, address, defer
 from twisted.internet import reactor
 from twisted.web import resource,static
@@ -170,7 +171,7 @@ class Plugins(log.Loggable):
         self._plugins.__setitem__(key,value)
 
     def set(self, key,value):
-        return self.__getitem__(key,value)
+        return self.__setitem__(key,value)
 
     def keys(self):
         return self._plugins.keys()
@@ -332,7 +333,12 @@ class Coherence(log.Loggable):
 
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
-        self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
+        try:
+            self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
+        except CannotListenError:
+            self.warning('port %r already in use, aborting!' % self.web_server_port)
+            reactor.stop()
+            return
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
 
@@ -666,7 +672,7 @@ class Coherence(log.Loggable):
         #    self.callback("new_device", infos['ST'], infos)
 
     def add_device(self, device):
-        self.info("adding device",device.get_usn())
+        self.info("adding device",device.get_id(),device.get_usn(),device.friendly_device_type)
         self.devices.append(device)
 
     def remove_device(self, device_type, infos):
