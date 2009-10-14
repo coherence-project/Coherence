@@ -421,6 +421,18 @@ class FSStore(BackendStore):
 
     implements = ['MediaServer']
 
+    description = """MediaServer exporting files from the file-system"""
+
+    options = [{'option':'name','type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+               {'option':'version','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+               {'option':'uuid','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
+               {'option':'content','type':'string','default':xdg_content(),'help':'the path(s) this MediaServer shall export'},
+               {'option':'ignore_patterns','type':'string','help':'list of regex patterns, matching filenames will be ignored'},
+               {'option':'enable_destroy','type':'string','default':'no','help':'enable deleting a file via an UPnP method'},
+               {'option':'import_folder','type':'string','help':'The path to store files imported via an UPnP method, if empty the Import method is disabled'}
+              ]
+
+
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000
