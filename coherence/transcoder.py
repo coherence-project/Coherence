@@ -663,9 +663,11 @@ class TranscoderManager(log.Loggable):
                                             with a '%s !')
                                            and an element named mux where we can attach
                                            our sink -->
-          <type>gstreamer</type>
-          <id>mpegts</id>
+          <type>gstreamer</type>      <!-- could be gstreamer or process -->
+          <name>mpegts</name>
           <target>video/mpeg</target>
+          <fourth_field>              <!-- value for the 4th field of the protocolInfo phalanx,
+                                           default is '*' -->
         </transcoder>
 
     """
