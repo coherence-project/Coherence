@@ -8,7 +8,7 @@
 """ Coherence is a framework to host DLNA/UPnP devices
 
     For more information about it and its available backends
-    point your browser to: http://coherence.beebits.net
+    point your browser to: http://coherence-project.org
 """
 
 import os, sys
