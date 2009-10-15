@@ -35,6 +35,7 @@ class JsonInterface(resource.Resource,log.Loggable):
 
     def do_the_render(self,request):
         self.warning('do_the_render, %s, %s, %s %r %s' % (request.method, request.path,request.uri, request.args, request.client))
+        msg = "Houston, we've got a problem"
         path = request.path.split('/')
         path = path[2:]
         self.warning('path %r' % path)
@@ -51,9 +52,17 @@ class JsonInterface(resource.Resource,log.Loggable):
                             action = service.get_action(path[2])
                             if action != None:
                                 return self.call_action(action,request)
+                            else:
+                                msg = "action %r on service type %r for device %r not found" % (path[2],path[1],path[0])
+                        else:
+                            msg = "service type %r for device %r not found" % (path[1],path[0])
 
-        request.setResponseCode(404)
-        return static.Data("<html><p>Houston, we've got a problem</p></html>",'text/html')
+                    else:
+                        msg = "device with id %r not found" % path[0]
+
+
+        request.setResponseCode(404,message=msg)
+        return static.Data("<html><p>%s</p></html>" % msg,'text/html')
 
 
 
