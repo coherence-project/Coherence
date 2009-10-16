@@ -27,7 +27,7 @@ MPEG4_EXTENSION = 'mp4'
 
 class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
-    logCategory = 'youtube_store'
+    logCategory = 'internetVideoProxy'
 
     def __init__(self, uri, id,
                  proxy_mode,
@@ -62,7 +62,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        self.info("ProxyStream requestFinished",result)
+        self.info("ProxyStream requestFinished:",result)
         if hasattr(self,'connection'):
             self.connection.transport.loseConnection()
 
@@ -79,7 +79,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         if self.stream_url is None:
 
             web_url = "http://%s%s" % (self.host,self.path)
-            #print "web_url", web_url
+            self.info("Web_url: %s" % web_url)
 
             def got_real_urls(real_urls):
                 got_real_url(real_urls[0])
@@ -208,10 +208,17 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             self.warning("Unsupported Proxy Mode: %s" % self.proxy_mode)
             return self.requestFinished(None)
 
+    def getMimetype(self):
+        type = MPEG4_MIMETYPE
+        if self.mimetype is not None:
+            type = self.mimetype
+        return type
+            
+
     def renderFile(self,request,filepath):
         self.info('Cache file available %r %r ' %(request, filepath))
         downloadedFile = utils.StaticFile(filepath, self.mimetype)
-        downloadedFile.type = MPEG4_MIMETYPE
+        downloadedFile.type = self.getMimetype()
         downloadedFile.encoding = None
         return downloadedFile.render(request)
 
@@ -226,8 +233,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 rendering = True
                 self.info("Render file", filepath, self.filesize, filesize, buffer_size)
                 bufferFile = utils.BufferFile(filepath, self.filesize, MPEG4_MIMETYPE)
-                bufferFile.type = MPEG4_MIMETYPE
-                #bufferFile.type = 'video/mpeg'
+                bufferFile.type = self.getMimetype()
                 bufferFile.encoding = None
                 try:
                     return bufferFile.render(request)
