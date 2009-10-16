@@ -52,23 +52,22 @@ class Container(BackendItem):
 
         self.sorted = False
 
+    def register_child(self, child, external_id = None): 
+        id = self.store.append_item(child)
+        child.url = self.store.urlbase + str(id)
+        child.parent = self
+        if external_id is not None:
+            child.external_id = external_id
+            self.children_by_external_id[external_id] = child
 
     def add_child(self, child, external_id = None, update=True):
-        id = self.store.append_item(child)
+        id = self.register_child(child, external_id)
         if self.children is None:
             self.children = []
         self.children.append(child)
         self.sorted = False
         if update == True:
             self.update_id += 1
-
-        child.url = self.store.urlbase + str(id)
-        child.parent = self
-
-        if external_id is not None:
-            child.external_id = external_id
-            self.children_by_external_id[external_id] = child
-
 
     def remove_child(self, child, external_id = None, update=True):
         self.children.remove(child)
@@ -288,6 +287,9 @@ class AbstractBackendStore (BackendStore):
     def get_root_id(self):
         return ROOT_CONTAINER_ID
 
+    def get_root_item(self):
+        return self.get_by_id(ROOT_CONTAINER_ID)
+
     def append_item(self, item, storage_id=None):
         if storage_id is None:
             storage_id = self.getnextID()
@@ -323,7 +325,8 @@ class PicasaProxy(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        del request.received_headers['referer']
+        if request.received_headers.has_key('referer'):
+            del request.received_headers['referer']
         return ReverseProxyUriResource.render(self, request)
 
 class PicasaPhotoItem(BackendItem):
@@ -331,7 +334,10 @@ class PicasaPhotoItem(BackendItem):
         #print photo
         self.photo = photo
 
-        self.name = photo.title.text
+        self.name = photo.summary.text
+        if self.name is None:
+            self.name = photo.title.text
+            
         self.duration = None
         self.size = None
         self.mimetype = photo.content.type
@@ -349,7 +355,9 @@ class PicasaPhotoItem(BackendItem):
     def replace_by(self, item):
         #print photo
         self.photo = item.photo
-        self.name = self.photo.title.text
+        self.name = photo.summary.text
+        if self.name is None:
+            self.name = photo.title.text
         self.mimetype = self.photo.content.type
         self.description = self.photo.summary.text
         self.photo_url = self.photo.content.src
@@ -404,7 +412,7 @@ class PicasaStore(AbstractBackendStore):
 
 
     def __repr__(self):
-        return str(self.__class__).split('.')[-1]
+        return self.__class__.__name__
 
 
     def upnp_init(self):
