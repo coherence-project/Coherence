@@ -215,7 +215,8 @@ class Resource(object):
         self.bitrate = None
         self.size = None
         self.duration = None
-
+        
+        self.nrAudioChannels = None
         self.resolution = None
 
         self.importUri = None
@@ -272,6 +273,9 @@ class Resource(object):
         if self.duration is not None:
             root.attrib['duration'] = self.duration
 
+        if self.nrAudioChannels is not None:
+            root.attrib['nrAudioChannels'] = self.nrAudioChannels
+            
         if self.resolution is not None:
             root.attrib['resolution'] = self.resolution
 
@@ -573,6 +577,8 @@ class Item(Object):
     refID = None
 
     director = None
+    genre = None
+    genres = None
 
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
@@ -586,6 +592,13 @@ class Item(Object):
 
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
+
+        if self.genre is not None:
+            ET.SubElement(root, qname('genre',UPNP_NS)).text = self.genre
+                        
+        if self.genres is not None:
+            for genre in self.genres:
+                ET.SubElement(root, qname('genre',UPNP_NS)).text = genre
 
         if kwargs.get('transcoding',False) == True:
             res = self.res.get_matching(['*:*:*:*'], protocol_type='http-get')
