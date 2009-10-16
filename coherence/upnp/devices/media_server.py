@@ -386,7 +386,8 @@ class RootDeviceXML(static.Data):
                         xbox_hack=False,
                         services=[],
                         devices=[],
-                        icons=[]):
+                        icons=[],
+                        presentationURL=None):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
@@ -479,8 +480,9 @@ class RootDeviceXML(static.Data):
         if len(devices):
             e = ET.SubElement(d, 'deviceList')
 
-
-        ET.SubElement(d, 'presentationURL').text = '/' + uuid[5:]
+        if presentationURL is None:
+            presentationURL = '/' + uuid[5:]
+        ET.SubElement(d, 'presentationURL').text = presentationURL
 
         x = ET.SubElement(d, 'dlna:X_DLNADOC')
         x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
@@ -501,6 +503,8 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
     logCategory = 'mediaserver'
 
     device_type = 'MediaServer'
+    
+    presentationURL = None
 
     def fire(self,backend,**kwargs):
 
@@ -579,7 +583,8 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                     friendly_name=self.backend.name,
                                     services=self._services,
                                     devices=self._devices,
-                                    icons=self.icons))
+                                    icons=self.icons,
+                                    presentationURL = self.presentationURL))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
@@ -589,7 +594,8 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                     xbox_hack=True,
                                     services=self._services,
                                     devices=self._devices,
-                                    icons=self.icons))
+                                    icons=self.icons,
+                                    presentationURL = self.presentationURL))
             version -= 1
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
