@@ -8,6 +8,7 @@
 # a little helper to get the proper ElementTree package
 
 import re
+import exceptions
 
 try:
     import cElementTree as ET
