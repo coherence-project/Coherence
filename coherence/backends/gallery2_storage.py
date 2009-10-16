@@ -192,7 +192,7 @@ class Gallery2Store(BackendStore):
             d.addCallback(self.init_completed)
 
     def __repr__(self):
-        return str(self.__class__).split('.')[-1]
+        return self.__class__.__name__ 
 
     def append( self, obj, parent):
         if isinstance(obj, basestring):
