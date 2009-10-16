@@ -93,7 +93,6 @@ if haz_setuptools == True:
         from configobj import ConfigObj
     except ImportError:
         setup_args['install_requires'].append('ConfigObj >= 4.3')
-
     try:
         import netifaces
     except ImportError:
@@ -126,7 +125,8 @@ if haz_setuptools == True:
         PicasaStore = coherence.backends.picasa_storage:PicasaStore
         TestStore = coherence.backends.test_storage:TestStore
         PlaylistStore = coherence.backends.playlist_storage:PlaylistStore
-
+        YamjStore = coherence.backends.yamj_storage:YamjStore
+                         
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
         GStreamerPlayer = coherence.backends.gstreamer_renderer:GStreamerPlayer
