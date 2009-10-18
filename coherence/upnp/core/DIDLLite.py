@@ -215,7 +215,7 @@ class Resource(object):
         self.bitrate = None
         self.size = None
         self.duration = None
-        
+
         self.nrAudioChannels = None
         self.resolution = None
 
@@ -275,7 +275,7 @@ class Resource(object):
 
         if self.nrAudioChannels is not None:
             root.attrib['nrAudioChannels'] = self.nrAudioChannels
-            
+
         if self.resolution is not None:
             root.attrib['resolution'] = self.resolution
 
@@ -347,16 +347,12 @@ class PlayContainerResource(Resource):
                             sc='',md=0,
                             protocolInfo=None):
 
+        Resource.__init__(self)
         if cid == None:
             raise AttributeError('missing Container Id')
         if fid == None:
             raise AttributeError('missing first Child Id')
         self.protocolInfo = protocolInfo
-        self.bitrate = None
-        self.size = None
-        self.duration = None
-        self.resolution = None
-        self.importUri = None
 
         args = ['sid=' + urllib.quote(sid),
                 'cid=' + urllib.quote(str(cid)),
@@ -595,7 +591,7 @@ class Item(Object):
 
         if self.genre is not None:
             ET.SubElement(root, qname('genre',UPNP_NS)).text = self.genre
-                        
+
         if self.genres is not None:
             for genre in self.genres:
                 ET.SubElement(root, qname('genre',UPNP_NS)).text = genre
