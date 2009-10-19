@@ -115,9 +115,9 @@ class ControlPoint(log.Loggable):
         return self.coherence.get_device_by_host(host)
 
     def check_device( self, device):
-        self.info("found device %s of type %s - %r" %(device.get_friendly_name(),
-                                                device.get_device_type(), device.client))
         if device.client == None:
+            self.info("found device %s of type %s - %r" %(device.get_friendly_name(),
+                                                device.get_device_type(), device.client))
             short_type = device.get_friendly_device_type()
             if short_type in self.auto_client and short_type is not None:
                 self.info("identified %s %r" %
@@ -138,7 +138,7 @@ class ControlPoint(log.Loggable):
         self.process_queries(device)
 
     def completed(self, client, udn):
-        self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected ' % client.device_type)
+        self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected %r' % (client.device_type, udn))
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
                                client=client,udn=udn)
 
