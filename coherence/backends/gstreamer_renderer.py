@@ -871,7 +871,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             self.seek(sign+str(seconds), old_state)
         if Unit in ['TRACK_NR']:
             if self.playcontainer == None:
-                NextURI = self.server.av_transport_server.get_variable(InstanceID, 'NextAVTransportURI').value
+                NextURI = self.server.av_transport_server.get_variable('NextAVTransportURI',InstanceID).value
                 if NextURI != '':
                     self.server.av_transport_server.set_variable(InstanceID, 'TransportState', 'TRANSITIONING')
                     NextURIMetaData = self.server.av_transport_server.get_variable('NextAVTransportURIMetaData').value
