@@ -23,11 +23,11 @@
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
         </stateVariable>
-	 <stateVariable>
+	<stateVariable>
             <name>RecordStorageMedium</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-              </stateVariable>
+        </stateVariable>
         <stateVariable>
             <name>PossiblePlaybackStorageMedia</name>
             <sendEventsAttribute>no</sendEventsAttribute>
@@ -51,7 +51,7 @@
             <name>TransportPlaySpeed</name>
             <sendEventsAttribute>no</sendEventsAttribute>
             <dataType>string</dataType>
-	<allowedValueList coherence:X_withVendorDefines="True">
+	    <allowedValueList coherence:X_withVendorDefines="True">
                 <allowedValue>1</allowedValue>
             </allowedValueList>
         </stateVariable>
@@ -253,7 +253,7 @@
                 </argument>
                 <argument>
                     <name>WriteStatus</name>
-                    <direction>out</direction>                    <relatedStateVariable>RecordMediumWriteStatus </relatedStateVariable>
+                    <direction>out</direction>                    <relatedStateVariable>RecordMediumWriteStatus</relatedStateVariable>
                 </argument>
             </argumentList>
         </action>

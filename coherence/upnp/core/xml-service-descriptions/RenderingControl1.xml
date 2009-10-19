@@ -1,10 +1,10 @@
-<scpd>
+<scpd xmlns:coherence="urn:schemas-beebits-net:service-1-0">
   <serviceStateTable>
     <stateVariable>
       <name>PresetNameList</name> <sendEventsAttribute>no</sendEventsAttribute>
       <dataType>string</dataType>
     </stateVariable>
-    <stateVariable> 
+    <stateVariable>
       <name>LastChange</name> <sendEventsAttribute>yes</sendEventsAttribute>
       <dataType>string</dataType>
     </stateVariable>
@@ -168,7 +168,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetBrightness</name>
       <argumentList>
         <argument>
@@ -183,7 +183,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetBrightness</name>
       <argumentList>
         <argument>
@@ -198,7 +198,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetContrast</name>
       <argumentList>
         <argument>
@@ -213,7 +213,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetContrast</name>
       <argumentList>
         <argument>
@@ -228,7 +228,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetSharpness</name>
       <argumentList>
         <argument>
@@ -243,7 +243,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetSharpness</name>
       <argumentList>
         <argument>
@@ -258,7 +258,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetRedVideoGain</name>
       <argumentList>
         <argument>
@@ -273,7 +273,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetRedVideoGain</name>
       <argumentList>
         <argument>
@@ -288,7 +288,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetGreenVideoGain</name>
       <argumentList>
         <argument>
@@ -303,7 +303,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetGreenVideoGain</name>
       <argumentList>
         <argument>
@@ -318,7 +318,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetBlueVideoGain</name>
       <argumentList>
         <argument>
@@ -333,7 +333,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetBlueVideoGain</name>
       <argumentList>
         <argument>
@@ -348,7 +348,7 @@
         </argument>
       </argumentList>
     </action>
-   <action><Optional/>
+   <action coherence:X_needs_backend="True"><Optional/>
     <name>GetRedVideoBlackLevel</name>
       <argumentList>
         <argument>
@@ -363,7 +363,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetRedVideoBlackLevel</name>
       <argumentList>
         <argument>
@@ -378,7 +378,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetGreenVideoBlackLevel</name>
       <argumentList>
         <argument>
@@ -393,7 +393,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetGreenVideoBlackLevel</name>
       <argumentList>
         <argument>
@@ -408,7 +408,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetBlueVideoBlackLevel</name>
       <argumentList>
         <argument>
@@ -423,7 +423,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetBlueVideoBlackLevel</name>
       <argumentList>
         <argument>
@@ -438,7 +438,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetColorTemperature </name>
       <argumentList>
         <argument>
@@ -453,7 +453,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetColorTemperature</name>
       <argumentList>
         <argument>
@@ -468,7 +468,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetHorizontalKeystone</name>
       <argumentList>
         <argument>
@@ -483,7 +483,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetHorizontalKeystone</name>
       <argumentList>
         <argument>
@@ -498,7 +498,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetVerticalKeystone</name>
       <argumentList>
         <argument>
@@ -513,7 +513,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetVerticalKeystone</name>
       <argumentList>
         <argument>
@@ -528,7 +528,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetMute</name>
       <argumentList>
         <argument>
@@ -548,7 +548,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetMute</name>
       <argumentList>
         <argument>
@@ -568,7 +568,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetVolume</name>
       <argumentList>
         <argument>
@@ -588,7 +588,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetVolume</name>
       <argumentList>
         <argument>
@@ -608,7 +608,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetVolumeDB</name>
       <argumentList>
         <argument>
@@ -628,7 +628,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetVolumeDB</name>
       <argumentList>
         <argument>
@@ -648,7 +648,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetVolumeDBRange</name>
       <argumentList>
         <argument>
@@ -673,7 +673,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>GetLoudness</name>
       <argumentList>
         <argument>
@@ -693,7 +693,7 @@
         </argument>
       </argumentList>
     </action>
-    <action><Optional/>
+    <action coherence:X_needs_backend="True"><Optional/>
     <name>SetLoudness</name>
       <argumentList>
         <argument>
@@ -715,4 +715,3 @@
     </action>
   </actionList>
 </scpd>
-

@@ -849,6 +849,14 @@ class ServiceServer(log.Loggable):
             implementation = 'required'
             if action_node.find('Optional') != None:
                 implementation = 'optional'
+
+            #if implementation == 'optional':
+            #    for action_object in self._actions.values():
+            #        if name in [a.get_state_variable() for a in action_object.arguments_list]:
+            #            break
+            #    else:
+            #        continue
+
             send_events = var_node.findtext('sendEventsAttribute')
             data_type = var_node.findtext('dataType')
             values = []
@@ -858,6 +866,10 @@ class ServiceServer(log.Loggable):
                                                            implementation,
                                                            instance, send_events,
                                                            data_type, values)
+
+            dependant_variable = var_node.findtext('{urn:schemas-beebits-net:service-1-0}X_dependantVariable')
+            if dependant_variable:
+                self._variables.get(instance)[name].dependant_variable = dependant_variable
             default_value = var_node.findtext('defaultValue')
             if default_value:
                 self._variables.get(instance)[name].set_default_value(default_value)
@@ -867,9 +879,7 @@ class ServiceServer(log.Loggable):
                                         None)
                 if never_evented is not None:
                     self._variables.get(instance)[name].set_never_evented(never_evented)
-            dependant_variable = var_node.findtext('{urn:schemas-beebits-net:service-1-0}X_dependantVariable')
-            if dependant_variable:
-                self._variables.get(instance)[name].dependant_variable = dependant_variable
+
             allowed_value_list = var_node.find('allowedValueList')
             if allowed_value_list != None:
                 vendor_values = allowed_value_list.attrib.get(
@@ -905,6 +915,11 @@ class ServiceServer(log.Loggable):
                                 self.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
                 self._variables.get(instance)[name].set_allowed_value_range(**range)
                 if vendor_values != None:
+                    self._variables.get(instance)[name].has_vendor_values = True
+            elif service_range_defaults:
+                variable_range_defaults = service_range_defaults.get(name)
+                if variable_range_defaults != None:
+                    self._variables.get(instance)[name].set_allowed_value_range(**variable_range_defaults)
                     self._variables.get(instance)[name].has_vendor_values = True
 
         for v in self._variables.get(0).values():

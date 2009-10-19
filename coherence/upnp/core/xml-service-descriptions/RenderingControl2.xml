@@ -9,10 +9,10 @@ Note:
 This file uses tabs (not spaces) for block indentation.
 Any updates to this file should maintain this convention.
 This includes disabling any automatic tab-to-space conversion
-feature provided by your editor. 
+feature provided by your editor.
 ================================================================-->
-<scpd>
-	<serviceStateTable xmlns:coherence="urn:schemas-beebits-net:service-1-0">
+<scpd xmlns:coherence="urn:schemas-beebits-net:service-1-0">
+	<serviceStateTable>
 		<stateVariable>
 			<name>LastChange</name>
 			<sendEventsAttribute>yes</sendEventsAttribute>
@@ -335,7 +335,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetBrightness</name>
 			<argumentList>
@@ -352,7 +352,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetBrightness</name>
 			<argumentList>
@@ -369,7 +369,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetContrast</name>
 			<argumentList>
@@ -386,7 +386,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action><Optional/>
+		<action coherence:X_needs_backend="True"><Optional/>
 		<name>SetContrast</name>
 			<argumentList>
 				<argument>
@@ -402,7 +402,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetSharpness</name>
 			<argumentList>
@@ -419,7 +419,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetSharpness</name>
 			<argumentList>
@@ -436,7 +436,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetRedVideoGain</name>
 			<argumentList>
@@ -453,7 +453,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetRedVideoGain</name>
 			<argumentList>
@@ -470,7 +470,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetGreenVideoGain</name>
 			<argumentList>
@@ -487,7 +487,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetGreenVideoGain</name>
 			<argumentList>
@@ -504,7 +504,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetBlueVideoGain</name>
 			<argumentList>
@@ -521,7 +521,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetBlueVideoGain</name>
 			<argumentList>
@@ -538,7 +538,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetRedVideoBlackLevel</name>
 			<argumentList>
@@ -555,7 +555,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetRedVideoBlackLevel</name>
 			<argumentList>
@@ -572,7 +572,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetGreenVideoBlackLevel</name>
 			<argumentList>
@@ -589,7 +589,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetGreenVideoBlackLevel</name>
 			<argumentList>
@@ -606,7 +606,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetBlueVideoBlackLevel</name>
 			<argumentList>
@@ -623,7 +623,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetBlueVideoBlackLevel</name>
 			<argumentList>
@@ -640,7 +640,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetColorTemperature</name>
 			<argumentList>
@@ -657,7 +657,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetColorTemperature</name>
 			<argumentList>
@@ -674,7 +674,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetHorizontalKeystone</name>
 			<argumentList>
@@ -691,7 +691,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetHorizontalKeystone</name>
 			<argumentList>
@@ -708,7 +708,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetVerticalKeystone</name>
 			<argumentList>
@@ -725,7 +725,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetVerticalKeystone</name>
 			<argumentList>
@@ -742,7 +742,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetMute</name>
 			<argumentList>
@@ -764,7 +764,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetMute</name>
 			<argumentList>
@@ -786,7 +786,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetVolume</name>
 			<argumentList>
@@ -808,7 +808,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetVolume</name>
 			<argumentList>
@@ -830,7 +830,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetVolumeDB</name>
 			<argumentList>
@@ -852,7 +852,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetVolumeDB</name>
 			<argumentList>
@@ -874,7 +874,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetVolumeDBRange</name>
 			<argumentList>
@@ -901,7 +901,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetLoudness</name>
 			<argumentList>
@@ -923,7 +923,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetLoudness</name>
 			<argumentList>
@@ -945,7 +945,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>GetStateVariables</name>
 			<argumentList>
@@ -967,7 +967,7 @@ feature provided by your editor.
 			</argumentList>
 		</action>
 
-		<action>
+		<action coherence:X_needs_backend="True">
 			<Optional/>
 			<name>SetStateVariables</name>
 			<argumentList>
