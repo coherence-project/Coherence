@@ -162,6 +162,16 @@ class Gallery2Store(BackendStore):
 
     implements = ['MediaServer']
 
+    description = ('Gallery2', 'exposes the photos from a Gallery2 photo repository.', None)
+
+    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'server_url','text':'Server URL:','type':'string'},
+       {'option':'username','text':'User ID:','type':'string','group':'User Account'},
+       {'option':'password','text':'Password:','type':'string','group':'User Account'},
+    ]
+
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self,server,**kwargs)
 

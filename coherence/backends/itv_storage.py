@@ -184,6 +184,14 @@ class ITVStore(BackendStore):
 
     implements = ['MediaServer']
 
+    description = ('Shoutcast TV', 'cexposes the list of video streams from Shoutcast TV.', None)
+
+    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'genrelist','text':'Server URL','type':'string', 'default':SHOUTCAST_WS_URL}
+    ]
+
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000

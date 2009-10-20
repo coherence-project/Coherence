@@ -75,6 +75,14 @@ class PlaylistStore(AbstractBackendStore):
 
     wmc_mapping = {'16': 1000}
 
+    description = ('Playlist', 'exposes the list of video/audio streams from a m3u playlist (e.g. web TV listings published by french ISPs such as Free, SFR...).', None)
+
+    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'playlist_url','text':'Playlist file URL:','type':'string','help':'URL to the playlist file (M3U).'},
+    ]
+
     playlist_url = None;
 
     def __init__(self, server, **kwargs):

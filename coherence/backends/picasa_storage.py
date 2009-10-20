@@ -389,6 +389,17 @@ class PicasaStore(AbstractBackendStore):
 
     implements = ['MediaServer']
 
+    description = ('Picasa Web Albums', 'connects to the Picasa Web Albums service and exposes the featured photos and albums for a given user.', None)
+
+    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'refresh','text':'Refresh period','type':'string'},
+       {'option':'login','text':'User ID:','type':'string','group':'User Account'},
+       {'option':'password','text':'Password:','type':'string','group':'User Account'},
+    ]
+
+
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 

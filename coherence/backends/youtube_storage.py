@@ -388,6 +388,23 @@ class YouTubeStore(AbstractBackendStore):
 
     implements = ['MediaServer']
 
+    description = ('Youtube', 'connects to the YouTube service and exposes the standard feeds (public) and the uploads/favorites/playlists/subscriptions of a given user.', None)
+
+    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'refresh','text':'Refresh period','type':'string'},
+       {'option':'login','text':'User ID:','type':'string','group':'User Account'},
+       {'option':'password','text':'Password:','type':'string','group':'User Account'},
+       {'option':'location','text':'Locale:','type':'string'},
+       {'option':'quality','text':'Video quality:','type':'string', 'default':'sd','enum': ('sd','hd')},
+       {'option':'standard_feeds','text':'Include standard feeds:','type':'bool', 'default': True},
+       {'option':'proxy_mode','text':'Proxy mode:','type':'string', 'enum': ('redirect','proxy','cache','buffered')},
+       {'option':'buffer_size','text':'Buffering size:','type':'int'},
+       {'option':'cache_directory','text':'Cache directory:','type':'dir', 'group':'Cache'},
+       {'option':'cache_maxsize','text':'Cache max size:','type':'int', 'group':'Cache'},
+    ]
+
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 

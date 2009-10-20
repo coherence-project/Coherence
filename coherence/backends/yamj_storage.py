@@ -106,6 +106,15 @@ class YamjStore(AbstractBackendStore):
 
     implements = ['MediaServer']
 
+    description = ('YAMJ', 'exposes the movie/TV series data files and metadata from a given YAMJ (Yet Another Movie Jukebox) library.', None)
+
+    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'refresh','text':'Refresh period','type':'string'},
+       {'option':'yamj_url','text':'Library URL:','type':'string', 'help':'URL to the library root directory.'}
+    ]
+
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
