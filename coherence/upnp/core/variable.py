@@ -180,8 +180,12 @@ class StateVariable(log.Loggable):
         self.value = new_value
         self.last_time_touched = time.time()
 
+        #print "UPDATED %s %r %r %r %r %r" % (self.name,self.service,isinstance( self.service, service.Service),self.instance,self.value,self._callbacks)
+        self.notify()
+
         if isinstance( self.service, service.Service):
-            self.notify()
+            #self.notify()
+            pass
         else:
             self.updated = True
             if self.service.last_change != None:
@@ -200,8 +204,9 @@ class StateVariable(log.Loggable):
         #    return
         louie.send(signal='Coherence.UPnP.StateVariable.%s.changed' % self.name, sender=self.service, variable=self)
         louie.send(signal='Coherence.UPnP.StateVariable.changed',sender=self.service, variable=self)
+        #print "CALLBACKS %s %r %r" % (self.name,self.instance,self._callbacks)
         for callback in self._callbacks:
-            callback( self)
+            callback(self)
 
     def __repr__(self):
         return "Variable: %s, %s, %d, %s, %s, %s, %s, %s, %s, %s" % \
