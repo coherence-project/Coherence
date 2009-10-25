@@ -14,6 +14,8 @@ from coherence.upnp.core import DIDLLite
 
 import string
 import os, platform
+from StringIO import StringIO
+import tokenize
 
 import pygst
 pygst.require('0.10')
@@ -27,9 +29,16 @@ from coherence import log
 
 class Player(log.Loggable):
     logCategory = 'gstreamer_player'
-    max_playbin_volume = 3.
+    max_playbin_volume = 1.
 
-    def __init__(self, default_mimetype='audio/mpeg'):
+    def __init__(self, default_mimetype='audio/mpeg', audio_sink_name=None,
+                 video_sink_name=None, audio_sink_options=None,
+                 video_sink_options=None):
+        self.audio_sink_name = audio_sink_name or "autoaudiosink"
+        self.video_sink_name = video_sink_name or "autovideosink"
+        self.audio_sink_options = audio_sink_options or {}
+        self.video_sink_options = video_sink_options or {}
+
         self.player = None
         self.source = None
         self.sink = None
@@ -86,6 +95,12 @@ class Player(log.Loggable):
             self.mute = self.mute_playbin
             self.unmute = self.unmute_playbin
             self.get_mute = self.get_mute_playbin
+            audio_sink = gst.element_factory_make(self.audio_sink_name)
+            self._set_props(audio_sink, self.audio_sink_options)
+            self.player.set_property("audio-sink", audio_sink)
+            video_sink = gst.element_factory_make(self.video_sink_name)
+            self._set_props(video_sink, self.video_sink_options)
+            self.player.set_property("video-sink", video_sink)
 
         self.bus = self.player.get_bus()
         self.player_clean = True
@@ -93,6 +108,26 @@ class Player(log.Loggable):
         self.bus.add_signal_watch()
         self.update_LC = LoopingCall(self.update)
 
+    def _set_props(self, element, props):
+        for option, value in props.iteritems():
+            value = self._py_value(value)
+            element.set_property(option, value)
+
+    def _py_value(self, s):
+        value = None
+        g = tokenize.generate_tokens(StringIO(s).readline)
+        for toknum, tokval, _, _, _  in g:
+            if toknum == tokenize.NUMBER:
+                if '.' in tokval:
+                    value = float(tokval)
+                else:
+                    value = int(tokval)
+            elif toknum == tokenize.NAME:
+                value = tokval
+
+            if value is not None:
+                break
+        return value
 
     def get_volume_playbin(self):
         """ playbin volume is a double from 0.0 - 10.0
@@ -403,7 +438,15 @@ class GStreamerPlayer(log.Loggable,Plugin):
             raise Exception, 'this media renderer needs use_dbus enabled in the configuration'
         self.name = kwargs.get('name','GStreamer Audio Player')
 
-        self.player = Player()
+        audio_sink_name = kwargs.get("audio_sink_name")
+        audio_sink_options = kwargs.get("audio_sink_options")
+        video_sink_name = kwargs.get("video_sink_name")
+        video_sink_options = kwargs.get("video_sink_options")
+
+        self.player = Player(audio_sink_name=audio_sink_name,
+                             video_sink_name=video_sink_name,
+                             audio_sink_options=audio_sink_options,
+                             video_sink_options=video_sink_options)
         self.player.add_view(self.update)
 
         self.metadata = None
