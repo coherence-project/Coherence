@@ -249,7 +249,7 @@ class Resource(object):
         root = ET.Element('res')
         if kwargs.get('upnp_client','') in ('XBox',):
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-            if content_format == 'video/x-msvideo':
+            if content_format in ['video/divx','video/x-msvideo']:
                 content_format = 'video/avi'
             if content_format == 'audio/x-wav':
                 content_format = 'audio/wav'
