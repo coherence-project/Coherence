@@ -688,6 +688,10 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         if device is not None:
             for service in device.get_services():
                 self.services.append(DBusService(service,self,bus))
+                # FIXME: find a better way to not reinject services from the tube
+                # to the dbus pontoon
+                if device.udn.find("tube") > -1:
+                    continue
                 if service.service_type.split(':')[3] == 'ContentDirectory':
                     self.services.append(DBusCDSService(service,self,bus))
 
