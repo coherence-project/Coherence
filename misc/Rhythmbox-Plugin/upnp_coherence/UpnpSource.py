@@ -132,9 +132,9 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
 
                     if duration is not None:
                         h,m,s = duration.split(':')
-                        seconds = int(h)*3600 + int(m)*60 + int(s)
-                        self.info("%r %r:%r:%r %r", duration, h, m , s, seconds)
-                        self.__db.set(entry, rhythmdb.PROP_DURATION, seconds)
+                        seconds = int(h)*3600 + int(m)*60 + float(s)
+                        self.info("%r %r:%r:%r %r" % (duration,h,m,s,seconds))
+                        self.__db.set(entry, rhythmdb.PROP_DURATION, int(seconds))
 
                     if size is not None:
                         self.__db.set(entry, rhythmdb.PROP_FILE_SIZE,int(size))
