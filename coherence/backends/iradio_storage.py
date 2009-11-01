@@ -44,7 +44,7 @@ class ProxyStream(utils.ReverseProxyResource, log.Loggable):
         if request.clientproto == 'HTTP/1.1':
             self.connection = request.getHeader('connection')
             if self.connection:
-                tokens = map(str.lower, connection.split(' '))
+                tokens = map(str.lower, self.connection.split(' '))
                 if 'close' in tokens:
                     d = request.notifyFinish()
                     d.addBoth(self.requestFinished)
