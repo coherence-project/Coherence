@@ -43,9 +43,11 @@ class MovieItem(BackendItem):
         self.rating = movie.find('./rating').text
         self.director = movie.find('./director').text
         self.genres = movie.findall('./genres/genre')
+        self.actors= movie.findall('./cast/actor')
         self.year = movie.find('year').text 
         self.audioChannels = movie.find('audioChannels').text
         self.resolution = movie.find('resolution').text
+        self.language =  movie.find('language').text
         
         self.posterURL = "%s/%s" % (store.jukebox_url, self.posterFilename)
         self.thumbnailURL = "%s/%s" % (store.jukebox_url, self.thumbnailFilename)       
@@ -53,6 +55,9 @@ class MovieItem(BackendItem):
         self.str_genres = []
         for genre in self.genres:
             self.str_genres.append(genre.text)
+        self.str_actors = []
+        for actor in self.actors:
+            self.str_actors.append(actor.text)
         
         url_mimetype,_ = mimetypes.guess_type(self.movie_url,strict=False)
         if url_mimetype == None:
@@ -84,6 +89,8 @@ class MovieItem(BackendItem):
             self.item.icon = self.thumbnailURL
             self.item.genre = None
             self.item.genres = self.str_genres
+            self.item.language = self.language
+            self.item.actors = self.str_actors
            
             res = DIDLLite.Resource(self.movie_url, 'http-get:*:%s:*' % self.mimetype)
             res.duration = self.duration
@@ -123,6 +130,8 @@ class YamjStore(AbstractBackendStore):
         self.jukebox_url = self.yamj_url + "/Jukebox/"
         self.refresh = int(kwargs.get('refresh',60))*60
         
+        self.nbMoviesPerFile = None
+        
         rootItem = Container(None, self.name)
         self.set_root_item(rootItem)
 
@@ -156,8 +165,8 @@ class YamjStore(AbstractBackendStore):
         dfr = getPage(filepath)
              
         def read_categories(data, parent_item, jukebox_url):
-            nbMoviesPerFile = int(data.find('preferences/mjb.nbThumbnailsPerPage').text)
-            self.debug("YMAJ: Nb Movies per file =  %s" % nbMoviesPerFile) 
+            #nbMoviesPerFile = 1 #int(data.find('preferences/mjb.nbThumbnailsPerPage').text)
+            #self.debug("YMAJ: Nb Movies per file =  %s" % nbMoviesPerFile) 
             for category in data.findall('category'):
                 type = category.get('name')
                 category_title = type
@@ -170,7 +179,7 @@ class YamjStore(AbstractBackendStore):
                     first_filename = index.text
                     root_name = first_filename[:-2]
                     self.debug("adding index %s:%s" % (type,name))
-                    indexItem = LazyContainer(categoryItem, name, None, self.refresh, self.retrieveIndexMovies, per_page=nbMoviesPerFile, name=name, root_name=root_name)
+                    indexItem = LazyContainer(categoryItem, name, None, self.refresh, self.retrieveIndexMovies, per_page=1, name=name, root_name=root_name)
                     if (type == 'Other'):
                         parent_item.add_child(indexItem)
                     else:
@@ -178,7 +187,7 @@ class YamjStore(AbstractBackendStore):
             self.init_completed()                  
 
         def fail_categories_read(f):
-            self.warning("failure reading yamj categories: %r" % f.getErrorMessage())
+            self.warning("failure reading yamj categories (%s): %r" % (filepath,f.getErrorMessage()))
             return f
 
         dfr.addCallback(parse_xml)
@@ -190,11 +199,14 @@ class YamjStore(AbstractBackendStore):
 
     def retrieveIndexMovies (self, parent, name, root_name, per_page=10, offset=0):
         #print offset, per_page
-        counter = abs(offset / per_page)+1
+        if self.nbMoviesPerFile is None:
+            counter = 1
+        else:
+            counter = abs(offset / self.nbMoviesPerFile) + 1
         fileUrl = "%s/%s_%d.xml" % (self.jukebox_url, urllib.quote(root_name), counter)
         
         def fail_readIndex(f):
-            self.warning("failure reading yamj index: %r" % f.getErrorMessage())
+            self.warning("failure reading yamj index (%s): %r" % (fileUrl,f.getErrorMessage()))
             return f
 
         def readIndex(data):
@@ -207,7 +219,10 @@ class YamjStore(AbstractBackendStore):
                         parent.childrenRetrievingNeeded = True
                     self.debug("%s: %s/%s" % (root_name, currentIndex, lastIndex))
                     break
-            for movie in data.findall('movies/movie'):
+            movies = data.findall('movies/movie')
+            if self.nbMoviesPerFile is None:
+                self.nbMoviesPerFile = len(movies)
+            for movie in movies:
                 movie_id = movie.find('./id').text
                 url = movie.find('./files/file/fileURL').text
                 external_id = "%s/%s" % (movie_id,url)

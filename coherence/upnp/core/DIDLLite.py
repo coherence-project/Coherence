@@ -595,6 +595,13 @@ class Item(Object):
         if self.genres is not None:
             for genre in self.genres:
                 ET.SubElement(root, qname('genre',UPNP_NS)).text = genre
+                
+        if self.actors is not None:
+            for actor in self.actors:
+                ET.SubElement(root, qname('actor',DC_NS)).text = actor                
+
+        #if self.language is not None:
+        #    ET.SubElement(root, qname('language',DC_NS)).text = self.language 
 
         if kwargs.get('transcoding',False) == True:
             res = self.res.get_matching(['*:*:*:*'], protocol_type='http-get')
