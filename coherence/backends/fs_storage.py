@@ -171,6 +171,7 @@ class FSItem(BackendItem):
                                      'application/ogg','audio/ogg',
                                      'audio/x-wav',
                                      'audio/x-m4a',
+                                     'audio/flac',
                                      'application/x-flac'):
                     dlna_pn = 'DLNA.ORG_PN=LPCM'
                     dlna_tags = simple_dlna_tags[:]
