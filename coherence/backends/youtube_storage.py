@@ -82,13 +82,17 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             self.info("Web_url: %s" % web_url)
 
             def got_real_urls(real_urls):
-                got_real_url(real_urls[0])
+                if len(real_urls) == 0:
+                    self.warning('Unable to retrieve any URL for video stream')
+                    return self.requestFinished(None)
+                else:
+                    got_real_url(real_urls[0])
 
             def got_real_url(real_url):
                 self.info("Real URL is %s" % real_url)
                 self.stream_url = real_url
                 if self.stream_url is None:
-                    self.warning('Error to retrieve URL - inconsistent web page')
+                    self.warning('Unable to retrieve URL - inconsistent web page')
                     return self.requestFinished(None) #FIXME
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
