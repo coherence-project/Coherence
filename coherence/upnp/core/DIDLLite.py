@@ -575,7 +575,9 @@ class Item(Object):
     director = None
     genre = None
     genres = None
-
+    actors = None
+    language = None
+	
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
 
