@@ -213,8 +213,22 @@ class Player(log.Loggable):
         return self.player.get_state()
 
     def get_uri(self):
-        return self.source.get_property(self.player_uri)
+        """ playbin2 has an empty uri property after a
+            pipeline stops, as the uri is nowdays the next
+            track to play, not the current one
+        """
+        if self.player.get_name() != 'player':
+            return self.source.get_property(self.player_uri)
+        else:
+            try:
+                return self.current_uri
+            except:
+                return None
 
+    def set_uri(self,uri):
+        self.source.set_property(self.player_uri, uri.encode('utf-8'))
+        if self.player.get_name() == 'player':
+            self.current_uri = uri.encode('utf-8')
 
     def on_message(self, bus, message):
         #print "on_message", message
@@ -304,7 +318,7 @@ class Player(log.Loggable):
 
 
         self.player.set_state(gst.STATE_READY)
-        self.source.set_property(self.player_uri, uri.encode('utf-8'))
+        self.set_uri(uri)
         self.player_clean = True
         self.duration = None
         self.mimetype = mimetype
@@ -326,7 +340,7 @@ class Player(log.Loggable):
 
                 self.create_pipeline(mimetype)
 
-                self.source.set_property(self.player_uri, uri)
+                self.set_uri(uri)
                 self.player.set_state(gst.STATE_READY)
         else:
             self.player_clean = True
@@ -334,14 +348,16 @@ class Player(log.Loggable):
         self.debug("play <--")
 
     def pause(self):
-        self.debug("pause <--")
+        self.debug("pause --> %r" % self.get_uri())
         self.player.set_state(gst.STATE_PAUSED)
+        self.debug("pause <--")
 
     def stop(self):
-        self.debug("stop <--")
+        self.debug("stop --> %r" % self.get_uri())
         self.seek('-0')
         self.player.set_state(gst.STATE_READY)
         self.update(message=gst.MESSAGE_EOS)
+        self.debug("stop <-- %r " % self.get_uri())
 
     def seek(self, location):
         """
