@@ -666,6 +666,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         if device is not None:
             self.uuid = device.get_id()[5:]
             self.id = self.uuid.replace('-','')
+            # we shouldn't need to do this, but ...
+            self.id = self.id.replace('+','')
         else:
             self.id = "from_the_tubes"
 

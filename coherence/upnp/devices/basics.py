@@ -127,10 +127,10 @@ class RootDeviceXML(static.Data):
         ET.SubElement( d, 'presentationURL').text = presentation_url
 
         if len(services):
-            e = ET.SubElement( d, 'serviceList')
+            e = ET.SubElement(d, 'serviceList')
             for service in services:
                 id = service.get_id()
-                s = ET.SubElement( e, 'service')
+                s = ET.SubElement(e, 'service')
                 try:
                     namespace = service.namespace
                 except:
@@ -145,10 +145,10 @@ class RootDeviceXML(static.Data):
                     namespace = service.id_namespace
                 except:
                     namespace = 'upnp-org'
-                ET.SubElement( s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
-                ET.SubElement( s, 'SCPDURL').text = id + '/' + service.scpd_url # '/' + uuid[5:] + '/' +
-                ET.SubElement( s, 'controlURL').text = id + '/' + service.control_url
-                ET.SubElement( s, 'eventSubURL').text = id + '/' + service.subscription_url
+                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
+                ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
+                ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(devices):
             e = ET.SubElement( d, 'deviceList')
@@ -172,6 +172,12 @@ class RootDeviceXML(static.Data):
                     for k,v in icon.items():
                         if k == 'url':
                             if v.startswith('file://'):
+                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                continue
+                            elif v == '.face':
+                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+'face-icon.png'
+                                continue
+                            else:
                                 ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
                                 continue
                         ET.SubElement(i, k).text = str(v)

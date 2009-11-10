@@ -56,19 +56,12 @@ class EventServer(resource.Resource, log.Loggable):
             except (SyntaxError,AttributeError):
                 self.warning("malformed event notification from %r", request.client)
                 self.debug("data: %r", data)
+                request.setResponseCode(400)
                 return ""
 
-            ns = "urn:schemas-upnp-org:event-1-0"
-            event = Event(sid)
-            for prop in tree.findall('{%s}property' % ns):
-                for var in prop.getchildren():
-                    tag = var.tag
-                    idx = tag.find('}') + 1
-                    value = var.text
-                    if value == None:
-                        value = ''
-                    event.update({tag[idx:]: value})
-            self.control_point.propagate(event)
+            event = Event(sid,tree,raw=data)
+            if len(event) != 0:
+                self.control_point.propagate(event)
         return ""
 
 
@@ -178,13 +171,38 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         return ""
 
 
-class Event(dict):
-    def __init__(self, sid):
+class Event(dict, log.Loggable):
+    logCategory = 'event'
+    ns = "urn:schemas-upnp-org:event-1-0"
+
+    def __init__(self, sid,elements=None,raw=None):
         dict.__init__(self)
         self._sid = sid
+        self.raw = raw
+        if elements != None:
+            self.from_elements(elements)
 
     def get_sid(self):
         return self._sid
+
+    def from_elements(self,elements):
+        for prop in elements.findall('{%s}property' % self.ns):
+            self._update_event(prop)
+        if len(self) == 0:
+            self.warning("event notification without property elements")
+            self.debug("data: %r", data)
+            for prop in elements.findall('property'):
+                self._update_event(prop)
+
+    def _update_event(self,prop):
+        for var in prop.getchildren():
+            tag = var.tag
+            idx = tag.find('}') + 1
+            value = var.text
+            if value == None:
+                value = ''
+            self.update({tag[idx:]: value})
+
 
 
 class EventProtocol(Protocol, log.Loggable):

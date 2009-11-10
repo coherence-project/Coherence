@@ -309,10 +309,10 @@ class Service(log.Loggable):
                                     #self.debug("%r update %r %r %r", self,namespace_uri, tag, var.attrib['val'])
                                     self.get_state_variable(tag, instance_id).update(var.attrib['val'])
                                     self.debug("updated 'attributed' var %r", var)
-                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value))
+                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value,event.raw))
             else:
                 self.get_state_variable(var_name, 0).update(var_value)
-                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value))
+                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value,event.raw))
         if self.last_time_updated == None:
             # The clients (e.g. media_server_client) check for last time to detect whether service detection is complete
             # so we need to set it here and now to avoid a potential race condition
