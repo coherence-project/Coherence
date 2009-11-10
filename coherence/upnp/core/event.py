@@ -190,7 +190,7 @@ class Event(dict, log.Loggable):
             self._update_event(prop)
         if len(self) == 0:
             self.warning("event notification without property elements")
-            self.debug("data: %r", data)
+            self.debug("data: %r", self.raw)
             for prop in elements.findall('property'):
                 self._update_event(prop)
 
@@ -278,17 +278,18 @@ def subscribe(service, action='subscribe'):
     def send_request(p, action):
         log.info(log_category, "event.subscribe.send_request %r, action: %r %r",
                  p, action, service.get_event_sub_url())
+        _,_,event_path,_,_ = urlsplit(service.get_event_sub_url())
         if action == 'subscribe':
             timeout = service.timeout
             if timeout == 0:
                 timeout = 1800
-            request = ["SUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
+            request = ["SUBSCRIBE %s HTTP/1.1" % event_path,
                         "HOST: %s:%d" % (host, port),
                         "TIMEOUT: Second-%d" % timeout,
                         ]
             service.event_connection = p
         else:
-            request = ["UNSUBSCRIBE %s HTTP/1.1" % service.get_event_sub_url(),
+            request = ["UNSUBSCRIBE %s HTTP/1.1" % event_path,
                         "HOST: %s:%d" % (host, port),
                         ]
 
