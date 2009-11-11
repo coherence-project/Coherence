@@ -32,23 +32,37 @@ mimetypes.add_type('video/x-matroska', '.mkv')
 
 class MovieItem(BackendItem):
 
-    def __init__(self, movie, store):
-        self.movie_id = movie.find('./id').text
+    def __init__(self, movie, store, title = None, url = None):
+        self.movie_id = 'UNK'
+        if movie.find('./id') is not None:
+            self.movie_id = movie.find('./id').text
+
         self.title = movie.find('./title').text
+        self.baseFilename = movie.find('./baseFilename').text
         self.plot = movie.find('./plot').text
         self.outline = movie.find('./outline').text
         self.posterFilename = movie.find('./posterFile').text
         self.thumbnailFilename = movie.find('./thumbnail').text
-        self.movie_url = movie.find('./files/file/fileURL').text
         self.rating = movie.find('./rating').text
         self.director = movie.find('./director').text
         self.genres = movie.findall('./genres/genre')
-        self.actors= movie.findall('./cast/actor')
+        self.actors = movie.findall('./cast/actor')
         self.year = movie.find('year').text 
         self.audioChannels = movie.find('audioChannels').text
         self.resolution = movie.find('resolution').text
         self.language =  movie.find('language').text
+        self.season = movie.find('season').text
         
+        if title is not None:
+            self.upnp_title = title
+        else:
+            self.upnp_title = self.title
+            
+        if url is not None:
+            self.movie_url = url
+        else: 
+            self.movie_url = movie.find('./files/file/fileURL').text
+            
         self.posterURL = "%s/%s" % (store.jukebox_url, self.posterFilename)
         self.thumbnailURL = "%s/%s" % (store.jukebox_url, self.thumbnailFilename)       
         #print self.movie_id, self.title, self.url, self.posterURL
@@ -68,12 +82,13 @@ class MovieItem(BackendItem):
         self.size = None
         self.mimetype = url_mimetype
         self.item = None
+        
 
     def get_item(self):
         if self.item == None:
             upnp_id = self.get_id()
-            upnp_parent_id = self.parent.get_id()
-            self.item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.title)
+            upnp_parent_id = self.parent.get_id()           
+            self.item = DIDLLite.Movie(upnp_id, upnp_parent_id, self.upnp_title)
             self.item.album = None
             self.item.albumArtURI = self.posterURL
             self.item.artist = None 
@@ -84,7 +99,7 @@ class MovieItem(BackendItem):
             self.item.longDescription = self.outline
             self.item.originalTrackNumber = None
             self.item.restricted = None
-            self.item.title = self.title
+            self.item.title = self.upnp_title
             self.item.writeStatus = "PROTECTED"
             self.item.icon = self.thumbnailURL
             self.item.genre = None
@@ -179,11 +194,11 @@ class YamjStore(AbstractBackendStore):
                     first_filename = index.text
                     root_name = first_filename[:-2]
                     self.debug("adding index %s:%s" % (type,name))
-                    indexItem = LazyContainer(categoryItem, name, None, self.refresh, self.retrieveIndexMovies, per_page=1, name=name, root_name=root_name)
+                    parent = categoryItem
                     if (type == 'Other'):
-                        parent_item.add_child(indexItem)
-                    else:
-                        categoryItem.add_child(indexItem)
+                        parent = parent_item                    
+                    indexItem = LazyContainer(parent, name, None, self.refresh, self.retrieveIndexMovies, per_page=1, name=name, root_name=root_name)
+                    parent.add_child(indexItem)
             self.init_completed()                  
 
         def fail_categories_read(f):
@@ -204,9 +219,13 @@ class YamjStore(AbstractBackendStore):
         else:
             counter = abs(offset / self.nbMoviesPerFile) + 1
         fileUrl = "%s/%s_%d.xml" % (self.jukebox_url, urllib.quote(root_name), counter)
-        
-        def fail_readIndex(f):
+
+        def fail_readPage(f):
             self.warning("failure reading yamj index (%s): %r" % (fileUrl,f.getErrorMessage()))
+            return f
+        
+        def fail_parseIndex(f):
+            self.warning("failure parsing yamj index (%s): %r" % (fileUrl,f.getErrorMessage()))
             return f
 
         def readIndex(data):
@@ -223,18 +242,59 @@ class YamjStore(AbstractBackendStore):
             if self.nbMoviesPerFile is None:
                 self.nbMoviesPerFile = len(movies)
             for movie in movies:
-                movie_id = movie.find('./id').text
-                url = movie.find('./files/file/fileURL').text
-                external_id = "%s/%s" % (movie_id,url)
-                item = MovieItem(movie, self)
-                parent.add_child(item, external_id)
+                isSet = (movie.attrib['isSet'] == 'true')
+                
+                if isSet is True:
+                    # the movie corresponds to a set
+                    name = movie.find('./title').text
+                    index_name = movie.find('./baseFilename').text
+                    set_root_name = index_name[:-2]
+                    self.debug("adding set %s" % name)
+                    indexItem = LazyContainer(parent, name, None, self.refresh, self.retrieveIndexMovies, per_page=1, name=name, root_name=set_root_name)
+                    parent.add_child(indexItem, set_root_name)
+                                    
+                else:
+                    # this is a real movie
+                    movie_id = "UNK"
+                    movie_id_xml = movie.find('./id')
+                    if movie_id_xml is not None:
+                        movie_id = movie_id_xml.text
+                    
+                    files = movie.findall('./files/file')
+                    if (len(files) == 1):
+                        url = files[0].find('./fileURL').text
+                        external_id = "%s/%s" % (movie_id,url)                       
+                        movieItem = MovieItem(movie, self)
+                        parent.add_child(movieItem, external_id)
+                    else:
+                        name = movie.find('./title').text
+                        if name is None or name == '':
+                            name = movie.find('./baseFilename').text
+                        season = movie.find('season').text
+                        if season is not None and season != '-1':
+                            name = "%s - season %s" % (name, season)
+                        container_item = Container(parent, name)
+                        parent.add_child(container_item, name)
+                        container_item.store = self
+                        for file in files:
+                            episodeIndex = file.attrib['firstPart']
+                            episodeTitle = file.attrib['title']
+                            if (episodeTitle == 'UNKNOWN'):
+                                title = "%s - %s" %(name, episodeIndex)
+                            else:
+                                title = "%s - %s " % (episodeIndex, episodeTitle)
+                            episodeUrl = file.find('./fileURL').text
+                            fileItem = MovieItem(movie, self, title=title, url=episodeUrl)
+                            file_external_id = "%s/%s" % (movie_id,episodeUrl)
+                            container_item.add_child(fileItem, file_external_id)
+                            
 
         self.debug("Reading index file %s" % fileUrl)
         d = getPage(fileUrl)
         d.addCallback(parse_xml)
-        d.addErrback(fail_readIndex)
+        d.addErrback(fail_readPage)
         d.addCallback(readIndex)
-        d.addErrback(fail_readIndex)
+        d.addErrback(fail_parseIndex)
         return d
 
     def __repr__(self):
