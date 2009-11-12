@@ -100,43 +100,49 @@ class MSRoot(resource.Resource, log.Loggable):
         if request.method in ('GET','HEAD'):
             if COVER_REQUEST_INDICATOR.match(request.uri):
                 self.info("request cover for id %s" % path)
-                ch = self.store.get_by_id(path)
-                if ch is not None:
-                    request.setResponseCode(200)
-                    file = ch.get_cover()
-                    if os.path.exists(file):
-                        self.info("got cover %s" % file)
-                        return StaticFile(file)
-                request.setResponseCode(404)
-                return static.Data('<html><p>cover requested not found</p></html>','text/html')
+                def got_item(ch):
+                    if ch is not None:
+                        request.setResponseCode(200)
+                        file = ch.get_cover()
+                        if os.path.exists(file):
+                            self.info("got cover %s" % file)
+                            return StaticFile(file)
+                    request.setResponseCode(404)
+                    return static.Data('<html><p>cover requested not found</p></html>','text/html')
+
+                dfr = defer.maybeDeferred(self.store.get_by_id, path)
+                dfr.addCallback(got_item)
+                return dfr
 
             if ATTACHMENT_REQUEST_INDICATOR.match(request.uri):
                 self.info("request attachment %r for id %s" % (request.args,path))
-                ch = self.store.get_by_id(path)
-                try:
-                    #FIXME same as below
-                    if 'transcoded' in request.args:
-                        if self.server.coherence.config.get('transcoding', 'no') == 'yes':
-                            format = request.args['transcoded'][0]
-                            type = request.args['type'][0]
-                            self.info("request transcoding %r %r" % (format, type))
-                            try:
-                                from coherence.transcoder import TranscoderManager
-                                manager = TranscoderManager(self.server.coherence)
-                                return manager.select(format,ch.item.attachments[request.args['attachment'][0]])
-                            except:
-                                self.debug(traceback.format_exc())
-                            request.setResponseCode(404)
-                            return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                def got_attachment(ch):
+                    try:
+                        #FIXME same as below
+                        if 'transcoded' in request.args:
+                            if self.server.coherence.config.get('transcoding', 'no') == 'yes':
+                                format = request.args['transcoded'][0]
+                                type = request.args['type'][0]
+                                self.info("request transcoding %r %r" % (format, type))
+                                try:
+                                    from coherence.transcoder import TranscoderManager
+                                    manager = TranscoderManager(self.server.coherence)
+                                    return manager.select(format,ch.item.attachments[request.args['attachment'][0]])
+                                except:
+                                    self.debug(traceback.format_exc())
+                                request.setResponseCode(404)
+                                return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                            else:
+                                request.setResponseCode(404)
+                                return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
                         else:
-                            request.setResponseCode(404)
-                            return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
-                    else:
-                        return ch.item.attachments[request.args['attachment'][0]]
-                except:
-                    request.setResponseCode(404)
-                    return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
-
+                            return ch.item.attachments[request.args['attachment'][0]]
+                    except:
+                        request.setResponseCode(404)
+                        return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
+                dfr = defer.maybeDeferred(self.store.get_by_id, path)
+                dfr.addCallback(got_attachment)
+                return dfr
         #if(request.method in ('GET','HEAD') and
         #   XBOX_TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
         #    if self.server.coherence.config.get('transcoding', 'no') == 'yes':
@@ -150,18 +156,21 @@ class MSRoot(resource.Resource, log.Loggable):
            TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
             self.info("request transcoding to %s for id %s" % (request.uri.split('/')[-1],path))
             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
-                ch = self.store.get_by_id(path)
-                #FIXME create a generic transcoder class and sort the details there
-                format = request.uri.split('/')[-1] #request.args['transcoded'][0]
-                uri = ch.get_path()
-                try:
-                    from coherence.transcoder import TranscoderManager
-                    manager = TranscoderManager(self.server.coherence)
-                    return manager.select(format,uri)
-                except:
-                    self.debug(traceback.format_exc())
-                    request.setResponseCode(404)
-                    return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                def got_stuff_to_transcode(ch):
+                    #FIXME create a generic transcoder class and sort the details there
+                    format = request.uri.split('/')[-1] #request.args['transcoded'][0]
+                    uri = ch.get_path()
+                    try:
+                        from coherence.transcoder import TranscoderManager
+                        manager = TranscoderManager(self.server.coherence)
+                        return manager.select(format,uri)
+                    except:
+                        self.debug(traceback.format_exc())
+                        request.setResponseCode(404)
+                        return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
+                dfr = defer.maybeDeferred(self.store.get_by_id, path)
+                dfr.addCallback(got_stuff_to_transcode)
+                return dfr
 
             request.setResponseCode(404)
             return static.Data("<html><p>This MediaServer doesn't support transcoding</p></html>",'text/html')
@@ -198,17 +207,19 @@ class MSRoot(resource.Resource, log.Loggable):
     def import_file(self,name,request):
         self.info("import file, id %s" % name)
         print "import file, id %s" % name
-        ch = self.store.get_by_id(name)
-        print "ch", ch
-        if ch is not None:
-            if hasattr(self.store,'backend_import'):
-                response_code = self.store.backend_import(ch,request.content)
-                if isinstance(response_code, defer.Deferred):
-                    return response_code
-                request.setResponseCode(response_code)
-                return
-
-        request.setResponseCode(404)
+        def got_file(ch):
+            print "ch", ch
+            if ch is not None:
+                if hasattr(self.store,'backend_import'):
+                    response_code = self.store.backend_import(ch,request.content)
+                    if isinstance(response_code, defer.Deferred):
+                        return response_code
+                    request.setResponseCode(response_code)
+                    return
+            else:
+                request.setResponseCode(404)
+        dfr = defer.maybeDeferred(self.store.get_by_id, name)
+        dfr.addCallback(got_file)
 
     def prepare_connection(self,request):
         new_id,_,_ = self.server.connection_manager_server.add_connection('',
