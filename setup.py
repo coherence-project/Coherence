@@ -126,6 +126,7 @@ if haz_setuptools == True:
         TestStore = coherence.backends.test_storage:TestStore
         PlaylistStore = coherence.backends.playlist_storage:PlaylistStore
         YamjStore = coherence.backends.yamj_storage:YamjStore
+        BansheeStore = coherence.backends.banshee_storage:BansheeStore
                          
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
