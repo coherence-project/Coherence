@@ -52,6 +52,7 @@ def un_namespace(text):
 class DBusCDSService(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
     SUPPORTS_MULTIPLE_CONNECTIONS = True
+    NOT_FOR_THE_TUBES = True
 
     def __init__(self, service, dbus_device, bus):
         self.service = service
@@ -692,8 +693,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
                 self.services.append(DBusService(service,self,bus))
                 # FIXME: find a better way to not reinject services from the tube
                 # to the dbus pontoon
-                if device.udn.find("tube") > -1:
-                    continue
+                ##if device.udn.find("tube") > -1:
+                ##    continue
                 if service.service_type.split(':')[3] == 'ContentDirectory':
                     self.services.append(DBusCDSService(service,self,bus))
 

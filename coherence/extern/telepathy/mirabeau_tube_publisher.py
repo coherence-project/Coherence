@@ -40,6 +40,8 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
         self.info("adding device %s to connection: %s",
                 device.get_markup_name(), self.device_tube)
         for service in device.services:
+            if hasattr(service,'NOT_FOR_THE_TUBES') and service.NOT_FOR_THE_TUBES == True:
+                continue
             service.add_to_connection(self.service_tube, service.path)
 
     def _media_server_removed(self, udn):
@@ -53,6 +55,8 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                 device.remove_from_connection(self.device_tube, device.path())
                 self.info("remove_from_connection: %s" % device.get_friendly_name())
                 for service in device.services:
+                    if hasattr(service,'NOT_FOR_THE_TUBES') and service.NOT_FOR_THE_TUBES == True:
+                        continue
                     service.remove_from_connection(self.service_tube, service.path)
                 return
 
