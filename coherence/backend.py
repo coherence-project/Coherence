@@ -245,6 +245,7 @@ class BackendItem(log.Loggable):
             should return
 
             - an UPnP ContentDirectoryServer DIDLLite object
+            - or a Deferred
         """
         return self.item
 
