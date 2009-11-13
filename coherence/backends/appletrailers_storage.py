@@ -11,6 +11,7 @@ This is a Media Backend that allows you to access the Trailers from Apple.com
 
 from coherence.backend import BackendItem, BackendStore
 from coherence.upnp.core import DIDLLite
+from coherence.upnp.core.utils import ReverseProxyUriResource
 from twisted.web import client
 from twisted.internet import task, reactor
 
@@ -22,18 +23,35 @@ XML_URL = "http://www.apple.com/trailers/home/xml/current.xml"
 
 ROOT_ID = 0
 
+class AppleTrailerProxy(ReverseProxyUriResource):
+    
+    def __init__(self, uri):
+        ReverseProxyUriResource.__init__(self, uri)
+
+    def render(self, request):
+        request.received_headers['user-agent'] = 'QuickTime/7.6.2 (qtver=7.6.2;os=Windows NT 5.1Service Pack 3)'
+        return ReverseProxyUriResource.render(self, request)
+
 
 class Trailer(BackendItem):
 
-    def __init__(self, parent_id, id=None, name=None, cover=None,
-            location=None):
+    def __init__(self, parent_id, urlbase, id=None, name=None, cover=None,
+            url=None):
         self.parentid = parent_id
         self.id = id
         self.name = name
         self.cover = cover
-        self.location = location
+        if( len(urlbase) and urlbase[-1] != '/'):
+            urlbase += '/'
+        self.url = urlbase + str(self.id)
+        self.location = AppleTrailerProxy(url)
         self.item = DIDLLite.VideoItem(id, parent_id, self.name)
-
+        self.item.albumArtURI = self.cover
+        
+    def get_path(self):
+        return self.url
+    
+    
 class Container(BackendItem):
 
     logCategory = 'apple_trailers'
@@ -128,9 +146,9 @@ class AppleTrailersStore(BackendStore):
         data['id'] = item.get('id')
         data['name'] = item.find('./info/title').text
         data['cover'] = item.find('./poster/location').text
-        data['location'] = item.find('./preview/large').text
+        data['url'] = item.find('./preview/large').text
 
-        trailer = Trailer(ROOT_ID, **data)
+        trailer = Trailer(ROOT_ID, self.urlbase, **data)
         duration = None
         try:
             hours = 0
@@ -158,7 +176,7 @@ class AppleTrailersStore(BackendStore):
         except:
             pass
 
-        res = DIDLLite.Resource(trailer.location, 'http-get:*:video/quicktime:*')
+        res = DIDLLite.Resource(trailer.get_path(), 'http-get:*:video/quicktime:*')
         res.duration = duration
         try:
             res.size = item.find('./preview/large').get('filesize',None)
@@ -207,3 +225,6 @@ class AppleTrailersStore(BackendStore):
         trailers = self.trailers.values()
         trailers.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
         self.container.children = trailers
+
+    def __repr__(self):
+        return self.__class__.__name__ 
