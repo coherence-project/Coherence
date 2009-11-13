@@ -212,10 +212,13 @@ class AppleTrailersStore(BackendStore):
         self.trailers[trailer.id] = trailer
 
     def get_by_id(self, id):
-        if int(id) == 0:
-            return self.container
-        else:
-            return self.trailers.get(id,None)
+        try:
+            if int(id) == 0:
+                return self.container
+            else:
+                return self.trailers.get(id,None)
+        except:
+            return None
 
     def upnp_init(self):
         if self.server:

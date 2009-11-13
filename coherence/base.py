@@ -50,24 +50,17 @@ class SimpleRoot(resource.Resource, log.Loggable):
             """ we have an out-of-band request """
             return static.File(self.coherence.dbus.pinboard[request.args['key'][0]])
 
-       # if name == '':
-        #    return self
-
-        # in case of call to SUBSCRIBE or UNSUBSCRIBE (instead of the standard GET, HEAD...)
-        # the request URI is http://hostname:port/uuid/xxx instead of just /uuid/xxx
-        # it seems to be a big from the twisted library
-        # to overcome it, we return self until we reach the device UUID
-        #if request.method in ['SUBSCRIBE','UNSUBSCRIBE']:
-        #    if name in [ 'ttp:', self.http_hostname]:
-        #        return self
-
+        if name == '':
+            return self
+		
+		# at this stage, name should be a device UUID
         try:
             return self.coherence.children[name]
         except:
-            return self
-            #self.warning("Cannot find device for requested name:", name)
-            #request.setResponseCode(404)
-            #return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name,'text/html')
+            #return self
+            self.warning("Cannot find device for requested name:", name)
+            request.setResponseCode(404)
+            return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name,'text/html')
 
 
     def listchilds(self, uri):
@@ -91,6 +84,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
         result = """<html><head><title>Coherence</title></head><body>
 <a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
         return result.encode('utf-8')
+
 
 class WebServer(log.Loggable):
     logCategory = 'webserver'
@@ -186,7 +180,7 @@ class Plugins(log.Loggable):
                     try:
                         #print entrypoint, type(entrypoint)
                         self._plugins[entrypoint.name] = entrypoint.load(require=False)
-                    except (ImportError, pkg_resources.ResolutionError), msg:
+                    except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
                         self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
                         self.info(traceback.format_exc())
         except ImportError:
@@ -334,7 +328,7 @@ class Coherence(log.Loggable):
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
         try:
-            self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
+        	self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
         except CannotListenError:
             self.warning('port %r already in use, aborting!' % self.web_server_port)
             reactor.stop()
@@ -462,9 +456,9 @@ class Coherence(log.Loggable):
                                                                          account, chatroom,
                                                                          tubes_to_offer, self,
                                                                          allowed_devices,
-                                                                         found_peer_callback=found_peer,
+                               found_peer_callback=found_peer,
                                                                          disapeared_peer_callback=disapeared_peer,
-                                                                         got_devices_callback=got_devices)
+                               got_devices_callback=got_devices)
 
                     self._tube_publisher.start()
 
@@ -491,7 +485,7 @@ class Coherence(log.Loggable):
                 except Exception, msg:
                     self.warning("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
                     self.debug(traceback.format_exc())
-        except KeyError:
+        except KeyError, error:
             self.warning("Can't enable %s plugin, not found!" % plugin)
         except Exception, msg:
             self.warning("Can't enable %s plugin, %s!" % (plugin, msg))
@@ -679,7 +673,7 @@ class Coherence(log.Loggable):
         self.info("removed device",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
-            louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
+            louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])        
             self.devices.remove(device)
             device.remove()
             if infos['ST'] == 'upnp:rootdevice':

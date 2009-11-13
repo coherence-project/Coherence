@@ -211,6 +211,7 @@ def de_chunk_payload(response):
 
 class Request(server.Request):
 
+
     def process(self):
         "Process a request."
 
@@ -223,18 +224,32 @@ class Request(server.Request):
         self.setHeader('content-type', "text/html")
 
         # Resource Identification
+        url = self.path
+        
+        #remove trailing "/", if ever
+        if url[-1] == '/':
+            url = url [:-1]
+            
+        scheme, netloc, path, query, fragment = urlsplit(url)
         self.prepath = []
-        self.postpath = map(unquote, self.path[1:].split('/'))
+        if path == "":
+            self.postpath = []
+        else:
+            self.postpath = map(unquote, path[1:].split('/'))
+
         try:
             def deferred_rendering(r):
                 self.render(r)
 
             resrc = self.site.getResourceFor(self)
-            if isinstance(resrc, defer.Deferred):
+            if resrc is None:
+                self.processingFailed("Error: No resource for path %s" % path)
+            elif isinstance(resrc, defer.Deferred):
                 resrc.addCallback(deferred_rendering)
                 resrc.addErrback(self.processingFailed)
             else:
                 self.render(resrc)
+                
         except:
             self.processingFailed(failure.Failure())
 
@@ -833,7 +848,7 @@ class BufferFile(static.File):
         # size is the byte position to stop sending, not how many bytes to send
 
         BufferFileTransfer(f, size - f.tell(), request)
-        # and make sure the connection doesn't get closed
+		# and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
 
