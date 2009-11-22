@@ -225,6 +225,8 @@ class Resource(object):
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if additional_info == '*':
                 self.protocolInfo = ':'.join((protocol,network,content_format,build_dlna_additional_info(content_format)))
+            elif additional_info == '#':
+                self.protocolInfo = ':'.join((protocol,network,content_format,'*'))
 
     def get_additional_info(self,upnp_client=''):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
@@ -577,7 +579,7 @@ class Item(Object):
     genres = None
     actors = None
     language = None
-	
+
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
 
@@ -597,13 +599,13 @@ class Item(Object):
         if self.genres is not None:
             for genre in self.genres:
                 ET.SubElement(root, qname('genre',UPNP_NS)).text = genre
-                
+
         if self.actors is not None:
             for actor in self.actors:
-                ET.SubElement(root, qname('actor',DC_NS)).text = actor                
+                ET.SubElement(root, qname('actor',DC_NS)).text = actor
 
         #if self.language is not None:
-        #    ET.SubElement(root, qname('language',DC_NS)).text = self.language 
+        #    ET.SubElement(root, qname('language',DC_NS)).text = self.language
 
         if kwargs.get('transcoding',False) == True:
             res = self.res.get_matching(['*:*:*:*'], protocol_type='http-get')
