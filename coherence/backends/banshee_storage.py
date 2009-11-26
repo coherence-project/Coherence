@@ -8,7 +8,6 @@
 """
 TODO:
 
-- playlists
 - videos
 - podcasts
 
@@ -35,6 +34,7 @@ AUDIO_CONTAINER = 200
 AUDIO_ALL_CONTAINER_ID = 201
 AUDIO_ARTIST_CONTAINER_ID = 202
 AUDIO_ALBUM_CONTAINER_ID = 203
+AUDIO_PLAYLIST_CONTAINER_ID = 204
 
 KNOWN_AUDIO_TYPES = {'.mp3':'audio/mpeg',
                      '.ogg':'application/ogg',
@@ -189,7 +189,7 @@ class Artist(BackendItem):
         self._db = args[1]
         self._local_music_library_id = args[2]
         self.musicbrainz_id = self._row.MusicBrainzID
-        self.storeID = self._row.ArtistID
+        self.itemID = self._row.ArtistID
         self.name = self._row.Name or ''
         if self.name:
             self.name = self.name.encode("utf-8")
@@ -201,7 +201,7 @@ class Artist(BackendItem):
             q = "select * from CoreAlbums where ArtistID=? and AlbumID in "\
                 "(select distinct(AlbumID) from CoreTracks where "\
                 "PrimarySourceID=?) order by Title"
-            rows = self._db.sql_execute(q, self.storeID,
+            rows = self._db.sql_execute(q, self.itemID,
                                         self._local_music_library_id)
             for row in rows:
                 album = Album(row, self._db, self)
@@ -216,7 +216,7 @@ class Artist(BackendItem):
         q = "select count(AlbumID) as c from CoreAlbums where ArtistID=? and "\
             "AlbumID in (select distinct(AlbumID) from CoreTracks where "\
             "PrimarySourceID=?) "
-        return self._db.sql_execute(q, self.storeID,
+        return self._db.sql_execute(q, self.itemID,
                                     self._local_music_library_id)[0].c
 
     def get_item(self):
@@ -226,16 +226,15 @@ class Artist(BackendItem):
         return item
 
     def get_id(self):
-        return "artist.%d" % self.storeID
+        return "artist.%d" % self.itemID
 
     def __repr__(self):
-        return '<Artist %d name="%s" musicbrainz="%s">' % (self.storeID,
+        return '<Artist %d name="%s" musicbrainz="%s">' % (self.itemID,
                                                            self.name,
                                                            self.musicbrainz_id)
 
 class Album(BackendItem):
     """ definition for an album """
-    typeName = 'album'
     mimetype = 'directory'
     get_path = None
 
@@ -244,7 +243,7 @@ class Album(BackendItem):
         self._row = args[0]
         self._db = args[1]
         self.artist = args[2]
-        self.storeID = self._row.AlbumID
+        self.itemID = self._row.AlbumID
         self.title = self._row.Title
         self.cover = get_cover_path(self.artist.name, self.title)
         if self.title:
@@ -259,7 +258,7 @@ class Album(BackendItem):
             q = "select * from CoreTracks where AlbumID=? order by TrackNumber"
             if request_count:
                 q += " limit %d" % request_count
-            rows = self._db.sql_execute(q, self.storeID)
+            rows = self._db.sql_execute(q, self.itemID)
             for row in rows:
                 track = Track(row, self._db, self)
                 tracks.append(track)
@@ -271,7 +270,7 @@ class Album(BackendItem):
 
     def get_child_count(self):
         q = "select count(TrackID) as c from CoreTracks where AlbumID=?"
-        count = self._db.sql_execute(q, self.storeID)[0].c
+        count = self._db.sql_execute(q, self.itemID)[0].c
         return count
 
     def get_item(self):
@@ -290,7 +289,7 @@ class Album(BackendItem):
             item.res.append(res)
             return item
 
-        if self.get_child_count() > 0:
+        if item.childCount > 0:
             dfr = self.get_children(request_count=1)
             dfr.addCallback(got_tracks)
         else:
@@ -298,7 +297,7 @@ class Album(BackendItem):
         return dfr
 
     def get_id(self):
-        return "album.%d" % self.storeID
+        return "album.%d" % self.itemID
 
     def get_name(self):
         return self.title
@@ -308,11 +307,102 @@ class Album(BackendItem):
 
     def __repr__(self):
         return '<Album %d title="%s" artist="%s" #cds %d cover="%s" musicbrainz="%s">' \
-               % (self.storeID, self.title,
+               % (self.itemID, self.title,
                   self.artist.name,
                   self.cd_count,
                   self.cover,
                   self.musicbrainz_id)
+
+
+class BasePlaylist(BackendItem):
+    """ definition for a playlist """
+    mimetype = 'directory'
+    get_path = None
+
+    def __init__(self, *args, **kwargs):
+        BackendItem.__init__(self, *args, **kwargs)
+        self._row = args[0]
+        self._store = args[1]
+        self._db = self._store.db
+        self.title = self._row.Name
+        if self.title:
+            self.title = self.title.encode("utf-8")
+
+    def get_tracks(self, request_count):
+        return []
+
+    def get_children(self, start=0, request_count=0):
+        tracks = []
+
+        def query_db():
+            rows = self.get_tracks(request_count)
+            for row in rows:
+                album = self._store.get_album_with_id(row.AlbumID)
+                track = Track(row, self._db, album)
+                tracks.append(track)
+                yield track
+
+        dfr = task.coiterate(query_db())
+        dfr.addCallback(lambda gen: tracks)
+        return dfr
+
+    def get_child_count(self):
+        return self._row.CachedCount
+
+    def get_item(self):
+        item = DIDLLite.PlaylistContainer(self.get_id(),
+                                          AUDIO_PLAYLIST_CONTAINER_ID,
+                                          self.title)
+        item.childCount = self.get_child_count()
+
+        def got_tracks(tracks):
+            res = DIDLLite.PlayContainerResource(self._db.server.uuid,
+                                                 cid=self.get_id(),
+                                                 fid=tracks[0].get_id())
+            item.res.append(res)
+            return item
+
+        if item.childCount > 0:
+            dfr = self.get_children(request_count=1)
+            dfr.addCallback(got_tracks)
+        else:
+            dfr = defer.succeed(item)
+        return dfr
+
+    def get_name(self):
+        return self.title
+
+class MusicPlaylist(BasePlaylist):
+
+    def get_tracks(self, request_count):
+        q = "select * from CoreTracks where TrackID in (select TrackID "\
+            "from CorePlaylistEntries where PlaylistID=?)"
+        if request_count:
+            q += " limit %d" % request_count
+        return self._db.sql_execute(q, self._row.PlaylistID)
+
+    def get_id(self):
+        return "musicplaylist.%d" % self._row.PlaylistID
+
+    def __repr__(self):
+        return '<MusicPlaylist %d title="%s">' % (self._row.PlaylistID, self.title)
+
+class MusicSmartPlaylist(BasePlaylist):
+
+    def get_tracks(self, request_count):
+        q = "select * from CoreTracks where TrackID in (select TrackID "\
+            "from CoreSmartPlaylistEntries where SmartPlaylistID=?)"
+        if request_count:
+            q += " limit %d" % request_count
+        return self._db.sql_execute(q, self._row.SmartPlaylistID)
+
+    def get_id(self):
+        return "musicsmartplaylist.%d" % self._row.SmartPlaylistID
+
+    def __repr__(self):
+        return '<MusicSmartPlaylist %d title="%s">' % (self._row.SmartPlaylistID,
+                                                       self.title)
+
 
 class Track(BackendItem):
     """ definition for a track """
@@ -322,10 +412,11 @@ class Track(BackendItem):
         self._row = args[0]
         self._db = args[1]
         self.album = args[2]
-        self.storeID = self._row.TrackID
+        self.itemID = self._row.TrackID
         self.title = self._row.Title
         self.track_nr = self._row.TrackNumber
         self.location = self._row.Uri
+        self.playlist = kwargs.get("playlist")
 
     def get_children(self,start=0,request_count=0):
         return []
@@ -334,9 +425,11 @@ class Track(BackendItem):
         return 0
 
     def get_item(self):
-        item = DIDLLite.MusicTrack(self.get_id(), self.album.storeID,self.title)
+        item = DIDLLite.MusicTrack(self.get_id(), self.album.itemID,self.title)
         item.artist = self.album.artist.name
         item.album = self.album.title
+        item.playlist = self.playlist
+
         if self.album.cover != '':
             _,ext =  os.path.splitext(self.album.cover)
             """ add the cover image extension to help clients not reacting on
@@ -372,7 +465,7 @@ class Track(BackendItem):
             res.size = 0
         item.res.append(res)
 
-        url = "%strack.%d%s" % (self._db.urlbase, self.storeID, ext)
+        url = "%strack.%d%s" % (self._db.urlbase, self.itemID, ext)
 
         res = DIDLLite.Resource(url, 'http-get:*:%s:*' % mimetype)
         try:
@@ -393,20 +486,20 @@ class Track(BackendItem):
         return urllib2.unquote(self.location[7:].encode('utf-8'))
 
     def get_id(self):
-        return "track.%d" % self.storeID
+        return "track.%d" % self.itemID
 
     def get_name(self):
         return self.title
 
     def get_url(self):
-        return self._db.urlbase + str(self.storeID).encode('utf-8')
+        return self._db.urlbase + str(self.itemID).encode('utf-8')
 
     def get_cover(self):
         return self.album.cover
 
     def __repr__(self):
         return '<Track %d title="%s" nr="%d" album="%s" artist="%s" path="%s">' \
-               % (self.storeID, self.title, self.track_nr, self.album.title,
+               % (self.itemID, self.title, self.track_nr, self.album.title,
                   self.album.artist.name, self.location)
 
 
@@ -428,23 +521,35 @@ class BansheeStore(BackendStore):
 
     def upnp_init(self):
         self.db = SQLiteDB(self._db_path)
-        artists = Container(AUDIO_ARTIST_CONTAINER_ID, ROOT_CONTAINER_ID,
+
+        music = Container(AUDIO_CONTAINER, ROOT_CONTAINER_ID,
+                          'Music', store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(music)
+        self.containers[AUDIO_CONTAINER] = music
+
+        artists = Container(AUDIO_ARTIST_CONTAINER_ID, AUDIO_CONTAINER,
                             'Artists', children_callback=self.get_artists,
                             store=self)
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = artists
-        self.containers[ROOT_CONTAINER_ID].add_child(artists)
+        self.containers[AUDIO_CONTAINER].add_child(artists)
 
-        albums = Container(AUDIO_ALBUM_CONTAINER_ID, ROOT_CONTAINER_ID,
+        albums = Container(AUDIO_ALBUM_CONTAINER_ID, AUDIO_CONTAINER,
                            'Albums', children_callback=self.get_albums,
                            store=self)
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = albums
-        self.containers[ROOT_CONTAINER_ID].add_child(albums)
+        self.containers[AUDIO_CONTAINER].add_child(albums)
 
-        tracks = Container(AUDIO_ALL_CONTAINER_ID, ROOT_CONTAINER_ID,
+        tracks = Container(AUDIO_ALL_CONTAINER_ID, AUDIO_CONTAINER,
                            'All tracks', children_callback=self.get_tracks,
                            play_container=True, store=self)
         self.containers[AUDIO_ALL_CONTAINER_ID] = tracks
-        self.containers[ROOT_CONTAINER_ID].add_child(tracks)
+        self.containers[AUDIO_CONTAINER].add_child(tracks)
+
+        playlists = Container(AUDIO_PLAYLIST_CONTAINER_ID, AUDIO_CONTAINER,
+                              'Playlists', store=self,
+                              children_callback=self.get_music_playlists)
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = playlists
+        self.containers[AUDIO_CONTAINER].add_child(playlists)
 
         self.db.server = self.server
         self.db.urlbase = self.urlbase
@@ -462,6 +567,8 @@ class BansheeStore(BackendStore):
                                                                'SourceProtocolInfo',
                                                                source_protocol_info,
                                                                default=True)
+
+
 
     def get_by_id(self,item_id):
         self.info("get_by_id %s" % item_id)
@@ -521,6 +628,25 @@ class BansheeStore(BackendStore):
         dfr.addCallback(lambda gen: albums)
         return dfr
 
+    def get_music_playlists(self):
+        playlists = []
+
+        def query_db():
+            q = "select * from CorePlaylists where PrimarySourceID=? order by Name"
+            for row in self.db.sql_execute(q, self.get_local_music_library_id()):
+                playlist = MusicPlaylist(row, self)
+                playlists.append(playlist)
+                yield playlist
+            q = "select * from CoreSmartPlaylists where PrimarySourceID=? order by Name"
+            for row in self.db.sql_execute(q, self.get_local_music_library_id()):
+                playlist = MusicSmartPlaylist(row, self)
+                playlists.append(playlist)
+                yield playlist
+
+        dfr = task.coiterate(query_db())
+        dfr.addCallback(lambda gen: playlists)
+        return dfr
+
     def get_artist_with_id(self, artist_id):
         q = "select * from CoreArtists where ArtistID=? limit 1"
         row = self.db.sql_execute(q, artist_id)[0]
@@ -531,6 +657,16 @@ class BansheeStore(BackendStore):
         row = self.db.sql_execute(q, album_id)[0]
         artist = self.get_artist_with_id(row.ArtistID)
         return Album(row, self.db, artist)
+
+    def get_music_playlist_with_id(self, playlist_id):
+        q = "select * from CorePlaylists where PlaylistID=? limit 1"
+        row = self.db.sql_execute(q, playlist_id)[0]
+        return MusicPlaylist(row, self)
+
+    def get_music_smart_playlist_with_id(self, playlist_id):
+        q = "select * from CoreSmartPlaylists where SmartPlaylistID=? limit 1"
+        row = self.db.sql_execute(q, playlist_id)[0]
+        return MusicSmartPlaylist(row, self)
 
     def get_track_with_id(self, track_id):
         q = "select * from CoreTracks where TrackID=? limit 1"
@@ -566,6 +702,10 @@ class BansheeStore(BackendStore):
             item = self.get_artist_with_id(item_id)
         elif item_type == "album":
             item = self.get_album_with_id(item_id)
+        elif item_type == "musicplaylist":
+            item = self.get_music_playlist_with_id(item_id)
+        elif item_type == "musicsmartplaylist":
+            item = self.get_music_smart_playlist_with_id(item_id)
         elif item_type == "track":
             item = self.get_track_with_id(item_id)
         return defer.succeed(item)
