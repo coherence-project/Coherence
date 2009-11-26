@@ -243,7 +243,8 @@ class Request(server.Request):
 
             resrc = self.site.getResourceFor(self)
             if resrc is None:
-                self.processingFailed("Error: No resource for path %s" % path)
+                self.setResponseCode(http.NOT_FOUND, "Error: No resource for path %s" % path)
+                self.finish()
             elif isinstance(resrc, defer.Deferred):
                 resrc.addCallback(deferred_rendering)
                 resrc.addErrback(self.processingFailed)
