@@ -764,9 +764,38 @@ class AudioBook(AudioItem):
 
 class VideoItem(Item):
     upnp_class = Item.upnp_class + '.videoItem'
+    valid_attrs = dict(genre=UPNP_NS, longDescription=UPNP_NS,
+                       producer=UPNP_NS, rating=UPNP_NS,
+                       actor=UPNP_NS, director=UPNP_NS,
+                       description=DC_NS, publisher=DC_NS, language=DC_NS,
+                       relation=DC_NS)
+
+    def toElement(self,**kwargs):
+        root = Item.toElement(self,**kwargs)
+
+        for attr_name, ns in self.valid_attrs.iteritems():
+            value = getattr(self, attr_name, None)
+            if value:
+                ET.SubElement(root, qname(attr_name, ns)).text = value
+
+        return root
+
+    def fromElement(self, elt):
+        Item.fromElement(self, elt)
+        for child in elt.getchildren():
+            tag = child.tag
+            val = child.text
+            if tag in self.valid_attrs.keys():
+                setattr(self, tag, val)
 
 class Movie(VideoItem):
     upnp_class = VideoItem.upnp_class + '.movie'
+
+    def __init__(self, *args, **kwargs):
+        VideoItem.__init__(self, *args, **kwargs)
+        self.valid_attrs.update(dict(storageMedium=UPNP_NS, DVDRegionCode=UPNP_NS,
+                                     channelName=UPNP_NS, scheduledStartTime=UPNP_NS,
+                                     sccheduledEndTime=UPNP_NS))
 
 class VideoBroadcast(VideoItem):
     upnp_class = VideoItem.upnp_class + '.videoBroadcast'
