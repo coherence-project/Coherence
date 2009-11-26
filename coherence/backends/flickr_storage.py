@@ -294,10 +294,16 @@ class FlickrItem(log.Loggable):
                 #print size.get('label'), size.get('source')
                 if size.get('label') == 'Original':
                     self.original_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
-                    self.url = self.original_url[0]
+                    if self.store.proxy == False:
+                        self.url = self.original_url[0]
+                    else:
+                        self.location = ProxyImage(self.original_url[0])
                 elif size.get('label') == 'Large':
                     self.large_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
-                    self.url = self.large_url[0]
+                    if self.store.proxy == False:
+                        self.url = self.large_url[0]
+                    else:
+                        self.location = ProxyImage(self.large_url[0])
                 elif size.get('label') == 'Medium':
                     self.medium_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
                 elif size.get('label') == 'Small':
@@ -306,32 +312,54 @@ class FlickrItem(log.Loggable):
                     self.thumb_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
 
             self.item = Photo(self.id,self.parent.get_id(),self.get_name())
+            #print self.id, self.store.proxy, self.url
             self.item.date = self.date
+            self.item.attachments = {}
             dlna_tags = simple_dlna_tags[:]
             dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
             if hasattr(self,'original_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
-                res = Resource(self.original_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                if self.store.proxy == False:
+                    res = Resource(self.original_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                else:
+                    res = Resource(self.url+'?attachment=original', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    self.item.attachments['original'] = ProxyImage(self.original_url[0])
                 res.resolution = self.original_url[1]
                 self.item.res.append(res)
             elif hasattr(self,'large_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
-                res = Resource(self.large_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                if self.store.proxy == False:
+                    res = Resource(self.large_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                else:
+                    res = Resource(self.url+'?attachment=large', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    self.item.attachments['large'] = ProxyImage(self.large_url[0])
                 res.resolution = self.large_url[1]
                 self.item.res.append(res)
             if hasattr(self,'medium_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_MED'
-                res = Resource(self.medium_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                if self.store.proxy == False:
+                    res = Resource(self.medium_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                else:
+                    res = Resource(self.url+'?attachment=medium', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    self.item.attachments['medium'] = ProxyImage(self.medium_url[0])
                 res.resolution = self.medium_url[1]
                 self.item.res.append(res)
             if hasattr(self,'small_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_SM'
-                res = Resource(self.small_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                if self.store.proxy == False:
+                    res = Resource(self.small_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                else:
+                    res = Resource(self.url+'?attachment=small', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    self.item.attachments['small'] = ProxyImage(self.small_url[0])
                 res.resolution = self.small_url[1]
                 self.item.res.append(res)
             if hasattr(self,'thumb_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
-                res = Resource(self.thumb_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                if self.store.proxy == False:
+                    res = Resource(self.thumb_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                else:
+                    res = Resource(self.url+'?attachment=thumb', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    self.item.attachments['thumb'] = ProxyImage(self.thumb_url[0])
                 res.resolution = self.thumb_url[1]
                 self.item.res.append(res)
 
