@@ -51,30 +51,17 @@ def un_namespace(text):
 
 class DBusCDSService(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
-    SUPPORTS_MULTIPLE_CONNECTIONS = True
     NOT_FOR_THE_TUBES = True
 
     def __init__(self, service, dbus_device, bus):
         self.service = service
         self.dbus_device = dbus_device
 
-        if self.service is not None:
-            self.type = self.service.service_type.split(':')[3] # get the service name
-        else:
-            self.type = "from_the_tubes"
+        self.type = self.service.service_type.split(':')[3] # get the service name
 
-        try:
-            bus_name = dbus.service.BusName(CDS_SERVICE, bus)
-        except:
-            bus_name = None
-            self.tube = bus
-        else:
-            self.tube = None
+        bus_name = dbus.service.BusName(CDS_SERVICE, bus)
 
-        if dbus_device:
-            device_id = dbus_device.id
-        else:
-            device_id = "dev_from_the_tubes"
+        device_id = dbus_device.id
         self.path = OBJECT_PATH + '/devices/' + device_id + '/services/' + 'CDS'
         dbus.service.Object.__init__(self, bus, bus_name=bus_name,
                                          object_path=self.path)
@@ -691,10 +678,6 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         if device is not None:
             for service in device.get_services():
                 self.services.append(DBusService(service,self,bus))
-                # FIXME: find a better way to not reinject services from the tube
-                # to the dbus pontoon
-                ##if device.udn.find("tube") > -1:
-                ##    continue
                 if service.service_type.split(':')[3] == 'ContentDirectory':
                     self.services.append(DBusCDSService(service,self,bus))
 
@@ -713,6 +696,8 @@ class DBusDevice(dbus.service.Object,log.Loggable):
 
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='v')
     def get_info(self):
+        services = [x.path for x in self.services
+                    if getattr(x, "NOT_FOR_THE_TUBES", False) == False]
         r = {'path': self.path(),
              'device_type': self.device.get_device_type(),
              'friendly_name': self.device.get_friendly_name(),
@@ -720,7 +705,7 @@ class DBusDevice(dbus.service.Object,log.Loggable):
              'uri': list(urlparse.urlsplit(self.device.get_location())),
              'presentation_url': self.device.get_presentation_url(),
              'parent_udn': self.device.get_parent_id(),
-             'services': [x.path for x in self.services]}
+             'services': services}
         return dbus.Dictionary(r,signature='sv',variant_level=2)
 
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='s')
@@ -754,7 +739,6 @@ class DBusDevice(dbus.service.Object,log.Loggable):
     @dbus.service.method(DEVICE_IFACE,in_signature='',out_signature='av')
     def get_device_icons(self):
         return dbus.Array(self.device.icons,signature='av',variant_level=2)
-
 
 class DBusPontoon(dbus.service.Object,log.Loggable):
     logCategory = 'dbus'
