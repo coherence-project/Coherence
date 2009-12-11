@@ -13,10 +13,10 @@ import urllib
 
 from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
-from coherence.backend import BackendStore,BackendItem
+from coherence.backend import BackendStore, BackendItem, Container, LazyContainer, \
+     AbstractBackendStore
 
 from coherence.backends.youtube_storage import TestVideoProxy
-from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
 
 class VideoItem(BackendItem):
 

@@ -23,8 +23,8 @@ from urlparse import urlsplit
 
 import re
 from coherence.upnp.core.utils import getPage
-from coherence.backend import BackendStore,BackendItem
-from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
+from coherence.backend import BackendStore, BackendItem, Container, LazyContainer, \
+     AbstractBackendStore
 
 class PlaylistItem(BackendItem):
     logCategory = 'playlist_store'
