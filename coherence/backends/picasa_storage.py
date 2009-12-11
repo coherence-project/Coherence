@@ -15,7 +15,8 @@ from coherence.upnp.core.utils import ReverseProxyUriResource
 from twisted.internet import task
 from coherence.upnp.core import utils
 from coherence.upnp.core import DIDLLite
-from coherence.backend import BackendStore,BackendItem
+from coherence.backend import BackendStore, BackendItem, Container, LazyContainer, \
+     AbstractBackendStore
 from coherence import log
 
 from urlparse import urlsplit
