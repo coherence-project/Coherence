@@ -552,104 +552,18 @@ class Video(BaseTrack):
 
         return item
 
-class BansheeStore(BackendStore):
-    logCategory = 'banshee_store'
-    implements = ['MediaServer']
+class BansheeDB(Loggable):
+    logCategory = "banshee_db"
 
-    def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
-        self.update_id = 0
+    def __init__(self, path=None):
+        Loggable.__init__(self)
         self._local_music_library_id = None
         self._local_video_library_id = None
         default_db_path = os.path.expanduser("~/.config/banshee-1/banshee.db")
-        self._db_path = kwargs.get("db_path", default_db_path)
-        self.name = kwargs.get('name', 'Banshee')
+        self._db_path = path or default_db_path
 
-        self.containers = {}
-        self.containers[ROOT_CONTAINER_ID] = Container(ROOT_CONTAINER_ID,
-                                                       -1, self.name, store=self)
-
-    def upnp_init(self):
+    def open_db(self):
         self.db = SQLiteDB(self._db_path)
-
-        music = Container(AUDIO_CONTAINER, ROOT_CONTAINER_ID,
-                          'Music', store=self)
-        self.containers[ROOT_CONTAINER_ID].add_child(music)
-        self.containers[AUDIO_CONTAINER] = music
-
-        artists = Container(AUDIO_ARTIST_CONTAINER_ID, AUDIO_CONTAINER,
-                            'Artists', children_callback=self.get_artists,
-                            store=self)
-        self.containers[AUDIO_ARTIST_CONTAINER_ID] = artists
-        self.containers[AUDIO_CONTAINER].add_child(artists)
-
-        albums = Container(AUDIO_ALBUM_CONTAINER_ID, AUDIO_CONTAINER,
-                           'Albums', children_callback=self.get_albums,
-                           store=self)
-        self.containers[AUDIO_ALBUM_CONTAINER_ID] = albums
-        self.containers[AUDIO_CONTAINER].add_child(albums)
-
-        tracks = Container(AUDIO_ALL_CONTAINER_ID, AUDIO_CONTAINER,
-                           'All tracks', children_callback=self.get_tracks,
-                           play_container=True, store=self)
-        self.containers[AUDIO_ALL_CONTAINER_ID] = tracks
-        self.containers[AUDIO_CONTAINER].add_child(tracks)
-
-        playlists = Container(AUDIO_PLAYLIST_CONTAINER_ID, AUDIO_CONTAINER,
-                              'Playlists', store=self,
-                              children_callback=self.get_music_playlists)
-        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = playlists
-        self.containers[AUDIO_CONTAINER].add_child(playlists)
-
-        videos = Container(VIDEO_CONTAINER, ROOT_CONTAINER_ID,
-                          'Videos', store=self)
-        self.containers[ROOT_CONTAINER_ID].add_child(videos)
-        self.containers[VIDEO_CONTAINER] = videos
-
-        all_videos = Container(VIDEO_ALL_CONTAINER_ID, VIDEO_CONTAINER,
-                               'All Videos', children_callback=self.get_videos,
-                               store=self)
-        self.containers[VIDEO_ALL_CONTAINER_ID] = all_videos
-        self.containers[VIDEO_CONTAINER].add_child(all_videos)
-
-        playlists = Container(VIDEO_PLAYLIST_CONTAINER_ID, VIDEO_CONTAINER,
-                              'Playlists', store=self,
-                              children_callback=self.get_video_playlists)
-        self.containers[VIDEO_PLAYLIST_CONTAINER_ID] = playlists
-        self.containers[VIDEO_CONTAINER].add_child(playlists)
-
-
-        self.db.server = self.server
-        self.db.urlbase = self.urlbase
-        self.db.containers = self.containers
-
-        self.current_connection_id = None
-        if self.server:
-            hostname = self.server.coherence.hostname
-            source_protocol_info = ['internal:%s:audio/mpeg:*' % hostname,
-                                    'http-get:*:audio/mpeg:*',
-                                    'internal:%s:application/ogg:*' % hostname,
-                                    'http-get:*:application/ogg:*']
-
-            self.server.connection_manager_server.set_variable(0,
-                                                               'SourceProtocolInfo',
-                                                               source_protocol_info,
-                                                               default=True)
-
-
-
-    def get_by_id(self,item_id):
-        self.info("get_by_id %s" % item_id)
-        if isinstance(item_id, basestring) and item_id.find('.') > 0:
-            item_id = item_id.split('@',1)
-            item_type, item_id = item_id[0].split('.')[:2]
-            item_id = int(item_id)
-            dfr = self._lookup(item_type, item_id)
-        else:
-            item_id = int(item_id)
-            item = self.containers[item_id]
-            dfr = defer.succeed(item)
-        return dfr
 
     def get_local_music_library_id(self):
         if self._local_music_library_id is None:
@@ -767,6 +681,18 @@ class BansheeStore(BackendStore):
         album = self.get_album_with_id(row.AlbumID)
         return Track(row, self.db, album)
 
+    def get_track_for_uri(self, track_uri):
+        q = "select * from CoreTracks where Uri=? limit 1"
+        try:
+            row = self.db.sql_execute(q, track_uri)[0]
+        except IndexError:
+            # not found
+            track = None
+        else:
+            album = self.get_album_with_id(row.AlbumID)
+            track = Track(row, self.db, album)
+        return track
+
     def get_tracks(self):
         tracks = []
         albums = {}
@@ -814,6 +740,100 @@ class BansheeStore(BackendStore):
     def get_video_playlists(self):
         return self.get_playlists(self.get_local_video_library_id(),
                                   VideoPlaylist, VideoSmartPlaylist)
+
+class BansheeStore(BackendStore, BansheeDB):
+    logCategory = 'banshee_store'
+    implements = ['MediaServer']
+
+    def __init__(self, server, **kwargs):
+        BackendStore.__init__(self,server,**kwargs)
+        BansheeDB.__init__(self, kwargs.get("db_path"))
+        self.update_id = 0
+        self.name = kwargs.get('name', 'Banshee')
+
+        self.containers = {}
+        self.containers[ROOT_CONTAINER_ID] = Container(ROOT_CONTAINER_ID,
+                                                       -1, self.name, store=self)
+
+    def upnp_init(self):
+        self.open_db()
+
+        music = Container(AUDIO_CONTAINER, ROOT_CONTAINER_ID,
+                          'Music', store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(music)
+        self.containers[AUDIO_CONTAINER] = music
+
+        artists = Container(AUDIO_ARTIST_CONTAINER_ID, AUDIO_CONTAINER,
+                            'Artists', children_callback=self.get_artists,
+                            store=self)
+        self.containers[AUDIO_ARTIST_CONTAINER_ID] = artists
+        self.containers[AUDIO_CONTAINER].add_child(artists)
+
+        albums = Container(AUDIO_ALBUM_CONTAINER_ID, AUDIO_CONTAINER,
+                           'Albums', children_callback=self.get_albums,
+                           store=self)
+        self.containers[AUDIO_ALBUM_CONTAINER_ID] = albums
+        self.containers[AUDIO_CONTAINER].add_child(albums)
+
+        tracks = Container(AUDIO_ALL_CONTAINER_ID, AUDIO_CONTAINER,
+                           'All tracks', children_callback=self.get_tracks,
+                           play_container=True, store=self)
+        self.containers[AUDIO_ALL_CONTAINER_ID] = tracks
+        self.containers[AUDIO_CONTAINER].add_child(tracks)
+
+        playlists = Container(AUDIO_PLAYLIST_CONTAINER_ID, AUDIO_CONTAINER,
+                              'Playlists', store=self,
+                              children_callback=self.get_music_playlists)
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = playlists
+        self.containers[AUDIO_CONTAINER].add_child(playlists)
+
+        videos = Container(VIDEO_CONTAINER, ROOT_CONTAINER_ID,
+                          'Videos', store=self)
+        self.containers[ROOT_CONTAINER_ID].add_child(videos)
+        self.containers[VIDEO_CONTAINER] = videos
+
+        all_videos = Container(VIDEO_ALL_CONTAINER_ID, VIDEO_CONTAINER,
+                               'All Videos', children_callback=self.get_videos,
+                               store=self)
+        self.containers[VIDEO_ALL_CONTAINER_ID] = all_videos
+        self.containers[VIDEO_CONTAINER].add_child(all_videos)
+
+        playlists = Container(VIDEO_PLAYLIST_CONTAINER_ID, VIDEO_CONTAINER,
+                              'Playlists', store=self,
+                              children_callback=self.get_video_playlists)
+        self.containers[VIDEO_PLAYLIST_CONTAINER_ID] = playlists
+        self.containers[VIDEO_CONTAINER].add_child(playlists)
+
+
+        self.db.server = self.server
+        self.db.urlbase = self.urlbase
+        self.db.containers = self.containers
+
+        self.current_connection_id = None
+        if self.server:
+            hostname = self.server.coherence.hostname
+            source_protocol_info = ['internal:%s:audio/mpeg:*' % hostname,
+                                    'http-get:*:audio/mpeg:*',
+                                    'internal:%s:application/ogg:*' % hostname,
+                                    'http-get:*:application/ogg:*']
+
+            self.server.connection_manager_server.set_variable(0,
+                                                               'SourceProtocolInfo',
+                                                               source_protocol_info,
+                                                               default=True)
+
+    def get_by_id(self,item_id):
+        self.info("get_by_id %s" % item_id)
+        if isinstance(item_id, basestring) and item_id.find('.') > 0:
+            item_id = item_id.split('@',1)
+            item_type, item_id = item_id[0].split('.')[:2]
+            item_id = int(item_id)
+            dfr = self._lookup(item_type, item_id)
+        else:
+            item_id = int(item_id)
+            item = self.containers[item_id]
+            dfr = defer.succeed(item)
+        return dfr
 
     def _lookup(self, item_type, item_id):
         lookup_mapping = dict(artist=self.get_artist_with_id,
