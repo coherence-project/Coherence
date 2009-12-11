@@ -1,3 +1,7 @@
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2009 Philippe Normand <phil@base-art.net>
 
 import gobject
 from dbus import PROPERTIES_IFACE
@@ -40,7 +44,7 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
         self.info("adding device %s to connection: %s",
                 device.get_markup_name(), self.device_tube)
         for service in device.services:
-            if hasattr(service,'NOT_FOR_THE_TUBES') and service.NOT_FOR_THE_TUBES == True:
+            if getattr(service,'NOT_FOR_THE_TUBES', False):
                 continue
             service.add_to_connection(self.service_tube, service.path)
 
@@ -55,7 +59,7 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                 device.remove_from_connection(self.device_tube, device.path())
                 self.info("remove_from_connection: %s" % device.get_friendly_name())
                 for service in device.services:
-                    if hasattr(service,'NOT_FOR_THE_TUBES') and service.NOT_FOR_THE_TUBES == True:
+                    if getattr(service,'NOT_FOR_THE_TUBES', False):
                         continue
                     service.remove_from_connection(self.service_tube, service.path)
                 return

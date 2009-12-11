@@ -219,6 +219,7 @@ class TubeDeviceProxy(log.Loggable):
     logCategory = 'dbus'
 
     def __init__(self, coherence, tube_device,external_address):
+        log.Loggable.__init__(self)
         self.device = tube_device
         self.coherence = coherence
         self.external_address = external_address
@@ -233,7 +234,8 @@ class TubeDeviceProxy(log.Loggable):
         self._devices = []
         self.icons = []
 
-        print self.uuid, self.friendly_name, self.device_type, self.version
+        self.info("uuid: %s, name: %r, device type: %r, version: %r",
+                  self.uuid, self.friendly_name, self.device_type, self.version)
 
         """ create the http entrypoint """
 
@@ -244,11 +246,10 @@ class TubeDeviceProxy(log.Loggable):
         """ create the Service proxy(s) """
 
         for service in self.device.services:
-            print service
+            self.debug("Proxying service %r", service)
             new_service = TubeServiceProxy(service, self)
             self._services.append(new_service)
 
-        print self._services
         """ create a device description xml file(s) """
 
         version = self.version

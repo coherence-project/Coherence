@@ -1,3 +1,7 @@
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2009 Philippe Normand <phil@base-art.net>
 
 import time
 
@@ -24,7 +28,7 @@ class Client(log.Loggable):
 
     def __init__(self, manager, protocol,
                  account, muc_id, existing_client=False):
-        super(Client, self).__init__()
+        log.Loggable.__init__(self)
         self.account = account
         self.existing_client = existing_client
         self.channel_text = None

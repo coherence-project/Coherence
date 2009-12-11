@@ -1,3 +1,7 @@
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2009 Philippe Normand <phil@base-art.net>
 
 import telepathy
 from telepathy.interfaces import CONN_MGR_INTERFACE

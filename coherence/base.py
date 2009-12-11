@@ -227,7 +227,7 @@ class Coherence(log.Loggable):
         self.cls._instance_ = None
 
     def setup(self, config={}):
-        self._tube_publisher = None
+        self._mirabeau = None
 
         self.devices = []
         self.children = {}
@@ -412,55 +412,19 @@ class Coherence(log.Loggable):
                 self.debug(traceback.format_exc())
             else:
                 if self.config.get('enable_mirabeau', 'no') == 'yes':
-                    from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
-                    from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisherConsumer
-                    from coherence.tube_service import TubeDeviceProxy, MirabeauProxy
-
-                    self.add_web_resource('mirabeau',MirabeauProxy())
+                    from coherence import mirabeau
+                    from coherence.tube_service import MirabeauProxy
 
                     mirabeau_cfg = self.config.get('mirabeau', {})
-                    chatroom = mirabeau_cfg['chatroom']
-                    manager = mirabeau_cfg['manager']
-                    protocol = mirabeau_cfg['protocol']
+
                     try:
                         self.external_address = mirabeau_cfg['external_address']
                     except KeyError:
                         pass
-                    # account dict keys are different for each
-                    # protocol so we assume the user gave the right
-                    # account parameters depending on the specified
-                    # protocol.
-                    account = mirabeau_cfg['account']
-                    try:
-                        allowed_devices = mirabeau_cfg["allowed_devices"].split(",")
-                    except KeyError:
-                        allowed_devices = None
-                    tubes_to_offer = {BUS_NAME: {}, DEVICE_IFACE: {}, SERVICE_IFACE: {}}
 
-                    def found_peer(peer):
-                        pass
-
-                    def disapeared_peer(peer):
-                        pass
-
-                    def got_devices(devices):
-                        print ">>>", devices
-                        self._tube_proxies = []
-                        for device in devices:
-                            uuid = device.get_id()
-                            print "MIRABEAU found:", uuid
-                            self._tube_proxies.append(TubeDeviceProxy(self, device,
-                                                                      self.external_address))
-
-                    self._tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
-                                                                         account, chatroom,
-                                                                         tubes_to_offer, self,
-                                                                         allowed_devices,
-                               found_peer_callback=found_peer,
-                                                                         disapeared_peer_callback=disapeared_peer,
-                               got_devices_callback=got_devices)
-
-                    self._tube_publisher.start()
+                    self._mirabeau = mirabeau.Mirabeau(mirabeau_cfg, self)
+                    self.add_web_resource('mirabeau', MirabeauProxy())
+                    self._mirabeau.start()
 
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin %r", plugin)
@@ -558,8 +522,9 @@ class Coherence(log.Loggable):
         if self._incarnations_ > 1:
             self._incarnations_ -= 1
             return
-        if self._tube_publisher is not None:
-            self._tube_publisher.stop()
+        if self._mirabeau is not None:
+            self._mirabeau.stop()
+            self._mirabeau = None
         for backend in self.active_backends.itervalues():
             backend.unregister()
         self.active_backends = {}

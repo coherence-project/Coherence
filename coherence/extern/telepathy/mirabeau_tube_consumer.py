@@ -1,3 +1,8 @@
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2009 Philippe Normand <phil@base-art.net>
+
 from dbus import PROPERTIES_IFACE
 
 from telepathy.interfaces import CHANNEL_TYPE_DBUS_TUBE, CONN_INTERFACE, \
@@ -59,6 +64,15 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
                           service_name)
                 if initiator_bus_name is not None:
                     self.found_devices(initiator_handle, initiator_bus_name)
+            for handle in removed:
+                try:
+                    tube_channels = self._coherence_tubes[handle]
+                except KeyError:
+                    self.debug("tube with handle %d not registered", handle)
+                else:
+                    for service_iface_name, channel in tube_channels.iteritems():
+                        channel[CHANNEL_INTERFACE].Close()
+                    del self._coherence_tubes[handle]
 
         pontoon_tube.remote_object.tube.watch_participants(cb)
 

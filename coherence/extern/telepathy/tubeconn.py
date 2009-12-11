@@ -60,7 +60,7 @@ class TubeConnection(Connection, log.Loggable):
 
     def close(self):
         self._dbus_names_changed_match.remove()
-        self._on_dbus_names_changed((), self.participants.keys())
+        self._on_dbus_names_changed({}, self.participants.keys())
         super(TubeConnection, self).close()
 
     def _on_get_dbus_names_reply(self, names):

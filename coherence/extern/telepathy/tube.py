@@ -1,3 +1,8 @@
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
+# Copyright 2009 Philippe Normand <phil@base-art.net>
+
 from telepathy.interfaces import CHANNEL_INTERFACE, CONNECTION_INTERFACE_REQUESTS, \
      CHANNEL_TYPE_DBUS_TUBE
 from telepathy.constants import CONNECTION_HANDLE_TYPE_ROOM, \
