@@ -429,6 +429,7 @@ class FSStore(BackendStore):
                {'option':'uuid','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
                {'option':'content','type':'string','default':xdg_content(),'help':'the path(s) this MediaServer shall export'},
                {'option':'ignore_patterns','type':'string','help':'list of regex patterns, matching filenames will be ignored'},
+               {'option':'enable_inotify','type':'string','default':'yes','help':'enable real-time monitoring of the content folders'},
                {'option':'enable_destroy','type':'string','default':'no','help':'enable deleting a file via an UPnP method'},
                {'option':'import_folder','type':'string','help':'The path to store files imported via an UPnP method, if empty the Import method is disabled'}
               ]
@@ -459,13 +460,16 @@ class FSStore(BackendStore):
 
         self.inotify = None
 
-        if haz_inotify == True:
-            try:
-                self.inotify = INotify()
-            except Exception,msg:
-                self.info("%s" %msg)
+        if kwargs.get('enable_inotify','yes') == 'yes':
+            if haz_inotify == True:
+                try:
+                    self.inotify = INotify()
+                except Exception,msg:
+                    self.info("%s" %msg)
+            else:
+                self.info("%s" %no_inotify_reason)
         else:
-            self.info("%s" %no_inotify_reason)
+            self.info("FSStore content auto-update disabled upon user request")
 
         if kwargs.get('enable_destroy','no') == 'yes':
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
