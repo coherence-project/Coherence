@@ -16,15 +16,13 @@ from twisted.web import client
 from twisted.internet import task, reactor
 
 from coherence.extern.et import parse_xml
-import coherence.extern.louie as louie
-
 
 XML_URL = "http://www.apple.com/trailers/home/xml/current.xml"
 
 ROOT_ID = 0
 
 class AppleTrailerProxy(ReverseProxyUriResource):
-    
+
     def __init__(self, uri):
         ReverseProxyUriResource.__init__(self, uri)
 
@@ -47,11 +45,11 @@ class Trailer(BackendItem):
         self.location = AppleTrailerProxy(url)
         self.item = DIDLLite.VideoItem(id, parent_id, self.name)
         self.item.albumArtURI = self.cover
-        
+
     def get_path(self):
         return self.url
-    
-    
+
+
 class Container(BackendItem):
 
     logCategory = 'apple_trailers'
@@ -106,11 +104,7 @@ class AppleTrailersStore(BackendStore):
 
         dfr = self.update_data()
         # first get the first bunch of data before sending init_completed
-        dfr.addCallback(self._send_init)
-
-    def _send_init(self, result):
-        louie.send('Coherence.UPnP.Backend.init_completed',
-                None, backend=self)
+        dfr.addCallback(lambda x: self.init_completed())
 
     def queue_update(self, result):
         reactor.callLater(self.refresh, self.update_data)
@@ -230,4 +224,4 @@ class AppleTrailersStore(BackendStore):
         self.container.children = trailers
 
     def __repr__(self):
-        return self.__class__.__name__ 
+        return self.__class__.__name__

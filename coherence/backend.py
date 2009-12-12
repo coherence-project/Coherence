@@ -51,7 +51,11 @@ class Backend(log.Loggable,Plugin):
         """
         log.Loggable.__init__(self)
         Plugin.__init__(self)
-        self.init_completed()
+
+        """ this has to be done in the actual backend, maybe it has
+            to wait for an answer from an external data-source first
+        """
+        #self.init_completed()
 
     def init_completed(self, *args, **kwargs):
         """ inform Coherence that this backend is ready for

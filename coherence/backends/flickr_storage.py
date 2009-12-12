@@ -41,8 +41,6 @@ from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core.utils import getPage
 from coherence.backend import BackendItem, BackendStore
 
-import coherence.extern.louie as louie
-
 from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
@@ -427,9 +425,10 @@ class FlickrStore(BackendStore):
            self.server.coherence.writeable_config() == True):
             if not None in (self.flickr_userid,self.flickr_password):
                 d = self.flickr_authenticate_app()
-                d.addBoth(lambda x: louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self))
-        else:
-            louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
+                d.addBoth(lambda x: self.init_completed())
+                return
+            
+        self.init_completed()
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
