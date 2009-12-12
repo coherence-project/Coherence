@@ -52,12 +52,11 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
         if name == '':
             return self
-		
-		# at this stage, name should be a device UUID
+
+        # at this stage, name should be a device UUID
         try:
             return self.coherence.children[name]
         except:
-            #return self
             self.warning("Cannot find device for requested name:", name)
             request.setResponseCode(404)
             return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name,'text/html')
@@ -328,7 +327,7 @@ class Coherence(log.Loggable):
         reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
 
         try:
-        	self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
+            self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
         except CannotListenError:
             self.warning('port %r already in use, aborting!' % self.web_server_port)
             reactor.stop()
@@ -638,7 +637,7 @@ class Coherence(log.Loggable):
         self.info("removed device",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
-            louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])        
+            louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
             self.devices.remove(device)
             device.remove()
             if infos['ST'] == 'upnp:rootdevice':
