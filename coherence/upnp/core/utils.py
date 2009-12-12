@@ -225,11 +225,10 @@ class Request(server.Request):
 
         # Resource Identification
         url = self.path
-        
+
         #remove trailing "/", if ever
-        if url[-1] == '/':
-            url = url [:-1]
-            
+        url = url.rstrip('/')
+
         scheme, netloc, path, query, fragment = urlsplit(url)
         self.prepath = []
         if path == "":
@@ -250,7 +249,7 @@ class Request(server.Request):
                 resrc.addErrback(self.processingFailed)
             else:
                 self.render(resrc)
-                
+
         except:
             self.processingFailed(failure.Failure())
 
@@ -849,7 +848,7 @@ class BufferFile(static.File):
         # size is the byte position to stop sending, not how many bytes to send
 
         BufferFileTransfer(f, size - f.tell(), request)
-		# and make sure the connection doesn't get closed
+        # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
 
