@@ -828,7 +828,7 @@ class BansheeStore(BackendStore, BansheeDB):
                                                                default=True)
 
     def release(self):
-        self.db.close()
+        self.db.disconnect()
 
     def get_by_id(self,item_id):
         self.info("get_by_id %s" % item_id)
