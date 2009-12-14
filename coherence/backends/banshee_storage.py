@@ -18,6 +18,7 @@ from coherence.extern import db_row
 from coherence.upnp.core import DIDLLite
 from coherence.backend import BackendItem, BackendStore
 from coherence.log import Loggable
+import coherence.extern.louie as louie
 
 from sqlite3 import dbapi2
 # fallback on pysqlite2.dbapi2
@@ -565,6 +566,9 @@ class BansheeDB(Loggable):
     def open_db(self):
         self.db = SQLiteDB(self._db_path)
 
+    def close(self):
+        self.db.disconnect()
+
     def get_local_music_library_id(self):
         if self._local_music_library_id is None:
             q = "select PrimarySourceID from CorePrimarySources where StringID=?"
@@ -690,7 +694,7 @@ class BansheeDB(Loggable):
             track = None
         else:
             album = self.get_album_with_id(row.AlbumID)
-            track = Track(row, self.db, album)
+            track = Track(row, self, album)
         return track
 
     def get_tracks(self):
@@ -754,6 +758,7 @@ class BansheeStore(BackendStore, BansheeDB):
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = Container(ROOT_CONTAINER_ID,
                                                        -1, self.name, store=self)
+        louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def upnp_init(self):
         self.open_db()
@@ -821,6 +826,9 @@ class BansheeStore(BackendStore, BansheeDB):
                                                                'SourceProtocolInfo',
                                                                source_protocol_info,
                                                                default=True)
+
+    def release(self):
+        self.db.close()
 
     def get_by_id(self,item_id):
         self.info("get_by_id %s" % item_id)
