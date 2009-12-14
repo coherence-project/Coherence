@@ -29,6 +29,20 @@ import time
 from urlparse import urlsplit
 import urllib2
 
+
+import mimetypes
+mimetypes.init()
+mimetypes.add_type('audio/x-m4a', '.m4a')
+mimetypes.add_type('video/mp4', '.mp4')
+mimetypes.add_type('video/mpegts', '.ts')
+mimetypes.add_type('video/divx', '.divx')
+mimetypes.add_type('video/divx', '.avi')
+mimetypes.add_type('video/x-matroska', '.mkv')
+mimetypes.add_type('audio/x-musepack', '.mpc')
+mimetypes.add_type('audio/x-wavpack', '.flac')
+mimetypes.add_type('audio/x-wavpack', '.wv')
+mimetypes.add_type('audio/mp4', '.m4a')
+
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER = 200
 VIDEO_CONTAINER = 300
@@ -38,13 +52,6 @@ AUDIO_ALBUM_CONTAINER_ID = 203
 AUDIO_PLAYLIST_CONTAINER_ID = 204
 VIDEO_ALL_CONTAINER_ID = 301
 VIDEO_PLAYLIST_CONTAINER_ID = 302
-
-KNOWN_AUDIO_TYPES = {'.mp3':'audio/mpeg',
-                     '.ogg':'application/ogg',
-                     '.mpc':'audio/x-musepack',
-                     '.flac':'audio/x-wavpack',
-                     '.wv':'audio/x-wavpack',
-                     '.m4a':'audio/mp4',}
 
 def get_cover_path(artist_name, album_title):
     def _escape_part(part):
@@ -457,9 +464,8 @@ class BaseTrack(BackendItem):
         ext = ext.lower()
 
         # FIXME: drop this hack when we switch to tagbin
-        try:
-            mimetype = KNOWN_AUDIO_TYPES[ext]
-        except KeyError:
+        mimetype, dummy = mimetypes.guess_type("dummy%s" % ext)
+        if not mimetype:
             mimetype = 'audio/mpeg'
             ext = "mp3"
 
