@@ -838,18 +838,19 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
     @dbus.service.method(BUS_NAME,in_signature='',out_signature='av',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def get_devices_async(self,dbus_async_cb,dbus_async_err_cb):
-        r = []
-        def iterate_devices():
-            for device in self.devices.values():
-                #r.append(device.path())
-                r.append(device.get_info())
-                yield r
+        infos = []
 
-        def got_devices(generator):
-            dbus_async_cb(dbus.Array(r,signature='v',variant_level=2))
+        def iterate_devices(devices):
+            for device in devices:
+                infos.append(device.get_info())
+                yield infos
 
-        dfr = task.coiterate(iterate_devices())
-        dfr.addCallback(got_devices)
+        def done(generator):
+            dbus_async_cb(dbus.Array(infos, signature='v', variant_level=2))
+
+        devices = self.devices.copy().values()
+        dfr = task.coiterate(iterate_devices(devices))
+        dfr.addCallbacks(done, lambda failure: dbus_async_err_cb(failure.value))
 
     @dbus.service.method(BUS_NAME,in_signature='s',out_signature='v')
     def get_device_with_id(self,id):
