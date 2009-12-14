@@ -17,13 +17,13 @@ class TubePublisherMixin(object):
 
     def muc_joined(self):
         self.info("muc joined. Offering the tubes")
-
+        conn_iface = self.conn[CONNECTION_INTERFACE_REQUESTS]
+        params = {CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_DBUS_TUBE,
+                  CHANNEL_INTERFACE + ".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
+                  CHANNEL_INTERFACE + ".TargetID": self.muc_id}
         for interface in self._tubes_to_offer.keys():
-            self.conn[CONNECTION_INTERFACE_REQUESTS].CreateChannel({
-                CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_DBUS_TUBE,
-                CHANNEL_INTERFACE + ".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
-                CHANNEL_INTERFACE + ".TargetID": self.muc_id,
-                CHANNEL_TYPE_DBUS_TUBE + ".ServiceName": interface})
+            params[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"] = interface
+            conn_iface.CreateChannel(params)
 
     def got_tube(self, tube):
         super(TubePublisherMixin, self).got_tube(tube)

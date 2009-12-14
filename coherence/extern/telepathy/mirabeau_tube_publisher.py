@@ -19,6 +19,8 @@ from coherence.extern.telepathy import client, tube, mirabeau_tube_consumer
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 from coherence import dbus_service
 
+from twisted.internet import task
+
 class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
     def __init__(self, tubes_to_offer, application, allowed_devices):
         tube.TubePublisherMixin.__init__(self, tubes_to_offer)
@@ -43,10 +45,15 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
         device.add_to_connection(self.device_tube, device.path())
         self.info("adding device %s to connection: %s",
                 device.get_markup_name(), self.device_tube)
-        for service in device.services:
-            if getattr(service,'NOT_FOR_THE_TUBES', False):
-                continue
-            service.add_to_connection(self.service_tube, service.path)
+
+        def iterate():
+            for service in device.services:
+                if getattr(service,'NOT_FOR_THE_TUBES', False):
+                    continue
+                yield service.add_to_connection(self.service_tube, service.path)
+
+        dfr = task.coiterate(iterate())
+        return dfr
 
     def _media_server_removed(self, udn):
         for device in self.coherence.dbus.devices.values():
@@ -78,12 +85,20 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                                                    self.device_tube,
                                                    self.service_tube):
             self.announce_done = True
-            for device in self.coherence.dbus.devices.values():
-                self._register_device(device)
-            self.coherence.dbus.bus.add_signal_receiver(self._media_server_found,
-                                                        "UPnP_ControlPoint_MediaServer_detected")
-            self.coherence.dbus.bus.add_signal_receiver(self._media_server_removed,
-                                                        "UPnP_ControlPoint_MediaServer_removed")
+
+            def iterate(devices):
+                for device in devices:
+                    yield self._register_device(device)
+
+            def done(result):
+                bus = self.coherence.dbus.bus
+                bus.add_signal_receiver(self._media_server_found,
+                                        "UPnP_ControlPoint_MediaServer_detected")
+                bus.add_signal_receiver(self._media_server_removed,
+                                        "UPnP_ControlPoint_MediaServer_removed")
+
+            dfr = task.coiterate(iterate(self.coherence.dbus.devices.values()))
+            dfr.addCallback(lambda gen: done)
 
 class MirabeauTubePublisherConsumer(MirabeauTubePublisherMixin,
                                     mirabeau_tube_consumer.MirabeauTubeConsumerMixin,

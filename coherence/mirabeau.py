@@ -19,18 +19,18 @@ class Mirabeau(log.Loggable):
         chatroom = config['chatroom']
         manager = config['manager']
         protocol = config['protocol']
-        # account dict keys are different for each
-        # protocol so we assume the user gave the right
-        # account parameters depending on the specified
-        # protocol.
+
+        # account dict keys are different for each protocol so we
+        # assume the user gave the right account parameters depending
+        # on the specified protocol.
         account = config['account']
+
         try:
             allowed_devices = config["allowed_devices"].split(",")
         except KeyError:
             allowed_devices = None
         tubes_to_offer = {BUS_NAME: {}, DEVICE_IFACE: {}, SERVICE_IFACE: {}}
 
-        print config
         callbacks = dict(found_peer_callback=self.found_peer,
                          disapeared_peer_callback=self.disapeared_peer,
                          got_devices_callback=self.got_devices)

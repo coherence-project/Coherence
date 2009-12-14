@@ -23,6 +23,11 @@ from coherence.extern.telepathy.tubeconn import TubeConnection
 from coherence.extern.telepathy.connect import tp_connect
 from coherence import log
 
+TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
+              TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
+              TUBE_CHANNEL_STATE_OPEN : 'open',
+              TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
+
 class Client(log.Loggable):
     logCategory = "tp_client"
 
@@ -128,10 +133,11 @@ class Client(log.Loggable):
                 self.connect_tube_signals(tube)
                 self.got_tube(tube)
         else:
-            chan_path, props = self.conn[CONNECTION_INTERFACE_REQUESTS].CreateChannel({
-                CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_TEXT,
-                CHANNEL_INTERFACE + ".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
-                CHANNEL_INTERFACE + ".TargetID": muc_id})
+            conn_iface = self.conn[CONNECTION_INTERFACE_REQUESTS]
+            params = {CHANNEL_INTERFACE+".ChannelType": CHANNEL_TYPE_TEXT,
+                      CHANNEL_INTERFACE+".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
+                      CHANNEL_INTERFACE+ ".TargetID": muc_id}
+            chan_path, props = conn_iface.CreateChannel(params)
 
             self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
 
@@ -157,9 +163,9 @@ class Client(log.Loggable):
 
     def connect_tube_signals(self, tube):
         tube_iface = tube[CHANNEL_INTERFACE_TUBE]
-        tube_iface.connect_to_signal("TubeChannelStateChanged",
-                                     lambda state: self.tube_channel_state_changed_cb(tube,
-                                                                                      state))
+        state_changed = lambda state: self.tube_channel_state_changed_cb(tube,
+                                                                         state)
+        tube_iface.connect_to_signal("TubeChannelStateChanged", state_changed)
         channel_iface = tube[CHANNEL_INTERFACE]
         channel_iface.connect_to_signal("Closed",
                                         lambda: self.tube_closed(tube))
@@ -171,22 +177,14 @@ class Client(log.Loggable):
         service = props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
 
         state = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'State')
-        tube_state = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
-                      TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
-                      TUBE_CHANNEL_STATE_OPEN : 'open',
-                      TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
 
         self.info("new D-Bus tube offered by %s. Service: %s. State: %s",
-                  initiator_id, service, tube_state[state])
+                  initiator_id, service, TUBE_STATE[state])
 
     def tube_opened(self, tube):
         tube_path = tube.object_path
         state = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'State')
-        tube_state = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
-                      TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
-                      TUBE_CHANNEL_STATE_OPEN : 'open',
-                      TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
-        self.info("tube %r opened (state: %s)", tube_path, tube_state[state])
+        self.info("tube %r opened (state: %s)", tube_path, TUBE_STATE[state])
 
         group_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
         tube_address = tube.local_address
