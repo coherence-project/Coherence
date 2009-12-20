@@ -1,8 +1,99 @@
 Coherence is a framework written in Python,
-enabling your application to participate in digital living networks.
+providing several UPnP MediaServers and MediaRenderers,
+and enabling your application to participate in digital living networks.
 
-As time evolves you will find in this file installation
-and basic configuration instructions.
+It is licenced under the MIT licence.
+
+Coherence is known to work with various clients
+   - Sony Playstation 3
+   - XBox360
+   - Denon AV Receivers
+   - WD HD Live MediaPlayers
+   - Samsung TVs
+   - Sony Bravia TVs
+
+and much more...
+   http://coherence-project.org/wiki/SupportedDevices
+
+As time evolves you will find in this file more detailed
+installation and basic configuration instructions.
 
 For now please pardon the inconvenience
-and have a look @ https://coherence.beebits.net.
+and have a look @ http://coherence-project.org
+
+
+Installation from source
+========================
+
+After downloading and extracting the archive or having done a svn checkout,
+move into the freshly created 'Coherence' folder and install the files
+with
+
+  sudo python ./setup.py install
+
+This will copy the Python module files into your local Python package folder
+and the coherence executable to '/usr/bin/coherence'.
+
+  http://coherence-project.org/wiki/DocumentationDepartment
+
+
+Quickstart
+==========
+
+To just export some files on your hard-disk fire up Coherence with
+an UPnP MediaServer with a file-system backend enabled.
+
+  coherence --plugin=backend:FSStore,content:/path/to/your/media/files
+
+A list of all available backends will get printed with
+
+  coherence --help
+
+More information about the backends and their specific configuration:
+
+  http://coherence-project.org/wiki/Backends
+
+For a continuous operation the use of a config file is highly recommended.
+
+  http://coherence-project.org/wiki/XMLConfig
+
+The config file can be placed anywhere, coherence looks by default for $HOME/.coherence,
+but you can pass the path via the commandline option '-c' to it too.
+
+  coherence -o /path/to/config/file -more -options
+
+
+Troubleshooting
+===============
+
+If your MediaServer doesn't show up on your client most of the time
+networking issue are responsible for that.
+
+ - Your system has more than one network interface?
+ 
+   Specify the network interface to use in the config file.
+
+ - Add a multicast route, pointing to the proper network interface
+
+   route add -net 239.0.0.0 netmask 255.0.0.0 eth0
+
+ - Any firewall on your system?
+
+
+Support
+=======
+
+First there is our wiki at http://coherence-project.org/. If you find an error there
+or think there is some information missing please get yourself an account and correct
+that issue. Thx!
+
+Then we have a mailinglist coherence-dev@lists.beebits.net.
+You add yourself here:
+
+  http://lists.beebits.net/cgi-bin/mailman/listinfo/coherence-dev
+
+And last but not least, there is our irc channel
+
+  irc://irc.freenode.net/#coherence
+
+where a lot of other users and most of the developers are around.

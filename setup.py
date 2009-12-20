@@ -34,42 +34,51 @@ setup_args = {
     'description':"""Coherence - DLNA/UPnP framework for the digital living""",
     'long_description':"""Coherence is a framework written in Python,
 providing a variety of UPnP MediaServer and UPnP MediaRenderer implementations
-for instant use. It includes an UPnP ControlPoint, which is accessible via
-D-Bus too. Furthermore it enables your application to participate in
-digital living networks, at the moment primarily the DLNA/UPnP universe.
+for instant use.
 
+It includes an UPnP ControlPoint, which is accessible via D-Bus too.
+
+Furthermore it enables your application to participate in
+digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this %s - Pont Mirabeau - release
+New in this %s - the Red-Nosed Reindeer - release
 
  * new MediaServer backends that allow access to
-   * Picasa Web Albums (http://picasa.google.com)
-   * a TestServer to easily serve and test interaction with
-     * one or more items and adjust 'upnp_class', 'mimetype' and 'DLNA-flags',
-     * items that are a GStreamer pipeline or an external program
- * a new - used in parallel - D-Bus API with an 'org.DLNA' interface
-   with the goal to create a common API for all UPnP/DNLA frameworks
- * support for the dlna-playcontainer URI
-   (http://netzflocken.de/2009/4/23/media-collection-playing-the-dlna-way)
- * enchancements to the GStreamer MediaRenderer, supporting now
-   dlna-playcontainer and SetNextAVTransportURI, and jumping to previous
-   and next tracks
- * support for video items served by Ampache (http://ampache.org)
- * base classes for a ScheduledRecording service
- * more 'compatibility' enhancements for different devices
+   * Banshee - exports audio and video files from Banshees media db (http://banshee-project.org/)
+   * FeedStore - a MediaServer serving generic RSS feeds
+   * Playlist - exposes the list of video/audio streams from a m3u playlist (e.g. web TV listings published by french ISPs such as Free, SFR...)
+   * YAMJ - serves the movie/TV series data files and metadata from a given YAMJ (Yet Another Movie Jukebox) library (http://code.google.com/p/moviejukebox/)
+ * updates on Mirabeau - our "UPnP over XMPP" bridge
+ * simplifications in the D-Bus API
+ * a first implementation of an JSON/REST API
+ * advancements of the GStreamer MediaRenderer, supporting now GStreamers playbin2
+ * upgrade of the DVB-Daemon MediaServer
+ * refinements in the transcoding section, having now the choice to use GStreamer pipelines or external processes like mencoder
+ * more 'compatibility' improvements for different devices (e.g. Samsung TVs or Apache Felix)
  * and - as every time - the usual bugfixes and enhancements
 
-Kudos go to jmsizun, cjsmo, chewi, and lightyear.
+Kudos go to:
+
+ * Benjamin (lightyear) Kampmann,
+ * Dominik (schrei5) Ruf,
+ * Frank (dev) Scholz,
+ * Friedrich (frinring) Kossebau,
+ * Jean-Michel (jmsizun) Sizun,
+ * Philippe (philn) Normand,
+ * Sebastian (sebp) Pölsterl,
+ * Zaheer (zaheerm) Merali
+
 
 """ % __version__,
     'author':"Frank Scholz",
-    'author_email':'coherence@beebits.net',
+    'author_email':'dev@coherence-project.org',
     'license' : "MIT",
     'packages':packages,
     'scripts' : ['bin/coherence','misc/Desktop-Applet/applet-coherence'],
-    'url' : "http://coherence.beebits.net",
-    'download_url' : 'http://coherence.beebits.net/download/Coherence-%s.tar.gz' % __version__,
+    'url' : "http://coherence-project.org",
+    'download_url' : 'http://coherence-project.org/download/Coherence-%s.tar.gz' % __version__,
     'keywords':['UPnP', 'DLNA', 'multimedia', 'gstreamer'],
     'classifiers' : ['Development Status :: 5 - Production/Stable',
                    'Environment :: Console',
@@ -127,7 +136,8 @@ if haz_setuptools == True:
         PlaylistStore = coherence.backends.playlist_storage:PlaylistStore
         YamjStore = coherence.backends.yamj_storage:YamjStore
         BansheeStore = coherence.backends.banshee_storage:BansheeStore
-                         
+        FeedStore = coherence.backends.feed_storage:FeedStore
+
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
         GStreamerPlayer = coherence.backends.gstreamer_renderer:GStreamerPlayer

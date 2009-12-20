@@ -101,6 +101,7 @@ class FeedStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self,server,**kwargs):
+        BackendStore.__init__(self,server,**kwargs)
         self.name = kwargs.get('name', 'Feed Store')
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase)>0 and
@@ -185,4 +186,3 @@ class FeedStore(BackendStore):
                 container_id += 1
             else:
                 raise Exception('to many containers')
-    

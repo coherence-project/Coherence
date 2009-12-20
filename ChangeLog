@@ -1,7 +1,1330 @@
-2009-08-28  Zaheer Abbas Merali  <zaheerabbas at merali dot org>
+2009-12-14 14:53  philn
 
-	* coherence/transcoder.py:
-	Proper pipeline for mpeg2 ts inserted.
+	* coherence/backends/banshee_storage.py: banshee: be a little more
+	  smart for typefinding
+
+2009-12-14 12:15  philn
+
+	* coherence/backends/banshee_storage.py: fix typo...
+
+2009-12-14 12:07  philn
+
+	* coherence/backends/banshee_storage.py: banshee: fixed backend
+	  registration and implement release()
+
+2009-12-14 12:06  philn
+
+	* coherence/dbus_service.py: pontoon: make get_devices_async
+	  operate on a copy of the devices dict
+
+2009-12-14 12:05  philn
+
+	* coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py, coherence/mirabeau.py:
+	  various mirabeau cleanups
+
+2009-12-12 10:29  dev
+
+	* coherence/upnp/core/utils.py: just some cleanups
+
+2009-12-12 10:24  dev
+
+	* coherence/base.py: just some cleanups
+
+2009-12-12 10:23  dev
+
+	* coherence/backends/fs_storage.py: allow en-/disabling the use of
+	  inotify for auto-content update via a backend option
+
+2009-12-12 10:13  dev
+
+	* coherence/backend.py,
+	  coherence/backends/appletrailers_storage.py,
+	  coherence/backends/flickr_storage.py: cleaning up some ''backend
+	  complete'' signaling mess
+
+2009-12-11 15:14  philn
+
+	* coherence/backends/picasa_storage.py: fixed missing imports
+
+2009-12-11 15:12  philn
+
+	* coherence/backends/picasa_storage.py: oops leftover of [1501]
+
+2009-12-11 15:11  philn
+
+	* coherence/backend.py, coherence/backends/miroguide_storage.py,
+	  coherence/backends/playlist_storage.py,
+	  coherence/backends/yamj_storage.py: Moved Container,
+	  LazyContainer, AbstractBackendStore to backend.py as they are
+	  generic enough
+
+2009-12-11 13:08  philn
+
+	* coherence/backends/banshee_storage.py: banshee: refactored db
+	  access methods to a new class
+
+2009-12-11 12:21  philn
+
+	* coherence/base.py, coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/connect.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py,
+	  coherence/extern/telepathy/tubeconn.py, coherence/mirabeau.py,
+	  coherence/tube_service.py: refactored mirabeau stuff from base.py
+	  to a new module. Also properly close Channels when someone leaves
+	  the MUC
+
+2009-12-10 15:42  philn
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/__init__.py: Use GIO to get
+	  the face icon's mime-type. See
+	  https://bugzilla.gnome.org/show_bug.cgi?id=604188
+
+2009-12-02 16:53  philn
+
+	* coherence/dbus_service.py: pontoon: don't return infos about
+	  services not exported over tubes
+
+2009-11-26 23:17  jmsizun
+
+	* coherence/upnp/core/utils.py: final fix for #112. return error
+	  404 (instead of 500) when resource item is missing
+
+2009-11-26 17:41  dev
+
+	* coherence/backends/flickr_storage.py: trying to fix proxy-mode in
+	  the Flickr UPnP backend
+
+2009-11-26 13:52  philn
+
+	* coherence/backends/banshee_storage.py,
+	  coherence/upnp/core/DIDLLite.py: videos (and video playlists)
+	  support
+
+2009-11-26 11:07  philn
+
+	* coherence/backends/banshee_storage.py: moved music related stuff
+	  inside Music and added support for playlists
+
+2009-11-22 21:56  dev
+
+	* coherence/upnp/core/DIDLLite.py: little hack to do tests without
+	  DLNA flags
+
+2009-11-13 22:46  jmsizun
+
+	* coherence/backends/appletrailers_storage.py, coherence/base.py,
+	  coherence/upnp/core/utils.py: report error(404) when a request
+	  for an erroneous URL is made
+
+2009-11-13 21:42  jmsizun
+
+	* coherence/backends/appletrailers_storage.py: updated appeltrailer
+	  plugin. Trailer have to be proxied through the coherence server
+	  to work. Hopefully fixes #259
+
+2009-11-12 21:04  dev
+
+	* coherence/dbus_service.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py: maybe
+	  that's it - trying to hide some DBus object from getting exported
+	  over the tubes
+
+2009-11-12 13:38  philn
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/banshee_storage.py,
+	  coherence/extern/db_row.py, setup.py: brand new Banshee Store
+
+2009-11-12 13:37  philn
+
+	* coherence/backend.py: doc update
+
+2009-11-12 13:37  philn
+
+	* coherence/upnp/devices/media_server.py: get_by_id can return a
+	  deferred
+
+2009-11-11 22:22  jmsizun
+
+	* coherence/backends/yamj_storage.py: YAMJ: added support for TV
+	  Shows (episodes...)
+
+2009-11-10 09:55  dev
+
+	* coherence/upnp/core/event.py: setting the proper publisher path
+
+2009-11-10 09:27  dev
+
+	* coherence/dbus_service.py, coherence/upnp/core/event.py,
+	  coherence/upnp/core/service.py, coherence/upnp/devices/basics.py:
+	  * better handling of mal-format event notifications
+	  * fix for absolute/relative URL handling in generic
+	  description.xml
+
+2009-11-07 15:44  dev
+
+	* coherence/backends/gstreamer_renderer.py: playbin2 has an empty
+	  uri property after a pipeline stops,
+	  as the uri is nowdays the next track to play, not the current one
+
+2009-11-04 23:51  jmsizun
+
+	* coherence/backends/youtube_storage.py,
+	  coherence/extern/youtubedl/youtubedl.py: fixed youtube backend
+	  with youtubedl update (2009.09.13)
+
+2009-11-04 22:30  jmsizun
+
+	* coherence/upnp/core/DIDLLite.py: fixed error with previous commit
+
+2009-11-03 23:18  jmsizun
+
+	* coherence/backends/yamj_storage.py,
+	  coherence/upnp/core/DIDLLite.py: fixed YAMJ backend + added
+	  attributes 'actor'
+
+2009-11-03 11:42  dev
+
+	* coherence/backends/fs_storage.py: react on the new mimetype
+	  ''audio/flac'' for flac files
+
+2009-11-01 22:36  jmsizun
+
+	* coherence/backends/iradio_storage.py: fixed error with iRadio
+	  items when requested from a browser
+
+2009-11-01 11:41  dev
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/MediaPlayer.py: add more
+	  supported audio formats to the ''SinkProtocolInfo'' StateVariable
+
+2009-10-29 21:29  dev
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/UpnpSource.py: seconds can
+	  be ''float''s, use proper conversion - addresses #258
+
+2009-10-28 08:12  philn
+
+	* coherence/dbus_service.py: mirabeau: workaround to not reinject
+	  services from the tubes to the dbus pontoon
+
+2009-10-25 21:12  philn
+
+	* coherence/backends/gstreamer_renderer.py: audio/video sink are
+	  now configurable in the gst MR, fixes #254
+
+2009-10-25 10:26  dev
+
+	* coherence/upnp/core/variable.py: do always call callbacks via
+	  notify to inform about updated StateVariable values, needs maybe
+	  some more thoughs
+
+2009-10-25 10:23  dev
+
+	* coherence/upnp/core/DIDLLite.py: some forgotten XBox adjustment
+
+2009-10-20 19:57  jmsizun
+
+	* coherence/backends/gallery2_storage.py,
+	  coherence/backends/itv_storage.py,
+	  coherence/backends/miroguide_storage.py,
+	  coherence/backends/picasa_storage.py,
+	  coherence/backends/playlist_storage.py,
+	  coherence/backends/yamj_storage.py,
+	  coherence/backends/youtube_storage.py: Added 'description' and
+	  'options' for backends gallery2, ITv, MiroGuide, Picasa,
+	  Playlist, Yamj, Youtube
+
+2009-10-19 15:23  dev
+
+	* coherence/upnp/devices/control_point.py: remove unnecessary
+	  double logging
+
+2009-10-19 15:22  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/core/xml-service-descriptions/AVTransport1.xml,
+	  coherence/upnp/core/xml-service-descriptions/RenderingControl1.xml,
+	  coherence/upnp/core/xml-service-descriptions/RenderingControl2.xml:
+	  fixing typos in the xml service descriptions and adjusting their
+	  parsing
+
+2009-10-19 15:20  dev
+
+	* coherence/backends/gstreamer_renderer.py: fix wrong argument
+	  order - annoying, time to fix #200
+
+2009-10-18 09:07  dev
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/upnp/core/DIDLLite.py: do a Resource.__init__ within
+	  PlayContainerResource.__init__, gets us the new
+	  ''nrAudioChannels'' attribute there too
+
+2009-10-16 23:50  jmsizun
+
+	* coherence/backends/picasa_storage.py: cosmetic changes to Picasa
+	  backend
+
+2009-10-16 23:48  jmsizun
+
+	* coherence/extern/et.py: small change to behave properly in some
+	  error case I do not remember of
+
+2009-10-16 23:46  jmsizun
+
+	* coherence/backends/youtube_storage.py: Minor cosmetic changes to
+	  youtube backend
+
+2009-10-16 23:41  jmsizun
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/yamj_storage.py, setup.py: New media_server
+	  backend to expose a YAMJ library
+
+2009-10-16 23:29  jmsizun
+
+	* coherence/backends/gallery2_storage.py: correct gallery backend
+	  name as appearing in logs
+
+2009-10-16 23:28  jmsizun
+
+	* coherence/upnp/devices/media_server.py: allow media_server
+	  backend to override device's "presentation URL" using attribute
+	  media_server.presentationURL
+
+2009-10-16 23:26  jmsizun
+
+	* coherence/upnp/core/DIDLLite.py: Added subelement
+	  upnp:nrAudioChannels to DIDL resources + Added subelement
+	  upnp:genre to DIDL items
+
+2009-10-15 18:22  dev
+
+	* coherence/transcoder.py: fix wrong doc-string
+
+2009-10-15 18:20  dev
+
+	* coherence/json.py: return more details in case of an error
+
+2009-10-15 18:19  dev
+
+	* bin/coherence: corrected URL to homepage
+
+2009-10-14 16:19  dev
+
+	* coherence/backends/fs_storage.py: experimenting with an options
+	  system provided by the backend itself
+	  
+	  Each backend shall provide class attributes ''description'' and
+	  ''options'' - ''descriptions'' being just a string, ''options''
+	  is a list of option dictionaries.
+	  
+	  The values of these dicts are:
+	  
+	  ''option'':: name of that option
+	  ''type'':: string or int
+	  ''default'':: default value, should be of type ''type''
+	  (optional)
+	  ''enum'':: a tuple/list of possible values (optional)
+	  ''range'':: a dict with ''min'' and ''max'' elements (optional)
+	  ''help'':: a (short) text describing this option (optional)
+	  ''level'':: the level of this option - ''normal'' or ''advance''
+	  (optional)
+	  
+	  Anything else?
+	  
+	  Accessing these attributes is like that:
+	  
+	  {{{
+	  >>> from coherence.base import Plugins
+	  >>> p = Plugins()
+	  >>> p['FSStore'].options
+	  [{'default': 'my media', 'type': 'string', 'key': 'name'}, ...]
+	  }}}
+	  
+	  The Plugins class is a dict, so p.items() returns the backend
+	  identifiers as keys and their classes as values.
+
+2009-10-13 12:28  dev
+
+	* coherence/base.py: fixing a typo in the Plugins class and some
+	  more logging
+
+2009-10-13 08:31  dev
+
+	* coherence/backends/gstreamer_renderer.py: allow activation too
+	  when ''glib'' option is set
+
+2009-10-12 18:33  dev
+
+	* coherence/dbus_service.py, coherence/upnp/core/device.py: adding
+	  ''presentation_url'' and ''parent_udn'' to the D-Bus get_devices
+	  response
+
+2009-10-10 13:47  dev
+
+	* coherence/dbus_service.py: change the out-signature of the CDS
+	  Browse and Search actions to 'aa{sv}iii' to ease de-marshaling
+
+2009-10-10 12:00  philn
+
+	* coherence/backends/gstreamer_renderer.py: re-reworked gst
+	  renderer (-> playbin2), better support for mute and pictures
+	  display, fixes #251, #153
+
+2009-10-10 11:02  dev
+
+	* coherence/backends/flickr_storage.py: fix the FlickrStore when
+	  used without an user account
+
+2009-10-10 10:26  philn
+
+	* Coherence.egg-info/entry_points.txt: feed store in egg metadata
+
+2009-10-09 08:39  dev
+
+	* coherence/backends/gstreamer_renderer.py: reverting [1435],
+	  addresses #251 and #153
+
+2009-10-07 18:49  philn
+
+	* coherence/backends/gstreamer_renderer.py: reworked the gstreamer
+	  media renderer to use playbin2, depend on the glib main loop and
+	  properly deal with volume properties, fixes #153
+
+2009-10-07 17:24  sebp
+
+	* coherence/backends/dvbd_storage.py: Added
+	  process_DeleteTimer_result callback function
+
+2009-10-07 17:14  sebp
+
+	* coherence/backends/dvbd_storage.py: Fixed bug when there are no
+	  channels or recordings.
+	  Added initial version of DVBDScheduledRecording class.
+
+2009-10-06 20:21  dev
+
+	* coherence/dbus_service.py: more cleaning-up the DBus api
+
+2009-10-06 19:12  dev
+
+	* coherence/json.py: adding first JSON calls:
+	  
+	  * `http://host:port/json/devices` returns a list of device dicts
+	  * `!http://host:port/json/<uuid>/<service>/<action>?arguments`
+	  returns the result of the action call as a dict of the out
+	  arguments[[BR]]
+	  e.g.
+	  `!http://host:port/json/<uuid>/<service>/ContentDirectory/Browse?ObjectID=0&BrowseFlag=BrowseDirectChildren&Filter=*&StartingIndex=0&RequestedCount=0&SortCriteria=`
+
+2009-10-06 16:36  dev
+
+	* coherence/upnp/core/device.py: necessary helper adjustments to
+	  enable embedded devices in the Inspector
+
+2009-10-06 08:48  dev
+
+	* coherence/base.py, coherence/upnp/core/ssdp.py: using proper
+	  interface on multihomed hosts for the SSDP multicast group,
+	  closes #250
+
+2009-10-04 16:27  dev
+
+	* coherence/dbus_service.py: emitting proper D-Bus signal
+
+2009-10-04 15:20  dev
+
+	* coherence/dbus_service.py: fixing the fix
+
+2009-10-04 15:18  zaheerm
+
+	* coherence/transcoder.py: fix typo
+
+2009-10-04 15:02  sebp
+
+	* coherence/backends/dvbd_storage.py: dvdb_storage: Added support
+	  for channel groups
+
+2009-10-04 14:45  dev
+
+	* coherence/dbus_service.py: refining the new generic device signal
+
+2009-10-04 14:09  dev
+
+	* coherence/dbus_service.py: adding generic device detected and
+	  removed signals
+
+2009-10-04 11:09  dev
+
+	* coherence/dbus_service.py: of course add the resources only when
+	  needed
+
+2009-10-04 11:05  dev
+
+	* coherence/dbus_service.py: now with the missing res array
+
+2009-10-04 10:53  dev
+
+	* coherence/dbus_service.py: fix D-Bus items structure
+
+2009-10-04 10:44  dev
+
+	* coherence/dbus_service.py: simplifying the D-Bus items structure
+
+2009-10-04 09:27  dev
+
+	* coherence/upnp/devices/control_point.py: fixing logging error
+
+2009-10-04 08:48  dev
+
+	* coherence/dbus_service.py: add XML to DBus dict parsing on our
+	  side for the CDS.Browse action
+
+2009-10-03 14:52  sebp
+
+	* coherence/backends/dvbd_storage.py: Adjusted DVB Daemon backend
+	  to API changes
+
+2009-10-03 14:28  dev
+
+	* coherence/json.py: importing the log from the proper place
+
+2009-10-03 12:21  dev
+
+	* coherence/base.py, coherence/json.py,
+	  coherence/upnp/core/action.py, coherence/upnp/core/device.py,
+	  coherence/upnp/core/service.py: laying the foundation for JSON
+	  "based" access to the devices/services and actions
+
+2009-10-03 10:47  philn
+
+	* coherence/backend.py: chain up to Backend class constructor
+
+2009-09-19 13:53  schrei5
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/feed_storage.py: adding my feed storage
+	  backend
+	  to use it add something like the following to your configuration
+	  
+	  <plugin active="yes">
+	  <backend>FeedStore</backend>
+	  <opml_url>http://www.swr3.de/rdf-feed/podcast/</opml_url>
+	  <uuid>426e6b31-fe2d-46ef-a69a-f0733ff4914f</uuid>
+	  <name>SWR3 OPML</name>
+	  </plugin>
+	  <plugin active="yes">
+	  <backend>FeedStore</backend>
+	  <uuid>b51ddca7-79ba-47bd-b558-2e830d1e2566</uuid>
+	  <feed_url>http://podcast.wdr.de/quarks.xml</feed_url>
+	  <name>Quarks</name>
+	  </plugin>
+
+2009-09-17 21:29  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/core/DIDLLite.py: implementing the missing parts
+	  from the buried patch out of #237 - addresses #248 and closes
+	  #237
+
+2009-09-14 16:58  dev
+
+	* setup.py: add netifaces as a dependency when doing a setuptools
+	  install on OpenSolaris and Windows, addresses #242
+
+2009-09-12 13:08  dev
+
+	* coherence/upnp/devices/media_server.py: sending out a
+	  ''contentFeatures.dlna.org'' header whenever it is requested
+
+2009-09-09 21:05  dev
+
+	* coherence/backends/fs_storage.py,
+	  coherence/upnp/devices/media_server.py: support for subtitles -
+	  Samsung style - addresses #248
+	  
+	  Works so far with the FSStore backend, if there is a filename.srt
+	  file we'll add that as an additional resource (maybe we can use
+	  that one day for some other device) and make it accessible via an
+	  attachment url
+
+2009-09-09 17:41  lightyear
+
+	* coherence/transcoder.py: mimetype->content_type
+
+2009-09-09 17:41  lightyear
+
+	* coherence/transcoder.py: disallow non-ascii in name
+
+2009-09-09 17:41  lightyear
+
+	* coherence/test/test_transcoder.py: bad name test
+
+2009-09-09 17:41  lightyear
+
+	* coherence/test/test_transcoder.py: add another anti-regression
+	  test
+
+2009-09-09 17:41  lightyear
+
+	* coherence/test/test_transcoder.py, coherence/transcoder.py: fix
+	  the implementation: level the API, spacing, pep8-ing the code,
+	  FIXMEs and basic clean up
+
+2009-09-09 17:41  lightyear
+
+	* coherence/test/test_transcoder.py: fix the tests
+
+2009-09-09 17:41  lightyear
+
+	* coherence/transcoder.py: fix the placeholder missing bug
+
+2009-09-09 17:40  lightyear
+
+	* coherence/test/test_transcoder.py: add test for placeholder
+	  missing bug
+
+2009-09-09 17:40  lightyear
+
+	* coherence/transcoder.py: make it bulletproof for 2.4 as well
+
+2009-09-09 17:40  lightyear
+
+	* coherence/test/test_transcoder.py, coherence/transcoder.py: fix
+	  this fucking implementation
+
+2009-09-09 17:40  lightyear
+
+	* coherence/test/test_transcoder.py, coherence/transcoder.py: more
+	  transcoder manager test stuff
+
+2009-09-09 17:40  lightyear
+
+	* coherence/test/test_transcoder.py, coherence/transcoder.py: more
+	  transcoder tests
+
+2009-09-09 17:40  lightyear
+
+	* coherence/test/test_transcoder.py: add first small and simple
+	  tests about the transcoder manager
+
+2009-09-09 16:04  dev
+
+	* coherence/upnp/core/DIDLLite.py: use the default DLNA.ORG_PN
+	  value for transcoded mpeg files
+
+2009-09-09 11:41  dev
+
+	* bin/coherence: making daemon mode work again, closes #230
+	  
+	  Nevertheless we should consider using
+	  http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+
+2009-09-09 10:34  philn
+
+	* bin/coherence, coherence/__init__.py, setup.py: check
+	  twisted{,.web} versions at runtime, fixes #243
+
+2009-09-08 20:09  philn
+
+	* setup.py: put coherence base root package in packages to ship,
+	  fixes #244
+
+2009-09-06 19:17  dev
+
+	* coherence/transcoder.py: now with the ExternalProcessPipeline
+
+2009-09-06 11:04  dev
+
+	* coherence/transcoder.py, coherence/upnp/core/DIDLLite.py: fixing
+	  more typos
+
+2009-09-05 15:16  dev
+
+	* coherence/upnp/core/DIDLLite.py: typo fix
+
+2009-09-05 14:59  dev
+
+	* coherence/transcoder.py: there might be none transcoders defined
+	  in the config at all, thx Crys
+
+2009-09-05 13:14  dev
+
+	* coherence/transcoder.py: fixing some leftovers
+
+2009-09-05 10:43  dev
+
+	* coherence/upnp/devices/media_server.py: remove the direct use to
+	  the JPEGTranscoder
+
+2009-09-05 09:58  dev
+
+	* coherence/base.py, coherence/transcoder.py,
+	  coherence/upnp/devices/media_server.py: creating a
+	  TranscoderManager and removing the selector from the MediaServer
+
+2009-08-28 07:54  zaheerm
+
+	* ChangeLog, coherence/transcoder.py: * coherence/transcoder.py:
+	  Proper pipeline for mpeg2 ts inserted.
+
+2009-08-27 20:27  dev
+
+	* coherence/upnp/core/DIDLLite.py: more stubs for the mpegts video
+	  transcoding - not that smart :-/
+
+2009-08-27 19:38  dev
+
+	* coherence/transcoder.py,
+	  coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: * stub for mpegts video
+	  transcoding - intermediate solution to get the whole thing up
+	  * we need a (singleton) class that collects all available
+	  transcoders, does the proper selection so we can move that switch
+	  out of the MediaServer, and provides the available urls for the
+	  DIDLLite Resource creation
+
+2009-08-27 18:24  dev
+
+	* Coherence.egg-info/entry_points.txt, coherence/dispatcher.py,
+	  coherence/extern/simple_config.py: do a lazy import of the
+	  reactor to not have the default reactor installed before we have
+	  the chance to change that
+
+2009-08-23 15:28  philn
+
+	* coherence/dbus_service.py: dbus_device: get_markup_name() method,
+	  needed since [1374]
+
+2009-08-04 09:19  dev
+
+	* setup.py: make a setuptools based install more flexible and
+	  detect distro versions of ConfigObj, Twisted and TwistedWeb
+
+2009-08-03 14:39  dev
+
+	* coherence/upnp/core/action.py, coherence/upnp/core/soap_proxy.py:
+	  correcting [1372] and make the whole thing work below Python 2.6
+	  again - thx lightyear
+
+2009-07-30 17:38  lightyear
+
+	* coherence/base.py, coherence/dbus_service.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/tube_service.py, coherence/upnp/core/device.py,
+	  coherence/upnp/devices/binary_light_client.py,
+	  coherence/upnp/devices/control_point.py,
+	  coherence/upnp/devices/dimmable_light_client.py,
+	  coherence/upnp/devices/media_renderer_client.py,
+	  coherence/upnp/devices/media_server_client.py,
+	  coherence/web/ui.py, mirabeau_client.py, tw_mirabeau_test.py:
+	  nice device type and version helpers
+	  
+	  From ea4155ed98daef846fe9895cdefdcc98a8f089b2 Mon Sep 17 00:00:00
+	  2001
+	  From: Benjamin Kampmann <ben.kampmann@googlemail.com>
+	  Date: Tue, 21 Jul 2009 20:42:49 +0200
+	  Subject: [PATCH] add
+	  - friendly_device_type to device
+	  - device_type_version
+	  - get_device_markup
+	  
+	  ---
+	  coherence/upnp/core/device.py | 20 +++++++++++++++++++-
+	  coherence/web/ui.py | 34 ++++++++++++++++++-------------
+
+2009-07-27 18:46  jmsizun
+
+	* coherence/backends/playlist_storage.py: playlist: differentiate
+	  audio and video items
+
+2009-07-26 12:03  dev
+
+	* coherence/upnp/core/action.py: preserve the order of input
+	  arguments when doing a client-side action call - thanks again
+	  David Liu for spotting this
+
+2009-07-21 20:25  philn
+
+	* coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/tube.py: mirabeau: pass initiator
+	  address in tube params and reimplemented roster filter (on
+	  consumer side)
+
+2009-07-20 17:44  zaheerm
+
+	* coherence/transcoder.py: Don't reuse pipeline after setting state
+	  to NULL
+
+2009-07-20 17:27  zaheerm
+
+	* coherence/transcoder.py: Handle eos to finish requests and
+	  cleanup pipeline
+
+2009-07-20 16:41  zaheerm
+
+	* Coherence.egg-info/entry_points.txt, setup.py: Revert my local
+	  changes that were not meant to be committed
+
+2009-07-20 16:35  zaheerm
+
+	* Coherence.egg-info/entry_points.txt, coherence/transcoder.py,
+	  coherence/upnp/devices/control_point.py, setup.py: Move
+	  GStreamerPipeline to use appsink instead of custom sink.
+	  Allow multiple requests to be served by GStreamerPipeline.
+	  Create pipeline in constructor of GStreamerPipeline rather than
+	  in start.
+
+2009-07-15 10:59  dev
+
+	* coherence/backends/fs_storage.py: add a mimetype for Matroska
+	  containers with a .mkv extension
+
+2009-07-14 21:19  jmsizun
+
+	* coherence/backends/dvbd_storage.py: DVBD: added items for live tv
+	  channels (exposed via rtsp by dvb-daemon)
+
+2009-07-12 17:05  dev
+
+	* coherence/dbus_service.py: fix unicode error in dbus pontoon, thx
+	  Alfonso - closes #237
+
+2009-07-12 17:01  dev
+
+	* coherence/upnp/core/event.py: workaround for devices that won't
+	  let us subscribe to events, closes #210
+
+2009-07-04 19:42  philn
+
+	* docs/mirabeau.xml: sample mirabeau config file
+
+2009-07-02 18:57  philn
+
+	* coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py: mirabeau: refactored
+	  publisher/consumer in mixins, code is now more reusable
+
+2009-06-30 07:54  dev
+
+	* coherence/dbus_service.py, coherence/tube_service.py: correcting
+	  some xml-namespace issue due to the fromString/toString cycle
+
+2009-06-29 22:13  jmsizun
+
+	* coherence/backends/itv_storage.py: ITV: return of "why not having
+	  this backend to work, for a change..."
+
+2009-06-29 21:55  jmsizun
+
+	* coherence/backends/dvbd_storage.py: dvbd: in my config,
+	  dvb_daemon returns file URIs for recordings instead of local
+	  pathes
+
+2009-06-28 21:26  philn
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/__init__.py: rhythmbox
+	  plugin: use interface option when starting coherence
+
+2009-06-28 14:29  philn
+
+	* coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/connect.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py,
+	  coherence/extern/telepathy/tubeconn.py: merged the tube
+	  publisher/consumer inside a single client instead of mixing 2
+	  clients
+
+2009-06-27 09:53  philn
+
+	* coherence/dbus_service.py: dbus_pontoon: implement
+	  get_devices_async with a coiterator
+
+2009-06-27 09:48  philn
+
+	* coherence/base.py: fix typo
+
+2009-06-26 21:53  jmsizun
+
+	* coherence/backends/iradio_storage.py: iRadio: replaced prints by
+	  proper logs and other small fixes
+
+2009-06-26 21:26  jmsizun
+
+	* coherence/backends/itv_storage.py: ITV: why not having this
+	  backend work, for a change...
+
+2009-06-26 20:47  jmsizun
+
+	* coherence/backends/playlist_storage.py: playlist backend: updated
+	  list of potential source protocols
+
+2009-06-26 19:58  dev
+
+	* coherence/base.py, coherence/dbus_service.py,
+	  coherence/tube_service.py, coherence/upnp/core/DIDLLite.py,
+	  coherence/upnp/devices/control_point.py: adding the missing
+	  pieces to allow access from outside the local lan to MediaServer
+	  items exported via MiraBeau
+	  
+	  For now we need an element
+	  ''<external_address>ip:port</external_address>'' in the mirabeau
+	  config section. This will in a next phase be extended with UPnP
+	  and ICE NAT-traversal techniques.
+
+2009-06-26 19:53  dev
+
+	* coherence/extern/telepathy/client.py: create the muc_id right
+	  when using local-xmpp
+
+2009-06-25 21:32  philn
+
+	* coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py: mirabeau: complete support
+	  for muc p2p media-server browsing
+
+2009-06-25 19:50  philn
+
+	* coherence/base.py, coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/connect.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py,
+	  coherence/extern/telepathy/tubeconn.py: mirabeau: various
+	  adaptations to latest Telepathy interface requests API
+
+2009-06-23 22:14  jmsizun
+
+	* coherence/upnp/core/device.py: clarified warning message
+
+2009-06-23 22:13  jmsizun
+
+	* coherence/backends/youtube_storage.py: fix string name for
+	  backend store class
+
+2009-06-23 22:10  jmsizun
+
+	* coherence/backends/playlist_storage.py: publish resource with
+	  protocol http-get instead of rtsp-rtp-udp when relevant
+
+2009-06-23 22:08  jmsizun
+
+	* coherence/backends/miroguide_storage.py: fix string name for
+	  backend store class
+
+2009-06-23 22:07  jmsizun
+
+	* coherence/backends/itv_storage.py: ITV: retry later when
+	  connection to Shoutcast server fails
+
+2009-06-23 20:05  jmsizun
+
+	* coherence/backends/itv_storage.py: ITV: replaced prints by proper
+	  logs
+
+2009-06-23 14:25  philn
+
+	* coherence/extern/louie.py: extern.louie: make the dispatcher a
+	  global variable and the deprecation warning more developer
+	  friendly
+
+2009-06-21 20:29  philn
+
+	* coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/tube.py,
+	  coherence/extern/telepathy/tubeconn.py: mirabeau: various code
+	  cleanups and debug msgs fixes
+
+2009-06-21 20:26  philn
+
+	* coherence/dbus_service.py: mirabeau: fix StateVariableChanged in
+	  dbus service object (take 2)
+
+2009-06-21 20:06  philn
+
+	* coherence/dbus_service.py: mirabeau: fix StateVariableChanged in
+	  dbus service object
+
+2009-06-21 15:58  philn
+
+	* coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py, coherence/tube_service.py:
+	  mirabeau: some jabber related fixes
+
+2009-06-21 15:07  philn
+
+	* coherence/extern/telepathy/client.py: mirabeau client: fixed text
+	  messages acknoledgement
+
+2009-06-21 14:23  philn
+
+	* coherence/base.py: mirabeau: plug found remote devices to tube
+	  proxies
+
+2009-06-21 13:06  dev
+
+	* Coherence.egg-info/entry_points.txt, coherence/dbus_service.py,
+	  coherence/tube_service.py, coherence/upnp/core/service.py,
+	  mirabeau_client.py, tw_mirabeau_test.py: exposing now TubeDevice
+	  and TubeService proxies, plain communication is possible now
+
+2009-06-20 16:02  philn
+
+	* coherence/base.py, coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py,
+	  coherence/extern/telepathy/tubeconn.py, mirabeau_client.py:
+	  mirabeau: Coherence can now publish tubes and listen for tubes
+	  from other peers within the same instance
+
+2009-06-20 12:34  lightyear
+
+	* coherence/extern/louie.py: using save_emit instead of emit
+	  because we rely on the bad reactor
+	  based implementation louie had before.
+
+2009-06-20 11:57  lightyear
+
+	* coherence/extern/louie.py: small syntax fix in the louie wrapper
+
+2009-06-20 11:38  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/services/servers/av_transport_server.py: * added
+	  ''register_vendor_action'' and ''register_vendor_variable''
+	  methods
+	  * delayed creation of the service XML file
+
+2009-06-20 11:36  dev
+
+	* coherence/upnp/core/variable.py: rearrangements and naming
+	  correction
+
+2009-06-20 11:35  dev
+
+	* coherence/backends/gstreamer_renderer.py: small fix re 'Next'
+	  TransportAction
+
+2009-06-20 11:33  dev
+
+	* coherence/backends/flickr_storage.py: add lazy DIDLLite item
+	  creation and dlna-playcontainer support
+
+2009-06-20 11:23  philn
+
+	* coherence/backends/lastfm_storage.py: use hashlib if available
+
+2009-06-20 10:36  lightyear
+
+	* coherence/dispatcher.py, coherence/extern/louie.py,
+	  coherence/test/test_dispatching.py: You shall not commit when you
+	  are not done adding:
+	  
+	  Replacing louie with the new signaling dispatching system of pure
+	  AWESOMENESS
+
+2009-06-20 10:34  lightyear
+
+	* coherence/base.py, coherence/extern/louie,
+	  coherence/upnp/core/device.py: Re
+
+2009-06-17 21:38  jmsizun
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/playlist_storage.py, setup.py: Added new
+	  backend for web tv playlists (used in France by Free and Neuf
+	  ISPs)
+
+2009-06-17 21:35  jmsizun
+
+	* Coherence.egg-info/entry_points.txt,
+	  coherence/backends/miro_storage.py,
+	  coherence/backends/miroguide_storage.py, setup.py: rename Miro
+	  Backend into MiroGuide backend
+
+2009-06-17 21:33  jmsizun
+
+	* coherence/backends/miroguide_storage.py: renamed backend
+
+2009-06-17 21:04  jmsizun
+
+	* coherence/backends/miro_storage.py: add thumbnail as albumArtURI
+
+2009-06-13 18:06  philn
+
+	* coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/tube.py: mirabeau: don't accept muc
+	  tubes if they are not offered by a member of my roster
+
+2009-06-13 18:03  philn
+
+	* coherence/extern/telepathy/client.py: mirabeau telepathy client:
+	  roster retrieval support
+
+2009-06-10 19:08  dev
+
+	* coherence/upnp/core/event.py, coherence/upnp/core/ssdp.py: fix
+	  the wrong creation of a rfc-1123 date, e.g. the date-string was
+	  localized ''DATE: 六, 06 6月 2009 05:50:58 GMT'' as reported by
+	  liuran - thx for spotting this!
+
+2009-06-10 17:05  dev
+
+	* coherence/upnp/core/service.py,
+	  coherence/upnp/core/xml-service-descriptions/AVTransport1.xml,
+	  coherence/upnp/core/xml-service-descriptions/AVTransport2.xml:
+	  add the necessary code to enforce that a backend has implemented
+	  all actions that Coherence can't handle itself
+
+2009-06-10 16:48  dev
+
+	* coherence/upnp/core/DIDLLite.py: modify the
+	  find-matching-res-entries method and allow check against a
+	  partial localcontent-format string ('image/' or 'audio/') only
+
+2009-06-10 16:44  dev
+
+	* coherence/extern/telepathy/tube.py, mirabeau_client.py: cosmetic
+	  changes
+
+2009-06-10 16:40  dev
+
+	* coherence/dbus_service.py: in an object coming from the tubes the
+	  ''device'' parameter is None
+
+2009-06-10 16:36  dev
+
+	* coherence/backends/test_storage.py: document 'title' and added a
+	  new 'extension' attribute to an item in the TestStore
+
+2009-06-10 16:31  dev
+
+	* coherence/base.py: reverting [1303] - this doesn't work here, and
+	  we need to find the root cause anyway, addresses #112
+
+2009-06-04 20:58  dev
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/MediaPlayer.py: added a
+	  missing import
+
+2009-06-03 22:03  jmsizun
+
+	* coherence/base.py: #112 : return 404 error when requesting an URI
+	  with erroneous device UUID.
+	  This includes a hack to overcome some strange behavior with
+	  Twisted and HTTP request with non-standard methods.
+
+2009-06-03 08:59  lightyear
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/__init__.py: cleanup,
+	  simplification and pep8-ing
+
+2009-06-02 18:51  dev
+
+	* coherence/dbus_service.py: * explicitly remove DBus object,
+	  currently they seem to stay around without that, maybe the
+	  objects have some references lingering around
+
+2009-06-02 18:25  philn
+
+	* coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py: mirabeau:
+	  use of logging system and other cleanups after dev :)
+
+2009-06-02 18:23  philn
+
+	* coherence/base.py: comments about telepathy account
+
+2009-06-02 10:12  dev
+
+	* coherence/base.py, coherence/dbus_service.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  mirabeau_client.py: mirabeau related cleanups
+
+2009-06-02 10:11  dev
+
+	* coherence/transcoder.py: typo fix
+
+2009-06-01 19:20  dev
+
+	* misc/Rhythmbox-Plugin/coherence.rb-plugin.in,
+	  misc/Rhythmbox-Plugin/upnp_coherence/MediaPlayer.py,
+	  misc/Rhythmbox-Plugin/upnp_coherence/MediaStore.py,
+	  misc/Rhythmbox-Plugin/upnp_coherence/__init__.py: * merging mine
+	  and lightyears gconf changes
+	  * an initial version of a configuration dialog
+	  * seeking fixes in the Rhythmbox MediaRenderer
+	  * better StateVariable settings for local initiated playback in
+	  the Rhythmbox MediaRenderer
+	  * first steps to dlna-playcontainer support in the Rhythmbox
+	  MediaServer
+
+2009-06-01 19:10  dev
+
+	* coherence/upnp/devices/media_renderer.py,
+	  coherence/upnp/devices/media_server.py: some fixes re icon
+	  handling
+
+2009-06-01 19:07  dev
+
+	* coherence/upnp/devices/basics.py: some fixes re icon handling
+
+2009-06-01 19:06  dev
+
+	* coherence/upnp/core/variable.py: one more detail for the
+	  Inspector
+
+2009-06-01 19:02  dev
+
+	* coherence/backends/gstreamer_renderer.py: fix re 'REL_TIME'
+	  seeking
+
+2009-06-01 18:57  dev
+
+	* coherence/upnp/core/xml-service-descriptions/AVTransport1.xml:
+	  fix re vendor values
+
+2009-06-01 14:19  philn
+
+	* coherence/extern/telepathy/mirabeau_tube_publisher.py: mirabeau:
+	  react on pontoon MS detected/removed signals
+
+2009-06-01 14:18  philn
+
+	* coherence/dbus_service.py: dbus: remove devices from cache after
+	  _removed signals have been called, it'd be better to hold the
+	  device object during signal emission. for now wait a second and
+	  clean cache
+
+2009-05-30 18:15  philn
+
+	* coherence/base.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py: mirabeau:
+	  uuid based devices filtering (on tube publisher side)
+
+2009-05-30 18:15  philn
+
+	* coherence/dbus_service.py: new dbus device attribute: uuid
+
+2009-05-30 10:26  jmsizun
+
+	* coherence/backends/youtube_storage.py: add youtube thumbnail as
+	  AlbumArtURI
+
+2009-05-29 23:08  jmsizun
+
+	* coherence/backends/itv_storage.py: fixed iTV items beeing
+	  erroneously advertised as audio items instead of video items
+
+2009-05-29 23:04  jmsizun
+
+	* coherence/backends/flickr_storage.py: #234 : authenticate call to
+	  flickr.photos.getSizes
+
+2009-05-29 13:06  lightyear
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/MediaPlayer.py,
+	  misc/Rhythmbox-Plugin/upnp_coherence/MediaStore.py,
+	  misc/Rhythmbox-Plugin/upnp_coherence/__init__.py: clean up, typo
+	  and name-setting support
+
+2009-05-29 12:48  lightyear
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/__init__.py: use gconf so
+	  save uuid and allow settings, refs #232
+
+2009-05-28 13:18  lightyear
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/MediaPlayer.py: ref #189 :
+	  adding Next/Previous to rb player
+
+2009-05-28 12:48  lightyear
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/MediaPlayer.py: small fix
+	  for rb-plugin: allow to start playback when rb didn't play before
+
+2009-05-28 12:13  lightyear
+
+	* misc/Rhythmbox-Plugin/upnp_coherence/MediaStore.py: fix the
+	  rb-media-store: backend store wasn't initialized
+
+2009-05-24 08:03  philn
+
+	* coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/stream.py,
+	  coherence/extern/telepathy/tube.py: stream tubes support in
+	  Tube{Publisher,Consumer}
+
+2009-05-20 23:15  lightyear
+
+	* misc/media_server_observer.py: example script as test helper
+
+2009-05-17 15:22  philn
+
+	* coherence/base.py: mirabeau: store settings in config
+
+2009-05-12 21:35  philn
+
+	* coherence/base.py, coherence/dbus_constants.py,
+	  coherence/dbus_service.py, coherence/extern/telepathy,
+	  coherence/extern/telepathy/__init__.py,
+	  coherence/extern/telepathy/client.py,
+	  coherence/extern/telepathy/connect.py,
+	  coherence/extern/telepathy/mirabeau_tube_consumer.py,
+	  coherence/extern/telepathy/mirabeau_tube_publisher.py,
+	  coherence/extern/telepathy/tube.py,
+	  coherence/extern/telepathy/tubeconn.py, mirabeau_client.py:
+	  initial Mirabeau super-bridge bases checkin
+
+2009-05-12 20:45  dev
+
+	* Coherence.egg-info/PKG-INFO, coherence/__init__.py: bumping
+	  version to 0.6.5
+
+2009-05-12 20:37  dev
+
+	* ChangeLog, NEWS, coherence/__init__.py, setup.py: New in this -
+	  Pont Mirabeau - release:
+	  
+	  * new MediaServer backends that allow access to
+	  * Picasa Web Albums (http://picasa.google.com)
+	  * a TestServer to easily serve and test interaction with
+	  * one or more items and adjust 'upnp_class', 'mimetype' and
+	  'DLNA-flags',
+	  * items that are a GStreamer pipeline or an external program
+	  * a new - used in parallel - D-Bus API with an 'org.DLNA'
+	  interface
+	  with the goal to create a common API for all UPnP/DNLA frameworks
+	  * support for the dlna-playcontainer URI
+	  (http://netzflocken.de/2009/4/23/media-collection-playing-the-dlna-way)
+	  * enchancements to the GStreamer MediaRenderer, supporting now
+	  dlna-playcontainer and SetNextAVTransportURI, and jumping to
+	  previous
+	  and next tracks
+	  * support for video items served by Ampache (http://ampache.org)
+	  * base classes for a ScheduledRecording service
+	  * some 'compatibility' adjustments for different devices
+	  * and - as every time - the usual bugfixes and enhancements
+	  
+	  Kudos go to jmsizun, Stecchino, cjsmo, chewi, and lightyear.
+
+2009-05-12 20:08  dev
+
+	* coherence/backends/test_storage.py: small typo in docstring
 
 2009-05-12 20:08  dev
 
