@@ -1,4 +1,19 @@
 recursive-exclude debian *
+include ChangeLog
+include LICENCE
+include MANIFEST.in
+include NEWS
+include README
+recursive-include docs *
+recursive-include tests *
+recursive-include coherence/upnp/core/xml-service-descriptions *
+recursive-include coherence/ui/icons *
+include misc/coherence-initscript.sh
+include misc/media_server_observer.py
+include misc/upnp-tester.py
 recursive-include misc/device-icons *
-recursive-include misc/Totem-Plugin *
+recursive-include misc/Desktop-Applet *
+recursive-include misc/EOF-Plugin *
+recursive-include misc/Nautilus *
 recursive-include misc/Rhythmbox-Plugin *
+recursive-include misc/Totem-Plugin *

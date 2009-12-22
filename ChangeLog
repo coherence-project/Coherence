@@ -1,3 +1,7 @@
+2009-12-22 19:21  jmsizun
+
+	* add proper imports. fix #272
+
 2009-12-14 14:53  philn
 
 	* coherence/backends/banshee_storage.py: banshee: be a little more

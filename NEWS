@@ -1,3 +1,8 @@
+0.6.6.1 - Red-Nosed Reindeer Reloaded - 20091222
+
+ * fixing the broken tarball of the 0.6.6 release and
+   adding a missing import that made some backends unfeasible
+
 0.6.6 - Red-Nosed Reindeer - 20091220
 
  * new MediaServer backends that allow access to
@@ -26,7 +31,7 @@ Kudos go to Benjamin (lightyear) Kampmann,
             Jean-Michel (jmsizun) Sizun,
             Philippe (philn) Normand,
             Sebastian (sebp) Pölsterl,
-            Zaheer (zaheerm) Merali,
+            Zaheer (zaheerm) Merali
 
 0.6.4 - Pont Mirabeau - 20090512
 

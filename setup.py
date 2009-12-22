@@ -67,7 +67,7 @@ Kudos go to:
  * Friedrich (frinring) Kossebau,
  * Jean-Michel (jmsizun) Sizun,
  * Philippe (philn) Normand,
- * Sebastian (sebp) Pölsterl,
+ * Sebastian (sebp) Poelsterl,
  * Zaheer (zaheerm) Merali
 
 
