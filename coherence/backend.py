@@ -5,6 +5,7 @@
 
 # Copyright 2007,, Frank Scholz <coherence@beebits.net>
 
+import time
 from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
@@ -13,7 +14,7 @@ import coherence.extern.louie as louie
 
 from coherence.upnp.core.utils import getPage
 from coherence.extern.et import parse_xml
-
+from coherence.upnp.core import DIDLLite
 
 class Backend(log.Loggable,Plugin):
 
