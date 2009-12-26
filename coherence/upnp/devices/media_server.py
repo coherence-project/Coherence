@@ -24,8 +24,10 @@ from coherence.extern.et import ET, indent
 from coherence import __version__
 
 from coherence.upnp.core.service import ServiceServer
+from coherence.upnp.core import utils
 from coherence.upnp.core.utils import StaticFile
 from coherence.upnp.core.utils import ReverseProxyResource
+
 
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
@@ -51,6 +53,7 @@ class MSRoot(resource.Resource, log.Loggable):
         log.Loggable.__init__(self)
         self.server = server
         self.store = store
+
 
     #def delayed_response(self, resrc, request):
     #    print "delayed_response", resrc, request
@@ -191,6 +194,73 @@ class MSRoot(resource.Resource, log.Loggable):
             if self.children.has_key('xbox-description-1.xml'):
                 self.msg( 'returning xbox-description-1.xml')
                 return self.children['xbox-description-1.xml']
+
+        # resource http://XXXX/<deviceID>/config
+        # configuration for the given device
+        # accepted methods:
+        # GET, HEAD: returns the configuration data (in XML format)
+        # POST: stop the current device and restart it with the posted configuration data
+        if path in ('config'):
+            backend = self.server.backend
+            backend_type = backend.__class__.__name__
+            def constructConfigData(backend):
+                msg = "<plugin active=\"yes\">"
+                msg += "<backend>" + backend_type + "</backend>"
+                for key, value in backend.config.items():
+                    msg += "<" + key + ">" + value + "</" + key + ">"
+                msg += "</plugin>"
+                return msg
+            
+            if request.method in ('GET', 'HEAD'):
+                # the client wants to retrieve the configuration parameters for the backend             
+                msg = constructConfigData(backend)
+                request.setResponseCode(200)
+                return static.Data(msg,'text/xml')
+            elif request.method in ('POST'):
+                # the client wants to update the configuration parameters for the backend
+                # we relaunch the backend with the new configuration (after content validation)
+                
+                def convert_elementtree_to_dict (root):                   
+                    active = False
+                    for name, value in root.items():
+                        if name == 'active':
+                            if value in ('yes'):
+                                active = True
+                        break
+                    if active is False:
+                        return None
+                    dict = {}
+                    for element in root.getchildren():
+                        key = element.tag
+                        text = element.text
+                        if (key not in ('backend')):
+                            dict[key] = text
+                    return dict
+                
+                new_config = None
+                try:        
+                    element_tree = utils.parse_xml(request.content.getvalue(), encoding='utf-8')
+                    new_config = convert_elementtree_to_dict(element_tree.getroot())
+                    self.server.coherence.remove_plugin(self.server)
+                    self.warning("%s %s (%s) with id %s desactivated" % (backend.name, self.server.device_type, backend, str(self.server.uuid)[5:]))
+                    if new_config is None :
+                        msg = "<plugin active=\"no\"/>"
+                    else:
+                        new_backend = self.server.coherence.add_plugin(backend_type, **new_config)
+                        if (self.server.coherence.writeable_config()):
+                            self.server.coherence.store_plugin_config(new_backend.uuid, new_config)
+                            msg = "<html><p>Device restarted. Config file has been modified with posted data.</p></html>" #constructConfigData(new_backend)
+                        else:
+                            msg = "<html><p>Device restarted. Config file not modified</p></html>" #constructConfigData(new_backend)
+                    request.setResponseCode(202)
+                    return static.Data(msg,'text/html')#'text/xml')
+                except SyntaxError, e:
+                    request.setResponseCode(400)
+                    return static.Data("<html><p>Invalid data posted:<BR>%s</p></html>" % e,'text/html')                        
+            else:
+                # invalid method requested    
+                request.setResponseCode(405)
+                return static.Data("<html><p>This resource does not allow the requested HTTP method</p></html>",'text/html')
 
         if self.children.has_key(path):
             return self.children[path]
@@ -374,6 +444,7 @@ class MSRoot(resource.Resource, log.Loggable):
         if uri[-1] != '/':
             uri += '/'
         cl = '<p><a href=%s0>content</a></p>' % uri
+        cl += '<li><a href=%sconfig>config</a></li>' % uri
         for c in self.children:
                 cl += '<li><a href=%s%s>%s</a></li>' % (uri,c,c)
         return cl
@@ -633,4 +704,4 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                         self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
 
         self.register()
-        self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))
+        self.warning("%s %s (%s) activated with id %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))
