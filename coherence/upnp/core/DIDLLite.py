@@ -383,6 +383,8 @@ class Object(log.Loggable):
     date = None
     albumArtURI = None
     artist = None
+    genre = None
+    genres = None
     album = None
     originalTrackNumber=None
 
@@ -500,6 +502,13 @@ class Object(log.Loggable):
         if self.artist is not None:
             ET.SubElement(root, qname('artist',UPNP_NS)).text = self.artist
 
+        if self.genre is not None:
+            ET.SubElement(root, qname('genre',UPNP_NS)).text = self.genre
+
+        if self.genres is not None:
+            for genre in self.genres:
+                ET.SubElement(root, qname('genre',UPNP_NS)).text = genre
+
         if self.originalTrackNumber is not None:
             ET.SubElement(root, qname('originalTrackNumber',UPNP_NS)).text = str(self.originalTrackNumber)
 
@@ -547,6 +556,13 @@ class Object(log.Loggable):
                 self.longDescription = child.text
             elif child.tag.endswith('artist'):
                 self.artist = child.text
+            elif child.tag.endswith('genre'):
+                if self.genre != None:
+                    if self.genres == None:
+                        self.genres = [self.genre,]
+                    self.genres.append(child.text)
+                self.genre = child.text
+
             elif child.tag.endswith('album'):
                 self.album = child.text
             elif child.tag.endswith('class'):
@@ -575,8 +591,6 @@ class Item(Object):
     refID = None
 
     director = None
-    genre = None
-    genres = None
     actors = None
     language = None
 
@@ -592,13 +606,6 @@ class Item(Object):
 
         if self.refID is not None:
             ET.SubElement(root, 'refID').text = self.refID
-
-        if self.genre is not None:
-            ET.SubElement(root, qname('genre',UPNP_NS)).text = self.genre
-
-        if self.genres is not None:
-            for genre in self.genres:
-                ET.SubElement(root, qname('genre',UPNP_NS)).text = genre
 
         if self.actors is not None:
             for actor in self.actors:
@@ -688,7 +695,6 @@ class AudioItem(Item):
 
     upnp_class = Item.upnp_class + '.audioItem'
 
-    genre = None
     publisher = None
     language = None
     relation = None
@@ -701,9 +707,6 @@ class AudioItem(Item):
     def toElement(self,**kwargs):
 
         root = Item.toElement(self,**kwargs)
-
-        if self.genre is not None:
-            ET.SubElement(root, qname('genre',UPNP_NS)).text = self.genre
 
         if self.publisher is not None:
             ET.SubElement(root, qname('publisher',DC_NS)).text = self.publisher
