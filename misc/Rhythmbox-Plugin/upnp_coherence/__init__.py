@@ -8,7 +8,8 @@
 
 
 import rhythmdb, rb
-import gobject, gtk
+import gobject
+gobject.threads_init()
 
 import gconf
 
@@ -63,14 +64,15 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             gtk2reactor.install()
         except AssertionError, e:
             # sometimes it's already installed
-            print e
+            self.warning("gtk2reactor already installed %r" % e)
 
         self.coherence = self.get_coherence()
         if self.coherence is None:
-            print "Coherence is not installed or too old, aborting"
+            self.warning("Coherence is not installed or too old, aborting")
             return
 
-        print "coherence UPnP plugin activated"
+        self.warning("Coherence UPnP plugin activated")
+
         self.shell = shell
         self.sources = {}
 
@@ -78,7 +80,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         the_icon = None
         face_path = os.path.join(os.path.expanduser('~'), ".face")
         if os.path.exists(face_path):
-            file = gio.File(file=path_path);
+            file = gio.File(file=face_path);
             url = file.get_uri();
             info = file.query_info("standard::fast-content-type");
             mimetype = info.get_attribute_as_string("standard::fast-content-type");
@@ -166,7 +168,6 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             louie.connect(self.removed_media_server,
                     'Coherence.UPnP.ControlPoint.MediaServer.removed',
                     louie.Any)
-
 
     def deactivate(self, shell):
         self.info("Coherence UPnP plugin deactivated")
