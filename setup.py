@@ -43,7 +43,7 @@ digital living networks, at the moment primarily the DLNA/UPnP universe.
 Its objective and demand is to relieve your application from all the
 membership/the UPnP related tasks as much as possible.
 
-New in this %s - the Red-Nosed Reindeer Revolutions, - release
+New in this %s - the Red-Nosed Reindeer Revolutions - release
 
  * new MediaServer backends that allow access to
    * Banshee - exports audio and video files from Banshees media db (http://banshee-project.org/)

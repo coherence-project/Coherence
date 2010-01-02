@@ -1,3 +1,16 @@
+2010-01-02 14:09  dev
+
+	* adding all necessary files to MANIFEST.in, to compensate for the gone
+	  'auto-include-all-files-under-version-control' setuptools feature 
+
+2010-01-02 14:05  dev
+
+	* rearranging genre and genres attribute in DIDLLite - thx Caleb 
+
+2010-01-01 18:42  philn
+
+        * fix face_path typo, fixes #275
+
 2009-12-22 19:21  jmsizun
 
 	* add proper imports. fix #272
