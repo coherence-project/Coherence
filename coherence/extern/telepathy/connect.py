@@ -4,7 +4,7 @@
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
 import telepathy
-from telepathy.interfaces import CONN_MGR_INTERFACE
+from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER
 import dbus
 
 def to_dbus_account(account):
@@ -20,10 +20,7 @@ def to_dbus_account(account):
     return account
 
 def tp_connect(manager, protocol, account, ready_handler=None):
-    try:
-        account = to_dbus_account(account)
-    except:
-        pass
+    account = to_dbus_account(account)
     reg = telepathy.client.ManagerRegistry()
     reg.LoadManagers()
 
@@ -36,3 +33,13 @@ def tp_connect(manager, protocol, account, ready_handler=None):
                                                     ready_handler=ready_handler)
     return client_connection
 
+
+def gabble_accounts():
+    bus = dbus.SessionBus()
+    account_manager = bus.get_object(ACCOUNT_MANAGER,
+                                     '/org/freedesktop/Telepathy/AccountManager')
+
+    all_accounts = account_manager.FindAccounts({}, dbus_interface='com.nokia.AccountManager.Interface.Query')
+
+    gabble_accounts = [account for account in all_accounts if account.find("gabble") > -1]
+    return gabble_accounts

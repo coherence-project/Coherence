@@ -3,6 +3,9 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
+from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER, ACCOUNT
+import dbus
+
 from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
 from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisherConsumer
 from coherence.tube_service import TubeDeviceProxy
@@ -24,6 +27,15 @@ class Mirabeau(log.Loggable):
         # assume the user gave the right account parameters depending
         # on the specified protocol.
         account = config['account']
+
+        if isinstance(account, basestring):
+            bus = dbus.SessionBus()
+            account_obj = bus.get_object(ACCOUNT_MANAGER, account)
+            account = account_obj.Get(ACCOUNT, 'Parameters')
+
+        # FIXME: why isn't this info advertized ?
+        if manager == "gabble" and "fallback-conference-server" not in account:
+            account["fallback-conference-server"] = "conference.jabber.org"
 
         try:
             allowed_devices = config["allowed_devices"].split(",")
