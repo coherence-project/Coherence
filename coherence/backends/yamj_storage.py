@@ -75,6 +75,7 @@ class MovieItem(BackendItem):
         url_mimetype,_ = mimetypes.guess_type(self.movie_url,strict=False)
         if url_mimetype == None:
             url_mimetype = "video"
+
         
         self.name = self.title
         self.duration = None
@@ -211,7 +212,7 @@ class YamjStore(AbstractBackendStore):
         return dfr
       
 
-    def retrieveIndexMovies (self, parent, name, root_name, per_page=10, offset=0):
+    def retrieveIndexMovies (self, parent, name, root_name, per_page=10, page=0, offset=0):
         #print offset, per_page
         if self.nbMoviesPerFile is None:
             counter = 1

@@ -175,7 +175,7 @@ class MiroGuideStore(AbstractBackendStore):
         self.wmc_mapping = {'15': self.get_root_id()}
 
 
-    def retrieveChannels (self, parent, filter, filter_value, per_page=100, offset=0, count=0, sort='name'):
+    def retrieveChannels (self, parent, filter, filter_value, per_page=100, page=0, offset=0, count=0, sort='name'):
         filter_value = urllib.quote(filter_value.encode("utf-8"))
 
         limit = count
