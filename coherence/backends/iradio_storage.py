@@ -1,44 +1,130 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2007, Frank Scholz <coherence@beebits.net>
+# a Shoutcast radio media server for the Coherence UPnP Framework
+# (heavily revamped from the existing IRadio plugin)
 
-from twisted.internet import defer
+# Copyright 2007, Frank Scholz <coherence@beebits.net>
+# Copyright 2009-2010, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
+
+from twisted.internet import defer,reactor
+from twisted.python.failure import Failure
+from twisted.web import server
 
 from coherence.upnp.core import utils
 
-from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
+from coherence.upnp.core import DIDLLite
+from coherence.upnp.core.DIDLLite import classChooser, Resource, DIDLElement
+
+import coherence.extern.louie as louie
+
+from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
-from coherence.backend import BackendItem, BackendStore
+from coherence.backend import BackendItem, BackendStore, Container, LazyContainer, AbstractBackendStore
 
 from urlparse import urlsplit
 
-class ProxyStream(utils.ReverseProxyResource, log.Loggable):
-    logCategory = 'iradio'
+SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newxml.phtml'
+
+genre_families = {
+    # genre hierarchy created from http://forums.winamp.com/showthread.php?s=&threadid=303231
+    "Alternative" : ["Adult Alternative", "Britpop", "Classic Alternative", "College", "Dancepunk", "Dream Pop", "Emo", "Goth", "Grunge", "Indie Pop", "Indie Rock", "Industrial", "Lo-Fi", "Modern Rock", "New Wave", "Noise Pop", "Post-Punk", "Power Pop", "Punk", "Ska", "Xtreme"],
+    "Blues" : ["Acoustic Blues", "Chicago Blues", "Contemporary Blues", "Country Blues", "Delta Blues", "Electric Blues", "Cajun/Zydeco" ],
+    "Classical" : [ "Baroque", "Chamber", "Choral", "Classical Period", "Early Classical", "Impressionist", "Modern", "Opera", "Piano", "Romantic", "Symphony" ],
+    "Country" : ["Alt-Country", "Americana", "Bluegrass", "Classic Country", "Contemporary Bluegrass", "Contemporary Country", "Honky Tonk", "Hot Country Hits", "Western" ],
+    "Easy Listening" : ["Exotica", "Light Rock", "Lounge", "Orchestral Pop", "Polka", "Space Age Pop" ],
+    "Electronic" : ["Acid House", "Ambient", "Big Beat", "Breakbeat", "Dance", "Demo", "Disco", "Downtempo", "Drum and Bass", "Electro", "Garage", "Hard House", "House", "IDM", "Remixes", "Jungle", "Progressive", "Techno", "Trance", "Tribal", "Trip Hop" ],
+    "Folk" : ["Alternative Folk", "Contemporary Folk", "Folk Rock", "New Acoustic", "Traditional Folk", "World Folk" ],
+    "Themes" : ["Adult", "Best Of", "Chill", "Experimental", "Female", "Heartache", "LGBT", "Love/Romance", "Party Mix", "Patriotic", "Rainy Day Mix", "Reality", "Sexy", "Shuffle", "Travel Mix", "Tribute", "Trippy", "Work Mix" ],
+    "Rap" : ["Alternative Rap", "Dirty South", "East Coast Rap", "Freestyle", "Hip Hop", "Gangsta Rap", "Mixtapes", "Old School", "Turntablism", "Underground Hip-Hop", "West Coast Rap"],
+    "Inspirational" : ["Christian", "Christian Metal", "Christian Rap", "Christian Rock", "Classic Christian", "Contemporary Gospel", "Gospel", "Praise/Worship", "Sermons/Services", "Southern Gospel", "Traditional Gospel"  ],
+    "International" : ["African", "Afrikaans", "Arabic", "Asian", "Brazilian", "Caribbean", "Celtic", "European", "Filipino", "Greek", "Hawaiian/Pacific", "Hindi", "Indian", "Japanese", "Jewish",  "Klezmer", "Mediterranean", "Middle Eastern", "North American", "Polskie", "Polska", "Soca", "South American", "Tamil", "Worldbeat", "Zouk" ],
+    "Jazz" : ["Acid Jazz", "Avant Garde", "Big Band", "Bop", "Classic Jazz", "Cool Jazz", "Fusion", "Hard Bop", "Latin Jazz", "Smooth Jazz", "Swing", "Vocal Jazz", "World Fusion" ],
+    "Latin" : ["Bachata", "Banda", "Bossa Nova", "Cumbia", "Latin Dance", "Latin Pop", "Latin Rap/Hip-Hop", "Latin Rock", "Mariachi", "Merengue", "Ranchera", "Reggaeton", "Regional Mexican", "Salsa", "Tango", "Tejano", "Tropicalia"],
+    "Metal" : ["Black Metal", "Classic Metal", "Extreme Metal", "Grindcore", "Hair Metal", "Heavy Metal", "Metalcore", "Power Metal", "Progressive Metal", "Rap Metal" ],
+    "New Age" : ["Environmental", "Ethnic Fusion", "Healing", "Meditation", "Spiritual" ],
+    "Decades" : ["30s", "40s", "50s", "60s", "70s", "80s", "90s"],
+    "Pop" : ["Adult Contemporary", "Barbershop", "Bubblegum Pop", "Dance Pop", "Idols", "Oldies", "JPOP", "Soft Rock", "Teen Pop", "Top 40", "World Pop" ],
+    "R&B/Urban" : ["Classic R&B", "Contemporary R&B", "Doo Wop", "Funk", "Motown", "Neo-Soul", "Quiet Storm", "Soul", "Urban Contemporary", "Reggae", "Contemporary Reggae", "Dancehall", "Dub", "Pop-Reggae", "Ragga", "Rock Steady", "Reggae Roots"],
+    "Rock" : ["Adult Album Alternative", "British Invasion", "Classic Rock", "Garage Rock", "Glam", "Hard Rock", "Jam Bands", "Piano Rock", "Prog Rock", "Psychedelic", "Rock & Roll", "Rockabilly", "Singer/Songwriter", "Surf"],
+    "Seasonal/Holiday" : ["Anniversary", "Birthday", "Christmas", "Halloween", "Hanukkah", "Honeymoon", "Valentine", "Wedding", "Winter"],
+    "Soundtracks" : ["Anime", "Bollywood", "Kids", "Original Score", "Showtunes", "Video Game Music"],
+    "Talk" : ["Comedy", "Community", "Educational", "Government", "News", "Old Time Radio", "Other Talk", "Political", "Public Radio", "Scanner", "Spoken Word", "Sports", "Technology", "Hardcore", "Eclectic", "Instrumental" ],
+    "Misc" : [],
+}
+
+synonym_genres = {
+  # TODO: extend list with entries from "Misc" which are clearly the same
+  "24h" : ["24h", "24hs"],
+  "80s" : ["80s", "80er"],
+  "Acid Jazz" : ["Acid", "Acid Jazz"],
+  "Adult" : ["Adult", "Adulto"],
+  "Alternative" : ["Alt", "Alternativa", "Alternative", "Alternativo"],
+  "Francais" : ["Francais", "French"],
+  "Heavy Metal" : ["Heavy Metal", "Heavy", "Metal"],
+  "Hip Hop" : ["Hip", "Hop", "Hippop", "Hip Hop"],
+  "Islam" : [ "Islam", "Islamic"],
+  "Italy" : ["Italia", "Italian", "Italiana", "Italo", "Italy"],
+  "Latina" : ["Latin", "Latina", "Latino" ],
+}
+useless_title_content =[ 
+    # TODO: extend list with title expressions which are clearly useless
+    " - [SHOUTcast.com]"
+]
+useless_genres = [
+    # TODO: extend list with entries from "Misc" which are clearly useless
+    "genres", "go", "here",
+    "Her", "Hbwa"
+]
+
+
+class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
+    """ proxies audio streams published as M3U playlists (typically the case for shoutcast streams) """
+    logCategory = 'PlaylistStreamProxy'
+
+    stream_url = None
     
     def __init__(self, uri):
-        self.uri = uri
-        _,host_port,path,_,_ = urlsplit(uri)
-        if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
-            port = int(port)
-        else:
-            host = host_port
-            port = 80
+        self.stream_url = None
+        utils.ReverseProxyUriResource.__init__(self, uri)
 
-        if path == '':
-            path = '/'
-
-        #print "ProxyStream init", host, port, path
-        utils.ReverseProxyResource.__init__(self, host, port, path)
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        self.info("ProxyStream requestFinished")
-        self.connection.transport.loseConnection()
+        self.debug("ProxyStream requestFinished")
+        if self.connection is not None:
+            self.connection.transport.loseConnection()
 
     def render(self, request):
+
+        if self.stream_url is None:
+            def got_playlist(result):
+                if result is None:
+                    self.warning('Error to retrieve playlist - nothing retrieved')
+                    return requestFinished(result)
+                result = result[0].split('\n')
+                for line in result:
+                    if line.startswith('File1='):
+                        self.stream_url = line[6:]
+                        break
+                if self.stream_url is None:
+                    self.warning('Error to retrieve playlist - inconsistent playlist file')
+                    return requestFinished(result)
+                #self.resetUri(self.stream_url)
+                request.uri = self.stream_url
+                return self.render(request)
+            
+            def got_error(error):
+                self.warning('Error to retrieve playlist - unable to retrieve data')
+                self.warning(error)
+                return None
+                
+            playlist_url = self.uri           
+            d = utils.getPage(playlist_url, timeout=20)
+            d.addCallbacks(got_playlist, got_error)
+            return server.NOT_DONE_YET
+             
         self.info("this is our render method",request.method, request.uri, request.client, request.clientproto)
         self.info("render", request.getAllHeaders())
         if request.clientproto == 'HTTP/1.1':
@@ -51,292 +137,236 @@ class ProxyStream(utils.ReverseProxyResource, log.Loggable):
         else:
             d = request.notifyFinish()
             d.addBoth(self.requestFinished)
-        return utils.ReverseProxyResource.render(self, request)
+        return utils.ReverseProxyUriResource.render(self, request)
 
-class IRadioItem(log.Loggable):
+        
+class IRadioItem(BackendItem):
     logCategory = 'iradio'
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
-        self.id = id
-
-        self.name = obj.get('name')
+    def __init__(self, station_id, title, stream_url, mimetype):
+        self.station_id = station_id
+        self.name = title
         self.mimetype = mimetype
+        self.stream_url = stream_url
+        
+        self.location = PlaylistStreamProxy(self.stream_url)
+        
+        self.item = None
 
-        self.parent = parent
-        if parent:
-            parent.add_child(self,update=update)
 
-        if parent == None:
-            parent_id = -1
-        else:
-            parent_id = parent.get_id()
-
-        self.item = UPnPClass(id, parent_id, self.name)
-        if isinstance(self.item, Container):
-            self.item.childCount = 0
-        self.child_count = 0
-        self.children = None
-
-        if( len(urlbase) and urlbase[-1] != '/'):
-            urlbase += '/'
-
-        if self.mimetype == 'directory':
-            self.url = urlbase + str(self.id)
-        else:
-            self.url = urlbase + str(self.id)
-            self.location = ProxyStream(obj.get('url'))
-            #self.url = obj.get('url')
-
-        if self.mimetype == 'directory':
-            self.update_id = 0
-        else:
-            res = Resource(self.url, 'http-get:*:%s:%s' % (obj.get('mimetype'),
-                                                                     ';'.join(('DLNA.ORG_PN=MP3',
-                                                                               'DLNA.ORG_CI=0',
-                                                                               'DLNA.ORG_OP=01',
-                                                                               'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
+    def replace_by (self, item):
+        # do nothing: we suppose the replacement item is the same
+        return
+    
+    def get_item(self):
+        if self.item == None:
+            upnp_id = self.get_id()
+            upnp_parent_id = self.parent.get_id()
+            self.item = DIDLLite.AudioBroadcast(upnp_id, upnp_parent_id, self.name)
+            res = Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,
+                                                           ';'.join(('DLNA.ORG_PN=MP3',
+                                                                     'DLNA.ORG_CI=0',
+                                                                     'DLNA.ORG_OP=01',
+                                                                     'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
             res.size = 0 #None
             self.item.res.append(res)
-
-
-    def remove(self):
-        if self.parent:
-            self.parent.remove_child(self)
-        del self.item
-
-    def add_child(self, child, update=False):
-        if self.children == None:
-            self.children = []
-        self.children.append(child)
-        self.child_count += 1
-        if isinstance(self.item, Container):
-            self.item.childCount += 1
-        if update == True:
-            self.update_id += 1
-
-
-    def remove_child(self, child):
-        self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
-        if child in self.children:
-            self.child_count -= 1
-            if isinstance(self.item, Container):
-                self.item.childCount -= 1
-            self.children.remove(child)
-            self.update_id += 1
-
-    def get_children(self,start=0,request_count=0):
-        if self.children == None:
-            def got_page(result):
-                result = utils.parse_xml(result, encoding='utf-8')
-                tunein = result.find('tunein')
-                if tunein != None:
-                    tunein = tunein.get('base','/sbin/tunein-station.pls')
-                prot,host_port,path,_,_ = urlsplit(self.store.config.get('genrelist','http://www.shoutcast.com/sbin/newxml.phtml'))
-                tunein = prot + '://' + host_port + tunein
-
-                def append_new(result, s):
-                    result = result[0].split('\n')
-                    for line in result:
-                        if line.startswith('File1='):
-                            s['url'] = line[6:]
-                            self.store.append(s,self)
-                            break
-
-                l = []
-                for station in result.findall('station'):
-                    if station.get('mt') == 'audio/mpeg':
-                        d2 = utils.getPage('%s?id=%s' % (tunein, station.get('id')), timeout=20)
-                        d2.addCallback(append_new, {'name':station.get('name').encode('utf-8'),
-                                                    'mimetype':station.get('mt'),
-                                                    'id':station.get('id'),
-                                                    'url':None})
-                        d2.addErrback(got_error)
-                        l.append(d2)
-                dl = defer.DeferredList(l)
-
-                def process_items(result):
-                    self.info("process_item", result, self.children)
-                    if self.children == None:
-                        return  []
-                    if request_count == 0:
-                        return self.children[start:]
-                    else:
-                        return self.children[start:request_count]
-
-                dl.addCallback(process_items)
-                return dl
-
-            def got_error(error):
-                self.warning("connection to ShoutCast service failed! %r", error)
-                self.debug("%r", error.getTraceback())
-
-            d = utils.getPage('%s?genre=%s' % (self.store.config.get('genrelist','http://www.shoutcast.com/sbin/newxml.phtml'),self.name))
-            d.addCallbacks(got_page, got_error, None, None, None, None)
-            return d
-        else:
-            if request_count == 0:
-                return self.children[start:]
-            else:
-                return self.children[start:request_count]
-
-    def get_child_count(self):
-        return self.child_count
-
-    def get_id(self):
-        return self.id
-
-    def get_update_id(self):
-        if hasattr(self, 'update_id'):
-            return self.update_id
-        else:
-            return None
-
-    def get_path(self):
-        return self.url
-
-    def get_name(self):
-        return self.name
-
-    def get_parent(self):
-        return self.parent
-
-    def get_item(self):
         return self.item
 
-    def get_xml(self):
-        return self.item.toString()
+    def get_path(self):
+        self.url = self.store.urlbase + str(self.storage_id)
+        return self.url
 
-    def __repr__(self):
-        return 'id: ' + str(self.id) + ' @ ' + self.url + ' ' + self.name
-
-class IRadioStore(BackendStore):
+    def get_id(self):
+        return self.storage_id
+    
+    
+class IRadioStore(AbstractBackendStore):
 
     logCategory = 'iradio'
 
     implements = ['MediaServer']
 
+    genre_parent_items = {} # will list the parent genre for every given genre
+    
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
-        self.next_id = 1000
-        self.config = kwargs
+        AbstractBackendStore.__init__(self,server,**kwargs)
+ 
         self.name = kwargs.get('name','iRadioStore')
+        self.refresh = int(kwargs.get('refresh',60))*60
 
-        self.update_id = 0
+        self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
+        
+        # set root item
+        root_item = Container(None, self.name)
+        self.set_root_item(root_item)
 
-        self.wmc_mapping = {'4': 1000}
+        # set root-level genre family containers
+        # and populate the genre_parent_items dict from the family hierarchy information
+        for family, genres in genre_families.items():
+            family_item = self.append_genre(root_item, family)           
+            if family_item is not None:
+                self.genre_parent_items[family] = root_item
+                for genre in genres:
+                    self.genre_parent_items[genre] = family_item
+        
+        # retrieve asynchronously the list of genres from the souhtcast server
+        # genres not already attached to a family will be attached to the "Misc" family           
+        self.retrieveGenreList_attemptCount = 0
+        deferredRoot = self.retrieveGenreList()
+        # self.init_completed() # will be fired when the genre list is retrieved
 
-
-        self.store = {}
-
-        self.init_completed()
-
+    def append_genre(self, parent, genre):
+        if genre in useless_genres:
+            return None
+        if synonym_genres.has_key(genre):
+            same_genres = synonym_genres[genre]
+        else:
+            same_genres = [genre]
+        title = genre.encode('utf-8')     
+        family_item = LazyContainer(parent, title, genre, self.refresh, self.retrieveItemsForGenre, genres=same_genres, per_page=1)
+        # we will use a specific child items sorter
+        # in order to get the sub-genre containers first
+        def childs_sort(x,y):
+            if x.__class__ == y.__class__:
+                return cmp(x.name,y.name) # same class, we compare the names
+            else:
+                # the IRadioItem is deemed the lowest item class,
+                # other classes are compared by name (as usual)
+                if isinstance(x, IRadioItem):
+                        return 1
+                elif isinstance(y, IRadioItem):
+                    return -1
+                else:
+                    return cmp(x.name,y.name)
+        family_item.sorting_method = childs_sort
+        
+        parent.add_child(family_item, external_id=genre)
+        return family_item
 
     def __repr__(self):
         return self.__class__.__name__
 
-    def append( self, obj, parent):
-        if isinstance(obj, basestring):
-            mimetype = 'directory'
-        else:
-            mimetype = obj['mimetype']
-
-        UPnPClass = classChooser(mimetype)
-        id = self.getnextID()
-        update = False
-        if hasattr(self, 'update_id'):
-            update = True
-
-        self.store[id] = IRadioItem( id, obj, parent, mimetype, self.urlbase,
-                                        UPnPClass, update=update)
-        self.store[id].store = self
-        if hasattr(self, 'update_id'):
-            self.update_id += 1
-            if self.server:
-                self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-            if parent:
-                #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
-                if self.server:
-                    self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
-
-        if mimetype == 'directory':
-            return self.store[id]
-
-        return None
-
-    def len(self):
-        return len(self.store)
-
-    def get_by_id(self,id):
-        if isinstance(id, basestring):
-            id = id.split('@',1)
-            id = id[0]
-        try:
-            id = int(id)
-        except ValueError:
-            id = 1000
-
-        if id == 0:
-            id = 1000
-        try:
-            return self.store[id]
-        except:
-            return None
-
-    def getnextID(self):
-        ret = self.next_id
-        self.next_id += 1
-        return ret
 
     def upnp_init(self):
         self.current_connection_id = None
-        #parent = self.append('iRadio', None)
 
-        #self.append({'name':'GrooveFM','mimetype':'audio/mpeg','url':'http://80.252.111.34:10028/'}, parent)
-        #self.append({'name':'Dancing Queen','mimetype':'audio/mpeg','url':'http://netzflocken.de/files/dq.mp3'}, parent)
-
-        parent = self.append({'name':'iRadio','mimetype':'directory'}, None)
-
-        def got_page(result):
-            result = utils.parse_xml(result, encoding='utf-8')
-            for genre in result.findall('genre'):
-                self.append({'name':genre.get('name').encode('utf-8'),
-                             'mimetype':'directory',
-                             'url':'%s?genre=%s' % (self.config.get('genrelist','http://www.shoutcast.com/sbin/newxml.phtml'),genre.get('name'))},parent)
-
-        def got_error(error):
-            self.warning("connection to ShoutCast service failed! %r", error)
-            self.debug("%r", error.getTraceback())
-
-        utils.getPage(self.config.get('genrelist','http://www.shoutcast.com/sbin/newxml.phtml')).addCallbacks(got_page, got_error, None, None, None, None)
+        self.wmc_mapping = {'4': self.get_root_id()}
 
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:audio/mpeg:*',
                                                                      'http-get:*:audio/x-scpls:*'],
-                                                                    default=True)
-
-def main():
-
-    f = IRadioStore(None)
-
-    def got_upnp_result(result):
-        print "upnp", result
-
-    f.upnp_init()
-    #print f.store
-    #r = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
-    #                    RequestedCount=0,
-    #                    StartingIndex=0,
-    #                    ObjectID=0,
-    #                    SortCriteria='*',
-    #                    Filter='')
-    #got_upnp_result(r)
+                                                                     default=True)
 
 
-if __name__ == '__main__':
+    # populate a genre container (parent) with the sub-genre containers
+    # and corresponding IRadio (list retrieved from the shoutcast server)
+    def retrieveItemsForGenre (self, parent, genres, per_page=1, offset=0, page=0):
+        genre = genres[page]
+        if page < len(genres)-1:
+            parent.childrenRetrievingNeeded = True
+        url = '%s?genre=%s' % (self.shoutcast_ws_url, genre)
 
-    from twisted.internet import reactor
+        if genre_families.has_key(genre):
+            family_genres = genre_families[genre]
+            for family_genre in family_genres:
+                self.append_genre(parent, family_genre)
+        
+        def got_page(result):
+            self.info('connection to ShoutCast service successful for genre %s' % genre)
+            result = utils.parse_xml(result, encoding='utf-8')
+            tunein = result.find('tunein')
+            if tunein != None:
+                tunein = tunein.get('base','/sbin/tunein-station.pls')
+            prot,host_port,path,_,_ = urlsplit(self.shoutcast_ws_url)
+            tunein = prot + '://' + host_port + tunein
 
-    reactor.callWhenRunning(main)
-    reactor.run()
+            stations = {}
+            for stationResult in result.findall('station'):
+                mimetype = stationResult.get('mt')
+                station_id = stationResult.get('id')
+                bitrate = stationResult.get('br')
+                name = stationResult.get('name').encode('utf-8')
+                # remove useless substrings (eg. '[Shoutcast.com]' ) from title
+                for substring in useless_title_content:
+                    name = name.replace(substring, "")
+                lower_name = name.lower()
+                url = '%s?id=%s' % (tunein, stationResult.get('id'))
+                
+                sameStation = stations.get(lower_name)
+                if sameStation == None or bitrate>sameStation['bitrate']:
+                    station = {'name':name,                                               
+                               'station_id':station_id,
+                               'mimetype':mimetype,
+                               'id':station_id,
+                               'url':url,
+                               'bitrate':bitrate }
+                    stations[lower_name] = station
+            
+            for station in stations.values():
+                station_id = station.get('station_id')
+                name = station.get('name')
+                url =  station.get('url')
+                mimetype = station.get('mimetype')
+                item = IRadioItem(station_id, name, url, mimetype)
+                parent.add_child(item, external_id = station_id)
+            
+            return True
+
+
+        def got_error(error):
+            self.warning("connection to ShoutCast service failed: %s" % url)
+            self.debug("%r", error.getTraceback())
+            parent.childrenRetrievingNeeded = True # we retry
+            return Failure("Unable to retrieve stations for genre" % genre)
+            
+        d = utils.getPage(url)
+        d.addCallbacks(got_page, got_error)
+        return d
+    
+
+    # retrieve the whole list of genres from the shoutcast server
+    # to complete the population of the genre families classification
+    # (genres not previously classified are put into the "Misc" family)
+    # ...and fire mediaserver init completion
+    def retrieveGenreList(self):
+ 
+        def got_page(result):
+            if self.retrieveGenreList_attemptCount == 0:
+                self.info("Connection to ShoutCast service successful for genre listing")
+            else:
+                self.warning("Connection to ShoutCast service successful for genre listing after %d attempts." % self.retrieveGenreList_attemptCount)
+            result = utils.parse_xml(result, encoding='utf-8')
+            
+            genres = {}
+            main_synonym_genre = {}
+            for main_genre, sub_genres in synonym_genres.items():
+                genres[main_genre] = sub_genres
+                for genre in sub_genres:
+                    main_synonym_genre[genre] = main_genre
+                    
+            for genre in result.findall('genre'):
+                name = genre.get('name')
+                if name not in main_synonym_genre:
+                    genres[name] = [name]
+                    main_synonym_genre[name] = name
+
+            for main_genre, sub_genres in genres.items():
+                if not self.genre_parent_items.has_key(main_genre):
+                    genre_families["Misc"].append(main_genre)
+            
+            self.init_completed()                
+
+        def got_error(error):
+            self.warning("connection to ShoutCast service for genre listing failed - Will retry! %r", error)
+            self.debug("%r", error.getTraceback())
+            self.retrieveGenreList_attemptCount += 1
+            reactor.callLater(5, self.retrieveGenreList)
+        
+        d = utils.getPage(self.shoutcast_ws_url)
+        d.addCallback(got_page)
+        d.addErrback(got_error)
+        return d
+  
+    
+
