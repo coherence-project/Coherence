@@ -16,7 +16,7 @@ try:
     import feedparser
 except:
     raise ImportError("""
-        This backend depends on the feedparser modul.
+        This backend depends on the feedparser module.
         You can get it at http://www.feedparser.org/.""")
 
 MIME_TYPES_EXTENTION_MAPPING = {'mp3': 'audio/mpeg',}
