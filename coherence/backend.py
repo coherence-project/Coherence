@@ -610,3 +610,6 @@ class AbstractBackendStore (BackendStore):
         ret = self.next_id
         self.next_id += 1
         return ret
+
+    def __repr__(self):
+        return self.__class__.__name__
