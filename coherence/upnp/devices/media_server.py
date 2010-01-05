@@ -112,6 +112,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
                 dfr = defer.maybeDeferred(self.store.get_by_id, path)
                 dfr.addCallback(got_item)
+                dfr.isLeaf = True
                 return dfr
 
             if ATTACHMENT_REQUEST_INDICATOR.match(request.uri):
@@ -142,6 +143,7 @@ class MSRoot(resource.Resource, log.Loggable):
                         return static.Data('<html><p>the requested attachment was not found</p></html>','text/html')
                 dfr = defer.maybeDeferred(self.store.get_by_id, path)
                 dfr.addCallback(got_attachment)
+                dfr.isLeaf = True
                 return dfr
         #if(request.method in ('GET','HEAD') and
         #   XBOX_TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
@@ -170,6 +172,7 @@ class MSRoot(resource.Resource, log.Loggable):
                         return static.Data('<html><p>the requested transcoded file was not found</p></html>','text/html')
                 dfr = defer.maybeDeferred(self.store.get_by_id, path)
                 dfr.addCallback(got_stuff_to_transcode)
+                dfr.isLeaf = True
                 return dfr
 
             request.setResponseCode(404)
@@ -180,6 +183,7 @@ class MSRoot(resource.Resource, log.Loggable):
             d = self.import_file(path,request)
             if isinstance(d, defer.Deferred):
                 d.addBoth(self.import_response,path)
+                d.isLeaf = True
                 return d
             return self.import_response(None,path)
 
