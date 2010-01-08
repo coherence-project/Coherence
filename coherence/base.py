@@ -226,7 +226,7 @@ class Coherence(log.Loggable):
         self.cls._instance_ = None
 
     def setup(self, config={}):
-        self._mirabeau = None
+        self.mirabeau = None
 
         self.devices = []
         self.children = {}
@@ -421,9 +421,9 @@ class Coherence(log.Loggable):
                     except KeyError:
                         pass
 
-                    self._mirabeau = mirabeau.Mirabeau(mirabeau_cfg, self)
+                    self.mirabeau = mirabeau.Mirabeau(mirabeau_cfg, self)
                     self.add_web_resource('mirabeau', MirabeauProxy())
-                    self._mirabeau.start()
+                    self.mirabeau.start()
 
     def add_plugin(self, plugin, **kwargs):
         self.info("adding plugin %r", plugin)
@@ -521,9 +521,9 @@ class Coherence(log.Loggable):
         if self._incarnations_ > 1:
             self._incarnations_ -= 1
             return
-        if self._mirabeau is not None:
-            self._mirabeau.stop()
-            self._mirabeau = None
+        if self.mirabeau is not None:
+            self.mirabeau.stop()
+            self.mirabeau = None
         for backend in self.active_backends.itervalues():
             backend.unregister()
         self.active_backends = {}

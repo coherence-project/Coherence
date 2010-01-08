@@ -43,13 +43,13 @@ class Mirabeau(log.Loggable):
         callbacks = dict(found_peer_callback=self.found_peer,
                          disapeared_peer_callback=self.disapeared_peer,
                          got_devices_callback=self.got_devices)
-        self._tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
-                                                             account, chatroom,
-                                                             conference_server,
-                                                             tubes_to_offer,
-                                                             self._coherence,
-                                                             allowed_devices,
-                                                             **callbacks)
+        self.tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
+                                                            account, chatroom,
+                                                            conference_server,
+                                                            tubes_to_offer,
+                                                            self._coherence,
+                                                            allowed_devices,
+                                                            **callbacks)
 
     def found_peer(self, peer):
         print "found", peer
@@ -66,7 +66,7 @@ class Mirabeau(log.Loggable):
                                                       external_address))
 
     def start(self):
-        self._tube_publisher.start()
+        self.tube_publisher.start()
 
     def stop(self):
-        self._tube_publisher.stop()
+        self.tube_publisher.stop()
