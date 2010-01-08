@@ -46,7 +46,6 @@ class Config(ConfigItem):
         f.close()
 
     def get(self,key,default=None):
-        print "get", key
         if key in self.config:
             item = self.config[key]
             try:
