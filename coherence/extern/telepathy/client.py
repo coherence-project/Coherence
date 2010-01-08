@@ -32,7 +32,7 @@ class Client(log.Loggable):
     logCategory = "tp_client"
 
     def __init__(self, manager, protocol,
-                 account, muc_id, existing_client=False):
+                 account, muc_id, conference_server=None, existing_client=False):
         log.Loggable.__init__(self)
         self.account = account
         self.existing_client = existing_client
@@ -51,7 +51,7 @@ class Client(log.Loggable):
             if protocol == 'local-xmpp':
                 self.muc_id = muc_id
             else:
-                self.muc_id = "%s@%s" % (muc_id, self.account["fallback-conference-server"])
+                self.muc_id = "%s@%s" % (muc_id, conference_server)
             self.conn = tp_connect(manager, protocol, account, self.ready_cb)
         conn_obj = self.conn[CONN_INTERFACE]
         conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)

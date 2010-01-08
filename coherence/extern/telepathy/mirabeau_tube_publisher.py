@@ -105,7 +105,7 @@ class MirabeauTubePublisherConsumer(MirabeauTubePublisherMixin,
                                     client.Client):
     logCategory = "mirabeau_tube_publisher"
 
-    def __init__(self, manager, protocol, account, muc_id, tubes_to_offer,
+    def __init__(self, manager, protocol, account, muc_id, conference_server, tubes_to_offer,
                  application, allowed_devices, found_peer_callback=None,
                  disapeared_peer_callback=None, got_devices_callback=None):
         MirabeauTubePublisherMixin.__init__(self, tubes_to_offer, application,
@@ -114,7 +114,7 @@ class MirabeauTubePublisherConsumer(MirabeauTubePublisherMixin,
                                                                   found_peer_callback=found_peer_callback,
                                                                   disapeared_peer_callback=disapeared_peer_callback,
                                                                   got_devices_callback=got_devices_callback)
-        client.Client.__init__(self, manager, protocol, account, muc_id)
+        client.Client.__init__(self, manager, protocol, account, muc_id, conference_server)
 
     def got_tube(self, tube):
         client.Client.got_tube(self, tube)

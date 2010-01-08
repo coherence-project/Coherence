@@ -44,9 +44,9 @@ class TubePublisherMixin(object):
 class TubePublisher(TubePublisherMixin, Client):
     logCategory = "tube_publisher"
 
-    def __init__(self, manager, protocol, account, muc_id, tubes_to_offer):
+    def __init__(self, manager, protocol, account, muc_id, conference_server, tubes_to_offer):
         TubePublisherMixin.__init__(self, tubes_to_offer)
-        Client.__init__(self, manager, protocol, account, muc_id)
+        Client.__init__(self, manager, protocol, account, muc_id, conference_server)
 
 
 class TubeConsumerMixin(object):
@@ -79,8 +79,8 @@ class TubeConsumer(TubeConsumerMixin, Client):
     logCategory = "tube_consumer"
 
     def __init__(self, manager, protocol,
-                 account, muc_id, found_peer_callback=None,
+                 account, muc_id, conference_server, found_peer_callback=None,
                  disapeared_peer_callback=None):
         TubeConsumerMixin.__init__(self, found_peer_callback=found_peer_callback,
                                    disapeared_peer_callback=disapeared_peer_callback)
-        Client.__init__(self, manager, protocol, account, muc_id)
+        Client.__init__(self, manager, protocol, account, muc_id, conference_server)

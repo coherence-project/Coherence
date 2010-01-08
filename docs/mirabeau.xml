@@ -4,6 +4,7 @@
   <enable_mirabeau>yes</enable_mirabeau>
   <mirabeau>
    <chatroom>Mirabeau</chatroom>
+   <conference-server>conference.jabber.org</conference-server>
    <manager>gabble</manager>
    <protocol>jabber</protocol>
    <account>
@@ -14,7 +15,6 @@
       <port>5223</port>
       <old-ssl>True</old-ssl>
       <ignore-ssl-errors>True</ignore-ssl-errors>
-      <fallback-conference-server>conference.jabber.org</fallback-conference-server>
    </account>
    <!-- <allowed_devices> -->
    <!--   33d68364-5bee-4dee-9ede-52afdd7baeaf,33d68364-5bee-4dee-9ede-52afdd7beeaf -->

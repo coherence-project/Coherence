@@ -3,7 +3,7 @@
 
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
-from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER, ACCOUNT
+from telepathy.interfaces import ACCOUNT_MANAGER, ACCOUNT
 import dbus
 
 from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
@@ -20,6 +20,7 @@ class Mirabeau(log.Loggable):
         self._coherence = coherence_instance
 
         chatroom = config['chatroom']
+        conference_server = config['conference-server']
         manager = config['manager']
         protocol = config['protocol']
 
@@ -33,10 +34,6 @@ class Mirabeau(log.Loggable):
             account_obj = bus.get_object(ACCOUNT_MANAGER, account)
             account = account_obj.Get(ACCOUNT, 'Parameters')
 
-        # FIXME: why isn't this info advertized ?
-        if manager == "gabble" and "fallback-conference-server" not in account:
-            account["fallback-conference-server"] = "conference.jabber.org"
-
         try:
             allowed_devices = config["allowed_devices"].split(",")
         except KeyError:
@@ -48,6 +45,7 @@ class Mirabeau(log.Loggable):
                          got_devices_callback=self.got_devices)
         self._tube_publisher = MirabeauTubePublisherConsumer(manager, protocol,
                                                              account, chatroom,
+                                                             conference_server,
                                                              tubes_to_offer,
                                                              self._coherence,
                                                              allowed_devices,

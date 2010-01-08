@@ -111,14 +111,14 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
 class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
     logCategory = "mirabeau_tube_consumer"
 
-    def __init__(self, manager, protocol, account, muc_id,
+    def __init__(self, manager, protocol, account, muc_id, conference_server,
                  found_peer_callback=None, disapeared_peer_callback=None,
                  got_devices_callback=None):
         MirabeauTubeConsumerMixin.__init__(self,
                                            found_peer_callback=found_peer_callback,
                                            disapeared_peer_callback=disapeared_peer_callback,
                                            got_devices_callback=got_devices_callback)
-        client.Client.__init__(self, manager, protocol, account, muc_id)
+        client.Client.__init__(self, manager, protocol, account, muc_id, conference_server)
 
     def got_tube(self, tube):
         client.Client.got_tube(self, tube)
