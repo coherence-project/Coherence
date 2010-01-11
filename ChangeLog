@@ -1,3 +1,16 @@
+2010-01-02 14:09  dev
+
+        * adding all necessary files to MANIFEST.in, to compensate for the gone
+          'auto-include-all-files-under-version-control' setuptools feature
+
+2010-01-02 14:05  dev
+
+        * rearranging genre and genres attribute in DIDLLite - thx Caleb
+
+2010-01-01 18:42  philn
+
+	* fix face_path typo, fixes #275
+
 2009-12-22 19:21  jmsizun
 
 	* add proper imports. fix #272
@@ -323,13 +336,13 @@
 
 	* coherence/backends/fs_storage.py: experimenting with an options
 	  system provided by the backend itself
-	  
+
 	  Each backend shall provide class attributes ''description'' and
 	  ''options'' - ''descriptions'' being just a string, ''options''
 	  is a list of option dictionaries.
-	  
+
 	  The values of these dicts are:
-	  
+
 	  ''option'':: name of that option
 	  ''type'':: string or int
 	  ''default'':: default value, should be of type ''type''
@@ -339,18 +352,18 @@
 	  ''help'':: a (short) text describing this option (optional)
 	  ''level'':: the level of this option - ''normal'' or ''advance''
 	  (optional)
-	  
+
 	  Anything else?
-	  
+
 	  Accessing these attributes is like that:
-	  
+
 	  {{{
 	  >>> from coherence.base import Plugins
 	  >>> p = Plugins()
 	  >>> p['FSStore'].options
 	  [{'default': 'my media', 'type': 'string', 'key': 'name'}, ...]
 	  }}}
-	  
+
 	  The Plugins class is a dict, so p.items() returns the backend
 	  identifiers as keys and their classes as values.
 
@@ -419,7 +432,7 @@
 2009-10-06 19:12  dev
 
 	* coherence/json.py: adding first JSON calls:
-	  
+
 	  * `http://host:port/json/devices` returns a list of device dicts
 	  * `!http://host:port/json/<uuid>/<service>/<action>?arguments`
 	  returns the result of the action call as a dict of the out
@@ -516,7 +529,7 @@
 	  coherence/backends/feed_storage.py: adding my feed storage
 	  backend
 	  to use it add something like the following to your configuration
-	  
+
 	  <plugin active="yes">
 	  <backend>FeedStore</backend>
 	  <opml_url>http://www.swr3.de/rdf-feed/podcast/</opml_url>
@@ -552,7 +565,7 @@
 	* coherence/backends/fs_storage.py,
 	  coherence/upnp/devices/media_server.py: support for subtitles -
 	  Samsung style - addresses #248
-	  
+
 	  Works so far with the FSStore backend, if there is a filename.srt
 	  file we'll add that as an additional resource (maybe we can use
 	  that one day for some other device) and make it accessible via an
@@ -626,7 +639,7 @@
 2009-09-09 11:41  dev
 
 	* bin/coherence: making daemon mode work again, closes #230
-	  
+
 	  Nevertheless we should consider using
 	  http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
 
@@ -729,7 +742,7 @@
 	  coherence/upnp/devices/media_server_client.py,
 	  coherence/web/ui.py, mirabeau_client.py, tw_mirabeau_test.py:
 	  nice device type and version helpers
-	  
+
 	  From ea4155ed98daef846fe9895cdefdcc98a8f089b2 Mon Sep 17 00:00:00
 	  2001
 	  From: Benjamin Kampmann <ben.kampmann@googlemail.com>
@@ -738,7 +751,7 @@
 	  - friendly_device_type to device
 	  - device_type_version
 	  - get_device_markup
-	  
+
 	  ---
 	  coherence/upnp/core/device.py | 20 +++++++++++++++++++-
 	  coherence/web/ui.py | 34 ++++++++++++++++++-------------
@@ -880,7 +893,7 @@
 	  coherence/upnp/devices/control_point.py: adding the missing
 	  pieces to allow access from outside the local lan to MediaServer
 	  items exported via MiraBeau
-	  
+
 	  For now we need an element
 	  ''<external_address>ip:port</external_address>'' in the mirabeau
 	  config section. This will in a next phase be extended with UPnP
@@ -1036,7 +1049,7 @@
 	* coherence/dispatcher.py, coherence/extern/louie.py,
 	  coherence/test/test_dispatching.py: You shall not commit when you
 	  are not done adding:
-	  
+
 	  Replacing louie with the new signaling dispatching system of pure
 	  AWESOMENESS
 
@@ -1303,7 +1316,7 @@
 
 	* ChangeLog, NEWS, coherence/__init__.py, setup.py: New in this -
 	  Pont Mirabeau - release:
-	  
+
 	  * new MediaServer backends that allow access to
 	  * Picasa Web Albums (http://picasa.google.com)
 	  * a TestServer to easily serve and test interaction with
@@ -1323,7 +1336,7 @@
 	  * base classes for a ScheduledRecording service
 	  * some 'compatibility' adjustments for different devices
 	  * and - as every time - the usual bugfixes and enhancements
-	  
+
 	  Kudos go to jmsizun, Stecchino, cjsmo, chewi, and lightyear.
 
 2009-05-12 20:08  dev
@@ -1470,7 +1483,7 @@
 	  coherence/backends/gstreamer_renderer.py,
 	  docs/test-store-example.xml: inquire the ignore pattern first
 	  before reacting upon an inotify event and adding a new file
-	  
+
 	  closes #203
 
 2009-04-14 11:32  dev
@@ -1498,14 +1511,14 @@
 	* docs/man, docs/man/coherence.1,
 	  misc/Desktop-Applet/applet-coherence.1: man-pages for
 	  /usr/bin/coherence and /usr/bin/applet-coherence - thx cjsmo!
-	  
+
 	  The is a new docs/man folder for the coherence.1 file, maybe
 	  we'll have some time some more there.
-	  
+
 	  The applet-coherence.1 file is included in the
 	  misc/Desktop-Applet folder, doesn't make sense to install it
 	  without the applet itself.
-	  
+
 	  Closes #199
 
 2009-04-09 20:31  jmsizun
@@ -1675,7 +1688,7 @@
 	* ChangeLog, Coherence.egg-info/PKG-INFO, MANIFEST.in, NEWS,
 	  coherence/__init__.py, setup.py: New in this 0.6.2 - Rosenmontag
 	  - release
-	  
+
 	  * new MediaServer backends that allow access to
 	  * YouTube videos (http://youtube.com)
 	  * the MiroGuide for online videos (https://www.miroguide.com)
@@ -1688,7 +1701,7 @@
 	  (http://www.openembedded.org/),
 	  bringing Coherence to the BeagleBoard (http://beagleboard.org/)
 	  * and - as every time - the usual bugfixes and enhancements
-	  
+
 	  Kudos go especially to jmsizun for his work on the new backends!
 
 2009-02-23 19:54  dev
@@ -2054,7 +2067,7 @@
 	  coherence/extern/youtubedl, coherence/upnp/core/utils.py,
 	  setup.py: a modified version of [ticket:173 jmsizuns YouTube
 	  backend], only partial working atm
-	  
+
 	  needs a current version of
 	  [http://code.google.com/p/gdata-python-client Google Data APIs
 	  Python Client Library]
@@ -2196,7 +2209,7 @@
 
 	* coherence/extern/inotify.py: incorporating dialtones changes and
 	  tests - thx!
-	  
+
 	  Closes #180
 
 2009-01-13 15:33  dev
@@ -2239,4 +2252,3 @@
 	* ., ChangeLog, Coherence.egg-info, LICENCE, MANIFEST.in, NEWS,
 	  README, bin, coherence, docs, misc, setup.py, tests: rearranging
 	  layout
-

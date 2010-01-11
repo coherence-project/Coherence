@@ -62,6 +62,7 @@ New in this %s - the Red-Nosed Reindeer - release
 Kudos go to:
 
  * Benjamin (lightyear) Kampmann,
+ * Charlie (porthose) Smotherman
  * Dominik (schrei5) Ruf,
  * Frank (dev) Scholz,
  * Friedrich (frinring) Kossebau,
