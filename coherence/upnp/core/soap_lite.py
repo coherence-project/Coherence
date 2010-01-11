@@ -95,7 +95,10 @@ def build_soap_call(method, arguments, is_response=False,
             if arg_type == 'xsd:int' or arg_type == 'xsd:float':
                 arg_val = str(arg_val)
             if arg_type == 'xsd:boolean':
-                arg_val = arg_val.lower()
+                if arg_val == True:
+                    arg_val = '1'
+                else:
+                    arg_val = '0'
 
             e = ET.SubElement(re, arg_name)
             if typed and arg_type:

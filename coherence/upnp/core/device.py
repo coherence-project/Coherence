@@ -97,6 +97,16 @@ class Device(log.Loggable):
     def get_uuid(self):
         return self.udn[5:]
 
+    def get_embedded_devices(self):
+        return self.devices
+
+    def get_embedded_device_by_type(self,type):
+        r = []
+        for device in self.devices:
+            if type == device.friendly_device_type:
+                r.append(device)
+        return r
+
     def get_services(self):
         return self.services
 
