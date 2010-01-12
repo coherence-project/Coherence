@@ -471,6 +471,7 @@ class FSStore(BackendStore):
         else:
             self.info("FSStore content auto-update disabled upon user request")
 
+
         if kwargs.get('enable_destroy','no') == 'yes':
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
 
@@ -501,6 +502,7 @@ class FSStore(BackendStore):
             if self.ignore_file_pattern.match(path):
                 continue
             try:
+                path = path.encode('utf-8') # patch for #267
                 self.walk(path, parent, self.ignore_file_pattern)
             except Exception,msg:
                 self.warning('on walk of %r: %r' % (path,msg))
