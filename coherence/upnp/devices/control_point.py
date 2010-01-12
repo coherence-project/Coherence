@@ -1,7 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2006-2010 Frank Scholz <dev@coherence-project.org>
 
 import string
 import traceback
@@ -17,6 +17,7 @@ from coherence.upnp.devices.media_server_client import MediaServerClient
 from coherence.upnp.devices.media_renderer_client import MediaRendererClient
 from coherence.upnp.devices.binary_light_client import BinaryLightClient
 from coherence.upnp.devices.dimmable_light_client import DimmableLightClient
+from coherence.upnp.devices.internet_gateway_device_client import InternetGatewayDeviceClient
 
 import coherence.extern.louie as louie
 
@@ -131,6 +132,8 @@ class ControlPoint(log.Loggable):
                     client = BinaryLightClient(device)
                 if short_type == 'DimmableLight':
                     client = DimmableLightClient(device)
+                if short_type == 'InternetGatewayDevice':
+                    client = InternetGatewayDeviceClient(device)
 
                 client.coherence = self.coherence
                 device.set_client( client)
