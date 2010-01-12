@@ -139,6 +139,7 @@ if haz_setuptools == True:
         BansheeStore = coherence.backends.banshee_storage:BansheeStore
         FeedStore = coherence.backends.feed_storage:FeedStore
         RadiotimeStore = coherence.backends.radiotime_storage:RadiotimeStore
+        AudioCDStore = coherence.backends.audiocd_storage:AudioCDStore
         
         [coherence.plugins.backend.media_renderer]
         ElisaPlayer = coherence.backends.elisa_renderer:ElisaPlayer
