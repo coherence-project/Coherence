@@ -48,6 +48,8 @@ class WANDeviceClient(log.Loggable):
         self.info("removal of WANDeviceClient started")
         if self.wan_common_interface_connection != None:
             self.wan_common_interface_connection.remove()
+        if self.wan_connection_device != None:
+            self.wan_connection_device.remove()
 
     def embedded_device_notified(self, device):
         self.info("EmbeddedDevice %r sent notification" % device);
