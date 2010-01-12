@@ -13,24 +13,26 @@ import exceptions
 try:
     import cElementTree as ET
     import elementtree
-    #print "we are on CET"
+    #print "ElementTree: using cElementTree as ET"
 except ImportError:
     try:
         from elementtree import ElementTree as ET
         import elementtree
-        #print "simply using ET"
+        #print "ElementTree: using elementtree.ElementTree as ET"
     except ImportError:
         """ this seems to be necessary with the python2.5 on the Maemo platform """
         try:
             from xml.etree import cElementTree as ET
             from xml import etree as elementtree
+            #print "ElementTree: using xml.etree.cElementTree as ET"
         except ImportError:
             try:
                 from xml.etree import ElementTree as ET
                 from xml import etree as elementtree
+                #print "ElementTree: using xml.etree.ElementTree as ET"
             except ImportError:
-                #print "no ElementTree module found, critical error"
-                raise ImportError, "no ElementTree module found, critical error"
+                #print "ElementTree: no ElementTree module found, critical error"
+                raise ImportError, "ElementTree: no ElementTree module found, critical error"
 
 utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
 escape = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
