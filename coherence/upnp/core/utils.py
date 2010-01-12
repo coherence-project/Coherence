@@ -4,6 +4,7 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
+from os.path import abspath
 import urlparse
 from urlparse import urlsplit
 
@@ -225,10 +226,10 @@ class Request(server.Request):
 
         # Resource Identification
         url = self.path
-
+        
         #remove trailing "/", if ever
         url = url.rstrip('/')
-
+            
         scheme, netloc, path, query, fragment = urlsplit(url)
         self.prepath = []
         if path == "":
@@ -249,7 +250,7 @@ class Request(server.Request):
                 resrc.addErrback(self.processingFailed)
             else:
                 self.render(resrc)
-
+                
         except:
             self.processingFailed(failure.Failure())
 
@@ -622,7 +623,12 @@ class StaticFile(static.File):
         accordingly to the patch by John-Mark Gurney
         http://resnet.uoregon.edu/~gurney_j/jmpc/dist/twisted.web.static.patch
     """
-
+    
+    # BEGIN patch for #266
+    def __init__(self, path, alwaysCreate=False): 
+        static.File.__init__(self, unquote(path), alwaysCreate) # added for #
+    # END patch for #266
+        
     def render(self, request):
         #print ""
         #print "StaticFile", request
@@ -848,7 +854,7 @@ class BufferFile(static.File):
         # size is the byte position to stop sending, not how many bytes to send
 
         BufferFileTransfer(f, size - f.tell(), request)
-        # and make sure the connection doesn't get closed
+		# and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
 
