@@ -389,7 +389,7 @@ class Coherence(log.Loggable):
 
         if(self.config.get('controlpoint', 'no') == 'yes' or
            self.config.get('json','no') == 'yes'):
-            self.ctrl = ControlPoint(self)
+            self.ctrl = ControlPoint(self, auto_client=['InternetGatewayDevice'])
 
         if self.config.get('json','no') == 'yes':
             from coherence.json import JsonInterface
@@ -404,7 +404,7 @@ class Coherence(log.Loggable):
             try:
                 from coherence import dbus_service
                 if self.ctrl == None:
-                    self.ctrl = ControlPoint(self)
+                    self.ctrl = ControlPoint(self, auto_client=['InternetGatewayDevice'])
                 self.dbus = dbus_service.DBusPontoon(self.ctrl)
             except Exception, msg:
                 self.warning("Unable to activate dbus sub-system: %r" % msg)
@@ -415,11 +415,6 @@ class Coherence(log.Loggable):
                     from coherence.tube_service import MirabeauProxy
 
                     mirabeau_cfg = self.config.get('mirabeau', {})
-
-                    try:
-                        self.external_address = mirabeau_cfg['external_address']
-                    except KeyError:
-                        pass
 
                     self.mirabeau = mirabeau.Mirabeau(mirabeau_cfg, self)
                     self.add_web_resource('mirabeau', MirabeauProxy())

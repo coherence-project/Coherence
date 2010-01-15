@@ -10,6 +10,9 @@ from coherence.dbus_constants import BUS_NAME, DEVICE_IFACE, SERVICE_IFACE
 from coherence.extern.telepathy.mirabeau_tube_publisher import MirabeauTubePublisherConsumer
 from coherence.tube_service import TubeDeviceProxy
 from coherence import log
+from coherence.upnp.devices.control_point import ControlPoint
+
+from twisted.internet import defer
 
 class Mirabeau(log.Loggable):
     logCategory = "mirabeau"
@@ -51,6 +54,61 @@ class Mirabeau(log.Loggable):
                                                             allowed_devices,
                                                             **callbacks)
 
+        self._external_address = ''
+        self._portmapping_ready = False
+
+        control_point = self._coherence.ctrl
+        igd_signal_name = 'Coherence.UPnP.ControlPoint.InternetGatewayDevice'
+        control_point.connect(self._igd_found, '%s.detected' % igd_signal_name)
+        control_point.connect(self._igd_removed, '%s.removed' % igd_signal_name)
+
+    def _igd_found(self, client, udn):
+        print "IGD found", client.device.get_friendly_name()
+        device = client.wan_device.wan_connection_device
+        self._igd_service = device.wan_ppp_connection or device.wan_ip_connection
+        if self._igd_service:
+            self._igd_service.subscribe_for_variable('ExternalIPAddress',
+                                                     callback=self.state_variable_change)
+            d = self._igd_service.get_all_port_mapping_entries()
+            d.addCallback(self._got_port_mappings)
+
+    def _got_port_mappings(self, mappings):
+        if mappings == None:
+            self.warning("Mappings changed during query, trying again...")
+            dfr = service.get_all_port_mapping_entries()
+            dfr.addCallback(self._got_port_mappings)
+        else:
+            mirabeau_mapped = False
+            description = "Coherence/Mirabeau"
+            for mapping in mappings:
+                if mapping["NewPortMappingDescription"] == description:
+                    mirabeau_mapped = True
+                    dfr = defer.succeed(True)
+                    break
+            if not mirabeau_mapped:
+                internal_port = self._coherence.web_server_port
+                internal_client = self._coherence.hostname
+                service = self._igd_service
+                dfr = service.add_port_mapping(remote_host='',
+                                               external_port=30020,
+                                               protocol='TCP',
+                                               internal_port=internal_port,
+                                               internal_client=internal_client,
+                                               enabled=True,
+                                               port_mapping_description=description,
+                                               lease_duration=0)
+            self._portmapping_ready = True
+        return dfr
+
+    def state_variable_change(self, variable):
+        if variable.name == 'ExternalIPAddress':
+            print "our external IP address is %s" % variable.value
+            self._external_address = variable.value
+
+    def _igd_removed(self, udn):
+        self._igd_service = None
+        self._portmapping_ready = False
+
     def found_peer(self, peer):
         print "found", peer
 
@@ -58,15 +116,18 @@ class Mirabeau(log.Loggable):
         print "disapeared", peer
 
     def got_devices(self, devices):
-        external_address = self._coherence.external_address
         for device in devices:
             uuid = device.get_id()
             print "MIRABEAU found:", uuid
             self._tube_proxies.append(TubeDeviceProxy(self._coherence, device,
-                                                      external_address))
+                                                      self._external_address))
 
     def start(self):
         self.tube_publisher.start()
 
     def stop(self):
         self.tube_publisher.stop()
+        if self._portmapping_ready:
+             self._igd_service.delete_port_mapping(remote_host='',
+                                                   external_port=30020,
+                                                   protocol='TCP')
