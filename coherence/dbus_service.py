@@ -672,7 +672,7 @@ class DBusDevice(dbus.service.Object,log.Loggable):
 
         allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
                                 'urn:schemas-upnp-org:device:MediaServer:1']
-        self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types
+        self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types()
         self.services = []
         self.device = device
 
