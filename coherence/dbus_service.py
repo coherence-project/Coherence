@@ -673,13 +673,13 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         self.services = []
         self.device = device
 
-        allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
-                                'urn:schemas-upnp-org:device:MediaServer:1']
-        self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types
-
         self.debug("DBusDevice %r %r", device, self.id)
 
         if device is not None:
+
+            allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
+                                    'urn:schemas-upnp-org:device:MediaServer:1']
+            self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types
             for service in device.get_services():
                 self.services.append(DBusService(service,self,bus))
                 if service.service_type.split(':')[3] == 'ContentDirectory':
