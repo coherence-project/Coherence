@@ -86,9 +86,12 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                                                    self.service_tube):
             self.announce_done = True
 
+            allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
+                                    'urn:schemas-upnp-org:device:MediaServer:1']
             def iterate(devices):
                 for device in devices:
-                    yield self._register_device(device)
+                    if device.get_device_type() in allowed_device_types:
+                        yield self._register_device(device)
 
             def done(result):
                 bus = self.coherence.dbus.bus
