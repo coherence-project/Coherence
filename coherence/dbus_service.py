@@ -676,10 +676,6 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         self.debug("DBusDevice %r %r", device, self.id)
 
         if device is not None:
-
-            allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
-                                    'urn:schemas-upnp-org:device:MediaServer:1']
-            self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types
             for service in device.get_services():
                 self.services.append(DBusService(service,self,bus))
                 if service.service_type.split(':')[3] == 'ContentDirectory':
@@ -839,13 +835,17 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
             r.append(device.get_info())
         return dbus.Array(r,signature='v',variant_level=2)
 
-    @dbus.service.method(BUS_NAME,in_signature='',out_signature='av',
+    @dbus.service.method(BUS_NAME,in_signature='i',out_signature='av',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
-    def get_devices_async(self,dbus_async_cb,dbus_async_err_cb):
+    def get_devices_async(self, for_mirabeau, dbus_async_cb,dbus_async_err_cb):
         infos = []
+        allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
+                                'urn:schemas-upnp-org:device:MediaServer:1']
 
         def iterate_devices(devices):
             for device in devices:
+                if for_mirabeau and device.get_device_type() not in allowed_device_types:
+                    continue
                 infos.append(device.get_info())
                 yield infos
 

@@ -105,7 +105,7 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
             print ">>>", exception
 
         pontoon = pontoon_tube.get_object(initiator_bus_name, OBJECT_PATH)
-        pontoon.get_devices_async(reply_handler=got_devices,
+        pontoon.get_devices_async(1, reply_handler=got_devices,
                                   error_handler=got_error)
 
 class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
