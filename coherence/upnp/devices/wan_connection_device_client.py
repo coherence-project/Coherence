@@ -6,6 +6,7 @@
 # Copyright 2010 Frank Scholz <dev@coherence-project.org>
 
 from coherence.upnp.services.clients.wan_ip_connection_client import WANIPConnectionClient
+from coherence.upnp.services.clients.wan_ppp_connection_client import WANPPPConnectionClient
 
 
 from coherence import log
@@ -22,6 +23,7 @@ class WANConnectionDeviceClient(log.Loggable):
         self.icons = device.icons
 
         self.wan_ip_connection = None
+        self.wan_ppp_connection = None
 
         self.detection_completed = False
 
@@ -30,17 +32,20 @@ class WANConnectionDeviceClient(log.Loggable):
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:WANIPConnection:1"]:
                 self.wan_ip_connection = WANIPConnectionClient(service)
-
+            if service.get_type() in ["urn:schemas-upnp-org:service:WANPPPConnection:1"]:
+                self.wan_ppp_connection = WANPPPConnectionClient(service)
         self.info("WANConnectionDevice %s" % (self.device.get_friendly_name()))
         if self.wan_ip_connection:
             self.info("WANIPConnection service available")
-        else:
-            self.warning("WANIPConnection service not available, device not implemented properly according to the UPnP specification")
+        if self.wan_ppp_connection:
+            self.info("WANPPPConnection service available")
 
     def remove(self):
         self.info("removal of WANConnectionDeviceClient started")
         if self.wan_ip_connection != None:
             self.wan_ip_connection.remove()
+        if self.wan_ppp_connection != None:
+            self.wan_ppp_connection.remove()
 
     def service_notified(self, service):
         self.info("Service %r sent notification" % service);
@@ -50,6 +55,11 @@ class WANConnectionDeviceClient(log.Loggable):
             if not hasattr(self.wan_ip_connection.service, 'last_time_updated'):
                 return
             if self.wan_ip_connection.service.last_time_updated == None:
+                return
+        if self.wan_ppp_connection != None:
+            if not hasattr(self.wan_ppp_connection.service, 'last_time_updated'):
+                return
+            if self.wan_ppp_connection.service.last_time_updated == None:
                 return
         self.detection_completed = True
         louie.send('Coherence.UPnP.EmbeddedDeviceClient.detection_completed', None,

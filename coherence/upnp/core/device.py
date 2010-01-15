@@ -111,9 +111,11 @@ class Device(log.Loggable):
         return self.services
 
     def get_service_by_type(self,type):
+        if not isinstance(type,(tuple,list)):
+            type = [type,]
         for service in self.services:
             _,_,_,service_class,version = service.service_type.split(':')
-            if service_class == type:
+            if service_class in type:
                 return service
 
     def add_service(self, service):
