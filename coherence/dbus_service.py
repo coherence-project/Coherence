@@ -447,6 +447,7 @@ class DBusService(dbus.service.Object,log.Loggable):
 
         if self.service is not None:
             self.type = self.service.service_type.split(':')[3] # get the service name
+            self.type = self.type.replace('-','')
         else:
             self.type = "from_the_tubes"
 
