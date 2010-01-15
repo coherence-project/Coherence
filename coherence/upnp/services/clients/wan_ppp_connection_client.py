@@ -6,7 +6,7 @@
 from twisted.internet import defer
 
 
-class WANIPConnectionClient:
+class WANPPPConnectionClient:
 
     def __init__(self, service):
         self.service = service
