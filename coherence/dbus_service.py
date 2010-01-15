@@ -670,11 +670,12 @@ class DBusDevice(dbus.service.Object,log.Loggable):
         dbus.service.Object.__init__(self, bus, bus_name=bus_name,
                                          object_path=self.path())
 
-        allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
-                                'urn:schemas-upnp-org:device:MediaServer:1']
-        self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types()
         self.services = []
         self.device = device
+
+        allowed_device_types = ['urn:schemas-upnp-org:device:MediaServer:2',
+                                'urn:schemas-upnp-org:device:MediaServer:1']
+        self.NOT_FOR_THE_TUBES = self.get_device_type() not in allowed_device_types
 
         self.debug("DBusDevice %r %r", device, self.id)
 
