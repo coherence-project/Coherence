@@ -45,7 +45,8 @@ class MirabeauProxy(resource.Resource, log.Loggable):
         return ReverseProxyUriResource(uri)
 
 
-class TubeServiceControl(UPnPPublisher):
+class TubeServiceControl(UPnPPublisher, log.Loggable):
+    logCategory = 'mirabeau'
 
     def __init__(self, server):
         self.service = server
@@ -79,7 +80,7 @@ class TubeServiceControl(UPnPPublisher):
             return result
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
-            if action.name  == 'XXXBrowse' and argument.name == 'Result':
+            if action.name  == 'Browse' and argument.name == 'Result':
                 didl = DIDLLite.DIDLElement.fromString(result['Result'].decode('utf-8'))
                 changed = False
                 for item in didl.getItems():
@@ -96,7 +97,7 @@ class TubeServiceControl(UPnPPublisher):
                     item.res = new_res
                 if changed == True:
                     didl.rebuild()
-                    ordered_result[argument.name] = didl.toString().replace('<ns0:','<')
+                    ordered_result[argument.name] = didl.toString() #.replace('<ns0:','<')
                 else:
                     ordered_result[argument.name] = result[argument.name].decode('utf-8')
             else:
