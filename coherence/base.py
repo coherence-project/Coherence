@@ -389,7 +389,7 @@ class Coherence(log.Loggable):
 
         if(self.config.get('controlpoint', 'no') == 'yes' or
            self.config.get('json','no') == 'yes'):
-            self.ctrl = ControlPoint(self, auto_client=['InternetGatewayDevice'])
+            self.ctrl = ControlPoint(self)
 
         if self.config.get('json','no') == 'yes':
             from coherence.json import JsonInterface
@@ -404,7 +404,8 @@ class Coherence(log.Loggable):
             try:
                 from coherence import dbus_service
                 if self.ctrl == None:
-                    self.ctrl = ControlPoint(self, auto_client=['InternetGatewayDevice'])
+                    self.ctrl = ControlPoint(self)
+                self.ctrl.auto_client_append('InternetGatewayDevice')
                 self.dbus = dbus_service.DBusPontoon(self.ctrl)
             except Exception, msg:
                 self.warning("Unable to activate dbus sub-system: %r" % msg)

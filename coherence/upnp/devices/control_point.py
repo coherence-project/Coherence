@@ -78,6 +78,13 @@ class ControlPoint(log.Loggable):
 
         louie.connect(self.completed, 'Coherence.UPnP.DeviceClient.detection_completed', louie.Any)
 
+    def auto_client_append(self,device_type):
+        if device_type in self.auto_client:
+            return
+        self.auto_client.append(device_type)
+        for device in self.get_devices():
+            self.check_device( device)
+
     def browse(self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
