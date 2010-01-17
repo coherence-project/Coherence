@@ -55,6 +55,7 @@ class Mirabeau(log.Loggable):
                                                             **callbacks)
 
         self._external_address = ''
+        self._external_port = 30020
         self._portmapping_ready = False
 
         control_point = self._coherence.ctrl
@@ -86,6 +87,7 @@ class Mirabeau(log.Loggable):
                     return None
 
             internal_port = self._coherence.web_server_port
+            self._external_port = internal_port
             internal_client = self._coherence.hostname
             service = self._igd_service
             dfr = service.add_port_mapping(remote_host='',

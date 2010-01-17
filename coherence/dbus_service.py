@@ -573,9 +573,11 @@ class DBusService(dbus.service.Object,log.Loggable):
                             remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
                             if remote_protocol == 'http-get' and remote_network == '*':
                                 quoted_url = 'mirabeau' + '/' + urllib.quote_plus(res.data)
-                                #print "modifying", res.data
-                                res.data = urlparse.urlunsplit(('http', self.service.device.client.coherence.external_address,quoted_url,"",""))
-                                #print "--->", res.data
+                                print "modifying", res.data
+                                host_port = ':'.join((self.service.device.client.coherence.mirabeau._external_address,
+                                                      str(self.service.device.client.coherence.mirabeau._external_port)))
+                                res.data = urlparse.urlunsplit(('http', host_port,quoted_url,"",""))
+                                print "--->", res.data
                                 new_res.append(res)
                                 changed = True
                         item.res = new_res
