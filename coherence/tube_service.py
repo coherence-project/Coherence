@@ -80,7 +80,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
             return result
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
-            if action.name  == 'Browse' and argument.name == 'Result':
+            if action.name  == 'XXXBrowse' and argument.name == 'Result':
                 didl = DIDLLite.DIDLElement.fromString(result['Result'].decode('utf-8'))
                 changed = False
                 for item in didl.getItems():
@@ -89,9 +89,9 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                         remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
                         if remote_protocol == 'http-get' and remote_network == '*':
                             quoted_url = urllib.quote_plus(res.data)
-                            #print "modifying", res.data
+                            print "modifying", res.data
                             res.data = urlparse.urlunsplit(('http', self.service.device.external_address,'mirabeau',quoted_url,""))
-                            #print "--->", res.data
+                            print "--->", res.data
                             new_res.append(res)
                             changed = True
                     item.res = new_res
@@ -156,7 +156,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
 
 class TubeServiceProxy(service.ServiceServer, resource.Resource,
                               log.Loggable):
-    logCategory = 'dbus'
+    logCategory = 'mirabeau'
 
     def __init__(self, tube_service, device, backend=None):
         self.device = device
