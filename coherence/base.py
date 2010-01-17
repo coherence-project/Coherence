@@ -519,7 +519,6 @@ class Coherence(log.Loggable):
             return
 
         def _shutdown():
-            print "_shutdown"
             for backend in self.active_backends.itervalues():
                 backend.unregister()
             self.active_backends = {}
