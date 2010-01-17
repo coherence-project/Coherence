@@ -517,43 +517,51 @@ class Coherence(log.Loggable):
         if self._incarnations_ > 1:
             self._incarnations_ -= 1
             return
-        if self.mirabeau is not None:
-            self.mirabeau.stop()
-            self.mirabeau = None
-        for backend in self.active_backends.itervalues():
-            backend.unregister()
-        self.active_backends = {}
-        """ send service unsubscribe messages """
-        try:
-            if self.web_server.port != None:
-                self.web_server.port.stopListening()
-                self.web_server.port = None
-            if hasattr(self.msearch, 'double_discover_loop'):
-                self.msearch.double_discover_loop.stop()
-            if hasattr(self.msearch, 'port'):
-                self.msearch.port.stopListening()
-            if hasattr(self.ssdp_server, 'resend_notify_loop'):
-                self.ssdp_server.resend_notify_loop.stop()
-            if hasattr(self.ssdp_server, 'port'):
-                self.ssdp_server.port.stopListening()
-            #self.renew_service_subscription_loop.stop()
-        except:
-            pass
-        l = []
-        for root_device in self.get_devices():
-            for device in root_device.get_devices():
-                d = device.unsubscribe_service_subscriptions()
-                l.append(d)
-                d.addCallback(device.remove)
-            d = root_device.unsubscribe_service_subscriptions()
-            l.append(d)
-            d.addCallback(root_device.remove)
 
-        """anything left over"""
-        self.ssdp_server.shutdown()
-        dl = defer.DeferredList(l)
-        self.warning('Coherence UPnP framework shutdown')
-        return dl
+        def _shutdown():
+            print "_shutdown"
+            for backend in self.active_backends.itervalues():
+                backend.unregister()
+            self.active_backends = {}
+            """ send service unsubscribe messages """
+            try:
+                if self.web_server.port != None:
+                    self.web_server.port.stopListening()
+                    self.web_server.port = None
+                if hasattr(self.msearch, 'double_discover_loop'):
+                    self.msearch.double_discover_loop.stop()
+                if hasattr(self.msearch, 'port'):
+                    self.msearch.port.stopListening()
+                if hasattr(self.ssdp_server, 'resend_notify_loop'):
+                    self.ssdp_server.resend_notify_loop.stop()
+                if hasattr(self.ssdp_server, 'port'):
+                    self.ssdp_server.port.stopListening()
+                #self.renew_service_subscription_loop.stop()
+            except:
+                pass
+            l = []
+            for root_device in self.get_devices():
+                for device in root_device.get_devices():
+                    d = device.unsubscribe_service_subscriptions()
+                    l.append(d)
+                    d.addCallback(device.remove)
+                d = root_device.unsubscribe_service_subscriptions()
+                l.append(d)
+                d.addCallback(root_device.remove)
+
+            """anything left over"""
+            self.ssdp_server.shutdown()
+            dl = defer.DeferredList(l)
+            self.warning('Coherence UPnP framework shutdown')
+            return dl
+
+        if self.mirabeau is not None:
+            d = defer.maybeDeferred(self.mirabeau.stop)
+            self.mirabeau = None
+            d.addBoth(lambda x: _shutdown())
+            return d
+        else:
+            return _shutdown()
 
     def check_devices(self):
         """ iterate over devices and their embedded ones and renew subscriptions """
