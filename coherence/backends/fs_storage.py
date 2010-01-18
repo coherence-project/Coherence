@@ -18,6 +18,8 @@ from sets import Set
 import mimetypes
 mimetypes.init()
 mimetypes.add_type('audio/x-m4a', '.m4a')
+mimetypes.add_type('audio/x-musepack', '.mpc')
+mimetypes.add_type('audio/x-wavpack', '.wv')
 mimetypes.add_type('video/mp4', '.mp4')
 mimetypes.add_type('video/mpegts', '.ts')
 mimetypes.add_type('video/divx', '.divx')

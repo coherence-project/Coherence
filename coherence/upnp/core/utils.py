@@ -226,10 +226,10 @@ class Request(server.Request):
 
         # Resource Identification
         url = self.path
-        
+
         #remove trailing "/", if ever
         url = url.rstrip('/')
-            
+
         scheme, netloc, path, query, fragment = urlsplit(url)
         self.prepath = []
         if path == "":
@@ -250,7 +250,7 @@ class Request(server.Request):
                 resrc.addErrback(self.processingFailed)
             else:
                 self.render(resrc)
-                
+
         except:
             self.processingFailed(failure.Failure())
 
@@ -623,12 +623,12 @@ class StaticFile(static.File):
         accordingly to the patch by John-Mark Gurney
         http://resnet.uoregon.edu/~gurney_j/jmpc/dist/twisted.web.static.patch
     """
-    
+
     # BEGIN patch for #266
-    def __init__(self, path, alwaysCreate=False): 
-        static.File.__init__(self, unquote(path), alwaysCreate) # added for #
+    def __init__(self, path, defaultType="text/html", ignoredExts=(), registry=None, allowExt=0):
+        static.File.__init__(self, unquote(path), defaultType=defaultType, ignoredExts=ignoredExts, registry=registry, allowExt=allowExt) # added for #
     # END patch for #266
-        
+
     def render(self, request):
         #print ""
         #print "StaticFile", request
