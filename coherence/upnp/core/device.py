@@ -263,9 +263,7 @@ class Device(log.Loggable):
                     i['height'] = icon.find('./{%s}height' % ns).text
                     i['depth'] = icon.find('./{%s}depth' % ns).text
                     i['realurl'] = icon.find('./{%s}url' % ns).text
-                    i['url'] = icon.find('./{%s}url' % ns).text
-                    if i['url'].startswith('/'):
-                        i['url'] = ''.join((url_base,i['url']))
+                    i['url'] = self.make_fullyqualified(i['realurl'])
                     self.icons.append(i)
                     self.debug("adding icon %r for %r" % (i,self.friendly_name))
                 except:
