@@ -400,6 +400,7 @@ class Coherence(log.Loggable):
             self.transcoder_manager = TranscoderManager(self)
 
 
+        self.dbus = None
         if self.config.get('use_dbus', 'no') == 'yes':
             try:
                 from coherence import dbus_service
@@ -519,6 +520,11 @@ class Coherence(log.Loggable):
             return
 
         def _shutdown():
+            self.mirabeau = None
+            if self.dbus:
+                self.dbus.shutdown()
+                self.dbus = None
+
             for backend in self.active_backends.itervalues():
                 backend.unregister()
             self.active_backends = {}
@@ -556,7 +562,6 @@ class Coherence(log.Loggable):
 
         if self.mirabeau is not None:
             d = defer.maybeDeferred(self.mirabeau.stop)
-            self.mirabeau = None
             d.addBoth(lambda x: _shutdown())
             return d
         else:

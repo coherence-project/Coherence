@@ -127,3 +127,7 @@ class MirabeauTubePublisherConsumer(MirabeauTubePublisherMixin,
         else:
             self.post_tube_accept(tube, tube_conn, initiator_handle)
         return tube_conn
+
+    def stop(self):
+        MirabeauTubePublisherMixin.close_tubes(self)
+        return client.Client.stop(self)

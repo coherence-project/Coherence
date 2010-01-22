@@ -786,6 +786,9 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
         self.debug("D-Bus pontoon started")
 
+    def shutdown(self):
+        self.remove_from_connection()
+
     @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='')
     def pin(self,key,value):
         self.pinboard[key] = value

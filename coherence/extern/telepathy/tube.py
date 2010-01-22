@@ -41,13 +41,16 @@ class TubePublisherMixin(object):
         tube.local_address = address
         self.info("local tube address: %r", address)
 
+    def close_tubes(self):
+        for object_path, channel in self._tubes.iteritems():
+            channel.Close()
+
 class TubePublisher(TubePublisherMixin, Client):
     logCategory = "tube_publisher"
 
     def __init__(self, manager, protocol, account, muc_id, conference_server, tubes_to_offer):
         TubePublisherMixin.__init__(self, tubes_to_offer)
         Client.__init__(self, manager, protocol, account, muc_id, conference_server)
-
 
 class TubeConsumerMixin(object):
     logCategory = "tube_consumer"
