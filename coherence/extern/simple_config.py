@@ -16,8 +16,9 @@ class ConfigItem(object):
 
 class Config(ConfigItem):
 
-    def __init__(self,filename,root=None,preamble=False):
+    def __init__(self,filename,root=None,preamble=False,element2attr_mappings=None):
         self.filename = filename
+        self.element2attr_mappings = element2attr_mappings or {}
         self.db = parse_xml(open(self.filename).read())
         self.config = self.db = ConvertXmlToDict(self.db.getroot())
         self.preamble = ''
@@ -31,7 +32,7 @@ class Config(ConfigItem):
         self.config.save = self.save
 
     def tostring(self):
-        root = ConvertDictToXml(self.db)
+        root = ConvertDictToXml(self.db,self.element2attr_mappings)
         tree = ElementTree.ElementTree(root).getroot()
         indent(tree,0)
         xml = self.preamble + ElementTree.tostring(tree, encoding='utf-8')
@@ -129,7 +130,7 @@ class XmlDictObject(dict,ConfigItem):
     def UnWrap(self):
         return XmlDictObject._UnWrap(self)
 
-def _ConvertDictToXmlRecurse(parent, dictitem):
+def _ConvertDictToXmlRecurse(parent, dictitem,element2attr_mappings=None):
     assert type(dictitem) is not type([])
 
     if isinstance(dictitem, dict):
@@ -139,13 +140,13 @@ def _ConvertDictToXmlRecurse(parent, dictitem):
 ##             elif str(tag) == '_attrs':
 ##                 for key, value in child.iteritems():
 ##                     parent.set(key, value)
-            elif str(tag) == "active":
-                parent.set(tag, child)
+            elif element2attr_mappings != None and tag in element2attr_mappings:
+                    parent.set(element2attr_mappings[tag],child)
             elif type(child) is type([]):
                 for listchild in child:
                     elem = ElementTree.Element(tag)
                     parent.append(elem)
-                    _ConvertDictToXmlRecurse(elem, listchild)
+                    _ConvertDictToXmlRecurse(elem, listchild,element2attr_mappings=element2attr_mappings)
             else:
                 if(not isinstance(dictitem, XmlDictObject) and
                    not callable(dictitem)):
@@ -158,15 +159,15 @@ def _ConvertDictToXmlRecurse(parent, dictitem):
                 elif not callable(tag) and not callable(child):
                     elem = ElementTree.Element(tag)
                     parent.append(elem)
-                    _ConvertDictToXmlRecurse(elem, child)
+                    _ConvertDictToXmlRecurse(elem, child,element2attr_mappings=element2attr_mappings)
     else:
         if not callable(dictitem):
             parent.text = str(dictitem)
 
-def ConvertDictToXml(xmldict):
+def ConvertDictToXml(xmldict,element2attr_mappings=None):
     roottag = xmldict.keys()[0]
     root = ElementTree.Element(roottag)
-    _ConvertDictToXmlRecurse(root, xmldict[roottag])
+    _ConvertDictToXmlRecurse(root, xmldict[roottag],element2attr_mappings=element2attr_mappings)
     return root
 
 def _ConvertXmlToDictRecurse(node, dictclass):

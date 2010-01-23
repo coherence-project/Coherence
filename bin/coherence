@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
     if options['noconfig'] != 1:
         try:
-            config = Config(options['configfile'],root='config').config
+            config = Config(options['configfile'],root='config',element2attr_mappings={'active':'active'}).config
         except SyntaxError:
             import traceback
             #print traceback.format_exc()
