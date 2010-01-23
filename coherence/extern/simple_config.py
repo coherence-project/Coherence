@@ -139,6 +139,8 @@ def _ConvertDictToXmlRecurse(parent, dictitem):
 ##             elif str(tag) == '_attrs':
 ##                 for key, value in child.iteritems():
 ##                     parent.set(key, value)
+            elif str(tag) == "active":
+                parent.set(tag, child)
             elif type(child) is type([]):
                 for listchild in child:
                     elem = ElementTree.Element(tag)
@@ -171,7 +173,6 @@ def _ConvertXmlToDictRecurse(node, dictclass):
     nodedict = dictclass()
 ##     if node.items():
 ##         nodedict.update({'_attrs': dict(node.items())})
-
     if len(node.items()) > 0:
         # if we have attributes, set them
         attrs = dict(node.items())
