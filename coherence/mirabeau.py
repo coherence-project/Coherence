@@ -135,6 +135,11 @@ class Mirabeau(log.Loggable):
         self.tube_publisher.start()
 
     def stop(self):
+        control_point = self._coherence.ctrl
+        igd_signal_name = 'Coherence.UPnP.ControlPoint.InternetGatewayDevice'
+        control_point.disconnect(self._igd_found, '%s.detected' % igd_signal_name)
+        control_point.disconnect(self._igd_removed, '%s.removed' % igd_signal_name)
+
         self.tube_publisher.stop()
         if self._portmapping_ready:
             remote_host,external_port = self._portmapping_ready
