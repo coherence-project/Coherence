@@ -62,9 +62,20 @@ class Player(log.Loggable):
         for v in self.views:
             v(message=message)
 
+    def _is_not_playbin2_friendly(self):
+        uname = platform.uname()[1]
+        result = False
+        if uname.startswith('Nokia'):
+            try:
+                device = uname.split("-")[1]
+            except:
+                device = "unknown"
+            result = device != "N900"
+        return result
+
     def create_pipeline(self, mimetype):
         self.debug("creating pipeline")
-        if platform.uname()[1].startswith('Nokia'):
+        if self._is_not_playbin2_friendly():
             self.bus = None
             self.player = None
             self.source = None
