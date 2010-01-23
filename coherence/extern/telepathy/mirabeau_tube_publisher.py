@@ -30,6 +30,8 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
         self.device_tube = None
         self.service_tube = None
         self.announce_done = False
+        self._ms_detected_match = None
+        self._ms_removed_match = None
 
     def _media_server_found(self, infos, udn):
         uuid = udn[5:]
@@ -90,10 +92,19 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                     self._register_device(device)
 
             bus = self.coherence.dbus.bus
-            bus.add_signal_receiver(self._media_server_found,
-                                    "UPnP_ControlPoint_MediaServer_detected")
-            bus.add_signal_receiver(self._media_server_removed,
-                                    "UPnP_ControlPoint_MediaServer_removed")
+            self._ms_detected_match = bus.add_signal_receiver(self._media_server_found,
+                                                              "UPnP_ControlPoint_MediaServer_detected")
+            self._ms_removed_match = bus.add_signal_receiver(self._media_server_removed,
+                                                             "UPnP_ControlPoint_MediaServer_removed")
+
+    def close_tubes(self):
+        if self._ms_detected_match:
+            self._ms_detected_match.remove()
+            self._ms_detected_match = None
+        if self._ms_removed_match:
+            self._ms_removed_match.remove()
+            self._ms_removed_match = None
+        return tube.TubePublisherMixin.close_tubes(self)
 
 class MirabeauTubePublisherConsumer(MirabeauTubePublisherMixin,
                                     mirabeau_tube_consumer.MirabeauTubeConsumerMixin,

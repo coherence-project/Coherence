@@ -462,6 +462,11 @@ class RootDevice(Device):
     def __repr__(self):
         return "rootdevice %r %r %r %r, manifestation %r" % (self.friendly_name,self.udn,self.st,self.host,self.manifestation)
 
+    def remove(self, *args):
+        result = Device.remove(self, *args)
+        louie.send('Coherence.UPnP.RootDevice.removed', self, usn=self.get_usn())
+        return result
+
     def get_usn(self):
         return self.usn
 

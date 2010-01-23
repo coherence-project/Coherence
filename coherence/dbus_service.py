@@ -70,14 +70,17 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
 
         self.subscribeStateVariables()
 
-    def _release_thyself(self):
+    def shutdown(self):
+        self._release_thyself(suicide_mode=False)
+
+    def _release_thyself(self, suicide_mode=True):
         louie.disconnect(self.variable_changed, 'StateVariable.changed', sender=self.service)
         self.service = None
         self.dbus_device = None
-        self.tube = None
-        self.path = None
         self.remove_from_connection()
-        del self
+        self.path = None
+        if suicide_mode:
+            del self
 
     def variable_changed(self,variable):
         self.StateVariableChanged(self.dbus_device.device.get_id(),self.type,variable.name, variable.value)
@@ -485,14 +488,18 @@ class DBusService(dbus.service.Object,log.Loggable):
 
         #self._get_service_methods()
 
-    def _release_thyself(self):
+    def shutdown(self):
+        self._release_thyself(suicide_mode=False)
+
+    def _release_thyself(self, suicide_mode=True):
         louie.disconnect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
         self.service = None
         self.dbus_device = None
         self.tube = None
-        self.path = None
         self.remove_from_connection()
-        del self
+        self.path = None
+        if suicide_mode:
+            del self
 
     def _get_service_methods(self):
         '''Returns a list of method descriptors for this object'''
@@ -684,15 +691,20 @@ class DBusDevice(dbus.service.Object,log.Loggable):
                 if service.service_type.split(':')[3] == 'ContentDirectory':
                     self.services.append(DBusCDSService(service,self,bus))
 
-    def _release_thyself(self):
+    def shutdown(self):
+        self._release_thyself(suicide_mode=False)
+
+    def _release_thyself(self, suicide_mode=True):
         for service in self.services:
             service._release_thyself()
         self.services = None
         self.device = None
         self.tube = None
-        self.path = None
         self.remove_from_connection()
-        del self
+
+        # FIXME: this is insane
+        if suicide_mode:
+            del self
 
     def path(self):
         return OBJECT_PATH + '/devices/' + self.id
@@ -787,7 +799,13 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         self.debug("D-Bus pontoon started")
 
     def shutdown(self):
+        louie.disconnect(self._device_detected, 'Coherence.UPnP.Device.detection_completed', louie.Any)
+        louie.disconnect(self._device_removed, 'Coherence.UPnP.Device.removed', louie.Any)
+        for device_id, device in self.devices.iteritems():
+            device.shutdown()
+        self.devices = {}
         self.remove_from_connection()
+        self.bus = None
 
     @dbus.service.method(BUS_NAME,in_signature='sv',out_signature='')
     def pin(self,key,value):
