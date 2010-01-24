@@ -127,6 +127,7 @@ class Client(log.Loggable):
 
         if self.existing_client:
             self.channel_text = self.existing_client.channel_text
+            self._text_channel_available()
             #self.new_channels_cb(self.existing_client._channels)
             self._tubes = self.existing_client._pending_tubes
             for path, tube in self._tubes.iteritems():
@@ -137,10 +138,18 @@ class Client(log.Loggable):
             params = {CHANNEL_INTERFACE+".ChannelType": CHANNEL_TYPE_TEXT,
                       CHANNEL_INTERFACE+".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
                       CHANNEL_INTERFACE+ ".TargetID": muc_id}
-            chan_path, props = conn_iface.CreateChannel(params)
 
-            self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
+            def got_channel(chan_path, props):
+                self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
+                self._text_channel_available()
 
+            def got_error(exception):
+                print exception
+
+            conn_iface.CreateChannel(params, reply_handler=got_channel, error_handler=got_error)
+
+
+    def _text_channel_available(self):
         room_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
         self.self_handle = room_iface.GetSelfHandle()
         room_iface.connect_to_signal("MembersChanged", self.text_channel_members_changed_cb)
