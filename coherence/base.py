@@ -556,10 +556,11 @@ class Coherence(log.Loggable):
 
             def homecleanup(result):
                 """anything left over"""
-                self.ssdp_server.shutdown()
                 louie.disconnect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
                 louie.disconnect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
                 louie.disconnect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
+                self.ssdp_server.shutdown()
+                self.ctrl.shutdown()
                 self.warning('Coherence UPnP framework shutdown')
                 return result
 
