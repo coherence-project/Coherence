@@ -54,7 +54,10 @@ class Mirabeau(log.Loggable):
                                                             allowed_devices,
                                                             **callbacks)
 
-        self._external_address = ''
+        # set external address to our hostname, if a IGD device is
+        # detected it means we are inside a LAN and the IGD will give
+        # us our real external address.
+        self._external_address = coherence_instance.hostname
         self._external_port = 30020
         self._portmapping_ready = False
 
