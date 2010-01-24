@@ -2,7 +2,7 @@
 # http://opensource.org/licenses/mit-license.php
 #
 # Copyright 2007, James Livingston  <doclivingston@gmail.com>
-# Copyright 2007,2008 Frank Scholz <coherence@beebits.net>
+# Copyright 2007-2010 Frank Scholz <dev@coherence-project.org>
 
 import rb, rhythmdb
 import gobject, gtk

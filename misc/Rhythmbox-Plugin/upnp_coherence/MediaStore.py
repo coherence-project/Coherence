@@ -2,7 +2,7 @@
 # http://opensource.org/licenses/mit-license.php
 #
 # Copyright 2007, James Livingston  <doclivingston@gmail.com>
-# Copyright 2007, Frank Scholz <coherence@beebits.net>
+# Copyright 2007-2010, Frank Scholz <dev@coherence-project.org>
 
 import os.path
 import rhythmdb
@@ -20,6 +20,7 @@ AUDIO_CONTAINER = 100
 AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
+AUDIO_PLAYLIST_CONTAINER_ID = 104
 
 CONTAINER_COUNT = 10000
 
@@ -76,6 +77,60 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
+
+
+class Playlist(BackendItem):
+    logCategory = 'rb_media_store'
+
+    def __init__(self, store, child, id):
+        self.id = id
+        self.store = store
+        # 2: RB_SOURCELIST_MODEL_COLUMN_NAME
+        # 3: RB_SOURCELIST_MODEL_COLUMN_SOURCE
+        self.title, self.source = self.store.playlist_model.get(child, 2, 3)
+        self.children = None
+
+        query = self.store.db.query_new()
+        self.store.db.query_append(query,
+                                   [ rhythmdb.QUERY_PROP_EQUALS,
+                                     rhythmdb.PROP_TYPE,
+                                     self.store.db.entry_type_get_by_name('song') ],
+                                   [ rhythmdb.QUERY_PROP_EQUALS,
+                                     rhythmdb.PROP_ALBUM,
+                                     self.title ])
+
+    def get_children(self, start=0, request_count=0):
+        if self.children == None:
+            self.children = map(self._create_track_from_playlist_item,
+                                # who knows what the other children/magic numbers mean
+                                self.source.get_children()[0].get_children()[1].get_children()[0].get_model())
+        return self.children
+
+    def _create_track_from_playlist_item(self, item):
+        uri = item[0].get_playback_uri()
+        entry = self.store.db.entry_lookup_by_location(uri)
+        id = self.store.db.entry_get(entry, rhythmdb.PROP_ENTRY_ID)
+        return Track(self.store, id, self.id)
+
+    def get_child_count(self):
+        try:
+            return len(self.get_children())
+        except:
+            return 0
+
+    def get_item(self):
+        item = DIDLLite.PlaylistContainer(self.id, AUDIO_PLAYLIST_CONTAINER_ID, self.title)
+        if __version_info__ >= (0,6,4):
+            if self.get_child_count() > 0:
+                res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=str(TRACK_COUNT+int(self.get_children()[0].get_id())))
+                item.res.append(res)
+        return item
+
+    def get_id(self):
+        return self.id
+
+    def get_name(self):
+        return self.title
 
 
 class Album(BackendItem):
@@ -345,12 +400,14 @@ class MediaStore(BackendStore):
         self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
                                  '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
                                  '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+                                 '14': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
                                 })
 
         self.next_id = CONTAINER_COUNT
         self.albums = None
         self.artists = None
         self.tracks = None
+        self.playlists = None
 
         self.urlbase = kwargs.get('urlbase','')
         if( len(self.urlbase) > 0 and self.urlbase[len(self.urlbase)-1] != '/'):
@@ -373,6 +430,9 @@ class MediaStore(BackendStore):
         self.artist_query = self.db.property_model_new(rhythmdb.PROP_ARTIST)
         self.artist_query.props.query_model = qm
 
+        # oh man this is a bit ugly
+        self.playlist_model = self.plugin.shell.get_playlist_manager().props.sourcelist.props.model
+
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
                 Container( ROOT_CONTAINER_ID,-1, "Rhythmbox on %s" % self.server.coherence.hostname)
@@ -392,6 +452,11 @@ class MediaStore(BackendStore):
                 Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
                           children_callback=self.children_artists)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
+
+        self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
+                Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                          children_callback=self.children_playlists)
+        self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
@@ -429,7 +494,6 @@ class MediaStore(BackendStore):
                 'http-get:*:audio/mpeg:*',
             ])
         self.warning("__init__ MediaStore initialized")
-
 
     def children_tracks(self, parent_id):
         tracks = []
@@ -489,3 +553,29 @@ class MediaStore(BackendStore):
             self.artists = artists
 
         return self.artists
+
+    def children_playlists(self,killbug=False):
+        playlists = []
+
+        def playlist_sort(x,y):
+            r = cmp(x.title,y.title)
+            self.info("sort %r - %r = %r", x.title, y.title, r)
+            return r
+
+        def collate (model, path, iter, parent_path):
+            parent = model.iter_parent(iter)
+            if parent and model.get_path(parent) == parent_path:
+                id = self.get_next_container_id()
+                playlist = Playlist(self, iter, id)
+                self.containers[id] = playlist
+                playlists.append(playlist)
+
+        if self.playlists is None:
+            PLAYLISTS_PARENT = 2 # 0 -> Library, 1 -> Stores, 2 -> Playlists
+            parent = self.playlist_model.iter_nth_child(None, PLAYLISTS_PARENT)
+            parent_path = self.playlist_model.get_path(parent)
+            self.playlist_model.foreach(collate, parent_path)
+            self.playlists = playlists
+            self.playlists.sort(cmp=playlist_sort)
+
+        return self.playlists
