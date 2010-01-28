@@ -4,7 +4,8 @@
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
 import telepathy
-from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER
+from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER, ACCOUNT, \
+     CONNECTION
 import dbus
 
 def to_dbus_account(account):
@@ -20,14 +21,23 @@ def to_dbus_account(account):
     return account
 
 def tp_connect(manager, protocol, account, ready_handler=None):
-    account = to_dbus_account(account)
-    reg = telepathy.client.ManagerRegistry()
-    reg.LoadManagers()
+    if isinstance(account, dict):
+        account = to_dbus_account(account)
+        reg = telepathy.client.ManagerRegistry()
+        reg.LoadManagers()
 
-    mgr = reg.GetManager(manager)
-    connection = mgr[CONN_MGR_INTERFACE].RequestConnection(protocol,
-                                                           account)
-    conn_bus_name, conn_object_path = connection
+        mgr = reg.GetManager(manager)
+        connection = mgr[CONN_MGR_INTERFACE].RequestConnection(protocol,
+                                                               account)
+        conn_bus_name, conn_object_path = connection
+    else:
+        presence = dbus.Struct((dbus.UInt32(2L), dbus.String(u'online'), dbus.String(u'')),
+                               signature=None, variant_level=1)
+        account.Set(ACCOUNT, "RequestedPresence", presence)
+        # TODO: figure how not to hardode to gabble
+        conn_bus_name = "org.freedesktop.Telepathy.ConnectionManager.gabble"
+        conn_object_path = account.Get(ACCOUNT, 'Connection')
+
     client_connection = telepathy.client.Connection(conn_bus_name,
                                                     conn_object_path,
                                                     ready_handler=ready_handler)

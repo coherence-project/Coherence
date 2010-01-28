@@ -34,8 +34,7 @@ class Mirabeau(log.Loggable):
 
         if isinstance(account, basestring):
             bus = dbus.SessionBus()
-            account_obj = bus.get_object(ACCOUNT_MANAGER, account)
-            account = account_obj.Get(ACCOUNT, 'Parameters')
+            account = bus.get_object(ACCOUNT_MANAGER, account)
 
         try:
             allowed_devices = config["allowed_devices"].split(",")
