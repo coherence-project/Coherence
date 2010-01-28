@@ -58,13 +58,16 @@ class Client(log.Loggable):
             else:
                 self.muc_id = "%s@%s" % (muc_id, conference_server)
             self.conn = tp_connect(manager, protocol, account, self.ready_cb)
+        conn_obj = self.conn[CONNECTION]
+        conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)
+        #conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
 
         self.joined = False
 
+        self.start()
+
     def _connected(self, *args):
-        self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
-        self.fill_roster()
-        self.join_muc()
+        pass
 
     def start(self):
         if not self.existing_client:
@@ -81,11 +84,9 @@ class Client(log.Loggable):
 
     def ready_cb(self, conn):
         self.debug("ready callback")
-        conn_obj = self.conn[CONNECTION]
-        conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)
-        #conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
-
-        self.start()
+        self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
+        self.fill_roster()
+        self.join_muc()
 
     def error_cb(self, error):
         print "Error:", error
