@@ -60,7 +60,7 @@ class Client(log.Loggable):
             self.conn = tp_connect(manager, protocol, account, self.ready_cb)
         conn_obj = self.conn[CONNECTION]
         conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)
-        #conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
+        conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
 
         self.joined = False
 
@@ -162,7 +162,7 @@ class Client(log.Loggable):
         if self.existing_client:
             self.channel_text = self.existing_client.channel_text
             self._text_channel_available()
-            #self.new_channels_cb(self.existing_client._channels)
+            self.new_channels_cb(self.existing_client._channels)
             self._tubes = self.existing_client._pending_tubes
             for path, tube in self._tubes.iteritems():
                 self.connect_tube_signals(tube)
