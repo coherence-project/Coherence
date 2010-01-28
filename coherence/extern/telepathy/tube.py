@@ -4,7 +4,7 @@
 # Copyright 2009 Philippe Normand <phil@base-art.net>
 
 from telepathy.interfaces import CHANNEL_INTERFACE, CONNECTION_INTERFACE_REQUESTS, \
-     CHANNEL_TYPE_DBUS_TUBE
+     CHANNEL_TYPE_DBUS_TUBE, ACCOUNT
 from telepathy.constants import CONNECTION_HANDLE_TYPE_ROOM, \
      SOCKET_ACCESS_CONTROL_CREDENTIALS
 
@@ -35,7 +35,12 @@ class TubePublisherMixin(object):
         self.info("offering my tube located at %r", tube.object_path)
         service_name = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
         params = self._tubes_to_offer[service_name]
-        params["initiator"] = self.account["account"]
+        try:
+            initiator = self.account["account"]
+        except TypeError:
+            params = self.account.Get(ACCOUNT, "Parameters")
+            initiator = params["account"]
+        params["initiator"] = initiator
         address = tube[CHANNEL_TYPE_DBUS_TUBE].Offer(params,
                                                      SOCKET_ACCESS_CONTROL_CREDENTIALS)
         tube.local_address = address
