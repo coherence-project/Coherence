@@ -39,8 +39,8 @@ def tp_connect(manager, protocol, account, ready_handler=None):
         conn_object_path = account.Get(ACCOUNT, 'Connection')
 
     client_connection = telepathy.client.Connection(conn_bus_name,
-                                                    conn_object_path,
-                                                    ready_handler=ready_handler)
+                                                    conn_object_path)
+    client_connection.call_when_ready(ready_handler)
     return client_connection
 
 

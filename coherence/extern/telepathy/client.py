@@ -58,30 +58,34 @@ class Client(log.Loggable):
             else:
                 self.muc_id = "%s@%s" % (muc_id, conference_server)
             self.conn = tp_connect(manager, protocol, account, self.ready_cb)
-        conn_obj = self.conn[CONN_INTERFACE]
-        conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)
-        conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
 
         self.joined = False
 
+    def _connected(self, *args):
+        self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
+        self.fill_roster()
+        self.join_muc()
+
     def start(self):
         if not self.existing_client:
-            self.conn[CONN_INTERFACE].Connect()
+            self.debug("connecting...")
+            self.conn[CONNECTION].Connect(reply_handler=self._connected,
+                                          error_handler=self.error_cb)
 
     def stop(self):
         if not self.existing_client:
             try:
-                self.conn[CONN_INTERFACE].Disconnect()
+                self.conn[CONNECTION].Disconnect()
             except:
                 pass
 
     def ready_cb(self, conn):
+        self.debug("ready callback")
+        conn_obj = self.conn[CONNECTION]
+        conn_obj.connect_to_signal('StatusChanged', self.status_changed_cb)
+        #conn_obj.connect_to_signal('NewChannels', self.new_channels_cb)
+
         self.start()
-        self.conn[CONNECTION_INTERFACE_REQUESTS].connect_to_signal("NewChannels",
-                                                                   self.new_channels_cb)
-        self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
-        self.fill_roster()
-        self.join_muc()
 
     def error_cb(self, error):
         print "Error:", error
@@ -173,12 +177,9 @@ class Client(log.Loggable):
                 self._text_channel_available()
 
             def got_error(exception):
-                print "Could not join MUC", exception
+                self.warning("Could not join MUC: %s", exception)
 
-            got_channel(*conn_iface.CreateChannel(params))
-            #reply_handler=got_channel, error_handler=got_error)
-            
-
+            conn_iface.CreateChannel(params,reply_handler=got_channel, error_handler=got_error)
 
     def _text_channel_available(self):
         room_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
@@ -191,6 +192,7 @@ class Client(log.Loggable):
 
 
     def new_channels_cb(self, channels):
+        self.debug("new channels %r", channels)
         self._channels.extend(channels)
         for path, props in channels:
             self.debug("new channel with path %r and props %r", path, props)
