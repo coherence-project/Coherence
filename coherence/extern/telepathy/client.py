@@ -76,6 +76,7 @@ class Client(log.Loggable):
                 pass
 
     def ready_cb(self, conn):
+        self.start()
         self.conn[CONNECTION_INTERFACE_REQUESTS].connect_to_signal("NewChannels",
                                                                    self.new_channels_cb)
         self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
@@ -133,7 +134,7 @@ class Client(log.Loggable):
         def no_channel_available (error):
             print error
 
-        for name in ('subscribe', 'publish', 'hide', 'allow', 'deny', 'known'):
+        for name in ('subscribe', 'publish'):
             conn[CONNECTION_INTERFACE_REQUESTS].EnsureChannel({
                 CHANNEL + '.ChannelType'     : CHANNEL_TYPE_CONTACT_LIST,
                 CHANNEL + '.TargetHandleType': HANDLE_TYPE_LIST,
@@ -165,14 +166,14 @@ class Client(log.Loggable):
             conn_iface = self.conn[CONNECTION_INTERFACE_REQUESTS]
             params = {CHANNEL_INTERFACE+".ChannelType": CHANNEL_TYPE_TEXT,
                       CHANNEL_INTERFACE+".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
-                      CHANNEL_INTERFACE+ ".TargetID": muc_id}
+                      CHANNEL_INTERFACE+".TargetID": muc_id}
 
             def got_channel(chan_path, props):
                 self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
                 self._text_channel_available()
 
             def got_error(exception):
-                print exception
+                print "Could not join MUC", exception
 
             conn_iface.CreateChannel(params, reply_handler=got_channel, error_handler=got_error)
 
