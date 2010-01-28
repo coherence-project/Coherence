@@ -11,13 +11,15 @@ from dbus import PROPERTIES_IFACE
 from telepathy.client import Channel
 from telepathy.interfaces import CONN_INTERFACE, CHANNEL_INTERFACE_GROUP, \
      CHANNEL_TYPE_CONTACT_LIST, CHANNEL_TYPE_TEXT, CHANNEL_INTERFACE, \
+     CONNECTION, CONNECTION_INTERFACE_ALIASING, CHANNEL, CONNECTION_INTERFACE_CONTACTS, \
+     CONNECTION_INTERFACE_SIMPLE_PRESENCE, CHANNEL_INTERFACE_MESSAGES, \
      CONNECTION_INTERFACE_REQUESTS, CHANNEL_INTERFACE_TUBE, CHANNEL_TYPE_DBUS_TUBE
 from telepathy.constants import CONNECTION_HANDLE_TYPE_CONTACT, \
      CONNECTION_HANDLE_TYPE_LIST, CONNECTION_HANDLE_TYPE_ROOM, \
      CONNECTION_STATUS_CONNECTED, CONNECTION_STATUS_DISCONNECTED, \
      CONNECTION_STATUS_CONNECTING, TUBE_CHANNEL_STATE_LOCAL_PENDING, \
      TUBE_CHANNEL_STATE_REMOTE_PENDING, TUBE_CHANNEL_STATE_OPEN, \
-     TUBE_CHANNEL_STATE_NOT_OFFERED
+     TUBE_CHANNEL_STATE_NOT_OFFERED, HANDLE_TYPE_LIST
 
 from coherence.extern.telepathy.tubeconn import TubeConnection
 from coherence.extern.telepathy.connect import tp_connect
@@ -27,6 +29,8 @@ TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
               TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
               TUBE_CHANNEL_STATE_OPEN : 'open',
               TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
+
+DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
 
 class Client(log.Loggable):
     logCategory = "tp_client"
@@ -42,6 +46,7 @@ class Client(log.Loggable):
         self._tubes = {}
         self._channels = []
         self._pending_tubes = {}
+        self._text_channels = {}
 
         if self.existing_client:
             self.muc_id = self.existing_client.muc_id
@@ -77,6 +82,9 @@ class Client(log.Loggable):
         self.fill_roster()
         self.join_muc()
 
+    def error_cb(self, error):
+        print "Error:", error
+
     def status_changed_cb(self, status, reason):
         self.debug("status changed to %r: %r", status, reason)
         if status == CONNECTION_STATUS_CONNECTING:
@@ -86,33 +94,53 @@ class Client(log.Loggable):
         elif status == CONNECTION_STATUS_DISCONNECTED:
             self.info('disconnected')
 
-
     def fill_roster(self):
         self.info("Filling up the roster")
         self.roster = {}
-        conn_iface = self.conn[CONN_INTERFACE]
+        conn = self.conn
+
+        class ensure_channel_cb (object):
+            def __init__ (self, parent, group):
+                self.parent = parent
+                self.group = group
+
+            def __call__ (self, yours, path, properties):
+                channel = Channel(conn.service_name, path)
+                self.channel = channel
+
+                # request the list of members
+                channel[DBUS_PROPERTIES].Get(CHANNEL_INTERFACE_GROUP,
+                                             'Members',
+                                             reply_handler = self.members_cb,
+                                             error_handler = self.parent.error_cb)
+
+            def members_cb (self, handles):
+                # request information for this list of handles using the
+                # Contacts interface
+                conn[CONNECTION_INTERFACE_CONTACTS].GetContactAttributes(
+                    handles, [
+                        CONNECTION,
+                        CONNECTION_INTERFACE_ALIASING,
+                        CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+                    ],
+                    False,
+                    reply_handler = self.get_contact_attributes_cb,
+                    error_handler = self.parent.error_cb)
+
+            def get_contact_attributes_cb (self, attributes):
+                self.parent.roster[self.group] = attributes
+
+        def no_channel_available (error):
+            print error
 
         for name in ('subscribe', 'publish', 'hide', 'allow', 'deny', 'known'):
-            try:
-                chan = self._request_list_channel(name)
-            except dbus.DBusException:
-                self.debug("'%s' channel is not available" % name)
-                continue
-
-            group_iface = chan[CHANNEL_INTERFACE_GROUP]
-            current, local_pending, remote_pending = (group_iface.GetAllMembers())
-            for member in current:
-                contact_id = conn_iface.InspectHandles(CONNECTION_HANDLE_TYPE_CONTACT,
-                                                       [member])[0]
-                self.roster[contact_id] = name
-        self.debug("roster contents: %r", self.roster)
-
-    def _request_list_channel(self, name):
-        handle = self.conn[CONN_INTERFACE].RequestHandles(
-            CONNECTION_HANDLE_TYPE_LIST, [name])[0]
-        return self.conn.request_channel(
-            CHANNEL_TYPE_CONTACT_LIST, CONNECTION_HANDLE_TYPE_LIST,
-            handle, True)
+            conn[CONNECTION_INTERFACE_REQUESTS].EnsureChannel({
+                CHANNEL + '.ChannelType'     : CHANNEL_TYPE_CONTACT_LIST,
+                CHANNEL + '.TargetHandleType': HANDLE_TYPE_LIST,
+                CHANNEL + '.TargetID'        : name,
+                },
+                reply_handler = ensure_channel_cb(self, name),
+                error_handler = no_channel_available)
 
     def join_muc(self):
         conn_obj = self.conn[CONN_INTERFACE]
@@ -242,3 +270,36 @@ class Client(log.Loggable):
         else:
             self.info("Queing text %r until muc is joined", text)
             self._unsent_messages.append(text)
+
+    def send_message(self, target_handle, message):
+        channel = self._text_channels.get(target_handle)
+        if not channel:
+            conn_iface = self.conn[CONNECTION_INTERFACE_REQUESTS]
+            params = {CHANNEL_INTERFACE+".ChannelType": CHANNEL_TYPE_TEXT,
+                      CHANNEL_INTERFACE+".TargetHandleType": CONNECTION_HANDLE_TYPE_CONTACT,
+                      CHANNEL_INTERFACE+ ".TargetHandle": target_handle}
+
+            def got_channel(chan_path, props):
+                channel = Channel(self.conn.dbus_proxy.bus_name, chan_path)
+                self._text_channels[target_handle] = channel
+                self.send_message(target_handle, message)
+
+            def got_error(exception):
+                print exception
+
+            conn_iface.CreateChannel(params, reply_handler=got_channel, error_handler=got_error)
+        else:
+            new_message = [
+                {}, # let the CM fill in the headers
+                {
+                    'content': message,
+                    'content-type': 'text/plain',
+                    },
+                ]
+
+            channel[CHANNEL_INTERFACE_MESSAGES].SendMessage(new_message, 0,
+                                                            reply_handler=self.send_message_cb,
+                                                            error_handler=self.error_cb)
+
+    def send_message_cb (self, token):
+        print "Sending message with token %s" % token
