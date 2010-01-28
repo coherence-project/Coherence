@@ -26,7 +26,9 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
     def pre_accept_tube(self, tube):
         params = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'Parameters')
         initiator = params.get("initiator")
-        can_accept = initiator and initiator in self.roster
+        # FIXME: reactivate this
+        #can_accept = initiator and initiator in self.roster
+        can_accept = True
         return can_accept
 
     def post_tube_accept(self, tube, tube_conn, initiator_handle):
