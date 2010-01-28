@@ -175,7 +175,9 @@ class Client(log.Loggable):
             def got_error(exception):
                 print "Could not join MUC", exception
 
-            conn_iface.CreateChannel(params, reply_handler=got_channel, error_handler=got_error)
+            got_channel(*conn_iface.CreateChannel(params))
+            #reply_handler=got_channel, error_handler=got_error)
+            
 
 
     def _text_channel_available(self):
