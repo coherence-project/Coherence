@@ -61,29 +61,21 @@ class Client(log.Loggable):
         self.conn[CONNECTION].connect_to_signal('StatusChanged', self.status_changed_cb)
         self.joined = False
 
-        self.start()
-
-    def _connected(self, *args):
-        pass
-
     def start(self):
         if not self.existing_client:
             self.debug("connecting...")
-            self.conn[CONNECTION].Connect(reply_handler=self._connected,
-                                          error_handler=self.error_cb)
+            self.conn[CONNECTION].Connect()
 
     def stop(self):
         if not self.existing_client:
             try:
                 self.conn[CONNECTION].Disconnect()
-            except:
-                pass
+            except Exception, exc:
+                self.warning("Error while disconnecting: %s", exc)
 
     def ready_cb(self, conn):
         self.debug("ready callback")
         self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
-        self.fill_roster()
-        self.join_muc()
         self.conn[CONNECTION_INTERFACE_REQUESTS].connect_to_signal ("NewChannels",
                 self.new_channels_cb)
 
@@ -96,20 +88,26 @@ class Client(log.Loggable):
             self.info('connecting')
         elif status == CONNECTION_STATUS_CONNECTED:
             self.info('connected')
+            self.conn[CONNECTION].GetInterfaces(reply_handler=self.get_interfaces_cb,
+                                                error_handler=self.error_cb)
         elif status == CONNECTION_STATUS_DISCONNECTED:
             self.info('disconnected')
+
+    def get_interfaces_cb(self, interfaces):
+        self.fill_roster()
+        self.join_muc()
 
     def fill_roster(self):
         self.info("Filling up the roster")
         self.roster = {}
         conn = self.conn
 
-        class ensure_channel_cb (object):
-            def __init__ (self, parent, group):
+        class ensure_channel_cb(object):
+            def __init__(self, parent, group):
                 self.parent = parent
                 self.group = group
 
-            def __call__ (self, yours, path, properties):
+            def __call__(self, yours, path, properties):
                 channel = Channel(conn.service_name, path)
                 self.channel = channel
 
@@ -119,7 +117,7 @@ class Client(log.Loggable):
                                              reply_handler = self.members_cb,
                                              error_handler = self.parent.error_cb)
 
-            def members_cb (self, handles):
+            def members_cb(self, handles):
                 # request information for this list of handles using the
                 # Contacts interface
                 conn[CONNECTION_INTERFACE_CONTACTS].GetContactAttributes(
@@ -132,10 +130,10 @@ class Client(log.Loggable):
                     reply_handler = self.get_contact_attributes_cb,
                     error_handler = self.parent.error_cb)
 
-            def get_contact_attributes_cb (self, attributes):
+            def get_contact_attributes_cb(self, attributes):
                 self.parent.roster[self.group] = attributes
 
-        def no_channel_available (error):
+        def no_channel_available(error):
             print error
 
         for name in ('subscribe', 'publish'):

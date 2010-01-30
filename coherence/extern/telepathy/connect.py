@@ -31,7 +31,7 @@ def tp_connect(manager, protocol, account, ready_handler=None):
                                                                account)
         conn_bus_name, conn_object_path = connection
     else:
-        presence = dbus.Struct((dbus.UInt32(2L), dbus.String(u'online'), dbus.String(u'')),
+        presence = dbus.Struct((dbus.UInt32(2L), dbus.String(u'available'), dbus.String(u'')),
                                signature=None, variant_level=1)
         account.Set(ACCOUNT, "RequestedPresence", presence)
         # TODO: figure how not to hardode to gabble

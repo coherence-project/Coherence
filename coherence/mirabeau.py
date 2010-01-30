@@ -136,8 +136,7 @@ class Mirabeau(log.Loggable):
                                                       self._external_address))
 
     def start(self):
-        #self.tube_publisher.start()
-        pass
+        self.tube_publisher.start()
 
     def stop(self):
         control_point = self._coherence.ctrl
