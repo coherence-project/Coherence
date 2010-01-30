@@ -180,8 +180,8 @@ class Client(log.Loggable):
             def got_error(exception):
                 self.warning("Could not join MUC: %s", exception)
 
-            got_channel(*conn_iface.CreateChannel(params))
-            #,reply_handler=got_channel, error_handler=got_error)
+            conn_iface.CreateChannel(params,reply_handler=got_channel,
+                                     error_handler=got_error)
 
     def _text_channel_available(self):
         room_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]
