@@ -560,7 +560,8 @@ class Coherence(log.Loggable):
                 louie.disconnect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
                 louie.disconnect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
                 self.ssdp_server.shutdown()
-                self.ctrl.shutdown()
+                if self.ctrl:
+                    self.ctrl.shutdown()
                 self.warning('Coherence UPnP framework shutdown')
                 return result
 
