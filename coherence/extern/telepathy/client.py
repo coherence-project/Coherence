@@ -95,7 +95,6 @@ class Client(log.Loggable):
 
     def get_interfaces_cb(self, interfaces):
         self.fill_roster()
-        self.join_muc()
 
     def fill_roster(self):
         self.info("Filling up the roster")
@@ -132,6 +131,10 @@ class Client(log.Loggable):
 
             def get_contact_attributes_cb(self, attributes):
                 self.parent.roster[self.group] = attributes
+                if 'subscribe' in self.parent.roster and \
+                   'publish' in self.parent.roster:
+                    self.parent.join_muc()
+
 
         def no_channel_available(error):
             print error
@@ -177,7 +180,8 @@ class Client(log.Loggable):
             def got_error(exception):
                 self.warning("Could not join MUC: %s", exception)
 
-            conn_iface.CreateChannel(params,reply_handler=got_channel, error_handler=got_error)
+            got_channel(*conn_iface.CreateChannel(params))
+            #,reply_handler=got_channel, error_handler=got_error)
 
     def _text_channel_available(self):
         room_iface = self.channel_text[CHANNEL_INTERFACE_GROUP]

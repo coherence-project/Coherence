@@ -26,13 +26,16 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
     def pre_accept_tube(self, tube):
         params = tube[PROPERTIES_IFACE].Get(CHANNEL_INTERFACE_TUBE, 'Parameters')
         initiator = params.get("initiator")
-        can_accept = False
         for group in ("publish", "subscribe"):
-            contacts = self.roster[group]
-            if contacts[CONNECTION + "/contact-id"] == initiator:
-                can_accept = True
-                break
-        return can_accept
+            try:
+                contacts = self.roster[group]
+            except KeyError:
+                self.debug("Group %r not in roster...", group)
+                continue
+            for contact_handle, contact in contacts.iteritems():
+                if contact[CONNECTION + "/contact-id"] == initiator:
+                    return True
+        return False
 
     def post_tube_accept(self, tube, tube_conn, initiator_handle):
         service = tube.props[CHANNEL_TYPE_DBUS_TUBE + ".ServiceName"]
