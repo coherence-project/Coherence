@@ -235,6 +235,7 @@ class Coherence(log.Loggable):
 
         self.dbus = None
         self.config = config
+        self.ctrl = None
 
         network_if = config.get('interface')
 
@@ -340,7 +341,6 @@ class Coherence(log.Loggable):
 
         self.available_plugins = None
 
-        self.ctrl = None
 
         try:
             plugins = self.config['plugin']
