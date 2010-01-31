@@ -18,6 +18,7 @@ from twisted.web import resource,static
 import coherence.extern.louie as louie
 
 from coherence import __version__
+from coherence import log
 
 from coherence.upnp.core.ssdp import SSDPServer
 from coherence.upnp.core.msearch import MSearch
@@ -33,7 +34,11 @@ from coherence.upnp.devices.binary_light import BinaryLight
 from coherence.upnp.devices.dimmable_light import DimmableLight
 
 
-from coherence import log
+try:
+    import pkg_resources
+except ImportError:
+    pkg_resources = None
+
 
 class SimpleRoot(resource.Resource, log.Loggable):
     addSlash = True
@@ -152,7 +157,18 @@ class Plugins(log.Loggable):
         pass
 
     def __getitem__(self, key):
-        return self._plugins.__getitem__(key)
+        plugin = self._plugins.__getitem__(key)
+        if pkg_resources and isinstance(plugin, pkg_resources.EntryPoint):
+            try:
+                plugin = plugin.load(require=False)
+            except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
+                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
+                self.info(traceback.format_exc())
+                del self._plugins[key]
+                raise KeyError
+            else:
+                self._plugins[key] = plugin
+        return plugin
 
     def get(self, key,default=None):
         try:
@@ -171,22 +187,14 @@ class Plugins(log.Loggable):
 
     def _collect(self, ids=_valids):
         if not isinstance(ids, (list,tuple)):
-            ids = (ids)
-        try:
-            import pkg_resources
-            for id in ids:
-                for entrypoint in pkg_resources.iter_entry_points(id):
-                    try:
-                        #print entrypoint, type(entrypoint)
-                        self._plugins[entrypoint.name] = entrypoint.load(require=False)
-                    except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
-                        self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
-                        self.info(traceback.format_exc())
-        except ImportError:
+            ids = (ids,)
+        if pkg_resources:
+            for group in ids:
+                for entrypoint in pkg_resources.iter_entry_points(group):
+                    # set a placeholder for lazy loading
+                    self._plugins[entrypoint.name] = entrypoint
+        else:
             self.info("no pkg_resources, fallback to simple plugin handling")
-
-        except Exception, msg:
-            self.warning(msg)
 
         if len(self._plugins) == 0:
             self._collect_from_module()
