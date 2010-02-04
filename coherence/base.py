@@ -162,7 +162,7 @@ class Plugins(log.Loggable):
             try:
                 plugin = plugin.load(require=False)
             except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
-                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (entrypoint.name,msg))
+                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (plugin.name,msg))
                 self.info(traceback.format_exc())
                 del self._plugins[key]
                 raise KeyError
