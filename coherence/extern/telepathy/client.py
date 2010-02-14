@@ -62,8 +62,7 @@ class Client(log.Loggable):
             else:
                 self.muc_id = "%s@%s" % (muc_id, conference_server)
             self.connection_dfr = tp_connect(manager, protocol, account, self.ready_cb)
-            self.connection_dfr.addCallback(self._got_connection)
-            self.connection_dfr.addErrback(self.error_cb)
+            self.connection_dfr.addCallbacks(self._got_connection, self.error_cb)
 
     def _got_connection(self, connection):
         self.conn = connection
