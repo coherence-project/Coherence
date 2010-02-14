@@ -47,6 +47,7 @@ class Client(log.Loggable):
         self._channels = []
         self._pending_tubes = {}
         self._text_channels = {}
+        self.joined = False
 
         if self.existing_client:
             self.muc_id = self.existing_client.muc_id
@@ -57,14 +58,14 @@ class Client(log.Loggable):
                 self.muc_id = muc_id
             else:
                 self.muc_id = "%s@%s" % (muc_id, conference_server)
-            self.conn = tp_connect(manager, protocol, account, self.ready_cb)
-        self.conn[CONNECTION].connect_to_signal('StatusChanged', self.status_changed_cb)
-        self.joined = False
+            dfr = tp_connect(manager, protocol, account, self.ready_cb)
+            dfr.addCallback(self._got_connection)
+
+    def _got_connection(self, connection):
+        self.conn = connection
 
     def start(self):
-        if not self.existing_client:
-            self.debug("connecting...")
-            self.conn[CONNECTION].Connect()
+        pass
 
     def stop(self):
         if not self.existing_client:
@@ -76,8 +77,14 @@ class Client(log.Loggable):
     def ready_cb(self, conn):
         self.debug("ready callback")
         self.self_handle = self.conn[CONN_INTERFACE].GetSelfHandle()
-        self.conn[CONNECTION_INTERFACE_REQUESTS].connect_to_signal ("NewChannels",
-                self.new_channels_cb)
+        self.conn[CONNECTION_INTERFACE_REQUESTS].connect_to_signal("NewChannels",
+                                                                   self.new_channels_cb)
+        self.conn[CONNECTION].connect_to_signal('StatusChanged', self.status_changed_cb)
+        if not self.existing_client:
+            self.debug("connecting...")
+            self.conn[CONNECTION].Connect()
+        self.conn[CONNECTION].GetInterfaces(reply_handler=self.get_interfaces_cb,
+                                            error_handler=self.error_cb)
 
     def error_cb(self, error):
         print "Error:", error
@@ -88,8 +95,6 @@ class Client(log.Loggable):
             self.info('connecting')
         elif status == CONNECTION_STATUS_CONNECTED:
             self.info('connected')
-            self.conn[CONNECTION].GetInterfaces(reply_handler=self.get_interfaces_cb,
-                                                error_handler=self.error_cb)
         elif status == CONNECTION_STATUS_DISCONNECTED:
             self.info('disconnected')
 
@@ -134,7 +139,6 @@ class Client(log.Loggable):
                 if 'subscribe' in self.parent.roster and \
                    'publish' in self.parent.roster:
                     self.parent.join_muc()
-
 
         def no_channel_available(error):
             print error
@@ -198,7 +202,8 @@ class Client(log.Loggable):
         self._channels.extend(channels)
         for path, props in channels:
             self.debug("new channel with path %r and props %r", path, props)
-            if props[CHANNEL_INTERFACE + ".ChannelType"] == CHANNEL_TYPE_DBUS_TUBE:
+            channel_type = props[CHANNEL_INTERFACE + ".ChannelType"]
+            if channel_type == CHANNEL_TYPE_DBUS_TUBE:
                 tube = Channel(self.conn.dbus_proxy.bus_name, path)
                 self.connect_tube_signals(tube)
                 tube.props = props

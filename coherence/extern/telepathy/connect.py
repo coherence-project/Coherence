@@ -7,6 +7,7 @@ import telepathy
 from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER, ACCOUNT, \
      CONNECTION
 import dbus
+from twisted.internet import defer
 
 def to_dbus_account(account):
     for key, value in account.iteritems():
@@ -30,18 +31,31 @@ def tp_connect(manager, protocol, account, ready_handler=None):
         connection = mgr[CONN_MGR_INTERFACE].RequestConnection(protocol,
                                                                account)
         conn_bus_name, conn_object_path = connection
+        client_connection = telepathy.client.Connection(conn_bus_name,
+                                                        conn_object_path,
+                                                        ready_handler=ready_handler)
+        dfr = defer.succeed(client_connection)
     else:
         presence = dbus.Struct((dbus.UInt32(2L), dbus.String(u'available'), dbus.String(u'')),
                                signature=None, variant_level=1)
-        account.Set(ACCOUNT, "RequestedPresence", presence)
-        # TODO: figure how not to hardode to gabble
-        conn_bus_name = "org.freedesktop.Telepathy.ConnectionManager.gabble"
-        conn_object_path = account.Get(ACCOUNT, 'Connection')
 
-    client_connection = telepathy.client.Connection(conn_bus_name,
-                                                    conn_object_path,
-                                                    ready_handler=ready_handler)
-    return client_connection
+        dfr = defer.Deferred()
+
+        def property_changed_cb(prop):
+            prop = dict(prop)
+            if 'CurrentPresence' in prop and prop['CurrentPresence'] == presence:
+                # TODO: figure how not to hardode to gabble
+                conn_bus_name = "org.freedesktop.Telepathy.ConnectionManager.gabble"
+                conn_object_path = account.Get(ACCOUNT, 'Connection')
+                client_connection = telepathy.client.Connection(conn_bus_name,
+                                                                conn_object_path,
+                                                                ready_handler=ready_handler)
+                dfr.callback(client_connection)
+
+        account.connect_to_signal('AccountPropertyChanged', property_changed_cb)
+        account.Set(ACCOUNT, "RequestedPresence", presence)
+
+    return dfr
 
 
 def gabble_accounts():
