@@ -25,7 +25,7 @@
 
 import CDDB, DiscID
 
-from twisted.internet import threads
+from twisted.internet import reactor,threads
 
 from coherence.upnp.core import DIDLLite
 from coherence import log
@@ -91,12 +91,15 @@ class AudioCDStore(AbstractBackendStore):
        {'option':'device_name','text':'device name for audio CD:','type':'string', 'help':'device name containing the audio cd.'}
     ]
 
+    disc_title = None
+    cdrom = None
+
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
         self.name = 'audio CD'
         self.device_name= kwargs.get('device_name',"/dev/cdom");
-        
+
         threads.deferToThread(self.extractAudioCdInfo)
         
         # self.init_completed() # will be fired when the audio CD info is extracted
@@ -114,8 +117,8 @@ class AudioCDStore(AbstractBackendStore):
 
     def extractAudioCdInfo (self):
         """ extract the CD info (album art + artist + tracks), and construct the UPnP items"""
-        cdrom = DiscID.open(self.device_name)
-        disc_id = DiscID.disc_id(cdrom)
+        self.cdrom = DiscID.open(self.device_name)
+        disc_id = DiscID.disc_id(self.cdrom)
 
         (query_status, query_info) = CDDB.query(disc_id)
         if query_status in (210, 211):
@@ -129,14 +132,14 @@ class AudioCDStore(AbstractBackendStore):
             
         track_count = disc_id[1]
         disc_id = query_info['disc_id']
-        disc_title = query_info['title'].encode('utf-8')
+        self.disc_title = query_info['title'].encode('utf-8')
         tracks = {}
         for i in range(track_count):
             tracks[i+1] = read_info['TTITLE' + `i`].decode('ISO-8859-1').encode('utf-8')
 
-        self.name = disc_title
+        self.name = self.disc_title
 
-        root_item = Container(None, disc_title)
+        root_item = Container(None, self.disc_title)
         # we will sort the item by "track_number"
         def childs_sort(x,y):
             return cmp(x.track_number, y.track_number)
@@ -149,9 +152,20 @@ class AudioCDStore(AbstractBackendStore):
             external_id = "%s_%d" % (disc_id, number)
             root_item.add_child(item, external_id = external_id)
 
+        self.info('Sharing audio CD %s' % self.disc_title)
+
+        reactor.callLater(2,self.checkIfAudioCdStillPresent)
         self.init_completed()
-            
- 
+        
+
+    def  checkIfAudioCdStillPresent(self):
+        try:
+            disc_id = DiscID.disc_id(self.cdrom)
+            reactor.callLater(2,self.checkIfAudioCdStillPresent)
+        except:
+            self.warning('audio CD %s ejected: closing UPnP server!' % self.disc_title)            
+            self.server.coherence.remove_plugin(self.server)
+
+        
     def __repr__(self):
         return self.__class__.__name__        
-        
