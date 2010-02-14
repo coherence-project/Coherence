@@ -6,6 +6,8 @@
 import telepathy
 from telepathy.interfaces import CONN_MGR_INTERFACE, ACCOUNT_MANAGER, ACCOUNT, \
      CONNECTION
+from telepathy.constants import CONNECTION_PRESENCE_TYPE_AVAILABLE
+
 import dbus
 from twisted.internet import defer
 
@@ -36,7 +38,8 @@ def tp_connect(manager, protocol, account, ready_handler=None):
                                                         ready_handler=ready_handler)
         dfr = defer.succeed(client_connection)
     else:
-        presence = dbus.Struct((dbus.UInt32(2L), dbus.String(u'available'), dbus.String(u'')),
+        presence = dbus.Struct((dbus.UInt32(CONNECTION_PRESENCE_TYPE_AVAILABLE),
+                                dbus.String(u'available'), dbus.String(u'')),
                                signature=None, variant_level=1)
 
         dfr = defer.Deferred()
@@ -52,8 +55,12 @@ def tp_connect(manager, protocol, account, ready_handler=None):
                                                                 ready_handler=ready_handler)
                 dfr.callback(client_connection)
 
-        account.connect_to_signal('AccountPropertyChanged', property_changed_cb)
-        account.Set(ACCOUNT, "RequestedPresence", presence)
+        valid = account.Get(ACCOUNT, 'Valid')
+        if not valid:
+            dfr.errback("Account not valid!")
+        else:
+            account.connect_to_signal('AccountPropertyChanged', property_changed_cb)
+            account.Set(ACCOUNT, "RequestedPresence", presence)
 
     return dfr
 
