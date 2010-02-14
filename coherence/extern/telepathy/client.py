@@ -25,6 +25,8 @@ from coherence.extern.telepathy.tubeconn import TubeConnection
 from coherence.extern.telepathy.connect import tp_connect
 from coherence import log
 
+from twisted.internet import defer
+
 TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
               TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
               TUBE_CHANNEL_STATE_OPEN : 'open',
@@ -53,16 +55,18 @@ class Client(log.Loggable):
             self.muc_id = self.existing_client.muc_id
             self.conn = self.existing_client.conn
             self.ready_cb(self.conn)
+            self.connection_dfr = defer.succeed(self.conn)
         else:
             if protocol == 'local-xmpp':
                 self.muc_id = muc_id
             else:
                 self.muc_id = "%s@%s" % (muc_id, conference_server)
-            dfr = tp_connect(manager, protocol, account, self.ready_cb)
-            dfr.addCallback(self._got_connection)
+            self.connection_dfr = tp_connect(manager, protocol, account, self.ready_cb)
+            self.connection_dfr.addCallback(self._got_connection)
 
     def _got_connection(self, connection):
         self.conn = connection
+        return connection
 
     def start(self):
         pass
