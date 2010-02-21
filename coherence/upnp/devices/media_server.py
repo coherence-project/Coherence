@@ -708,4 +708,4 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                         self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
 
         self.register()
-        self.warning("%s %s (%s) activated with id %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))
+        self.warning("%s %s (%s) activated with id %s" % (self.device_type, self.backend.name, self.backend, str(self.uuid)[5:]))
