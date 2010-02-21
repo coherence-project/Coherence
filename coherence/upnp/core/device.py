@@ -497,13 +497,15 @@ class RootDevice(Device):
 
     def device_detect( self, *args, **kwargs):
         self.debug("device_detect %r", kwargs)
+        self.debug("root_detection_completed %r", self.root_detection_completed)
         if self.root_detection_completed == True:
             return
-        self.debug("root_detection_completed %r", self.root_detection_completed)
         # our self is not complete yet
+
+        self.debug("detection_completed %r", self.detection_completed)
         if self.detection_completed == False:
             return
-        self.debug("detection_completed %r", self.detection_completed)
+
         # now check child devices.
         self.debug("self.devices %r", self.devices)
         for d in self.devices:
@@ -528,23 +530,31 @@ class RootDevice(Device):
         def gotPage(x):
             self.debug("got device description from %r" % self.location)
             data, headers = x
-            tree = utils.parse_xml(data, 'utf-8').getroot()
-
-            major = tree.findtext('./{%s}specVersion/{%s}major' % (ns,ns))
-            minor = tree.findtext('./{%s}specVersion/{%s}minor' % (ns,ns))
+            xml_data = None
             try:
-                self.upnp_version = '.'.join((major,minor))
+                xml_data = utils.parse_xml(data, 'utf-8')
             except:
-                self.upnp_version = 'n/a'
-            try:
-                self.urlbase = tree.findtext('./{%s}URLBase' % ns)
-            except:
+                self.warning("Invalid device description received from %r", self.location)
                 import traceback
                 self.debug(traceback.format_exc())
-
-            d = tree.find('./{%s}device' % ns)
-            if d is not None:
-                self.parse_device(d) # root device
+            
+            if xml_data is not None:
+                tree = xml_data.getroot()
+                major = tree.findtext('./{%s}specVersion/{%s}major' % (ns,ns))
+                minor = tree.findtext('./{%s}specVersion/{%s}minor' % (ns,ns))
+                try:
+                    self.upnp_version = '.'.join((major,minor))
+                except:
+                    self.upnp_version = 'n/a'
+                try:
+                    self.urlbase = tree.findtext('./{%s}URLBase' % ns)
+                except:
+                    import traceback
+                    self.debug(traceback.format_exc())
+    
+                d = tree.find('./{%s}device' % ns)
+                if d is not None:
+                    self.parse_device(d) # root device
 
         def gotError(failure, url):
             self.warning("error getting device description from %r", url)
