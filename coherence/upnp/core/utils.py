@@ -519,7 +519,7 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
     noisy = False
 
     def __init__(self, url, method='GET', postdata=None, headers=None,
-                 agent="Twisted PageGetter", timeout=0, cookies=None,
+                 agent="Coherence PageGetter", timeout=0, cookies=None,
                  followRedirect=True, redirectLimit=20):
         self.followRedirect = followRedirect
         self.redirectLimit = redirectLimit
