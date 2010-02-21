@@ -71,7 +71,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
         parent_container = str(ContainerID)
 
-        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', None),
                            parent_container=parent_container,
                            transcoding=self.transcoding)
 
@@ -128,7 +128,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             return dl
 
         def proceed(result):
-            if(kwargs.get('X_UPnPClient', '') == 'XBox' and
+            if(kwargs.has_key('X_UPnPClient') and
+               kwargs.get('X_UPnPClient').hasTag('XBox') and
                hasattr(result, 'get_artist_all_tracks')):
                 d = defer.maybeDeferred( result.get_artist_all_tracks, StartingIndex, StartingIndex + RequestedCount)
             else:
@@ -143,7 +144,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             pass
 
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
-        if kwargs.get('X_UPnPClient', '') == 'XBox':
+        if kwargs.has_key('X_UPnPClient') and kwargs.get('X_UPnPClient').hasTag('XBox'):
             if(wmc_mapping != None and
                wmc_mapping.has_key(ContainerID)):
                 """ fake a Windows Media Connect Server
@@ -216,7 +217,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
         self.info("upnp_Browse request %r %r %r %r", ObjectID, BrowseFlag, StartingIndex, RequestedCount)
 
-        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', ''),
+        didl = DIDLElement(upnp_client=kwargs.get('X_UPnPClient', None),
                            requested_id=requested_id,
                            parent_container=parent_container,
                            transcoding=self.transcoding)
@@ -292,7 +293,8 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         root_id = ObjectID
 
         wmc_mapping = getattr(self.backend, "wmc_mapping", None)
-        if(kwargs.get('X_UPnPClient', '') == 'XBox' and
+        if(kwargs.has_key('X_UPnPClient') and
+            kwargs.get('X_UPnPClient').hasTag('XBox') and
             wmc_mapping != None and
             wmc_mapping.has_key(ObjectID)):
             """ fake a Windows Media Connect Server

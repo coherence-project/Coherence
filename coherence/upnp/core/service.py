@@ -1045,7 +1045,7 @@ class ServiceControl:
         self.info("soap__generic", action, __name__, kwargs)
         del kwargs['soap_methodName']
         if( kwargs.has_key('X_UPnPClient') and
-                kwargs['X_UPnPClient'] == 'XBox'):
+                kwargs['X_UPnPClient'].hasTag('XBox')):
             if(action.name == 'Browse' and
                     kwargs.has_key('ContainerID')):
                 """ XXX: THIS IS SICK """

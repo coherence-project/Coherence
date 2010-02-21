@@ -138,19 +138,8 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             self._methodNotFound(request, methodName)
             return server.NOT_DONE_YET
         else:
-            keywords = {'soap_methodName':methodName}
-            if(headers.has_key('user-agent') and
-                    headers['user-agent'].find('Xbox/') == 0):
-                keywords['X_UPnPClient'] = 'XBox'
-            #if(headers.has_key('user-agent') and
-            #        headers['user-agent'].startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows""")):
-            #    keywords['X_UPnPClient'] = 'XBox'
-            if(headers.has_key('x-av-client-info') and
-                    headers['x-av-client-info'].find('"PLAYSTATION3') > 0):
-                keywords['X_UPnPClient'] = 'PLAYSTATION3'
-            if(headers.has_key('user-agent') and
-                    headers['user-agent'].find('Philips-Software-WebClient/4.32') == 0):
-                keywords['X_UPnPClient'] = 'Philips-TV'
+            keywords = {'soap_methodName':methodName,
+                        'X_UPnPClient':request.upnp_client}
             for k, v in kwargs.items():
                 keywords[str(k)] = v
             self.info('call', methodName, keywords)

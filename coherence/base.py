@@ -8,6 +8,7 @@ import socket
 import os, sys
 import traceback
 import copy
+import re
 
 from twisted.python import filepath, util
 from twisted.internet.tcp import CannotListenError
@@ -39,6 +40,115 @@ try:
 except ImportError:
     pkg_resources = None
 
+class WebClient(log.Loggable):
+    ''' the WebClient item represents the client devices, as recognized from its ip, mac-address, user-agent... \
+        Specific tags and other device characteristics are extracted from configuration, \
+        to be used to adapt the request treatment at any stage where it may be needed.'''
+    
+    logCategory = 'coherence'
+    request = None
+    config = None 
+    done = False
+    
+    ip = ""
+    useragent = ""
+    otherHttpHeaders = {}
+    mac = ""
+    tags = []
+    dict = {}
+    
+    def __init__(self, request, config, init = False):
+        self.request = request;
+        self.config = config;
+        done = False
+        if (init is True):
+            self.init()
+    
+    # data is lazily extracted from configuration 
+    def init(self):
+      
+        # extract seed data from request
+        self.ip = self.request.host.host
+        #self.mac = ""
+        if (self.request.received_headers.has_key('user-agent')):
+            self.useragent = self.request.received_headers['user-agent']
+        
+        # complete date from config
+        if self.config is not None:
+            rules = self.config.get('rule', [])
+            for rule in rules:
+                type = rule.get('type', "")
+
+                if type not in ('ip', 'mac', 'user-agent', 'tag', 'http-header', 'all'):
+                    self.warning("Invalid device configuration rule: %r" % rule)
+                    continue
+                if type in ('mac'):
+                    self.warning("Device configuration rule not implemented: %r" % rule)
+                
+                value = rule.get('value', "")                
+                valueAux = rule.get('auxValue', "")
+                
+                # switch to next rule, except if the rule value corresponds to the current request
+                if ((type == 'ip' and value is not self.ip)
+                    or (type == 'mac' and value is not self.mac)
+                    or (type == 'user-agent' and re.search(value, self.useragent) is None)
+                    or (type == 'http-header' and (not self.request.received_headers.has_key(value) or valueAux is not self.request.received_headers[value])) 
+                    or (type == 'tag' and value not in self.tags)):
+                    continue                     
+                          
+                for key in rule.keys():
+                    items = rule.get(key)
+                    
+                    if key in ('type', 'value', 'auxValue'):
+                        # do nothing for attributes type, value, auxValue
+                        continue
+                 
+                    # make sure 'items' is a list of strings,
+                    # especially in case there is a single item, returned as a string
+                    if isinstance(items, str):
+                        items = [items]
+                    
+                    # for each item
+                    for item in items:
+                        
+                        if key == 'tag':      
+                            # add tag                 
+                            self.tags.append(item)
+    
+                        elif key == 'forced-mimetype':
+                            # add new forced mimetype
+                            source = item.get('src', None)
+                            dest = item.get('dest', source)
+                            if (source is not None):
+                                self.dict["forced-mimetype-%s" % source] = dest
+                        
+                        else:
+                            # add new attribute
+                            self.dict[key] = item
+
+        self.dict['ip'] = self.ip
+        self.dict['mac-address'] = self.mac
+        self.dict['user-agent'] = self.useragent
+        self.dict['tags'] = self.tags
+
+        done = True
+        
+    def hasValue(self, key):
+        if (self.done is False):
+            self.init()
+        return self.dict.has_key(key)
+    
+    def getValue(self, key):
+        if (self.done is False):
+            self.init()
+        return self.dict[key]
+
+    def hasTag(self, tag):
+        if (self.done is False):
+            self.init()
+        return (tag in self.dict["tags"])
+
+     
 
 class SimpleRoot(resource.Resource, log.Loggable):
     addSlash = True
@@ -51,6 +161,12 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
     def getChild(self, name, request):
         self.debug('SimpleRoot getChild %s, %s' % (name, request))
+        self.debug('client: %r', request.received_headers)
+        
+        # UPnP client characteristics
+        webClient = WebClient(request, self.coherence.config.get('devices', None), False)
+        request.upnp_client = webClient
+        
         if name == 'oob':
             """ we have an out-of-band request """
             return static.File(self.coherence.dbus.pinboard[request.args['key'][0]])

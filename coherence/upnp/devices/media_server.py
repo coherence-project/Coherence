@@ -190,14 +190,13 @@ class MSRoot(resource.Resource, log.Loggable):
                 return d
             return self.import_response(None,path)
 
-        if(headers.has_key('user-agent') and
-           (headers['user-agent'].find('Xbox/') == 0 or      # XBox
-            headers['user-agent'].startswith("""Mozilla/4.0 (compatible; UPnP/1.0; Windows""")) and  # wmp11
-           path in ['description-1.xml','description-2.xml']):
-            self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
-            if self.children.has_key('xbox-description-1.xml'):
-                self.msg( 'returning xbox-description-1.xml')
-                return self.children['xbox-description-1.xml']
+        if path in ['description-1.xml','description-2.xml']:
+            if request.upnp_client is not None \
+                and request.upnp_client.hasTag('SIMULATE_WMC_SERVER'):
+                self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
+                if self.children.has_key('xbox-description-1.xml'):
+                    self.msg( 'returning xbox-description-1.xml')
+                    return self.children['xbox-description-1.xml']
 
         # resource http://XXXX/<deviceID>/config
         # configuration for the given device

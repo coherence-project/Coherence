@@ -228,16 +228,20 @@ class Resource(object):
             elif additional_info == '#':
                 self.protocolInfo = ':'.join((protocol,network,content_format,'*'))
 
-    def get_additional_info(self,upnp_client=''):
+    def get_additional_info(self,upnp_client=None):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-        if upnp_client  in ('XBox','Philips-TV',):
-            """ we don't need the DLNA tags there,
-                and maybe they irritate these poor things anyway
-            """
-            additional_info = '*'
-        elif upnp_client  in ('PLAYSTATION3',):
-            if content_format.startswith('video/'):
+        if upnp_client is not None:
+            if upnp_client.hasTag('NO_DLNA_ADDITIONAL_INFO'):
+                """ we don't need the DLNA tags there,
+                    and maybe they irritate these poor things anyway
+                """
                 additional_info = '*'
+            elif upnp_client.hasValue("audio_dlna_additional_info") and content_format.startswith('audio/'):
+                    additional_info = upnp_client.getValue("audio_dlna_additional_info")
+            elif upnp_client.hasValue("image_dlna_additional_info") and content_format.startswith('image/'):
+                    additional_info = upnp_client.getValue("image_dlna_additional_info")
+            elif upnp_client.hasValue("video_dlna_additional_info") and content_format.startswith('video/'):
+                    additional_info = upnp_client.getValue("video_dlna_additional_info")
 
         a_list = additional_info.split(';')
         for part in a_list:
@@ -249,20 +253,17 @@ class Resource(object):
 
     def toElement(self,**kwargs):
         root = ET.Element('res')
-        if kwargs.get('upnp_client','') in ('XBox',):
-            protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-            if content_format in ['video/divx','video/x-msvideo']:
-                content_format = 'video/avi'
-            if content_format == 'audio/x-wav':
-                content_format = 'audio/wav'
-            additional_info = self.get_additional_info(upnp_client=kwargs.get('upnp_client',''))
-            root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
-        else:
-            protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-            if content_format == 'video/x-msvideo':
-                content_format = 'video/divx'
-            additional_info = self.get_additional_info(upnp_client=kwargs.get('upnp_client',''))
-            root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
+        upnp_client=kwargs.get('upnp_client',None)
+        protocol,network,content_format,additional_info = self.protocolInfo.split(':')
+
+        # change content_format mimetype if needed by the client device
+        if upnp_client is not None and upnp_client.hasValue("forced-mimetype-%s" % content_format):
+            new_content_format = upnp_client.getValue("forced-mimetype-%s" % content_format)
+            #print "Force mimetype %s to %s" % (content_format, new_content_format)
+            content_format = new_content_format
+            
+        additional_info = self.get_additional_info(upnp_client=upnp_client)
+        root.attrib['protocolInfo'] = ':'.join((protocol,network,content_format,additional_info))
 
         root.text = self.data
 
@@ -378,6 +379,7 @@ class Object(log.Loggable):
 
     upnp_class = 'object'
     creator = None
+    restricted = False
     res = None
     writeStatus = None
     date = None
@@ -427,8 +429,11 @@ class Object(log.Loggable):
 
         root.attrib['parentID'] = str(self.parentID)
 
-        if(kwargs.get('upnp_client','') != 'XBox'):
-            if self.refID:
+        if self.refID:
+            if (kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('NO_REF_ID')):
+                # do nothing with refID
+                pass
+            else:
                 root.attrib['refID'] = str(self.refID)
 
         if kwargs.get('requested_id',None):
@@ -437,7 +442,10 @@ class Object(log.Loggable):
                 t.text = 'root'
             #if kwargs.get('requested_id') != '0' and kwargs.get('requested_id') != root.attrib['id']:
             if kwargs.get('requested_id') != root.attrib['id']:
-                if(kwargs.get('upnp_client','') != 'XBox'):
+                if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('NO_REF_ID')):
+                    # do nothing with refID
+                    pass
+                else:
                     root.attrib['refID'] = root.attrib['id']
                 r_id = kwargs.get('requested_id')
                 root.attrib['id'] = r_id
@@ -446,25 +454,30 @@ class Object(log.Loggable):
                     root.attrib['parentID'] = r_id[1]
                 except IndexError:
                     pass
-                if(kwargs.get('upnp_client','') != 'XBox'):
-                    self.info("Changing ID from %r to %r, with parentID %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'])
-                else:
+                if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('NO_REF_ID')):
                     self.info("Changing ID from %r to %r, with parentID %r", self.id, root.attrib['id'], root.attrib['parentID'])
+                else:
+                    self.info("Changing ID from %r to %r, with parentID %r", root.attrib['refID'], root.attrib['id'], root.attrib['parentID'])
+                    
         elif kwargs.get('parent_container',None):
             if(kwargs.get('parent_container') != '0' and
                kwargs.get('parent_container') != root.attrib['parentID']):
-                if(kwargs.get('upnp_client','') != 'XBox'):
+                if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('NO_REF_ID')):
+                    # Do nothing with refID
+                    pass
+                else:
                     root.attrib['refID'] = root.attrib['id']
                 root.attrib['id'] = '@'.join((root.attrib['id'],kwargs.get('parent_container')))
                 root.attrib['parentID'] = kwargs.get('parent_container')
-                if(kwargs.get('upnp_client','') != 'XBox'):
-                    self.info("Changing ID from %r to %r, with parentID from %r to %r", root.attrib['refID'], root.attrib['id'], self.parentID, root.attrib['parentID'])
-                else:
+                if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('NO_REF_ID')):
                     self.info("Changing ID from %r to %r, with parentID from %r to %r", self.id, root.attrib['id'], self.parentID, root.attrib['parentID'])
+                else:
+                    self.info("Changing ID from %r to %r, with parentID from %r to %r", root.attrib['refID'], root.attrib['id'], self.parentID, root.attrib['parentID'])
+             
 
         ET.SubElement(root, qname('class',UPNP_NS)).text = self.upnp_class
 
-        if kwargs.get('upnp_client','') == 'XBox':
+        if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('XBox')):
             u = root.find(qname('class',UPNP_NS))
             if(kwargs.get('parent_container',None) != None and
                 u.text.startswith('object.container')):
@@ -592,7 +605,6 @@ class Item(Object):
 
     director = None
     actors = None
-    language = None
 
     def __init__(self, *args, **kwargs):
         Object.__init__(self, *args, **kwargs)
@@ -611,14 +623,11 @@ class Item(Object):
             for actor in self.actors:
                 ET.SubElement(root, qname('actor',DC_NS)).text = actor
 
-        #if self.language is not None:
-        #    ET.SubElement(root, qname('language',DC_NS)).text = self.language
-
         if kwargs.get('transcoding',False) == True:
             res = self.res.get_matching(['*:*:*:*'], protocol_type='http-get')
             if len(res) > 0 and is_audio(res[0].protocolInfo):
                 old_res = res[0]
-                if(kwargs.get('upnp_client','') == 'XBox'):
+                if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('XBox')):
                     transcoded_res = old_res.transcoded('mp3')
                     if transcoded_res != None:
                         root.append(transcoded_res.toElement(**kwargs))
@@ -656,13 +665,14 @@ class Item(Object):
 
 
 class ImageItem(Item):
+    """ a still image object """
     upnp_class = Item.upnp_class + '.imageItem'
 
     rating = None
     storageMedium = None
     publisher = None
     rights = None
-
+  
     def toElement(self,**kwargs):
         root = Item.toElement(self,**kwargs)
 
@@ -681,6 +691,7 @@ class ImageItem(Item):
         return root
 
 class Photo(ImageItem):
+    """ a photo object (as opposed to, for example, an icon) """
     upnp_class = ImageItem.upnp_class + '.photo'
     album = None
 
@@ -691,10 +702,11 @@ class Photo(ImageItem):
         return root
 
 class AudioItem(Item):
-    """A piece of content that when rendered generates some audio."""
+    """content that is intended for listening."""
 
     upnp_class = Item.upnp_class + '.audioItem'
 
+    genre = None
     publisher = None
     language = None
     relation = None
@@ -732,7 +744,8 @@ class AudioItem(Item):
 
 
 class MusicTrack(AudioItem):
-    """A discrete piece of audio that should be interpreted as music."""
+    """A discrete piece of audio that should be interpreted as music
+      (as opposed to, for example, a news broadcast or an audio book)."""
 
     upnp_class = AudioItem.upnp_class + '.musicTrack'
 
@@ -760,12 +773,17 @@ class MusicTrack(AudioItem):
         return root
 
 class AudioBroadcast(AudioItem):
+    """ a continuous stream from an audio broadcast
+    (as opposed to, for example, a song or an audio book). """
     upnp_class = AudioItem.upnp_class + '.audioBroadcast'
 
 class AudioBook(AudioItem):
+    """  audio content that is ther narration of a book
+    (as opposed to , for example, a news broadcast or a song). """
     upnp_class = AudioItem.upnp_class + '.audioBook'
 
 class VideoItem(Item):
+    """ content intended for viewing (as a combination of video and audio). """ 
     upnp_class = Item.upnp_class + '.videoItem'
     valid_attrs = dict(genre=UPNP_NS, longDescription=UPNP_NS,
                        producer=UPNP_NS, rating=UPNP_NS,
@@ -792,6 +810,8 @@ class VideoItem(Item):
                 setattr(self, tag, val)
 
 class Movie(VideoItem):
+    """ content that is a movie
+    (as opposed to, for example,a continuous TV broadcast or a music video clip. """
     upnp_class = VideoItem.upnp_class + '.movie'
 
     def __init__(self, *args, **kwargs):
@@ -801,19 +821,83 @@ class Movie(VideoItem):
                                      sccheduledEndTime=UPNP_NS))
 
 class VideoBroadcast(VideoItem):
+    """ a continuous stream from a video broadcast
+    (for example: a convential TV channel or a Webcast). """
     upnp_class = VideoItem.upnp_class + '.videoBroadcast'
 
 class MusicVideoClip(VideoItem):
+    """ video content that is a clip supporting a song
+    (as opposed to, for example, a continuous TV broadcast or a movie) """
     upnp_class = VideoItem.upnp_class + '.musicVideoClip'
 
 class PlaylistItem(Item):
+    """ a playable sequence of resources """
     upnp_class = Item.upnp_class + '.playlistItem'
 
+    valid_attrs = dict(artist=UPNP_NS, 
+                       genre=UPNP_NS,
+                       longDescription=UPNP_NS,
+                       storageMedium=UPNP_NS,
+                       description=DC_NS,
+                       date=DC_NS,
+                       language=DC_NS)
+
+    def toElement(self,**kwargs):
+        root = Item.toElement(self,**kwargs)
+
+        for attr_name, ns in self.valid_attrs.iteritems():
+            value = getattr(self, attr_name, None)
+            if value:
+                ET.SubElement(root, qname(attr_name, ns)).text = value
+
+        return root
+
+    def fromElement(self, elt):
+        Item.fromElement(self, elt)
+        for child in elt.getchildren():
+            tag = child.tag
+            val = child.text
+            if tag in self.valid_attrs.keys():
+                setattr(self, tag, val)    
+    
+
 class TextItem(Item):
+    """ a content intended for reading """
     upnp_class = Item.upnp_class + '.textItem'
 
+    valid_attrs = dict(author=UPNP_NS, 
+                       longDescription=UPNP_NS,
+                       storageMedium=UPNP_NS,
+                       rating=UPNP_NS,
+                       description=DC_NS,
+                       publisher=DC_NS,
+                       contributor=DC_NS,
+                       date=DC_NS,
+                       relation=DC_NS,
+                       language=DC_NS,
+                       rigths=DC_NS)
+
+    def toElement(self,**kwargs):
+        root = Item.toElement(self,**kwargs)
+
+        for attr_name, ns in self.valid_attrs.iteritems():
+            value = getattr(self, attr_name, None)
+            if value:
+                ET.SubElement(root, qname(attr_name, ns)).text = value
+
+        return root
+
+    def fromElement(self, elt):
+        Item.fromElement(self, elt)
+        for child in elt.getchildren():
+            tag = child.tag
+            val = child.text
+            if tag in self.valid_attrs.keys():
+                setattr(self, tag, val) 
+
 class Container(Object):
-    """An object that can contain other objects."""
+    """An object that can contain other objects
+    (individual content objects or other containers)."""
 
     upnp_class = Object.upnp_class + '.container'
 
@@ -870,50 +954,62 @@ class Container(Object):
 
 
 class Person(Container):
+    """ an unordered collection of objects associated with a person """ 
     upnp_class = Container.upnp_class + '.person'
 
 
 class MusicArtist(Person):
+    """ Person instance, where the person associated with the container is a music artist."""
     upnp_class = Person.upnp_class + '.musicArtist'
 
 
 class PlaylistContainer(Container):
+    """ a collection of objects. """
     upnp_class = Container.upnp_class + '.playlistContainer'
 
 
 class Album(Container):
+    """ an ordered collection of objects. """
     upnp_class = Container.upnp_class + '.album'
 
 
 class MusicAlbum(Album):
+    """ Album container containing items of class musicTrack or sub-MusicAlbums. """
     upnp_class = Album.upnp_class + '.musicAlbum'
 
 
 class PhotoAlbum(Album):
+    """ Album container  containing items of class photo orsub-photoAlbums. """
     upnp_class = Album.upnp_class + '.photoAlbum'
 
 
 class Genre(Container):
+    """ an unordered collection of objects that all belong to the same genre. """
     upnp_class = Container.upnp_class + '.genre'
 
 
 class MusicGenre(Genre):
+    """ 'genre' which is interpreted as a style of music. """
     upnp_class = Genre.upnp_class + '.musicGenre'
 
 
 class MovieGenre(Genre):
+    """ 'genre' which is interpreted as a movie style. """
     upnp_class = Genre.upnp_class + '.movieGenre'
 
 
 class StorageSystem(Container):
+    """ a potentially heterogeneous collection of storage media. """
     upnp_class = Container.upnp_class + '.storageSystem'
 
 
 class StorageVolume(Container):
+    """ all, or a partition of, some physical storage unit of a single type. """
     upnp_class = Container.upnp_class + '.storageVolume'
 
 
 class StorageFolder(Container):
+    """ a collection of objects stored on some storage medium. """
     upnp_class = Container.upnp_class + '.storageFolder'
 
 
@@ -921,7 +1017,7 @@ class DIDLElement(ElementInterface,log.Loggable):
 
     logCategory = 'didllite'
 
-    def __init__(self, upnp_client='',
+    def __init__(self, upnp_client=None,
                  parent_container=None,requested_id=None,
                  transcoding=False):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
