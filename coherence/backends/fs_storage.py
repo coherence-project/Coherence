@@ -5,7 +5,7 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import os, stat
+import os, stat, glob
 import tempfile
 import shutil
 import time
@@ -59,6 +59,30 @@ def _natural_key(s):
     # strip the spaces
     s = s.get_name().strip()
     return [ part.isdigit() and int(part) or part.lower() for part in NUMS.split(s) ]
+
+
+class NoThumbnailFound(Exception):
+    """no thumbnail found"""
+
+def _find_thumbnail(filename,thumbnail_folder='.thumbs'):
+    """ looks for a thumbnail file of the same basename
+        in a folder named '.thumbs' relative to the file
+
+        returns the filename of the thumb, its mimetype and the correspondig DLNA PN string
+        or throws an Exception otherwise
+    """
+    name,ext = os.path.splitext(os.path.basename(filename))
+    pattern = os.path.join(os.path.dirname(filename),thumbnail_folder,name+'.*')
+    for f in glob.glob(pattern):
+        mimetype,_ = mimetypes.guess_type(f, strict=False)
+        if mimetype in ('image/jpeg','image/png'):
+            if mimetype == 'image/jpeg':
+                dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
+            else:
+                dlna_pn = 'DLNA.ORG_PN=PNG_TN'
+            return os.path.abspath(f),mimetype,dlna_pn
+    else:
+        raise NoThumbnailFound()
 
 class FSItem(BackendItem):
     logCategory = 'fs_item'
@@ -213,32 +237,30 @@ class FSItem(BackendItem):
                 self.item.attachments[key] = utils.StaticFile(filename_of_thumbnail)
             """
 
-            if self.mimetype in ('image/jpeg', 'image/png'):
-                path = self.get_path()
-                thumbnail = os.path.join(os.path.dirname(path),'.thumbs',os.path.basename(path))
-                if os.path.exists(thumbnail):
-                    mimetype,_ = mimetypes.guess_type(thumbnail, strict=False)
-                    if mimetype in ('image/jpeg','image/png'):
-                        if mimetype == 'image/jpeg':
-                            dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
-                        else:
-                            dlna_pn = 'DLNA.ORG_PN=PNG_TN'
+            if(self.mimetype in ('image/jpeg', 'image/png') or
+               self.mimetype.startswith('video/')):
+                try:
+                    filename,mimetype,dlna_pn = _find_thumbnail(self.get_path())
+                except NoThumbnailFound:
+                    pass
+                except:
+                    self.warning(traceback.format_exc())
+                else:
+                    dlna_tags = simple_dlna_tags[:]
+                    dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
 
-                        dlna_tags = simple_dlna_tags[:]
-                        dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
-
-                        hash_from_path = str(id(thumbnail))
-                        new_res = Resource(self.url+'?attachment='+hash_from_path,
-                            'http-get:*:%s:%s' % (mimetype, ';'.join([dlna_pn]+dlna_tags)))
-                        new_res.size = os.path.getsize(thumbnail)
-                        self.item.res.append(new_res)
-                        if not hasattr(self.item, 'attachments'):
-                            self.item.attachments = {}
-                        self.item.attachments[hash_from_path] = utils.StaticFile(urllib.quote(thumbnail))
+                    hash_from_path = str(id(filename))
+                    new_res = Resource(self.url+'?attachment='+hash_from_path,
+                        'http-get:*:%s:%s' % (mimetype, ';'.join([dlna_pn]+dlna_tags)))
+                    new_res.size = os.path.getsize(filename)
+                    self.item.res.append(new_res)
+                    if not hasattr(self.item, 'attachments'):
+                        self.item.attachments = {}
+                    self.item.attachments[hash_from_path] = utils.StaticFile(filename)
 
             if self.mimetype.startswith('video/'):
-                path = self.get_path()
-                caption,_ =  os.path.splitext(path)
+                # check for a subtitles file
+                caption,_ =  os.path.splitext(self.get_path())
                 caption = caption + '.srt'
                 if os.path.exists(caption):
                     hash_from_path = str(id(caption))
@@ -250,7 +272,7 @@ class FSItem(BackendItem):
                     self.item.res.append(new_res)
                     if not hasattr(self.item, 'attachments'):
                         self.item.attachments = {}
-                    self.item.attachments[hash_from_path] = utils.StaticFile(urllib.quote(caption))
+                    self.item.attachments[hash_from_path] = utils.StaticFile(caption)
 
             try:
                 # FIXME: getmtime is deprecated in Twisted 2.6
