@@ -248,7 +248,7 @@ class Player(log.Loggable):
         #print t
         if t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
-            self.warning("Gstreamer error: %r,%r" % (err, debug))
+            self.warning("Gstreamer error: %s,%r" % (err.message, debug))
             if self.playing == True:
                 self.seek('-0')
             #self.player.set_state(gst.STATE_READY)
