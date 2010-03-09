@@ -55,6 +55,7 @@ class WebClient(log.Loggable):
     otherHttpHeaders = {}
     mac = ""
     tags = []
+    deviceInfo = None
     dict = {}
     
     def __init__(self, request, config, init = False):
@@ -66,9 +67,9 @@ class WebClient(log.Loggable):
     
     # data is lazily extracted from configuration 
     def init(self):
-      
+        
         # extract seed data from request
-        self.ip = self.request.host.host
+        self.ip = self.request.client.host
         #self.mac = ""
         if (self.request.received_headers.has_key('user-agent')):
             self.useragent = self.request.received_headers['user-agent']
@@ -86,20 +87,20 @@ class WebClient(log.Loggable):
                     self.warning("Device configuration rule not implemented: %r" % rule)
                 
                 value = rule.get('value', "")                
-                valueAux = rule.get('auxValue', "")
+                value2 = rule.get('value2', "")
                 
                 # switch to next rule, except if the rule value corresponds to the current request
                 if ((type == 'ip' and value is not self.ip)
                     or (type == 'mac' and value is not self.mac)
                     or (type == 'user-agent' and re.search(value, self.useragent) is None)
-                    or (type == 'http-header' and (not self.request.received_headers.has_key(value) or valueAux is not self.request.received_headers[value])) 
+                    or (type == 'http-header' and (not self.request.received_headers.has_key(value) or re.search(value2, self.request.received_headers[value]) is None)) 
                     or (type == 'tag' and value not in self.tags)):
                     continue                     
                           
                 for key in rule.keys():
                     items = rule.get(key)
                     
-                    if key in ('type', 'value', 'auxValue'):
+                    if key in ('type', 'value', 'value2'):
                         # do nothing for attributes type, value, auxValue
                         continue
                  
@@ -114,23 +115,38 @@ class WebClient(log.Loggable):
                         if key == 'tag':      
                             # add tag                 
                             self.tags.append(item)
+                            
+                        elif key == 'device-info':
+                            self.deviceInfo = item
     
                         elif key == 'forced-mimetype':
                             # add new forced mimetype
-                            source = item.get('src', None)
-                            dest = item.get('dest', source)
-                            if (source is not None):
-                                self.dict["forced-mimetype-%s" % source] = dest
+                            mimetype = item.get('mimetype', None)
+                            dest = item._text
+                            if (mimetype is not None):
+                                self.dict["forced-mimetype-%s" % mimetype] = dest
+
+                        elif key == 'dlna-additional-info':
+                            # add new DLNA additional info
+                            mimetype = item.get('mimetype', None) # audio, video, image or a full mimetype
+                            info = item._text
+                            if (mimetype is not None):
+                                self.dict["dlna-additional-info-%s" % mimetype] = info
                         
                         else:
                             # add new attribute
                             self.dict[key] = item
 
+
         self.dict['ip'] = self.ip
         self.dict['mac-address'] = self.mac
         self.dict['user-agent'] = self.useragent
         self.dict['tags'] = self.tags
-
+        if self.deviceInfo is not None:
+            self.info("Client device recognized as '%s'" % self.deviceInfo)
+            self.dict['device-info'] = self.deviceInfo
+        self.info("Client device params are: %r" % self.dict)
+        
         done = True
         
     def hasValue(self, key):
@@ -147,6 +163,8 @@ class WebClient(log.Loggable):
         if (self.done is False):
             self.init()
         return (tag in self.dict["tags"])
+ 
+     
 
      
 

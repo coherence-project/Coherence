@@ -236,12 +236,14 @@ class Resource(object):
                     and maybe they irritate these poor things anyway
                 """
                 additional_info = '*'
-            elif upnp_client.hasValue("audio_dlna_additional_info") and content_format.startswith('audio/'):
-                    additional_info = upnp_client.getValue("audio_dlna_additional_info")
-            elif upnp_client.hasValue("image_dlna_additional_info") and content_format.startswith('image/'):
-                    additional_info = upnp_client.getValue("image_dlna_additional_info")
-            elif upnp_client.hasValue("video_dlna_additional_info") and content_format.startswith('video/'):
-                    additional_info = upnp_client.getValue("video_dlna_additional_info")
+            elif upnp_client.hasValue("dlna-additional-info-%s" % content_format):
+                    additional_info = upnp_client.getValue("dlna-additional-info-%s" % content_format)
+            elif upnp_client.hasValue("dlna-additional-info-audio") and content_format.startswith('audio/'):
+                    additional_info = upnp_client.getValue("dlna-additional-info-audio")
+            elif upnp_client.hasValue("dlna-additional-info-image") and content_format.startswith('image/'):
+                    additional_info = upnp_client.getValue("dlna-additional-info-image")
+            elif upnp_client.hasValue("dlna-additional-info-video") and content_format.startswith('video/'):
+                    additional_info = upnp_client.getValue("dlna-additional-info-video")
 
         a_list = additional_info.split(';')
         for part in a_list:
