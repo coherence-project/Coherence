@@ -126,6 +126,13 @@ class WebClient(log.Loggable):
                             if (mimetype is not None):
                                 self.dict["forced-mimetype-%s" % mimetype] = dest
 
+                        elif key == 'transcoders':
+                            # add specific transcoding profiles
+                            mimetype = item.get('mimetype', None)
+                            transcoders = item._text
+                            if (mimetype is not None):                             
+                                self.dict["transcoders-%s" % mimetype] = transcoders
+
                         elif key == 'dlna-additional-info':
                             # add new DLNA additional info
                             mimetype = item.get('mimetype', None) # audio, video, image or a full mimetype

@@ -63,6 +63,18 @@ def is_video(mimetype):
         return True
     return False
 
+def is_image(mimetype):
+    """ checks for type image,
+        expects a mimetype or an UPnP
+        protocolInfo
+    """
+    test = mimetype.split(':')
+    if len(test) == 4:
+        mimetype = test[2]
+    if mimetype.startswith('image/'):
+        return True
+    return False
+
 class Resources(list):
 
     """ a list of resources, always sorted after an append """
@@ -238,11 +250,11 @@ class Resource(object):
                 additional_info = '*'
             elif upnp_client.hasValue("dlna-additional-info-%s" % content_format):
                     additional_info = upnp_client.getValue("dlna-additional-info-%s" % content_format)
-            elif upnp_client.hasValue("dlna-additional-info-audio") and content_format.startswith('audio/'):
+            elif upnp_client.hasValue("dlna-additional-info-audio") and is_audio(content_format):
                     additional_info = upnp_client.getValue("dlna-additional-info-audio")
-            elif upnp_client.hasValue("dlna-additional-info-image") and content_format.startswith('image/'):
+            elif upnp_client.hasValue("dlna-additional-info-image") and is_image(content_format):
                     additional_info = upnp_client.getValue("dlna-additional-info-image")
-            elif upnp_client.hasValue("dlna-additional-info-video") and content_format.startswith('video/'):
+            elif upnp_client.hasValue("dlna-additional-info-video") and is_video(content_format):
                     additional_info = upnp_client.getValue("dlna-additional-info-video")
 
         a_list = additional_info.split(';')
@@ -310,20 +322,20 @@ class Resource(object):
         instance.fromElement(elt.getroot())
         return instance
 
-    def transcoded(self,format):
+    def transcoded(self,profile):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
         dlna_tags = simple_dlna_tags[:]
         #dlna_tags[1] = 'DLNA.ORG_OP=00'
         dlna_tags[2] = 'DLNA.ORG_CI=1'
-        if format == 'mp3':
+        if profile == 'mp3':
             if content_format == 'audio/mpeg':
                 return None
             content_format='audio/mpeg'
             dlna_pn = 'DLNA.ORG_PN=MP3'
-        elif format == 'lpcm':
+        elif profile == 'lpcm':
             dlna_pn = 'DLNA.ORG_PN=LPCM'
             content_format='audio/L16;rate=44100;channels=2'
-        elif format == 'mpegts':
+        elif profile == 'mpegts':
             if content_format == 'video/mpeg':
                 return None
             dlna_pn = 'DLNA.ORG_PN=MPEG_PS_PAL' # 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
@@ -334,7 +346,7 @@ class Resource(object):
         additional_info = ';'.join([dlna_pn]+dlna_tags)
         new_protocol_info = ':'.join((protocol,network,content_format,additional_info))
 
-        new_res = Resource(self.data+'/transcoded/%s' % format,
+        new_res = Resource(self.data+'/transcoded/%s' % profile,
                         new_protocol_info)
         new_res.size = None
         new_res.duration = self.duration
@@ -626,28 +638,54 @@ class Item(Object):
                 ET.SubElement(root, qname('actor',DC_NS)).text = actor
 
         if kwargs.get('transcoding',False) == True:
+            # the transcoded resource is the first resource with protocol type http-get
+            # if none is present, no transcoding will occur
             res = self.res.get_matching(['*:*:*:*'], protocol_type='http-get')
-            if len(res) > 0 and is_audio(res[0].protocolInfo):
+            if len(res) > 0:
                 old_res = res[0]
-                if(kwargs.has_key('upnp_client') and kwargs.get('upnp_client').hasTag('XBox')):
-                    transcoded_res = old_res.transcoded('mp3')
-                    if transcoded_res != None:
-                        root.append(transcoded_res.toElement(**kwargs))
+                protocolInfo = old_res.protocolInfo
+                protocol,network,content_format,additional_info = protocolInfo.split(':')
+                
+                transcoders_string = 'native'
+                
+                upnp_client = kwargs.get('upnp_client',None)
+                if upnp_client is not None:
+                    if upnp_client.hasTag('NO_TRANSCODING'):
+                        #we don't need transcoded resources, and maybe they irritate these poor things anyway
+                        transcoders_string = 'native'
+                    elif upnp_client.hasValue("transcoders-%s" % content_format):
+                        transcoders_string = upnp_client.getValue("transcoders-%s" % content_format)
+                    elif upnp_client.hasValue("transcoders-audio") and is_audio(content_format):
+                        transcoders_string = upnp_client.getValue("transcoders-audio")
+                    elif upnp_client.hasValue("transcoders-image") and is_image(content_format):
+                        transcoders_string = upnp_client.getValue("transcoders-image")
+                    elif upnp_client.hasValue("transcoders-video") and is_video(content_format):
+                        transcoders_string = upnp_client.getValue("transcoders-video")                
+                    elif is_audio(content_format):
+                        transcoders_string = 'native,lpcm'
+                    elif is_video(content_format):
+                        transcoders_string = 'native,mpegts'
                     else:
-                        root.append(old_res.toElement(**kwargs))
-                else:
+                        transcoders_string = 'native'
+                                                
+                transcoders = transcoders_string.split(",")
+                res_count = 0
+                for transcoder in transcoders:
+                    if transcoder in ('native'):
+                        for res in self.res:
+                            root.append(res.toElement(**kwargs))
+                            res_count+=1
+                    else:
+                        transcoded_res = old_res.transcoded(transcoder)
+                        if transcoded_res != None:
+                            root.append(transcoded_res.toElement(**kwargs))
+                            res_count+=1
+                if res_count == 0:
+                    # fallback in case no resources was actually added (for whatever reason)
                     for res in self.res:
                         root.append(res.toElement(**kwargs))
-                    transcoded_res = old_res.transcoded('lpcm')
-                    if transcoded_res != None:
-                        root.append(transcoded_res.toElement(**kwargs))
-            elif len(res) > 0 and is_video(res[0].protocolInfo):
-                old_res = res[0]
-                for res in self.res:
-                    root.append(res.toElement(**kwargs))
-                transcoded_res = old_res.transcoded('mpegts')
-                if transcoded_res != None:
-                    root.append(transcoded_res.toElement(**kwargs))
+                        res_count+=1
+                            
             else:
                 for res in self.res:
                     root.append(res.toElement(**kwargs))
