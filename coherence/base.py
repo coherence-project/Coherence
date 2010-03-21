@@ -9,7 +9,8 @@ import os, sys
 import traceback
 import copy
 import re
-
+#import threading
+        
 from twisted.python import filepath, util
 from twisted.internet.tcp import CannotListenError
 from twisted.internet import task, address, defer
@@ -45,7 +46,7 @@ class WebClient(log.Loggable):
         Specific tags and other device characteristics are extracted from configuration, \
         to be used to adapt the request treatment at any stage where it may be needed.'''
     
-    logCategory = 'coherence'
+    logCategory = 'webserver'
     request = None
     config = None 
     done = False
@@ -61,12 +62,27 @@ class WebClient(log.Loggable):
     def __init__(self, request, config, init = False):
         self.request = request;
         self.config = config;
-        done = False
+        self.done = False
+        self.ip = ""
+        self.useragent = ""
+        self.otherHttpHeaders = {}
+        self.mac = ""
+        self.tags = []
+        self.deviceInfo = None
+        self.dict = {}
+        
         if (init is True):
             self.init()
     
     # data is lazily extracted from configuration 
+    # this function is critical section
     def init(self):
+        #lock = threading.Lock()
+        
+        #lock.acquire()
+        #if (self.done is True):
+        #    lock.release()
+        #    return
         
         # extract seed data from request
         self.ip = self.request.client.host
@@ -154,7 +170,8 @@ class WebClient(log.Loggable):
             self.dict['device-info'] = self.deviceInfo
         self.info("Client device params are: %r" % self.dict)
         
-        done = True
+        self.done = True
+        #lock.release()
         
     def hasValue(self, key):
         if (self.done is False):
@@ -177,7 +194,7 @@ class WebClient(log.Loggable):
 
 class SimpleRoot(resource.Resource, log.Loggable):
     addSlash = True
-    logCategory = 'coherence'
+    logCategory = 'webserver'
 
     def __init__(self, coherence):
         resource.Resource.__init__(self)
@@ -209,7 +226,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
 
     def listchilds(self, uri):
-        self.info('listchilds %s' % uri)
+        self.debug('SimpleRoot listchilds %s' % uri)
         if uri[-1] != '/':
             uri += '/'
         cl = []
@@ -226,6 +243,12 @@ class SimpleRoot(resource.Resource, log.Loggable):
         return "".join(cl)
 
     def render(self,request):
+        self.debug('SimpleRoot render')
+        
+        # UPnP client characteristics
+        webClient = WebClient(request, self.coherence.config.get('devices', None), False)
+        request.upnp_client = webClient
+        
         result = """<html><head><title>Coherence</title></head><body>
 <a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
         return result.encode('utf-8')

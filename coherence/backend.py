@@ -120,6 +120,13 @@ class BackendStore(Backend):
                                  'B':lambda: self._get_all_items(0),
                                 })
 
+        # Access control information
+        # by default, ever client are allowed to access content
+        deny = kwargs.get('deny','')
+        allow = kwargs.get('allow','')
+        self.denied_tags = deny.split()
+        self.allowed_tags = allow.split()
+
         """ and send out the signal when ready
         """
         #louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)

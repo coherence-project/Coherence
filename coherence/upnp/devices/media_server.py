@@ -72,6 +72,11 @@ class MSRoot(resource.Resource, log.Loggable):
         headers = request.getAllHeaders()
         self.msg( request.getAllHeaders())
 
+        allowed = self.check_access_rights(request)
+        if allowed is False:
+            request.setResponseCode(403)
+            return static.Data('<html><p>access to device denied.</p></html>','text/html')
+		
         try:
             if headers['getcontentfeatures.dlna.org'] != '1':
                 request.setResponseCode(400)
@@ -363,7 +368,7 @@ class MSRoot(resource.Resource, log.Loggable):
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = StaticFile(p)
-        self.info('MSRoot ch', ch)
+        self.info('MSRoot ch:', ch)
         return ch
 
     def getChild(self, name, request):
@@ -457,11 +462,47 @@ class MSRoot(resource.Resource, log.Loggable):
 
     def render(self,request):
         #print "render", request
+        allowed = self.check_access_rights(request)
+        if allowed is False:
+            request.setResponseCode(403)
+            return '<html><p>access to device denied.</p></html>'
         return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>'% \
                                         (self.server.backend,
                                          self.listchilds(request.uri))
 
+    def check_access_rights(self, request):
+        if request.upnp_client is not None:
+            upnp_client = request.upnp_client
+            denied_tags = self.store.denied_tags
+            allowed_tags = self.store.allowed_tags
+            if (len(denied_tags) > 0) and (len(allowed_tags) > 0):
+                # we've got both a list  of clients to deny and client to allow
+                # that's not consistent and configuration should be corrected
+                #  in the present case, the request is allowed
+                self.debug("Corrupted deny/allow configuration for device %r -> request going through..." % self.store)
+                return True
+            
+            elif (len(denied_tags) > 0):
+                # we've got some clients to reject
+                # all other clients are allowed
+                for denied_tag in denied_tags:
+                    if upnp_client.hasTag(denied_tag):
+                        self.debug("Client denied because of tag %s" % denied_tag)
+                        return False
 
+            elif (len(allowed_tags) > 0):
+                # we've got some clients to reject
+                # all other clients are rejected
+                allow_client = False
+                for allowed_tag in allowed_tags:
+                    if upnp_client.hasTag(allowed_tag):
+                        allow_client = True
+                if (allow_client is False):
+                    self.debug("Client denied because it provides none of the allowed tags: %r" % allowed_tags)
+                    return False
+        self.debug("Client allowed to access device: %r" % self.server.backend)
+        return True
+    
 class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
