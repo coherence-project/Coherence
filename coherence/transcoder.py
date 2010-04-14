@@ -23,6 +23,44 @@ from coherence import log
 
 import struct
 
+def is_audio(mimetype):
+    """ checks for type audio,
+        expects a mimetype or an UPnP
+        protocolInfo
+    """
+    test = mimetype.split(':')
+    if len(test) == 4:
+        mimetype = test[2]
+    if mimetype == 'application/ogg':
+        return True
+    if mimetype.startswith('audio/'):
+        return True
+    return False
+
+def is_video(mimetype):
+    """ checks for type video,
+        expects a mimetype or an UPnP
+        protocolInfo
+    """
+    test = mimetype.split(':')
+    if len(test) == 4:
+        mimetype = test[2]
+    if mimetype.startswith('video/'):
+        return True
+    return False
+
+def is_image(mimetype):
+    """ checks for type image,
+        expects a mimetype or an UPnP
+        protocolInfo
+    """
+    test = mimetype.split(':')
+    if len(test) == 4:
+        mimetype = test[2]
+    if mimetype.startswith('image/'):
+        return True
+    return False
+
 def get_transcoder_name(transcoder):
     return transcoder.name
 
@@ -616,21 +654,38 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
     logCategory = 'externalprocess'
     addSlash = False
 
-    def __init__(self, uri):
+    def __init__(self, uri, subtitle=None):
         self.uri = uri
+        self.subtitle = subtitle
 
     def getChildWithDefault(self, path, request):
         return self
 
     def render(self, request):
-        print "ExternalProcessPipeline render"
+        self.debug("ExternalProcessPipeline render")
         try:
             if self.contentType:
                 request.setHeader('Content-Type', self.contentType)
         except AttributeError:
             pass
 
-        ExternalProcessProducer(self.pipeline_description % self.uri, request)
+        command = None
+        # How many values are foreseen in the pipeline_description?
+        # 0: no need for a value
+        # 1: the value is the resource native uri
+        # 2: %(uri) is the resource native uri, %(subtitle) is the resource subtitle data uri 
+        # >2: error
+        nbValues = self.pipeline_description.count('%') - 2*self.pipeline_description.count('%%')
+        if (nbValues == 0):
+            command = self.pipeline_description
+        elif (nbValues == 1):
+            command = self.pipeline_description % self.uri
+        elif (nbValues == 2):
+            if self.subtitle is not None:
+                command = self.pipeline_description % {'uri':self.uri, 'subtitle': self.subtitle}
+                                                       
+        if command is not None:
+            ExternalProcessProducer(command, request)
         return server.NOT_DONE_YET
     
 
@@ -695,6 +750,9 @@ class TranscoderManager(log.Loggable):
             with the main coherence class passed as an argument,
             so we have access to the config
         """
+        if hasattr(self,'initDone'):
+            return
+        self.initDone = False
         self.transcoders = {}
         
         # retrieve internal transcoders
@@ -735,14 +793,16 @@ class TranscoderManager(log.Loggable):
                     if gst:
                         wrapped = transcoder_class_wrapper(GStreamerTranscoder,
                                 transcoder['target'], transcoder['pipeline'])
+                        wrapped.contentType = transcoder['target']
                     else:
                         self.warning("Can't create transcoder %r:"
-                             " Gstreamer-based transcoders are not operationnal",
+                             " Gstreamer-based transcoders are not operational",
                              transcoder)
                         
                 elif transcoder_type == 'process':
                     wrapped = transcoder_class_wrapper(ExternalProcessPipeline,
                             transcoder['target'], transcoder['pipeline'])
+                    wrapped.contentType = transcoder['target']
                 
                 else:
                     self.warning("unknown transcoder type %r", transcoder_type)
@@ -751,7 +811,7 @@ class TranscoderManager(log.Loggable):
                 self.transcoders[transcoder_name] = wrapped
 
         self.info("available transcoders %r" % self.transcoders)
-
+        self.initDone = True
 
     def select(self, name, uri, backend=None):
         # FIXME:why do we specify the name when trying to get it?
@@ -766,6 +826,76 @@ class TranscoderManager(log.Loggable):
 
         transcoder = self.transcoders[name](uri)
         return transcoder
+
+    def getProfiles (self, source_type, upnp_client):
+        supported_profiles = []
+        if upnp_client is None:
+            supported_profiles = ['native'] + self.transcoders.keys()
+        elif upnp_client.hasTag('NO_TRANSCODING'):
+            supported_profiles = ['native']
+        elif upnp_client.hasValue("transcoders-%s" % source_type):
+            transcoders_str = upnp_client.getValue("transcoders-%s" % source_type)
+            supported_profiles = transcoders_str.split(",")
+        elif upnp_client.hasValue("transcoders-audio") and is_audio(source_type):
+            transcoders_str = upnp_client.getValue("transcoders-audio")
+            supported_profiles = transcoders_str.split(",")
+        elif upnp_client.hasValue("transcoders-image") and is_image(source_type):
+            transcoders_str = upnp_client.getValue("transcoders-image")
+            supported_profiles = transcoders_str.split(",")
+        elif upnp_client.hasValue("transcoders-video") and is_video(source_type):
+            transcoders_str = upnp_client.getValue("transcoders-video")
+            supported_profiles = transcoders_str.split(",")                
+        elif upnp_client.hasValue("transcoders"):
+            transcoders_str = upnp_client.getValue("transcoders")
+            supported_profiles = transcoders_str.split(",")       
+        else:
+            supported_profiles = ['native'] + self.transcoders.keys()
+        return supported_profiles
+
+    def resourceIsSupported(self, profile, resource):
+        if not self.transcoders.has_key(profile):
+            return False
+        transcoder = self.transcoders[profile]
+        protocol,network,content_format,additional_info = resource.protocolInfo.split(':')
+        if content_format == transcoder.contentType:
+            return False
+        return True
+
+
+    defaultTargetContentFormats ={'mp3':'audio/mpeg',
+                                  'lpcm':'audio/L16;rate=44100;channels=2',
+                                  'mpegts':'video/mpeg'}
+
+    def getTargetContentFormat(self, profile, resource):
+        targetContentFormat = None
+        
+        protocol,network,content_format,additional_info = resource.protocolInfo.split(':')
+        if self.defaultTargetContentFormats.has_key('profile'):
+            targetContentFormat = self.defaultTargetContentFormats[profile]
+        elif self.transcoders.has_key(profile):
+            transcoder = self.transcoders[profile]
+            targetContentFormat = transcoder.contentType
+        
+        return targetContentFormat
+
+
+    defaultTargetDlnaPn ={'mp3':'DLNA.ORG_PN=MP3',
+                          'lpcm':'DLNA.ORG_PN=LPCM',
+                          'mpegts':'DLNA.ORG_PN=MPEG_PS_PAL' # 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD}
+                        }
+
+    def getTargetDlnaPn(self, profile, resource):
+        targetDlnaPn = None
+        
+        protocol,network,content_format,additional_info = resource.protocolInfo.split(':')
+        if self.defaultTargetDlnaPn.has_key('profile'):
+            targetDlnaPn = self.defaultTargetDlnaPn[profile]
+        elif self.transcoders.has_key(profile):
+            transcoder = self.transcoders[profile]
+            targetDlnaPn = None # FIXME add info in transcoder configuration
+        
+        return targetDlnaPn
+
 
 if __name__ == '__main__':
     t = Transcoder(None)

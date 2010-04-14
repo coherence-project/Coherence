@@ -30,6 +30,7 @@ from coherence.upnp.core import dlna
 
 from coherence import log
 
+from coherence.transcoder import TranscoderManager
 
 def qname(tag,ns=''):
     if len(ns) == 0:
@@ -327,22 +328,16 @@ class Resource(object):
         dlna_tags = simple_dlna_tags[:]
         #dlna_tags[1] = 'DLNA.ORG_OP=00'
         dlna_tags[2] = 'DLNA.ORG_CI=1'
-        if profile == 'mp3':
-            if content_format == 'audio/mpeg':
-                return None
-            content_format='audio/mpeg'
-            dlna_pn = 'DLNA.ORG_PN=MP3'
-        elif profile == 'lpcm':
-            dlna_pn = 'DLNA.ORG_PN=LPCM'
-            content_format='audio/L16;rate=44100;channels=2'
-        elif profile == 'mpegts':
-            if content_format == 'video/mpeg':
-                return None
-            dlna_pn = 'DLNA.ORG_PN=MPEG_PS_PAL' # 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
-            content_format='video/mpeg'
-        else:
-            return None
-
+        
+        transcoderManager = TranscoderManager()
+        
+        if not transcoderManager.resourceIsSupported(profile, self):
+            return
+        
+        content_format = transcoderManager.getTargetContentFormat(profile, self)
+        dlna_pn = transcoderManager.getTargetDlnaPn(profile, self)
+        if dlna_pn is None:
+            dlna_pn = '*'
         additional_info = ';'.join([dlna_pn]+dlna_tags)
         new_protocol_info = ':'.join((protocol,network,content_format,additional_info))
 
@@ -645,30 +640,16 @@ class Item(Object):
                 old_res = res[0]
                 protocolInfo = old_res.protocolInfo
                 protocol,network,content_format,additional_info = protocolInfo.split(':')
-                
-                transcoders_string = 'native'
-                
+ 
                 upnp_client = kwargs.get('upnp_client',None)
-                if upnp_client is not None:
-                    if upnp_client.hasTag('NO_TRANSCODING'):
-                        #we don't need transcoded resources, and maybe they irritate these poor things anyway
-                        transcoders_string = 'native'
-                    elif upnp_client.hasValue("transcoders-%s" % content_format):
-                        transcoders_string = upnp_client.getValue("transcoders-%s" % content_format)
-                    elif upnp_client.hasValue("transcoders-audio") and is_audio(content_format):
-                        transcoders_string = upnp_client.getValue("transcoders-audio")
-                    elif upnp_client.hasValue("transcoders-image") and is_image(content_format):
-                        transcoders_string = upnp_client.getValue("transcoders-image")
-                    elif upnp_client.hasValue("transcoders-video") and is_video(content_format):
-                        transcoders_string = upnp_client.getValue("transcoders-video")                
-                    elif is_audio(content_format):
-                        transcoders_string = 'native,lpcm'
-                    elif is_video(content_format):
-                        transcoders_string = 'native,mpegts'
-                    else:
-                        transcoders_string = 'native'
+                if upnp_client is not None and upnp_client.hasTag('NO_TRANSCODING'):
+                    # We don't need transcoded resources,
+                    # and maybe they irritate these poor things anyway
+                    transcoders = ['native']
+                else:         
+                    transcoderManager = TranscoderManager()      
+                    transcoders = transcoderManager.getProfiles(content_format, upnp_client)               
                                                 
-                transcoders = transcoders_string.split(",")
                 res_count = 0
                 for transcoder in transcoders:
                     if transcoder in ('native'):
@@ -681,7 +662,7 @@ class Item(Object):
                             root.append(transcoded_res.toElement(**kwargs))
                             res_count+=1
                 if res_count == 0:
-                    # fallback in case no resources was actually added (for whatever reason)
+                    # fallback in case no resources was actually added (whatever the reason)
                     for res in self.res:
                         root.append(res.toElement(**kwargs))
                         res_count+=1

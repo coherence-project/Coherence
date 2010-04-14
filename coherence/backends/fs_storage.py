@@ -53,6 +53,10 @@ import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 
+ROOT_CONTAINER_ID = '0'
+SEED_ITEM_ID = 0
+
+
 ## Sorting helpers
 NUMS = re.compile('([0-9]+)')
 def _natural_key(s):
@@ -439,7 +443,7 @@ class FSStore(BackendStore):
 
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self,server,**kwargs)
-        self.next_id = 1000
+        self.next_id = SEED_ITEM_ID
         self.name = kwargs.get('name','my media')
         self.content = kwargs.get('content',None)
         if self.content != None:
@@ -520,7 +524,7 @@ class FSStore(BackendStore):
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def __repr__(self):
-        return str(self.__class__).split('.')[-1]
+        return self.__class__.__name__
 
     def release(self):
         if self.inotify != None:
@@ -538,10 +542,10 @@ class FSStore(BackendStore):
         #try:
         #    id = int(id)
         #except ValueError:
-        #    id = 1000
+        #    id = SEED_ITEM_ID
 
         if id == '0':
-            id = '1000'
+            id = ROOT_CONTAINER_ID
         #print "get_by_id 2", id
         try:
             r = self.store[id]
@@ -595,12 +599,12 @@ class FSStore(BackendStore):
         path = os.path.abspath(path)
         if path not in self.content:
             self.content.add(path)
-            self.walk(path, self.store['1000'], self.ignore_file_pattern)
+            self.walk(path, self.store[ROOT_CONTAINER_ID], self.ignore_file_pattern)
 
     def remove_content_folder(self,path):
         path = os.path.abspath(path)
         if path in self.content:
-            id = self.get_id_by_name('1000', path)
+            id = self.get_id_by_name(ROOT_CONTAINER_ID, path)
             self.remove(id)
             self.content.remove(path)
 

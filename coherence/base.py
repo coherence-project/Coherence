@@ -51,6 +51,47 @@ class WebClient(log.Loggable):
     config = None 
     done = False
     
+    default_rules = [
+     # Default rule
+     {'type':'all', 
+      'device-info':'Generic device',
+      'forced-mimetype':[{'mimetype':'video/x-msvideo','text':'video/divx'},
+                         {'mimetype':'video/avi','text':'video/divx'}]
+     },  
+     # Browsers
+     {'type':'user-agent', 'value':'Mozilla','device-info':'Mozilla'},     
+     # Coherence-based clients
+     {'type':'user-agent', 'value':'Coherence','device-info':'Coherence'},
+     {'type':'user-agent', 'value':'Twisted PageGetter','device-info':'UPnp Inspector'},
+     # Microsoft Windows Software UPnP clients
+     {'type':'user-agent', 'value':'Mozilla/4.0 \(compatible; UPnP/1.0; Windows','device-info':'Windows Media Player',
+      'tag':['SIMULATE_WMC_SERVER']},
+     {'type':'user-agent', 'value':'FDSSDP','device-info':'Windows 7',
+      'tag':['SIMULATE_WMC_SERVER']},       
+     # Game consoles: XBox
+     {'type':'user-agent', 'value':'Xbox/','device-info':'XBox',
+      'tag':['XBox','NO_DLNA_ADDITIONAL_INFO','NO_REF_ID','SIMULATE_WMC_SERVER'],
+      'forced-mimetype':[{'mimetype':'video/x-msvideo','text':'video/avi'},
+                         {'mimetype':'video/divx','text':'video/divx'},
+                         {'mimetype':'audio/x-wav','text':'audio/wav'}],
+      'transcoders':[{'mimetype':'audio','text':'mp3'}]},
+     # Game consoles:  Playstation
+     {'type':'http-header', 'value':'x-av-client-info', 'value2':'PLAYSTATION3', 'device-info':'Playstation 3',
+      'dlna_additional_info':[{'mimetype':'video','text':'*'}]},       
+     # Set-Top-Boxes: Freebox HD
+     {'type':'user-agent', 'value':'fbxupnpav','device-info':'Freebox HD',
+      'forced-mimetype':[{'mimetype':'video/x-msvideo','text':'video/avi'},
+                         {'mimetype':'video/divx','text':'video/avi'}]},    
+     # TV: Philips-TV
+     {'type':'user-agent', 'value':'Philips-Software-WebClient','device-info':'Philips-TV',
+      'tag':['NO_DLNA_ADDITIONAL_INFO']},
+     {'type':'user-agent', 'value':'Allegro-Software-WebClient','device-info':'Philips-TV',
+      'tag':['NO_DLNA_ADDITIONAL_INFO']},
+     # TV: Sony Bravia KDL
+     {'type':'http-header', 'value':'x-av-client-info', 'value2':'BRAVIA KDL', 'device-info':'Sony Bravia KDL',
+      'dlna_additional_info':[{'mimetype':'video/mpegts','text':'MPEG_TS_SD_EU_ISO'}]}
+    ]
+    
     ip = ""
     useragent = ""
     otherHttpHeaders = {}
@@ -89,76 +130,15 @@ class WebClient(log.Loggable):
         #self.mac = ""
         if (self.request.received_headers.has_key('user-agent')):
             self.useragent = self.request.received_headers['user-agent']
-        
-        # complete date from config
+
+        # populate data with the default rules
+        for rule in self.default_rules:
+            self.process_rule(rule)        
+        # complete data from config rules
         if self.config is not None:
             rules = self.config.get('rule', [])
             for rule in rules:
-                type = rule.get('type', "")
-
-                if type not in ('ip', 'mac', 'user-agent', 'tag', 'http-header', 'all'):
-                    self.warning("Invalid device configuration rule: %r" % rule)
-                    continue
-                if type in ('mac'):
-                    self.warning("Device configuration rule not implemented: %r" % rule)
-                
-                value = rule.get('value', "")                
-                value2 = rule.get('value2', "")
-                
-                # switch to next rule, except if the rule value corresponds to the current request
-                if ((type == 'ip' and value is not self.ip)
-                    or (type == 'mac' and value is not self.mac)
-                    or (type == 'user-agent' and re.search(value, self.useragent) is None)
-                    or (type == 'http-header' and (not self.request.received_headers.has_key(value) or re.search(value2, self.request.received_headers[value]) is None)) 
-                    or (type == 'tag' and value not in self.tags)):
-                    continue                     
-                          
-                for key in rule.keys():
-                    items = rule.get(key)
-                    
-                    if key in ('type', 'value', 'value2'):
-                        # do nothing for attributes type, value, auxValue
-                        continue
-                 
-                    # make sure 'items' is a list of strings,
-                    # especially in case there is a single item, returned as a string
-                    if isinstance(items, str):
-                        items = [items]
-                    
-                    # for each item
-                    for item in items:
-                        
-                        if key == 'tag':      
-                            # add tag                 
-                            self.tags.append(item)
-                            
-                        elif key == 'device-info':
-                            self.deviceInfo = item
-    
-                        elif key == 'forced-mimetype':
-                            # add new forced mimetype
-                            mimetype = item.get('mimetype', None)
-                            dest = item._text
-                            if (mimetype is not None):
-                                self.dict["forced-mimetype-%s" % mimetype] = dest
-
-                        elif key == 'transcoders':
-                            # add specific transcoding profiles
-                            mimetype = item.get('mimetype', None)
-                            transcoders = item._text
-                            if (mimetype is not None):                             
-                                self.dict["transcoders-%s" % mimetype] = transcoders
-
-                        elif key == 'dlna-additional-info':
-                            # add new DLNA additional info
-                            mimetype = item.get('mimetype', None) # audio, video, image or a full mimetype
-                            info = item._text
-                            if (mimetype is not None):
-                                self.dict["dlna-additional-info-%s" % mimetype] = info
-                        
-                        else:
-                            # add new attribute
-                            self.dict[key] = item
+                self.process_rule(rule)
 
 
         self.dict['ip'] = self.ip
@@ -172,7 +152,74 @@ class WebClient(log.Loggable):
         
         self.done = True
         #lock.release()
+
+    def process_rule(self, rule):
+        type = rule.get('type', "")
+
+        if type not in ('ip', 'mac', 'user-agent', 'tag', 'http-header', 'all'):
+            self.warning("Invalid device rule: %r" % rule)
+            return
+        if type in ('mac'):
+            self.warning("Device rule type not implemented: %r" % rule)
         
+        value = rule.get('value', "")                
+        value2 = rule.get('value2', "")
+        
+        # continue only if the rule value corresponds to the current request
+        if ((type == 'ip' and value is not self.ip)
+            or (type == 'mac' and value is not self.mac)
+            or (type == 'user-agent' and re.search(value, self.useragent) is None)
+            or (type == 'http-header' and (not self.request.received_headers.has_key(value) or re.search(value2, self.request.received_headers[value]) is None)) 
+            or (type == 'tag' and value not in self.tags)):
+            return                     
+                  
+        for key in rule.keys():
+            items = rule.get(key)
+            
+            if key in ('type', 'value', 'value2'):
+                # do nothing for attributes type, value, auxValue
+                continue
+         
+            # make sure 'items' is a list of strings,
+            # especially in case there is a single item, returned as a string
+            if isinstance(items, str):
+                items = [items]
+            
+            # for each item
+            for item in items:
+                
+                if key == 'tag':      
+                    # add tag                 
+                    self.tags.append(item)
+                    
+                elif key == 'device-info':
+                    self.deviceInfo = item
+
+                elif key == 'forced-mimetype':
+                    # add new forced mimetype
+                    mimetype = item.get('mimetype', None)
+                    dest = item.get('text')
+                    if (mimetype is not None):
+                        self.dict["forced-mimetype-%s" % mimetype] = dest
+
+                elif key == 'transcoders':
+                    # add specific transcoding profiles
+                    mimetype = item.get('mimetype', None)
+                    transcoders = item.get('text')
+                    if (mimetype is not None):                             
+                        self.dict["transcoders-%s" % mimetype] = transcoders
+
+                elif key == 'dlna-additional-info':
+                    # add new DLNA additional info
+                    mimetype = item.get('mimetype', None) # audio, video, image or a full mimetype
+                    info = item.get('text')
+                    if (mimetype is not None):
+                        self.dict["dlna-additional-info-%s" % mimetype] = info
+                
+                else:
+                    # add new attribute
+                    self.dict[key] = item
+    
     def hasValue(self, key):
         if (self.done is False):
             self.init()
