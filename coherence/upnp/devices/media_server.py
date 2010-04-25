@@ -169,8 +169,8 @@ class MSRoot(resource.Resource, log.Loggable):
                 def got_stuff_to_transcode(ch):
                     #FIXME create a generic transcoder class and sort the details there
                     format = request.uri.split('/')[-1] #request.args['transcoded'][0]
-                    uri = ch.get_path()
                     try:
+                        uri = ch.get_path()
                         from coherence.transcoder import TranscoderManager
                         manager = TranscoderManager(self.server.coherence)
                         return manager.select(format,uri)

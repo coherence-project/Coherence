@@ -148,7 +148,7 @@ class WebClient(log.Loggable):
         if self.deviceInfo is not None:
             self.info("Client device recognized as '%s'" % self.deviceInfo)
             self.dict['device-info'] = self.deviceInfo
-        self.info("Client device params are: %r" % self.dict)
+        self.debug("Client device params are: %r" % self.dict)
         
         self.done = True
         #lock.release()

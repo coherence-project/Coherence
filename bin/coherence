@@ -318,11 +318,13 @@ if __name__ == '__main__':
                 except KeyError:
                     pass
 
+    from twisted.internet import pollreactor
+    pollreactor.install()
+    
     use_qt = config.get('qt', 'no') == 'yes'
     if(config.get('use_dbus', 'no') == 'yes' or
        config.get('glib', 'no') == 'yes' or
-       use_qt or
-       config.get('transcoding', 'no') == 'yes'):
+       use_qt) :
         if use_qt:
             from coherence.extern import qt4reactor
             qt4reactor.install()

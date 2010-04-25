@@ -12,16 +12,21 @@
     and feeding the output into a http response
 """
 
+import os
+import signal
 import os.path
 import urllib
 import warnings
+#import mmap
+import tempfile
 
 from twisted.web import resource, server
-from twisted.internet import protocol
+from twisted.internet import protocol,abstract,fdesc
 
 from coherence import log
 
 import struct
+
 
 def is_audio(mimetype):
     """ checks for type audio,
@@ -118,7 +123,7 @@ try:
             self.buffer = self.buffer + buffer.data
             if not self.buffer_size:
                 try:
-                    self.buffer_size, a_type = struct.unpack(">L4s", self.buffer[:8])
+                    self.buffer_size, a_type = struc.unptack(">L4s", self.buffer[:8])
                 except:
                     return gst.FLOW_OK
     
@@ -192,7 +197,7 @@ try:
                         self.request.write(self.buffer)
                     self.request.finish()
             return True
-    
+   
     
     gobject.type_register(DataSink)
     
@@ -341,6 +346,7 @@ try:
             self.destination = destination
             resource.Resource.__init__(self)
     
+
         def getChild(self, name, request):
             self.info('getChild %s, %s' % (name, request))
             return self
@@ -567,24 +573,115 @@ except ImportError:
     warnings.warn("GStreamer-based transcoders are not operational.")
     pygst = None
 
+
+class FifoReader(abstract.FileDescriptor):
+    def __init__(self, caller, fileno):
+        from twisted.internet import reactor
+        abstract.FileDescriptor.__init__(self, reactor)
+        self.caller = caller
+        fdesc.setNonBlocking(fileno)
+        self.fd = fileno
+        self.startReading()
+    def fileno(self):
+        return self.fd
+    def doRead(self):
+        print ("FifoReader.doRead")
+        if self.caller.acceptData():
+            return fdesc.readFromFD(self.fd, self.caller.dataReceived)
+        else:
+            self.reactor.callLater(0.1,self.doRead)
+            return None
+
 class ExternalProcessProtocol(protocol.ProcessProtocol):
 
-    def __init__(self, caller):
+    def __init__(self, caller, output_file=None):
         self.caller = caller
+        self.output_file = output_file
+        self.buffer_size = 4*8192*1024 # 32 Mbytes
+        self.max_received_size = 8192
+        self.chunk_size = 8192*4
 
+        self.dataFileno = None
+        if self.output_file:
+            self.dataFileno = os.open(self.output_file, os.O_RDONLY|os.O_NONBLOCK)
+            self.dataReader = FifoReader(self, self.dataFileno)
+
+        self.tempFile = tempfile.NamedTemporaryFile('w')
+        self.tempFile.truncate(self.buffer_size)
+        
+        #self.bufferIn = mmap.mmap(self.tempFile.fileno(), self.buffer_size, access=mmap.ACCESS_WRITE)    
+        #self.bufferOut = mmap.mmap(self.tempFile.fileno(), self.buffer_size, access=mmap.ACCESS_READ)
+        self.bufferIn = self.tempFile
+        self.bufferOut = open (self.tempFile.name, 'r')
+                
+        self.posIn = 0
+        self.posOut = 0
+        self.received = 0
+        self.written = 0
+        self.ended = False
+        
     def connectionMade(self):
         print "pp connection made"
 
-    def outReceived(self, data):
-        #print "outReceived with %d bytes!" % len(data)
-        self.caller.write_data(data)
+    def acceptData(self):
+        if (self.caller is None):
+            return True
+        if (self.received - self.written + self.max_received_size) > self.buffer_size:
+            #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
+            #print "data blocked"
+            return False
+        return True
 
+    def hasData(self):
+        if self.received > self.written:
+            return True
+        else:
+            return False
+
+    def writeData(self):
+        if self.posOut + self.chunk_size >= self.buffer_size:
+            remaining = self.buffer_size-self.posOut
+            written = self.caller.write_data(self.bufferOut.read(remaining))
+            self.written += written
+            self.posOut += written
+            if (written == remaining):
+                #gc.collect(0)
+                self.posOut = 0
+                self.bufferOut.seek(0,0)
+        else: 
+            written = self.caller.write_data(self.bufferOut.read(self.chunk_size))
+            self.written += written
+            self.posOut = self.posOut + written
+        #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
+
+
+    def dataReceived(self, data):
+        #print "outReceived with %d bytes!" % len(data)
+        remaining = self.buffer_size-self.posIn
+        if remaining < 0:
+            self.bufferIn.write(data[:remaining])
+            self.bufferIn.seek(0,0)
+            self.bufferIn.write(data[remaining+1:])
+            self.posIn = len(data)-remaining
+        else:
+            self.bufferIn.write(data)
+            self.posIn += len(data)
+        self.received += len(data)
+        #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
+
+    def outReceived(self, data):
+        if self.dataFileno is None:
+            return self.dataReceived(data)
+        else:
+            print "outReceived! with %d bytes!" % len(data)
+            print "pp (out):", data.strip()
+        
     def errReceived(self, data):
-        #print "errReceived! with %d bytes!" % len(data)
+        print "errReceived! with %d bytes!" % len(data)
         print "pp (err):", data.strip()
 
     def inConnectionLost(self):
-        #print "inConnectionLost! stdin is closed! (we probably did it)"
+        print "inConnectionLost! stdin is closed! (we probably did it)"
         pass
 
     def outConnectionLost(self):
@@ -595,59 +692,95 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         #print "errConnectionLost! The child closed their stderr."
         pass
 
+    def processExited(self, reason):
+        print "process exited: ", reason
+    
     def processEnded(self, status_object):
-        print "processEnded, status %d" % status_object.value.exitCode
+        exitCode = status_object.value.exitCode
+        print "processEnded, status %d" % exitCode
         print "processEnded quitting"
-        self.caller.ended = True
-        self.caller.write_data('')
+        if exitCode is not 0:
+            self.caller.stopProducing()
+            self.caller = None
+        self.ended = True
+        #self.bufferOut.close()
+        self.bufferIn.close()
+        self.tempFile.close()
 
 
 class ExternalProcessProducer(object):
     logCategory = 'externalprocess'
 
-    def __init__(self, pipeline, request):
+    def __init__(self, pipeline, request, output_file = None):
         self.pipeline = pipeline
         self.request = request
+        self.output_file = output_file
         self.process = None
-        self.written = 0
-        self.data = ''
+        self.processProtocol = None
         self.ended = False
-        request.registerProducer(self, 0)
+        self.request.registerProducer(self, 0)
 
     def write_data(self, data):
+        written = 0
         if data:
             #print "write %d bytes of data" % len(data)
-            self.written += len(data)
-            # this .write will spin the reactor, calling .doWrite and then
-            # .resumeProducing again, so be prepared for a re-entrant call
             self.request.write(data)
+            written = len(data)
         if self.request and self.ended:
             print "closing"
             self.request.unregisterProducer()
             self.request.finish()
             self.request = None
+            self.bufferOut.close()
+        return written
+        
 
     def resumeProducing(self):
         #print "resumeProducing", self.request
-        if not self.request:
+        if not self.request or self.ended is True:
             return
-        if self.process is None:
-            argv = self.pipeline.split()
+        if self.processProtocol is None:
+            argv = self.pipeline
             executable = argv[0]
             argv[0] = os.path.basename(argv[0])
             from twisted.internet import reactor
-            self.process = reactor.spawnProcess(ExternalProcessProtocol(self),
-                    executable, argv, {})
+            print self.request
+            print argv
+            if self.output_file:
+                # create the FIFO pipe file
+                os.mkfifo(self.output_file)
+            #self.process = reactor.spawnProcess(ExternalProcessProtocol(self), executable, argv, {})
+            from coherence.process import Process
+            self.process = Process(reactor,executable, argv, {}, None, ExternalProcessProtocol(self, self.output_file))
+            self.processProtocol = self.process.proto
+            self.bufferOut = self.processProtocol.bufferOut
+        if self.processProtocol.hasData():
+            self.processProtocol.writeData()
+        elif self.processProtocol.ended is True:
+            self.ended = True
+            print "closing"
+            self.request.unregisterProducer()
+            self.request.finish()
+            self.request = None
+        else:
+            from twisted.internet import reactor
+            reactor.callLater(0.1, self.resumeProducing)
 
     def pauseProducing(self):
+        print "pauseProducing", self.request
         pass
 
     def stopProducing(self):
         print "stopProducing", self.request
+        self.ended = True
         self.request.unregisterProducer()
         self.process.loseConnection()
+        os.kill(self.process.pid, signal.SIGKILL)
+        self.process = None
         self.request.finish()
         self.request = None
+        self.bufferOut.close()
+        self.bufferOut = None
 
 
 class ExternalProcessPipeline(resource.Resource, log.Loggable):
@@ -669,23 +802,25 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         except AttributeError:
             pass
 
-        command = None
-        # How many values are foreseen in the pipeline_description?
-        # 0: no need for a value
-        # 1: the value is the resource native uri
-        # 2: %(uri) is the resource native uri, %(subtitle) is the resource subtitle data uri 
-        # >2: error
-        nbValues = self.pipeline_description.count('%') - 2*self.pipeline_description.count('%%')
-        if (nbValues == 0):
-            command = self.pipeline_description
-        elif (nbValues == 1):
-            command = self.pipeline_description % self.uri
-        elif (nbValues == 2):
-            if self.subtitle is not None:
-                command = self.pipeline_description % {'uri':self.uri, 'subtitle': self.subtitle}
-                                                       
-        if command is not None:
-            ExternalProcessProducer(command, request)
+        # if needed
+        output_file = None
+        
+        if self.pipeline_description is not None:
+            command = self.pipeline_description.split()
+            if "%s" in command:
+                index = command.index("%s")
+                command[index] = self.uri
+            if "%uri" in command:
+                index = command.index("%uri")
+                command[index] = self.uri
+            if "%subtitle" in command:
+                index = command.index("%subtitle")
+                command[index] = self.subtitle
+            if "%output" in command:
+                output_file = tempfile.mktemp()
+                index = command.index("%output")
+                command[index] = output_file
+            ExternalProcessProducer(command, request, output_file)
         return server.NOT_DONE_YET
     
 
@@ -772,11 +907,11 @@ class TranscoderManager(log.Loggable):
             for transcoder in transcoders_from_config:
                 # FIXME: is anyone checking if all keys are given ?
                 pipeline = transcoder['pipeline']
-                if not '%s' in pipeline:
-                    self.warning("Can't create transcoder %r:"
-                            " missing placehoder '%%s' in 'pipeline'",
-                            transcoder)
-                    continue
+                #if not '%s' in pipeline:
+                #    self.warning("Can't create transcoder %r:"
+                #            " missing placehoder '%%s' in 'pipeline'",
+                #            transcoder)
+                #    continue
 
                 try:
                     transcoder_name = transcoder['name'].decode('ascii')
@@ -786,9 +921,8 @@ class TranscoderManager(log.Loggable):
                             transcoder)
                     continue
 
-
                 transcoder_type = transcoder['type'].lower()
-
+ 
                 if transcoder_type == 'gstreamer':
                     if gst:
                         wrapped = transcoder_class_wrapper(GStreamerTranscoder,
