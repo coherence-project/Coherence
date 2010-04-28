@@ -648,8 +648,8 @@ class Item(Object):
                     transcoders = ['native']
                 else:         
                     transcoderManager = TranscoderManager()      
-                    transcoders = transcoderManager.getProfiles(content_format, upnp_client)               
-                                                
+                    transcoders = transcoderManager.getProfiles(old_res, upnp_client)
+
                 res_count = 0
                 for transcoder in transcoders:
                     if transcoder in ('native'):

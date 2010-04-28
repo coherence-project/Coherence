@@ -19,6 +19,7 @@ import urllib
 import warnings
 #import mmap
 import tempfile
+import re
 
 from twisted.web import resource, server
 from twisted.internet import protocol,abstract,fdesc
@@ -123,7 +124,7 @@ try:
             self.buffer = self.buffer + buffer.data
             if not self.buffer_size:
                 try:
-                    self.buffer_size, a_type = struc.unptack(">L4s", self.buffer[:8])
+                    self.buffer_size, a_type = struc.unpack(">L4s", self.buffer[:8])
                 except:
                     return gst.FLOW_OK
     
@@ -397,7 +398,8 @@ try:
     class PCMTranscoder(BaseTranscoder, InternalTranscoder):
         contentType = 'audio/L16;rate=44100;channels=2'
         name = 'lpcm'
-    
+        args = {'source':{'mimetype':'audio/'}}
+        
         def start(self, request=None):
             self.info("PCMTranscoder start %r %r", request, self.uri)
             self.pipeline = gst.parse_launch(
@@ -424,7 +426,8 @@ try:
     
         contentType = 'audio/x-wav'
         name = 'wav'
-    
+        args = {'source':{'mimetype':'audio/'}}
+        
         def start(self, request=None):
             self.info("start %r", request)
             self.pipeline = gst.parse_launch(
@@ -445,7 +448,8 @@ try:
     
         contentType = 'audio/mpeg'
         name = 'mp3'
-    
+        args = {'source':{'mimetype':'audio/'}}
+        
         def start(self, request=None):
             self.info("start %r", request)
             self.pipeline = gst.parse_launch(
@@ -466,7 +470,8 @@ try:
         """
         contentType = 'video/mp4'
         name = 'mp4'
-    
+        args = {'source':{'mimetype':'video/'}}
+        
         def start(self, request=None):
             self.info("start %r", request)
             self.pipeline = gst.parse_launch(
@@ -485,7 +490,8 @@ try:
     
         contentType = 'video/mpeg'
         name = 'mpegts'
-    
+        args = {'source':{'mimetype':'video/'}}
+        
         def start(self, request=None):
             self.info("start %r", request)
             ### FIXME mpeg2enc
@@ -507,7 +513,8 @@ try:
         """
         contentType = 'image/jpeg'
         name = 'thumb'
-    
+        args = {'source':{'mimetype':'image/'}}
+        
         def start(self, request=None):
             self.info("start %r", request)
             """ what we actually want here is a pipeline that calls
@@ -585,32 +592,38 @@ class FifoReader(abstract.FileDescriptor):
     def fileno(self):
         return self.fd
     def doRead(self):
-        print ("FifoReader.doRead")
-        if self.caller.acceptData():
+        #print ("FifoReader.doRead")
+        if self.caller.readyToReceive():
             return fdesc.readFromFD(self.fd, self.caller.dataReceived)
-        else:
+        elif self.caller.ended is False:
             self.reactor.callLater(0.1,self.doRead)
             return None
-
-class ExternalProcessProtocol(protocol.ProcessProtocol):
-
-    def __init__(self, caller, output_file=None):
-        self.caller = caller
-        self.output_file = output_file
+    def readConnectionLost(self, reason):
+        self.caller.stopReceiving()
+        pass
+        
+class DataBufferedProxy(object):
+    def __init__(self, consumer, args={}):
+        self.consumer = consumer
+        self.args = args
+        
         self.buffer_size = 4*8192*1024 # 32 Mbytes
         self.max_received_size = 8192
         self.chunk_size = 8192*4
+        print "%r" % self.args
+        if self.args.has_key('buffer'):
+            buffer_args = self.args['buffer']
+            if buffer_args.has_key('size'):
+                self.buffer_size = int(buffer_args['size'])
+            if buffer_args.has_key('chunk-size'):
+                self.chunk_size = int(buffer_args['chunk-size'])
 
-        self.dataFileno = None
-        if self.output_file:
-            self.dataFileno = os.open(self.output_file, os.O_RDONLY|os.O_NONBLOCK)
-            self.dataReader = FifoReader(self, self.dataFileno)
-
+        print "Buffer size:", self.buffer_size
+        print "Chunk size:", self.chunk_size
+        
         self.tempFile = tempfile.NamedTemporaryFile('w')
         self.tempFile.truncate(self.buffer_size)
-        
-        #self.bufferIn = mmap.mmap(self.tempFile.fileno(), self.buffer_size, access=mmap.ACCESS_WRITE)    
-        #self.bufferOut = mmap.mmap(self.tempFile.fileno(), self.buffer_size, access=mmap.ACCESS_READ)
+         
         self.bufferIn = self.tempFile
         self.bufferOut = open (self.tempFile.name, 'r')
                 
@@ -619,43 +632,27 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         self.received = 0
         self.written = 0
         self.ended = False
-        
-    def connectionMade(self):
-        print "pp connection made"
+        self.producerEnded = False
+        self.consumerEnded = False
 
-    def acceptData(self):
-        if (self.caller is None):
-            return True
+    def readyToReceive(self):
+        if self.consumerEnded:
+            return False
         if (self.received - self.written + self.max_received_size) > self.buffer_size:
             #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
             #print "data blocked"
             return False
         return True
 
-    def hasData(self):
+    def readyToProduce(self):
         if self.received > self.written:
             return True
         else:
             return False
 
-    def writeData(self):
-        if self.posOut + self.chunk_size >= self.buffer_size:
-            remaining = self.buffer_size-self.posOut
-            written = self.caller.write_data(self.bufferOut.read(remaining))
-            self.written += written
-            self.posOut += written
-            if (written == remaining):
-                #gc.collect(0)
-                self.posOut = 0
-                self.bufferOut.seek(0,0)
-        else: 
-            written = self.caller.write_data(self.bufferOut.read(self.chunk_size))
-            self.written += written
-            self.posOut = self.posOut + written
-        #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
-
-
     def dataReceived(self, data):
+        if self.consumerEnded:
+            return
         #print "outReceived with %d bytes!" % len(data)
         remaining = self.buffer_size-self.posIn
         if remaining < 0:
@@ -669,12 +666,67 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
         self.received += len(data)
         #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
 
-    def outReceived(self, data):
-        if self.dataFileno is None:
-            return self.dataReceived(data)
+    def produceData(self):
+        if self.consumerEnded:
+            return
+        if self.posOut + self.chunk_size >= self.buffer_size:
+            remaining = self.buffer_size-self.posOut
+            written = self.consumer.write_data(self.bufferOut.read(remaining))
+            self.written += written
+            self.posOut += written
+            if (written == remaining):
+                self.posOut = 0
+                self.bufferOut.seek(0,0)
+        else: 
+            written = self.consumer.write_data(self.bufferOut.read(self.chunk_size))
+            self.written += written
+            self.posOut = self.posOut + written
+        #print "written/received - posOut/posIn/buffer: %d/%d - %d-%d/%d" % (self.written, self.received, self.posOut, self.posIn, self.buffer_size)
+
+    def stopReceiving(self):
+        self.producerEnded = True
+        if self.consumerEnded:
+            self.stop()
+
+    def stopProducing(self):
+        self.consumerEnded = True
+        if self.producerEnded:
+            self.stop()
+        
+    def stop(self):
+        print "stop buffers"
+        self.ended = True
+        #self.bufferOut.close()
+        self.bufferIn.close()
+        self.tempFile.close()
+        self.consumer = None
+
+
+class ExternalProcessProtocol(protocol.ProcessProtocol):
+
+    def __init__(self, caller, output_file=None, args={}):
+        self.caller = caller
+        self.output_file = output_file
+        if self.output_file:
+            self.dataFileno = os.open(self.output_file, os.O_RDONLY|os.O_NONBLOCK)
+            self.dataReader = FifoReader(self.caller, self.dataFileno)
+        self.ended = False
+
+    def connectionMade(self):
+        print "pp connection made"
+
+    def acceptData(self):
+        if (self.caller is None):
+            return True
         else:
-            print "outReceived! with %d bytes!" % len(data)
-            print "pp (out):", data.strip()
+            return self.caller.readyToReceive()
+
+    def outReceived(self, data):
+        if self.output_file is None:
+            return self.caller.dataReceived(data)
+        #else:
+            #print "outReceived! with %d bytes!" % len(data)
+            #print "pp (out):", data.strip()
         
     def errReceived(self, data):
         print "errReceived! with %d bytes!" % len(data)
@@ -697,26 +749,31 @@ class ExternalProcessProtocol(protocol.ProcessProtocol):
     
     def processEnded(self, status_object):
         exitCode = status_object.value.exitCode
-        print "processEnded, status %d" % exitCode
+        print "processEnded, status %r" % exitCode
         print "processEnded quitting"
+        self.ended = True
+        self.caller.stopReceiving()
+        if self.output_file:
+            self.dataReader.stopReading()
+            self.dataReader = None
         if exitCode is not 0:
             self.caller.stopProducing()
-            self.caller = None
-        self.ended = True
-        #self.bufferOut.close()
-        self.bufferIn.close()
-        self.tempFile.close()
+        self.caller = None
+
 
 
 class ExternalProcessProducer(object):
     logCategory = 'externalprocess'
 
-    def __init__(self, pipeline, request, output_file = None):
+    def __init__(self, pipeline, args, request, output_file = None):
         self.pipeline = pipeline
+        self.args = args
         self.request = request
         self.output_file = output_file
         self.process = None
+        self.proto = None
         self.processProtocol = None
+        self.launched = False
         self.ended = False
         self.request.registerProducer(self, 0)
 
@@ -726,42 +783,60 @@ class ExternalProcessProducer(object):
             #print "write %d bytes of data" % len(data)
             self.request.write(data)
             written = len(data)
-        if self.request and self.ended:
-            print "closing"
-            self.request.unregisterProducer()
-            self.request.finish()
-            self.request = None
-            self.bufferOut.close()
+        #if self.request and self.ended:
+        #    print "closing"
+        #    self.request.unregisterProducer()
+        #    self.request.finish()
+        #    self.request = None
+        #    self.bufferOut.close()
         return written
         
-
+    def stop(self):
+        print "stop"
+        self.ended = True
+        if self.proto and self.proto.ended is False:
+            self.process.loseConnection()
+            os.kill(self.process.pid, signal.SIGKILL)
+        self.process = None
+        self.proto = None
+        if self.dataBuffers and self.dataBuffers.ended is False:
+            #self.dataBuffers.stopReceiving()
+            self.dataBuffers.stopProducing()
+        self.dataBuffers = None
+        if self.output_file:
+            os.unlink(self.output_file)
+        self.output_file = None
+        if self.request:
+            self.request.unregisterProducer()
+            self.request.finish()
+        self.request = None
+            
     def resumeProducing(self):
         #print "resumeProducing", self.request
-        if not self.request or self.ended is True:
+        if not self.request or self.ended:
             return
-        if self.processProtocol is None:
+        if self.launched is False:
             argv = self.pipeline
             executable = argv[0]
             argv[0] = os.path.basename(argv[0])
             from twisted.internet import reactor
             print self.request
             print argv
+            self.dataBuffers = DataBufferedProxy(self, self.args)
+
+            from coherence.process import Process
             if self.output_file:
                 # create the FIFO pipe file
                 os.mkfifo(self.output_file)
-            #self.process = reactor.spawnProcess(ExternalProcessProtocol(self), executable, argv, {})
-            from coherence.process import Process
-            self.process = Process(reactor,executable, argv, {}, None, ExternalProcessProtocol(self, self.output_file))
-            self.processProtocol = self.process.proto
-            self.bufferOut = self.processProtocol.bufferOut
-        if self.processProtocol.hasData():
-            self.processProtocol.writeData()
-        elif self.processProtocol.ended is True:
+            self.proto = ExternalProcessProtocol(self.dataBuffers, self.output_file, self.args)
+            self.process = Process(reactor,executable, argv, {}, None, self.proto)
+            self.launched = True
+
+        if self.dataBuffers.readyToProduce():
+            self.dataBuffers.produceData()
+        elif self.dataBuffers.producerEnded:
             self.ended = True
-            print "closing"
-            self.request.unregisterProducer()
-            self.request.finish()
-            self.request = None
+            self.stop()
         else:
             from twisted.internet import reactor
             reactor.callLater(0.1, self.resumeProducing)
@@ -772,15 +847,7 @@ class ExternalProcessProducer(object):
 
     def stopProducing(self):
         print "stopProducing", self.request
-        self.ended = True
-        self.request.unregisterProducer()
-        self.process.loseConnection()
-        os.kill(self.process.pid, signal.SIGKILL)
-        self.process = None
-        self.request.finish()
-        self.request = None
-        self.bufferOut.close()
-        self.bufferOut = None
+        self.stop()
 
 
 class ExternalProcessPipeline(resource.Resource, log.Loggable):
@@ -789,7 +856,6 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
 
     def __init__(self, uri, subtitle=None):
         self.uri = uri
-        self.subtitle = subtitle
 
     def getChildWithDefault(self, path, request):
         return self
@@ -813,22 +879,20 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
             if "%uri" in command:
                 index = command.index("%uri")
                 command[index] = self.uri
-            if "%subtitle" in command:
-                index = command.index("%subtitle")
-                command[index] = self.subtitle
             if "%output" in command:
                 output_file = tempfile.mktemp()
                 index = command.index("%output")
                 command[index] = output_file
-            ExternalProcessProducer(command, request, output_file)
+            ExternalProcessProducer(command, self.args, request, output_file)
         return server.NOT_DONE_YET
     
 
-def transcoder_class_wrapper(klass, content_type, pipeline):
+def transcoder_class_wrapper(klass, transcoder_args):
     def create_object(uri):
         transcoder = klass(uri)
-        transcoder.contentType = content_type
-        transcoder.pipeline_description = pipeline
+        transcoder.contentType = transcoder_args['target']
+        transcoder.pipeline_description = transcoder_args['pipeline']
+        transcoder.args = transcoder_args
         return transcoder
     return create_object
 
@@ -889,10 +953,13 @@ class TranscoderManager(log.Loggable):
             return
         self.initDone = False
         self.transcoders = {}
+        self.transcoder_keys = []
         
         # retrieve internal transcoders
         for transcoder in InternalTranscoder.__subclasses__():
-            self.transcoders[get_transcoder_name(transcoder)] = transcoder
+            transcoder_name = get_transcoder_name(transcoder)
+            self.transcoders[transcoder_name] = transcoder
+            self.transcoder_keys.append(transcoder_name)
 
         # retrieve transcoders defined in configuration
         if coherence is not None:
@@ -927,6 +994,7 @@ class TranscoderManager(log.Loggable):
                     if gst:
                         wrapped = transcoder_class_wrapper(GStreamerTranscoder,
                                 transcoder['target'], transcoder['pipeline'])
+                        wrapped.args = transcoder
                         wrapped.contentType = transcoder['target']
                     else:
                         self.warning("Can't create transcoder %r:"
@@ -934,14 +1002,16 @@ class TranscoderManager(log.Loggable):
                              transcoder)
                         
                 elif transcoder_type == 'process':
-                    wrapped = transcoder_class_wrapper(ExternalProcessPipeline,
-                            transcoder['target'], transcoder['pipeline'])
+                    wrapped = transcoder_class_wrapper(ExternalProcessPipeline, transcoder)
+                    wrapped.args = transcoder
                     wrapped.contentType = transcoder['target']
                 
                 else:
                     self.warning("unknown transcoder type %r", transcoder_type)
                     continue
-
+                
+                if not transcoder_name in self.transcoder_keys:
+                     self.transcoder_keys.append(transcoder_name)
                 self.transcoders[transcoder_name] = wrapped
 
         self.info("available transcoders %r" % self.transcoders)
@@ -961,10 +1031,14 @@ class TranscoderManager(log.Loggable):
         transcoder = self.transcoders[name](uri)
         return transcoder
 
-    def getProfiles (self, source_type, upnp_client):
+    def getProfiles (self, resource, upnp_client):
         supported_profiles = []
+
+        protocol,network,source_type,additional_info = resource.protocolInfo.split(':')
+
+        # Take into account client device configuration
         if upnp_client is None:
-            supported_profiles = ['native'] + self.transcoders.keys()
+            supported_profiles = None
         elif upnp_client.hasTag('NO_TRANSCODING'):
             supported_profiles = ['native']
         elif upnp_client.hasValue("transcoders-%s" % source_type):
@@ -983,7 +1057,39 @@ class TranscoderManager(log.Loggable):
             transcoders_str = upnp_client.getValue("transcoders")
             supported_profiles = transcoders_str.split(",")       
         else:
-            supported_profiles = ['native'] + self.transcoders.keys()
+            supported_profiles = None
+
+        # If no information in client device configuration
+        # We construct the list of profiles from the transcoder parameters
+        if supported_profiles is None:
+            supported_profiles = []
+            profiles_before_native = []
+            profiles_hiding_native = []
+            profiles_after_native = []
+            profiles_others = []
+            for transcoder_name in self.transcoder_keys:
+                transcoder=self.transcoders[transcoder_name]
+                if not self.resourceIsSupported(transcoder_name, resource):
+                    continue
+                priority = 2
+                if hasattr(transcoder,'args') and transcoder.args.has_key('priority'):
+                    priority = int(transcoder.args['priority'])
+                if (priority == -1):
+                    profiles_before_native.append(transcoder_name)
+                elif (priority == 0):
+                    profiles_hiding_native.append(transcoder_name)
+                elif (priority == 1):
+                    profiles_after_native.append(transcoder_name)
+                else:
+                    profiles_others.append(transcoder_name)
+            supported_profiles.extend(profiles_before_native)
+            if len(profiles_hiding_native) > 0:
+                supported_profiles.extend(profiles_hiding_native)
+            else:
+                supported_profiles.append('native')
+            supported_profiles.extend(profiles_after_native)
+            supported_profiles.extend(profiles_others)
+            
         return supported_profiles
 
     def resourceIsSupported(self, profile, resource):
@@ -991,9 +1097,18 @@ class TranscoderManager(log.Loggable):
             return False
         transcoder = self.transcoders[profile]
         protocol,network,content_format,additional_info = resource.protocolInfo.split(':')
-        if content_format == transcoder.contentType:
-            return False
-        return True
+        uri = resource.data
+        supported = True
+        if hasattr(transcoder,'args') and transcoder.args.has_key('source'):
+            sources = transcoder.args['source']
+            if isinstance(sources, dict):
+                sources = [sources]
+            for source in sources:
+                if source.has_key('mimetype') and  not re.match(source['mimetype'], content_format):
+                    supported = False
+                if source.has_key('uri') and  not re.match(source['uri'], uri):
+                    supported = False       
+        return supported
 
 
     defaultTargetContentFormats ={'mp3':'audio/mpeg',
