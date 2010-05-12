@@ -23,7 +23,7 @@ class Mirabeau(log.Loggable):
         self._coherence = coherence_instance
 
         chatroom = config['chatroom']
-        conference_server = config['conference-server']
+        conference_server = config['account']['fallback-conference-server']
         manager = config['manager']
         protocol = config['protocol']
 

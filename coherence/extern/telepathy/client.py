@@ -66,6 +66,8 @@ class Client(log.Loggable):
 
     def _got_connection(self, connection):
         self.conn = connection
+        if connection.GetStatus() == CONNECTION_STATUS_DISCONNECTED:
+            connection.Connect()
         return connection
 
     def start(self):
