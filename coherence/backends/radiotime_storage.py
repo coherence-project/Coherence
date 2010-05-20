@@ -141,6 +141,9 @@ class RadiotimeStore(AbstractBackendStore):
             elif type in ('link'):
                 # the corresponding item will a self-populating Container
                 text = outline.get('text')
+                # except for the following items, which correspond to nothing interesting
+                if text in ('Registration Code'):
+                    return
                 outline_url = outline.get('URL')
                 key = outline.get('key')
                 guide_id = outline.get('guide_id')
@@ -179,7 +182,7 @@ class RadiotimeStore(AbstractBackendStore):
             parent.childrenRetrievingNeeded = True # we retry
             return Failure("Unable to retrieve items for url %s" % url)
             
-        d = utils.getPage(url, )
+        d = utils.getPage(url)
         d.addCallback(parse_xml)
         d.addErrback(got_error)
         d.addCallback(got_page)
