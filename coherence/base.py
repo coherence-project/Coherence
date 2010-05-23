@@ -36,6 +36,7 @@ from coherence.upnp.devices.binary_light import BinaryLight
 from coherence.upnp.devices.dimmable_light import DimmableLight
 
 
+
 try:
     import pkg_resources
 except ImportError:
@@ -558,9 +559,17 @@ class Coherence(log.Loggable):
         #self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         #self.renew_service_subscription_loop.start(20.0, now=False)
 
+        #
+        # init mappings
+        #
+        # init extension -> mimetype mappings
+        self.setup_mimetypes()
+        # init mimetype -> UPnPClass mapping
+        from coherence.upnp.core.DIDLLite import init_mimetype_upnpclass_mappings
+        init_mimetype_upnpclass_mappings(self.config, self)
+
         self.available_plugins = None
-
-
+        
         try:
             plugins = self.config['plugin']
             if isinstance(plugins,dict):
@@ -900,3 +909,25 @@ class Coherence(log.Loggable):
         """ wrapper method around louie.disconnect
         """
         louie.disconnect(receiver,signal=signal,sender=sender,weak=weak)
+
+    def setup_mimetypes(self):
+        # Complete mimetype mappings from configuration
+        import mimetypes
+        mimetypes.init()
+        mappingsFromConfig = []
+        try:
+            mappingsFromConfig = self.config['mapping']
+            if isinstance(mappingsFromConfig, dict):
+                mappingsFromConfig = [mappingsFromConfig]
+        except KeyError:
+            mappingsFromConfig = []
+        extensionMimetypeMappings = []  
+        for mapping in mappingsFromConfig:
+            mappingType = mapping.get('type','')
+            if mappingType == 'extension-mimetype':
+                extensionMimetypeMappings.append(mapping)
+        for mapping in extensionMimetypeMappings:
+            mappingFrom = mapping.get('from''')
+            mappingTo =  mapping.get('to','')
+            mimetypes.add_type(mappingTo, mappingFrom)
+            self.info('Mimetype mapping added: extension %s to mimetype %s' % (mappingFrom,mappingTo))        

@@ -143,8 +143,99 @@ class Resources(list):
                         result.append(res)
         return result
 
-def classChooser(mimetype, sub=None):
 
+mimetype_upnpclass_mappings = {}
+
+def init_mimetype_upnpclass_mappings(config, logger):
+    mappingsFromConfig = []
+    try:
+        mappingsFromConfig = config['mapping']
+        if isinstance(mappingsFromConfig, dict):
+            mappingsFromConfig = [mappingsFromConfig]
+    except KeyError:
+        mappingsFromConfig = []
+    mimetypeUpnpclassMappings = []  
+    for mapping in mappingsFromConfig:
+        mappingType = mapping.get('type','')
+        if mappingType == 'mimetype-upnpclass':
+            mimetypeUpnpclassMappings.append(mapping)
+    for mapping in mimetypeUpnpclassMappings:
+        mappingFrom = mapping.get('from''')
+        mappingTo =  mapping.get('to','')
+        mimetype_upnpclass_mappings[mappingFrom] = mappingTo
+        logger.info('UPnPClass mapping added: mimetype %s to UPnPClass %s' % (mappingFrom,mappingTo))
+    mimetype_upnpclass_mappings_inited = True
+
+def classChooser(mimetype, sub=None):
+    # we try the configured "mimetype -> class" mappings
+    try:
+        klass = mimetype_upnpclass_mappings[mimetype]
+        print klass
+        if klass == 'object.item':
+            return Item
+        elif klass == 'object.item.imageItem':
+            return ImageItem
+        elif klass == 'object.item.imageItem.photo':
+            return Photo
+        elif klass == 'object.item.audioItem':
+            return AudioItem
+        elif klass == 'object.item.audioItem.musicTrack':
+            return MusicTrack
+        elif klass == 'object.item.audioItem.audioBroadcast':
+            return AudioBroacast
+        elif klass == 'object.item.audioItem.audioBook':
+            return AudioBook
+        elif klass == 'object.item.videoItem':
+            return VideoItem
+        elif klass == 'object.item.videoItem.movie':
+            return Movie
+        elif klass == 'object.item.videoItem.videoBroadcast':
+            return VideoBroadcast
+        elif klass == 'object.item.videoItem.musicVideoClip':
+            return MusicVideoClip
+        elif klass == 'object.item.playlistItem':
+            return PlaylistItem
+        elif klass == 'object.item.textItem':
+            return TextItem
+        #elif klass == 'object.item.bookmarkItem':
+        #elif klass == 'object.item.epgItem':
+        #elif klass == 'object.item.epgItem.audioProgram':
+        #elif klass == 'object.item.epgItem.videoProgram':
+        elif klass == 'object.container.person':
+            return Person
+        elif klass == 'object.container.person.musicArtist':
+            return MusicArtist
+        elif klass == 'object.container.playlistContainer':
+            return PlaylistContainer
+        elif klass == 'object.container.album':
+            return Album
+        elif klass == 'object.container.album.musicAlbum':
+            return MusicAlbum
+        elif klass == 'object.container.album.photoAlbum':
+            return PhotoAlbum
+        elif klass == 'object.container.genre':
+            return Genre
+        elif klass == 'object.container.genre.musicGenre':
+            return MusicGenre
+        elif klass == 'object.container.genre.movieGenre':
+            return MovieGenre
+        #elif klass == 'object.container.channelGroup':
+        #elif klass == 'object.container.channelGroup.audioChannelGroup':
+        #elif klass == 'object.container.channelGroup.videoChannelGroup':
+        #elif klass == 'object.container.epgContainer':
+        elif klass == 'object.container.storageSystem':
+            return StorageSystem
+        elif klass == 'object.container.storageVolume':
+            return StorageVolume
+        elif klass == 'object.container.storageFolder':
+            return StorageFolder
+        #elif klass == 'object.container.bookmarkFolder':
+        else:
+            print("Unsupported UPnP class: %s" % klass)
+            return null
+    except KeyError:
+        pass
+    
     if mimetype == 'root':
         return Container
     if mimetype == 'item':
