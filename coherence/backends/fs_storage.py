@@ -1,3 +1,4 @@
+#mimetypes.add_type('video/divx', '.divx')
 # -*- coding: utf-8 -*-
 
 # Licensed under the MIT license
@@ -16,15 +17,15 @@ import urllib
 from sets import Set
 
 import mimetypes
-mimetypes.init()
-mimetypes.add_type('audio/x-m4a', '.m4a')
-mimetypes.add_type('audio/x-musepack', '.mpc')
-mimetypes.add_type('audio/x-wavpack', '.wv')
-mimetypes.add_type('video/mp4', '.mp4')
-mimetypes.add_type('video/mpegts', '.ts')
-mimetypes.add_type('video/divx', '.divx')
-mimetypes.add_type('video/divx', '.avi')
-mimetypes.add_type('video/x-matroska', '.mkv')
+#mimetypes.init()
+#mimetypes.add_type('audio/x-m4a', '.m4a')
+#mimetypes.add_type('audio/x-musepack', '.mpc')
+#mimetypes.add_type('audio/x-wavpack', '.wv')
+#mimetypes.add_type('video/mp4', '.mp4')
+#mimetypes.add_type('video/mpegts', '.ts')
+#mimetypes.add_type('video/divx', '.divx')
+#mimetypes.add_type('video/divx', '.avi')
+#mimetypes.add_type('video/x-matroska', '.mkv')
 
 from urlparse import urlsplit
 

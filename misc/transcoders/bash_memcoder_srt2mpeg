@@ -1,0 +1,22 @@
+#!/bin/bash
+input="$1"
+output="$2"
+
+srt=$input
+
+# filename must be of the form "movie name.XX[X].srt" or "movie name.srt"
+base_name="$(echo $srt | sed 's/\..\{2,3\}\.srt$//' | sed 's/\.srt$//')"
+
+extensions="avi mp4 mpg mov"
+for ext in $extensions ; do
+    input=$base_name.$ext;
+    if [[ -e $input ]]; then break; fi
+done
+
+mencoder "$input" \
+-oac lavc -ovc lavc -of mpeg \
+-lavcopts vcodec=mpeg2video:keyint=1:vbitrate=200000:vrc_maxrate=9000:vrc_buf_size=1835 \
+-vf harddup -mpegopts muxrate=12000 \
+-sub "$srt" -font "/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf" -subfont-autoscale 2 \
+-o "$output"
+

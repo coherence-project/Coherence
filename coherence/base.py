@@ -927,7 +927,7 @@ class Coherence(log.Loggable):
             if mappingType == 'extension-mimetype':
                 extensionMimetypeMappings.append(mapping)
         for mapping in extensionMimetypeMappings:
-            mappingFrom = mapping.get('from''')
+            mappingFrom = mapping.get('from', '')
             mappingTo =  mapping.get('to','')
             mimetypes.add_type(mappingTo, mappingFrom)
             self.info('Mimetype mapping added: extension %s to mimetype %s' % (mappingFrom,mappingTo))        
