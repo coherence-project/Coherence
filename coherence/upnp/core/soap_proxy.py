@@ -44,7 +44,7 @@ class SOAPProxy(log.Loggable):
 
         self.info("callRemote %r %r %r %r", self.soapaction, soapmethod, self.namespace, self.action)
 
-        headers = { 'content-type': 'text/xml ;charset="utf-8"',
+        headers = { 'content-type': 'text/xml; charset="utf-8"',
                     'SOAPACTION': '"%s"' % soapaction,}
         if arguments.has_key('headers'):
             headers.update(arguments['headers'])
