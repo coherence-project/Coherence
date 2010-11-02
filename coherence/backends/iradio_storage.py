@@ -24,6 +24,7 @@ from coherence import log
 from coherence.backend import BackendItem, BackendStore, Container, LazyContainer, AbstractBackendStore
 
 from urlparse import urlsplit
+import urllib
 
 SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newxml.phtml'
 
@@ -265,8 +266,8 @@ class IRadioStore(AbstractBackendStore):
         genre = genres[page]
         if page < len(genres)-1:
             parent.childrenRetrievingNeeded = True
-        url = '%s?genre=%s' % (self.shoutcast_ws_url, genre)
-
+        url = '%s?genre=%s' % (self.shoutcast_ws_url, urllib.quote (genre))
+        
         if genre_families.has_key(genre):
             family_genres = genre_families[genre]
             for family_genre in family_genres:
