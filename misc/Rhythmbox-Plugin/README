@@ -1,6 +1,4 @@
-This project is a continuation of the Coherence UPnP plugin for Rhythmbox, based on https://coherence.beebits.net/svn/trunk/Coherence/misc/Rhythmbox-Plugin@1596
-
-It aims to extend and improve the code with compatibility with current Rhythmbox releases, bug fixes, et cetera.
+This project is a plugin for the Rhythmbox music management application (http://www.rhythmbox.org/), providing integration with the Coherence MediaRenderer and MediaServer implementations.
 
 PREREQUISISTES
 
