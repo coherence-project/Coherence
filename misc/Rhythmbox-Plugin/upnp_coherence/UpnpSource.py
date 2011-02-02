@@ -137,9 +137,9 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                     if duration is not None:
                         #match duration via regular expression.
                         #in case RB ever supports fractions of a second, here's the full regexp:
-                        #"(\d+):(\d{2}):(\d{2})(?:\.(\d+))?(?:\.(\d+)\/(\d+))?" 
+                        #"(\d+):([0-5][0-9]):([0-5][0-9])(?:\.(\d+))?(?:\.(\d+)\/(\d+))?" 
                         self.info("duration: %r" %(duration))
-                        match = re.match("(\d+):(\d{2}):(\d{2})", duration)
+                        match = re.match("(\d+):([0-5][0-9]):([0-5][0-9])", duration)
                         if match is not None:
                             h = match.group(1)
                             m = match.group(2)
