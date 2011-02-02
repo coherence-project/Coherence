@@ -106,7 +106,7 @@ class RhythmboxPlayer(log.Loggable):
             cover = self.shell.props.db.entry_request_extra_metadata(entry, "rb:coverArt-uri")
             if cover != None:
                 _,ext =  os.path.splitext(cover)
-                item.albumArtURI = ''.join((self.server.coherence.urlbase+str(self.dmr_uuid.uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT),'?cover',ext))
+                item.albumArtURI = ''.join((self.server.coherence.urlbase+str(self.dmr_uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT),'?cover',ext))
 
             item.res = []
 
