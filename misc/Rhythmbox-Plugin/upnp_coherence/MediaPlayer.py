@@ -1,6 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
+# Copyright 2011, Caleb Callaway <enlightened-despot@gmail.com>
 # Copyright 2008-2010, Frank Scholz <dev@coherence-project.org>
 
 import os.path

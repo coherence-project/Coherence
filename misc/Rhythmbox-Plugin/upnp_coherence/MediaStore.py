@@ -1,8 +1,9 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 #
-# Copyright 2007, James Livingston  <doclivingston@gmail.com>
+# Copyright 2011, Caleb Callaway <enlightened-despot@gmail.com>
 # Copyright 2007-2010, Frank Scholz <dev@coherence-project.org>
+# Copyright 2007, James Livingston  <doclivingston@gmail.com>
 
 import os.path
 import rhythmdb

@@ -1,5 +1,6 @@
 # -*- Mode: python; coding: utf-8; tab-width: 8; indent-tabs-mode: t; -*-
 #
+# Copyright 2011, Caleb Callaway <enlightened-despot@gmail.com>
 # Copyright 2008-2010, Frank Scholz <dev@coherence-project.org>
 # Copyright 2008, James Livingston <doclivingston@gmail.com>
 #
