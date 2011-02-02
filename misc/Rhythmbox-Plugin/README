@@ -1,0 +1,15 @@
+This project is a continuation of the Coherence UPnP plugin for Rhythmbox, based on https://coherence.beebits.net/svn/trunk/Coherence/misc/Rhythmbox-Plugin@1596
+
+It aims to extend and improve the code with bug fixes, compatibility with current Rhythmbox releases, etc.
+
+PREREQUISISTES
+
+* Rhythmbox 0.13
+* Coherence 0.5.2 or above (tested with Coherence 0.6.6.2)
+
+INSTALLATION
+
+1) Move or remove the existing Coherence UPnP plugin. This is typically located in /usr/lib/rhythmbox/plugins/ or /usr/local/lib/rhythmbox/plugins/
+2) Copy the upnp_coherence directory to ~/.gnome2/rhythmbox/plugins/
+
+The plugin can be activated from the Rhythmbox plugins configuration window, in the same fashion as other plugins.
