@@ -6,6 +6,7 @@
 
 import rb, rhythmdb
 import gobject, gtk
+import re
 
 from coherence import __version_info__ as coherence_version
 
@@ -133,10 +134,18 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                         pass
 
                     if duration is not None:
-                        h,m,s = duration.split(':')
-                        seconds = int(h)*3600 + int(m)*60 + float(s)
-                        self.info("%r %r:%r:%r %r" % (duration,h,m,s,seconds))
-                        self.__db.set(entry, rhythmdb.PROP_DURATION, int(seconds))
+                        #match duration via regular expression.
+                        #in case RB ever supports fractions of a second, here's the full regexp:
+                        #"(\d+):(\d{2}):(\d{2})(?:\.(\d+))?(?:\.(\d+)\/(\d+))?" 
+                        self.info("duration: %r" %(duration))
+                        match = re.match("(\d+):(\d{2}):(\d{2})", duration)
+                        if match is not None:
+                            h = match.group(1)
+                            m = match.group(2)
+                            s = match.group(3)
+                            seconds = int(h)*3600 + int(m)*60 + int(s)
+                            self.info("duration parsed as %r:%r:%r (%r seconds)" % (h,m,s,seconds))
+                            self.__db.set(entry, rhythmdb.PROP_DURATION, seconds)
 
                     if size is not None:
                         try:
