@@ -60,7 +60,9 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         for a in ('r', 's'):
             self.config.set_bool(gconf_keys['dm%s_active' % a], True)
             self.config.set_int(gconf_keys['dm%s_version' % a], 2)
-            self.config.set_string(gconf_keys['dm%s_name' % a], "Rhythmbox on %s" % self.server.coherence.hostname)
+
+        self.config.set_string(gconf_keys['dmr_name'], "Rhythmbox UPnP MediaRenderer on {host}")
+        self.config.set_string(gconf_keys['dms_name'], "Rhythmbox UPnP MediaServer on {host}")
 
         self.config.set_bool(gconf_keys['dmc_active'], True)
 
@@ -144,7 +146,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
                     "version": self.config.get_int(gconf_keys['dmr_version']),
                     "no_thread_needed": True,
                     "shell": self.shell,
-                    'rb_mediaserver': self.server,
+                    'dmr_uuid': gconf_keys['dmr_uuid']
                     }
 
                 if the_icon:
@@ -253,8 +255,8 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
     def detected_media_server(self, client, udn):
         self.warning("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
 
-        if self.server and client.device.get_id() == str(self.server.uuid):
-            """ don't react on our own MediaServer"""
+        """ don't react on our own MediaServer"""
+        if hasattr(self, 'server') and client.device.get_id() == str(self.server.uuid):
             return
 
         db = self.shell.props.db

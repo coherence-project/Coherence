@@ -37,7 +37,7 @@ class RhythmboxPlayer(log.Loggable):
         self.warning("__init__ RhythmboxPlayer %r", kwargs)
         self.shell = kwargs['shell']
         self.server = device
-        self.rb_mediaserver = kwargs['rb_mediaserver']
+        self.dmr_uuid = kwargs['dmr_uuid']
 
         self.player = None
         self.entry = None
@@ -106,7 +106,7 @@ class RhythmboxPlayer(log.Loggable):
             cover = self.shell.props.db.entry_request_extra_metadata(entry, "rb:coverArt-uri")
             if cover != None:
                 _,ext =  os.path.splitext(cover)
-                item.albumArtURI = ''.join((self.server.coherence.urlbase+str(self.rb_mediaserver.uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT),'?cover',ext))
+                item.albumArtURI = ''.join((self.server.coherence.urlbase+str(self.dmr_uuid.uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT),'?cover',ext))
 
             item.res = []
 
@@ -114,7 +114,7 @@ class RhythmboxPlayer(log.Loggable):
             if location.startswith("file://"):
                 location = unicode(urllib.unquote(location[len("file://"):]))
 
-            uri = ''.join((self.server.coherence.urlbase+str(self.rb_mediaserver.uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT)))
+            uri = ''.join((self.server.coherence.urlbase+str(self.dmr_uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT)))
 
             res = DIDLLite.Resource(uri, 'http-get:*:%s:*' % mimetype)
             if size > 0:
