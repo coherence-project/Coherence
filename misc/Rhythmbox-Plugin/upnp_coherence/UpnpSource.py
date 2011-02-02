@@ -120,7 +120,11 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                             self.__db.set(entry, rhythmdb.PROP_ALBUM, item.album)
                     except AttributeError:
                         pass
-
+                    try:
+                        if item.genre is not None:
+                            self.__db.set(entry, rhythmdb.PROP_GENRE, item.genre)
+                    except AttributeError:
+                        pass
                     try:
                         self.info("%r %r", item.title,item.originalTrackNumber)
                         if item.originalTrackNumber is not None:
@@ -135,7 +139,15 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                         self.__db.set(entry, rhythmdb.PROP_DURATION, int(seconds))
 
                     if size is not None:
-                        self.__db.set(entry, rhythmdb.PROP_FILE_SIZE,int(size))
+                        try:
+                             self.__db.set(entry, rhythmdb.PROP_FILE_SIZE,int(size))
+                        except AttributeError:
+                            pass
+                    if bitrate is not None:
+                        try:
+                            self.__db.set(entry, rhythmdb.PROP_BITRATE,int(bitrate))
+                        except AttributeError:
+                            pass
 
                     self.__db.commit()
                     
