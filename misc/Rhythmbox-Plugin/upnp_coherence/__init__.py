@@ -254,7 +254,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             del self.sources[udn]
 
     def detected_media_server(self, client, udn):
-        self.warning("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
+        self.info("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
 
         """ don't react on our own MediaServer"""
         if hasattr(self, 'server') and client.device.get_id() == str(self.server.uuid):
@@ -262,7 +262,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
         db = self.shell.props.db
         group = rb.rb_display_page_group_get_by_id ("shared")
-        
+            
         from CoherenceUpnpEntryType import CoherenceUpnpEntryType
         entry_type = CoherenceUpnpEntryType(client.device.get_id()[5:])
         db.register_entry_type(entry_type)
