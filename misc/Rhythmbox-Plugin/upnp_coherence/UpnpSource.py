@@ -27,10 +27,6 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
         self.__db = None
         self.__activated = False
         self.container_watch = []
-        if coherence_version < (0,5,1):
-            self.process_media_server_browse = self.old_process_media_server_browse
-        else:
-            self.process_media_server_browse = self.new_process_media_server_browse
 
     def do_set_property(self, property, value):
         if property.name == 'plugin':
@@ -83,7 +79,7 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                     self.load_db(container)
 
 
-    def new_process_media_server_browse(self, results, udn):
+    def process_media_server_browse(self, results, udn):
         didl = DIDLLite.DIDLElement.fromString(results['Result'])
         for item in didl.getItems():
             self.info("process_media_server_browse %r %r", item.id, item)

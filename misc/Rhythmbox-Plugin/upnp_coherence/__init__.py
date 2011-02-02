@@ -138,7 +138,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             # create our own media renderer
             # but only if we have a matching Coherence package installed
             if self.coherence_version < (0, 5, 2):
-                print "activation faild. Coherence is older than version 0.5.2"
+                print "activation failed. Coherence is older than version 0.5.2"
             else:
                 from coherence.upnp.devices.media_renderer import MediaRenderer
                 from MediaPlayer import RhythmboxPlayer
@@ -310,9 +310,21 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             table = gtk.Table(rows=2, columns=2, homogeneous=False)
             dialog.vbox.pack_start(table, False, False, 0)
 
-            label = gtk.Label("Port:")
+            label = gtk.Label("Network Interface:")
             label.set_alignment(0,0.5)
             table.attach(label, 0, 1, 0, 1)
+            interface_entry = gtk.Entry()
+            interface_entry.set_max_length(16)
+            if self.config.get_string(gconf_keys['interface']) != None:
+                interface_entry.set_text(self.config.get_string(gconf_keys['interface']))
+            else:
+                interface_entry.set_text('')
+            table.attach(interface_entry, 1, 2, 0, 1,
+                         xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
+
+            label = gtk.Label("Port:")
+            label.set_alignment(0,0.5)
+            table.attach(label, 0, 1, 1, 2)
 
             value = 0
             if self.config.get_int(gconf_keys['port']) != None:
@@ -321,19 +333,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             port_spinner = gtk.SpinButton(adj, 0, 0)
             port_spinner.set_wrap(True)
             port_spinner.set_numeric(True)
-            table.attach(port_spinner, 1, 2, 0, 1,
-                         xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
-
-            label = gtk.Label("Interface:")
-            label.set_alignment(0,0.5)
-            table.attach(label, 0, 1, 1, 2)
-            interface_entry = gtk.Entry()
-            interface_entry.set_max_length(16)
-            if self.config.get_string(gconf_keys['interface']) != None:
-                interface_entry.set_text(self.config.get_string(gconf_keys['interface']))
-            else:
-                interface_entry.set_text('')
-            table.attach(interface_entry, 1, 2, 1, 2,
+            table.attach(port_spinner, 1, 2, 1, 2,
                          xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
 
             frame = gtk.Frame('MediaServer')
