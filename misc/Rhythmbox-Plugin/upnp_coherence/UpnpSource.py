@@ -40,11 +40,13 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
             self.props.name = self.__client.device.get_friendly_name()
         elif property.name == 'udn':
             self.__udn = value
+        elif property.name == 'entry-type':
+            self.__entry_type = value
         else:
             raise AttributeError, 'unknown property %s' % property.name
 
 
-    def do_impl_activate(self):
+    def do_selected (self):
         if not self.__activated:
             print "activating upnp source"
             self.__activated = True

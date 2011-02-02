@@ -38,6 +38,11 @@ gconf_keys = {
     'dmc_active': "/apps/rhythmbox/plugins/coherence/dmc/active",
 }
 
+class CoherenceUpnpEntryType(rhythmdb.EntryType): 
+    def __init__(self, client_id): 
+        entry_name = "CoherenceUpnp:%s", client_id 
+        rhythmdb.EntryType.__init__(self, name=entry_name) 
+
 class CoherencePlugin(rb.Plugin, log.Loggable):
 
     logCategory = 'rb_coherence_plugin'
@@ -246,28 +251,30 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             del self.sources[udn]
 
     def detected_media_server(self, client, udn):
-        self.info("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
+        self.warning("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
+
         if self.server and client.device.get_id() == str(self.server.uuid):
             """ don't react on our own MediaServer"""
             return
 
         db = self.shell.props.db
-        group = rb.rb_source_group_get_by_name("shared")
-        entry_type = db.entry_register_type("CoherenceUpnp:%s" %
-                 client.device.get_id()[5:])
+        group = rb.rb_display_page_group_get_by_id ("shared")
+        
+        from CoherenceUpnpEntryType import CoherenceUpnpEntryType
+        entry_type = CoherenceUpnpEntryType(client.device.get_id()[5:])
+        db.register_entry_type(entry_type)
 
         from UpnpSource import UpnpSource
         source = gobject.new (UpnpSource,
                     shell=self.shell,
                     entry_type=entry_type,
-                    source_group=group,
                     plugin=self,
                     client=client,
                     udn=udn)
 
         self.sources[udn] = source
 
-        self.shell.append_source (source, None)
+        self.shell.append_display_page (source, group)
 
     def create_configure_dialog(self, dialog=None):
         if dialog is None:

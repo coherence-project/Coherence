@@ -430,8 +430,7 @@ class MediaStore(BackendStore):
         self.artist_query = self.db.property_model_new(rhythmdb.PROP_ARTIST)
         self.artist_query.props.query_model = qm
 
-        # oh man this is a bit ugly
-        self.playlist_model = self.plugin.shell.get_playlist_manager().props.sourcelist.props.model
+        self.playlist_model = self.plugin.shell.get_playlist_manager().props.display_page_model
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
