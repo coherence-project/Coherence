@@ -106,7 +106,7 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                         bitrate = res.bitrate
                         break
 
-                if url is not None:
+                if url is not None and item.refID is None:
                     self.info("url %r %r",url,item.title)
 
                     entry = self.__db.entry_lookup_by_location (url)
@@ -142,5 +142,5 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                         self.__db.set(entry, rhythmdb.PROP_FILE_SIZE,int(size))
 
                     self.__db.commit()
-
+                    
 gobject.type_register(UpnpSource)
