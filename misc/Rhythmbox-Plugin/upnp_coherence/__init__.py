@@ -263,7 +263,6 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         db = self.shell.props.db
         group = rb.rb_display_page_group_get_by_id ("shared")
             
-        from CoherenceUpnpEntryType import CoherenceUpnpEntryType
         entry_type = CoherenceUpnpEntryType(client.device.get_id()[5:])
         db.register_entry_type(entry_type)
 
