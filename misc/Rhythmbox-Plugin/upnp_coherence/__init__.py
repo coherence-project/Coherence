@@ -17,6 +17,7 @@ import gconf
 import coherence.extern.louie as louie
 
 from coherence import log
+from CoherenceDBEntryType import CoherenceDBEntryType
 
 # for the icon
 import os.path, urllib, gio, gtk.gdk
@@ -38,11 +39,6 @@ gconf_keys = {
     # DMC
     'dmc_active': "/apps/rhythmbox/plugins/coherence/dmc/active",
 }
-
-class CoherenceUpnpEntryType(rhythmdb.EntryType): 
-    def __init__(self, client_id): 
-        entry_name = "CoherenceUpnp:%s", client_id 
-        rhythmdb.EntryType.__init__(self, name=entry_name) 
 
 class CoherencePlugin(rb.Plugin, log.Loggable):
 
@@ -263,7 +259,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         db = self.shell.props.db
         group = rb.rb_display_page_group_get_by_id ("shared")
             
-        entry_type = CoherenceUpnpEntryType(client.device.get_id()[5:])
+        entry_type = CoherenceDBEntryType(client.device.get_id()[5:])
         db.register_entry_type(entry_type)
 
         from UpnpSource import UpnpSource
