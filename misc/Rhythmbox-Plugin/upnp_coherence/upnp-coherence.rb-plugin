@@ -6,4 +6,4 @@ Name=DLNA/UPnP support
 Description=Adds support for playing media from and sending media to DLNA/UPnP network devices, and enables Rhythmbox to be controlled by a DLNA/UPnP ControlPoint
 Authors=James Livingston <doclivingston@gmail.com>, Frank Scholz <dev@coherence-project.org>, Caleb Callaway <enlightened.despot@gmail.com>
 Copyright=Copyright © 2007,2008,2009,2010 James Livingston & Frank Scholz, 2011 Caleb Callaway 
-Website=http://www.rhythmbox.org/ - http://coherence-project.org - https://github.com/Despot/Rhythmbox-Coherence-UPnP
+Website=http://www.rhythmbox.org/ - http://coherence-project.org

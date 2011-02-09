@@ -43,7 +43,6 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
         else:
             raise AttributeError, 'unknown property %s' % property.name
 
-
     def do_selected (self):
         if not self.__activated:
             print "activating upnp source"
@@ -53,16 +52,30 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
             self.__db = shell.get_property('db')
             self.__entry_type = self.get_property('entry-type')
 
-            # load upnp db
-            self.load_db(0)
+            self.load_db()
             self.__client.content_directory.subscribe_for_variable('ContainerUpdateIDs', self.state_variable_change)
             self.__client.content_directory.subscribe_for_variable('SystemUpdateID', self.state_variable_change)
 
+    def do_get_status(self):
+        if (self.browse_count > 0):
+            return ('Loading contents of %s' % self.props.name, None, 0)
+        else:
+            qm = self.get_property("query-model")
+            return (qm.compute_status_normal("%d song", "%d songs"), None, 2.0)
 
-    def load_db(self, id):
+    def load_db(self):
+        self.browse_count = 0
+        self.load_children(0)
+        
+    def load_children(self, id):
+        self.browse_count += 1
         d = self.__client.content_directory.browse(id, browse_flag='BrowseDirectChildren', process_result=False, backward_compatibility=False)
         d.addCallback(self.process_media_server_browse, self.__udn)
-
+        d.addErrback(self.err_back)
+    
+    def err_back(self, *args, **kw):
+        self.info("Browse action failed: %s" % str(args))
+        self.browse_count -= 1
 
     def state_variable_change(self, variable, udn=None):
         self.info("%s changed from >%s< to >%s<", variable.name, variable.old_value, variable.value)
@@ -80,13 +93,14 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                     self.info("we have a change in %r, container needs a reload", container)
                     self.load_db(container)
 
-
     def process_media_server_browse(self, results, udn):
+        self.browse_count -= 1
+
         didl = DIDLLite.DIDLElement.fromString(results['Result'])
         for item in didl.getItems():
             self.info("process_media_server_browse %r %r", item.id, item)
             if item.upnp_class.startswith('object.container'):
-                self.load_db(item.id)
+                self.load_children(item.id)
             if item.upnp_class.startswith('object.item.audioItem'):
 
                 url = None
@@ -160,5 +174,5 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                             pass
 
                     self.__db.commit()
-                    
+                            
 gobject.type_register(UpnpSource)
