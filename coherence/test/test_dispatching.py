@@ -27,7 +27,7 @@ class SimpleTarget(object):
         setattr(self, variable, getattr(self, variable) + plus)
 
     def fail_before(self, plus, variable=False):
-        raise TypeError(':(')
+        raise TypeError
         self.update(plus, variable=variable)
 
 class TestDispatching(unittest.TestCase):
