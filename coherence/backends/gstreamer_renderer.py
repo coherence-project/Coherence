@@ -462,7 +462,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
     def __init__(self, device, **kwargs):
         if(device.coherence.config.get('use_dbus','no') != 'yes' and
            device.coherence.config.get('glib','no') != 'yes'):
-            raise Exception, 'this media renderer needs use_dbus enabled in the configuration'
+            raise Exception('this media renderer needs use_dbus enabled in the configuration')
         self.name = kwargs.get('name','GStreamer Audio Player')
 
         audio_sink_name = kwargs.get("audio_sink_name")

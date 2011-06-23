@@ -634,11 +634,11 @@ class AmpacheStore(BackendStore):
             response = utils.parse_xml(response, encoding='utf-8')
         except SyntaxError, msg:
             self.warning('error parsing ampache answer %r', msg)
-            raise SyntaxError, 'error parsing ampache answer %r' % msg
+            raise SyntaxError('error parsing ampache answer %r' % msg)
         try:
             error = response.find('error').text
             self.warning('error on token request %r', error)
-            raise ValueError, error
+            raise ValueError(error)
         except AttributeError:
             try:
                 self.token = response.find('auth').text
@@ -680,7 +680,7 @@ class AmpacheStore(BackendStore):
 
                     louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
             except AttributeError:
-                raise ValueError, 'no authorization token returned'
+                raise ValueError('no authorization token returned')
 
     def got_auth_error(self,e,renegotiate=False):
         self.warning('error calling ampache %r', e)
@@ -734,7 +734,7 @@ class AmpacheStore(BackendStore):
                 d.addCallback(resend_request, request)
                 d.addErrBack(self.got_error)
                 return d
-            raise ValueError, error.text
+            raise ValueError(error.text)
         except AttributeError:
             if query_item in ('song','artist','album','playlist','genre','tag','video'):
                 q = response.find(query_item)

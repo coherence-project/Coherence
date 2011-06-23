@@ -627,7 +627,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
             self.warning( 'ConnectionManagerServer', msg)
-            raise LookupError,msg
+            raise LookupError(msg)
 
         try:
             transcoding = False
@@ -637,7 +637,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             self._services.append(self.content_directory_server)
         except LookupError,msg:
             self.warning( 'ContentDirectoryServer', msg)
-            raise LookupError,msg
+            raise LookupError(msg)
 
         try:
             self.media_receiver_registrar_server = MediaReceiverRegistrarServer(self,

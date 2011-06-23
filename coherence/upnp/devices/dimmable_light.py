@@ -66,14 +66,14 @@ class DimmableLight(log.Loggable,BasicDeviceMixin):
             self._services.append(self.switch_power_server)
         except LookupError,msg:
             self.warning( 'SwitchPowerServer', msg)
-            raise LookupError,msg
+            raise LookupError(msg)
 
         try:
             self.dimming_server = DimmingServer(self)
             self._services.append(self.dimming_server)
         except LookupError,msg:
             self.warning( 'SwitchPowerServer', msg)
-            raise LookupError,msg
+            raise LookupError(msg)
 
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:

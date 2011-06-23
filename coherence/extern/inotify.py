@@ -172,7 +172,7 @@ class INotify(FileDescriptor, object):
                 print("inotify.py - can't use libc6, 2.4 or higher needed")
                 import platform
                 if platform.system() != 'Linux':
-                    raise SystemError, "unknown system '%r', INotify support disabled" % platform.uname()
+                    raise SystemError("unknown system '%r', INotify support disabled" % platform.uname())
                 machine = platform.machine()
                 try:
                     obj._init_syscall_id = _inotify_syscalls[machine][0]
@@ -183,7 +183,7 @@ class INotify(FileDescriptor, object):
                     obj.inotify_add_watch = obj._inotify_add_watch
                     obj.inotify_rm_watch = obj._inotify_rm_watch
                 except:
-                    raise SystemError, "unknown system '%s', INotify support disabled" % machine
+                    raise SystemError("unknown system '%s', INotify support disabled" % machine)
 
             FileDescriptor.__init__(obj)
 

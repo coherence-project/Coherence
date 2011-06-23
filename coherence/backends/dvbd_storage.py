@@ -231,7 +231,7 @@ class DVBDStore(BackendStore):
     def __init__(self, server, **kwargs):
 
         if server.coherence.config.get('use_dbus','no') != 'yes':
-            raise Exception, 'this backend needs use_dbus enabled in the configuration'
+            raise Exception('this backend needs use_dbus enabled in the configuration')
 
         BackendStore.__init__(self,server,**kwargs)
         self.config = kwargs
@@ -623,7 +623,7 @@ class DVBDScheduledRecording(BackendStore):
     def __init__(self, server, **kwargs):
 
         if server.coherence.config.get('use_dbus','no') != 'yes':
-            raise Exception, 'this backend needs use_dbus enabled in the configuration'
+            raise Exception('this backend needs use_dbus enabled in the configuration')
 
         BackendStore.__init__(self, server, **kwargs)
         

@@ -95,7 +95,7 @@ class DBRow(object):
 
     def __setitem__(self, key, value):
         """Not used in this implementation"""
-        raise TypeError, "can't set an item of a result set"
+        raise TypeError("can't set an item of a result set")
 
     def __getslice__(self, i, j):
         """Return the value of the numbered column"""
@@ -103,7 +103,7 @@ class DBRow(object):
 
     def __setslice__(self, i, j, list):
         """Not used in this implementation"""
-        raise TypeError, "can't set an item of a result set"
+        raise TypeError("can't set an item of a result set")
 
     def keys(self):
         """Return the field names"""

@@ -41,7 +41,7 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
         elif property.name == 'entry-type':
             self.__entry_type = value
         else:
-            raise AttributeError, 'unknown property %s' % property.name
+            raise AttributeError('unknown property %s' % property.name)
 
     def do_selected (self):
         if not self.__activated:

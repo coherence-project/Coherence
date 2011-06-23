@@ -14,7 +14,7 @@ import urllib, urlparse
 import dbus
 
 if dbus.__version__ < '0.82.2':
-    raise ImportError, 'dbus-python module too old, pls get a newer one from http://dbus.freedesktop.org/releases/dbus-python/'
+    raise ImportError('dbus-python module too old, pls get a newer one from http://dbus.freedesktop.org/releases/dbus-python/')
 
 from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)

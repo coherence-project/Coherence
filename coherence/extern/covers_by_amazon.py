@@ -182,7 +182,7 @@ class CoverGetter(object):
                 title = sanitize(title)
                 query = '&'.join((query, 'Title=%s' % urllib.quote(title)))
         else:
-            raise KeyError, "Please supply either asin, title or artist and title arguments"
+            raise KeyError("Please supply either asin, title or artist and title arguments")
         url = self.server+self.aws_base_query+aws_response_group+query
         WorkQueue(self.send_request, url)
 

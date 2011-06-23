@@ -760,7 +760,7 @@ class ServiceServer(log.Loggable):
                 if((hasattr(self,'implementation') and self.implementation == 'required') or
                     not hasattr(self,'implementation')):
                     self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
-                raise LookupError,"missing callback"
+                raise LookupError("missing callback")
 
         arguments_list = []
         for argument in arguments:

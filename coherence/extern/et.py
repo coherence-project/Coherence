@@ -32,7 +32,7 @@ except ImportError:
                 #print "ElementTree: using xml.etree.ElementTree as ET"
             except ImportError:
                 #print "ElementTree: no ElementTree module found, critical error"
-                raise ImportError, "ElementTree: no ElementTree module found, critical error"
+                raise ImportError("ElementTree: no ElementTree module found, critical error")
 
 utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
 escape = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
@@ -143,6 +143,6 @@ def parse_xml(data, encoding="utf-8",dump_invalid_data=False):
         if dump_invalid_data:
             print error, repr(data)
         p.close()
-        raise Exception, error
+        raise
     else:
         return ET.ElementTree(p.close())

@@ -139,12 +139,10 @@ class Config(ConfigDict):
         dict.__init__(self)
         try:
             xml = ET.parse(file)
-        except SyntaxError, msg:
-            raise SyntaxError, msg
-        except IOError, msg:
-            raise IOError, msg
+        except (SyntaxError, IOError):
+            raise
         except Exception, msg:
-            raise SyntaxError, msg
+            raise SyntaxError(msg)
 
         xmlroot = xml.getroot()
         self.name = xmlroot.tag

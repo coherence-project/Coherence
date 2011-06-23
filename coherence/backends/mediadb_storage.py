@@ -119,7 +119,7 @@ except ImportError:
             get_tags = None
 
 if not get_tags:
-    raise ImportError, "we need some installed id3 tag library for this backend: python-tagpy, pyid3lib or libmtag"
+    raise ImportError("we need some installed id3 tag library for this backend: python-tagpy, pyid3lib or libmtag")
 
 
 
