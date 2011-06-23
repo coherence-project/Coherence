@@ -100,7 +100,7 @@ class Gallery:
             data,headers = result
             response = self._parse_response( data )
             if response['status'] != '0':
-                raise response['status_text']
+                raise Exception(response['status_text'])
             try:
                 self.auth_token = response['auth_token']
             except:
@@ -137,7 +137,7 @@ class Gallery:
 
         # make sure the 1st line is #__GR2PROTO__
         if string.find( line, '#__GR2PROTO__' ) == -1:
-            raise "Bad response: \r\n" + response
+            raise Exception("Bad response: %r" % response)
 
         resDict = {}
 
