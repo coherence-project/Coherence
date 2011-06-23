@@ -4,6 +4,7 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2006,2007,2008 Frank Scholz <coherence@beebits.net>
+# Copyright 2011, Hartmut Goebel <h.goebel@goebel-consult.de>
 
 """ Coherence is a framework to host DLNA/UPnP devices
 
@@ -18,9 +19,6 @@ import string
 from coherence import __version__
 
 from coherence.extern.simple_config import Config,ConfigItem
-
-from twisted.python import usage, text
-
 
 """
  thankfully taken from twisted.scripts._twistd_unix.py
@@ -42,154 +40,6 @@ def daemonize():
                 raise
     os.close(null)
 
-"""
- taken with minor adjustments from twisted.python.text.py
-"""
-def greedyWrap(inString, width=80):
-    """Given a string and a column width, return a list of lines.
-
-    Caveat: I'm use a stupid greedy word-wrapping
-    algorythm.  I won't put two spaces at the end
-    of a sentence.  I don't do full justification.
-    And no, I've never even *heard* of hypenation.
-    """
-
-    outLines = []
-
-    #eww, evil hacks to allow paragraphs delimited by two \ns :(
-    if inString.find('\n\n') >= 0:
-        paragraphs = inString.split('\n\n')
-        for para in paragraphs:
-            outLines.extend(greedyWrap(para, width) + [''])
-        return outLines
-    inWords = inString.split()
-
-    column = 0
-    ptr_line = 0
-    while inWords:
-        column = column + len(inWords[ptr_line])
-        ptr_line = ptr_line + 1
-
-        if (column > width):
-            if ptr_line == 1:
-                # This single word is too long, it will be the whole line.
-                pass
-            else:
-                # We've gone too far, stop the line one word back.
-                ptr_line = ptr_line - 1
-            (l, inWords) = (inWords[0:ptr_line], inWords[ptr_line:])
-            outLines.append(string.join(l,' '))
-
-            ptr_line = 0
-            column = 0
-        elif not (len(inWords) > ptr_line):
-            # Clean up the last bit.
-            outLines.append(' '.join(inWords))
-            del inWords[:]
-        else:
-            # Space
-            column = column + 1
-    # next word
-
-    return outLines
-
-"""
- taken with minor adjustments from twisted.python.usage.py
-"""
-def docMakeChunks(optList, width=80):
-    """
-    Makes doc chunks for option declarations.
-
-    Takes a list of dictionaries, each of which may have one or more
-    of the keys 'long', 'short', 'doc', 'default', 'optType'.
-
-    Returns a list of strings.
-    The strings may be multiple lines,
-    all of them end with a newline.
-    """
-
-    # XXX: sanity check to make sure we have a sane combination of keys.
-
-    maxOptLen = 0
-    for opt in optList:
-        optLen = len(opt.get('long', ''))
-        if optLen:
-            if opt.get('optType', None) == "parameter":
-                # these take up an extra character
-                optLen = optLen + 1
-            maxOptLen = max(optLen, maxOptLen)
-
-    colWidth1 = maxOptLen + len("  -s, --  ")
-    colWidth2 = width - colWidth1
-    # XXX - impose some sane minimum limit.
-    # Then if we don't have enough room for the option and the doc
-    # to share one line, they can take turns on alternating lines.
-
-    colFiller1 = " " * colWidth1
-
-    optChunks = []
-    seen = {}
-    for opt in optList:
-        if opt.get('short', None) in seen or opt.get('long', None) in seen:
-            continue
-        for x in opt.get('short', None), opt.get('long', None):
-            if x is not None:
-                seen[x] = 1
-
-        optLines = []
-        comma = " "
-        if opt.get('short', None):
-            short = "-%c" % (opt['short'],)
-        else:
-            short = ''
-
-        if opt.get('long', None):
-            long = opt['long']
-            if opt.get("optType", None) == "parameter":
-                long = long + '='
-
-            long = "%-*s" % (maxOptLen, long)
-            if short:
-                comma = ","
-        else:
-            long = " " * (maxOptLen + len('--'))
-
-        if opt.get('optType', None) == 'command':
-            column1 = '    %s      ' % long
-        else:
-            column1 = "  %2s%c --%s  " % (short, comma, long)
-
-        if opt.get('doc', ''):
-            doc = opt['doc'].strip()
-        else:
-            doc = ''
-
-        if (opt.get("optType", None) == "parameter") \
-           and not (opt.get('default', None) is None):
-            doc = "%s [default: %s]" % (doc, opt['default'])
-
-        if (opt.get("optType", None) == "parameter") \
-           and opt.get('dispatch', None) is not None:
-            d = opt['dispatch']
-            if isinstance(d, usage.CoerceParameter) and d.doc:
-                doc = "%s. %s" % (doc, d.doc)
-
-        if doc:
-            column2_l = greedyWrap(doc, colWidth2)
-        else:
-            column2_l = ['']
-
-        optLines.append("%s%s\n" % (column1, column2_l.pop(0)))
-
-        for line in column2_l:
-            optLines.append("%s%s\n" % (colFiller1, line))
-
-        optChunks.append(''.join(optLines))
-
-    return optChunks
-
-usage.docMakeChunks = docMakeChunks
-
 def setConfigFile():
     def findConfigDir():
         try:
@@ -200,49 +50,14 @@ def setConfigFile():
 
     return os.path.join( findConfigDir(), '.coherence')
 
+def __opt_option(option, opt, value, parser):
+    try:
+        key, val = value.split(':', 1)
+    except:
+        key = value
+        val = ''
+    parser.values.options[key] = val
 
-class Options(usage.Options):
-
-    optFlags = [['daemon','d', 'daemonize'],
-                ['noconfig', None, 'ignore any configfile found'],
-                ['version','v', 'print out version']
-                ]
-    optParameters = [['configfile', 'c', setConfigFile(), 'configfile'],
-                     ['logfile', 'l', None, 'logfile'],
-                     ['option', 'o', None, 'activate option'],
-                     ['plugin', 'p', None, 'activate plugin'],
-                    ]
-
-    def __init__(self):
-        usage.Options.__init__(self)
-        self['plugins'] = []
-        self['options'] = {}
-
-    def opt_version(self):
-        print "Coherence version:", __version__
-        sys.exit(0)
-
-    def opt_help(self):
-        sys.argv.remove('--help')
-        from coherence.base import Plugins
-        p = Plugins()
-        for opt,doc in self.docs.items():
-            if opt == 'plugin':
-                self.docs[opt] = doc + '\n\nExample: --plugin=backend:FSStore,name:MyCoherence\n\nAvailable backends are:\n\n'
-                self.docs[opt] += ', '.join(p.keys())
-
-        print self.__str__()
-        sys.exit(0)
-
-    def opt_plugin(self,option):
-        self['plugins'].append(option)
-
-    def opt_option(self,option):
-        try:
-            key,value = option.split(':')
-            self['options'][key] = value
-        except:
-            pass
 
 def main(config):
 
@@ -253,65 +68,102 @@ def main(config):
     #c.add_plugin('FSStore', content_directory='tests/content', version=1)
 
 
+
+
 if __name__ == '__main__':
 
-    options = Options()
-    try:
-        options.parseOptions()
-    except usage.UsageError, errortext:
-        print '%s: %s' % (sys.argv[0], errortext)
-        print '%s: Try --help for usage details.' % (sys.argv[0])
-        sys.exit(0)
+    import optparse
+    class OptionParser(optparse.OptionParser):
+        """
+        Simple wrapper to add list of available plugins to help
+        message, but only if help message is really printed
+        """
+        def print_help(self, file=None):
+            from coherence.base import Plugins
+            # hack: avoid plugins are displaying there help message
+            sys.argv = sys.argv[:1]
+            p = Plugins().keys()
+            p.sort()
+            self.epilog = 'Available backends are: %s' % ', '.join(p)
+            optparse.OptionParser.print_help(self, file)
 
-    try:
-        if options['daemon'] == 1:
+
+    parser = OptionParser('%prog [options]',
+                          version="Coherence version: %s" % __version__)
+    parser.add_option('-d', '--daemon', action='store_true',
+                      help='daemonize')
+    parser.add_option('--noconfig', action='store_false', dest='configfile',
+                      help='ignore any configfile found')
+    parser.add_option('-c', '--configfile', default=setConfigFile(),
+                      help='configfile to use, default: %default')
+    parser.add_option('-l', '--logfile', help='logfile to use')
+    parser.add_option('-o', '--option', action='callback',
+                      dest='options', metavar='NAME:VALUE',
+                      default={}, callback=__opt_option, type='string',
+                      help="activate option (name and value separated by a "
+                           "colon (`:`), may be given multiple times)")
+    parser.add_option('-p', '--plugins', action='append',
+                      help='activate plugins (may be given multiple times) '
+                           'Example: --plugin=backend:FSStore,name:MyCoherence')
+
+    options, args = parser.parse_args()
+    if args:
+        parser.error('takes no arguments')
+
+    if options.daemon:
+        try:
             daemonize()
-    except:
-        print traceback.format_exc()
+        except:
+            print traceback.format_exc()
 
     config = {}
+    config['logging'] = {}
 
-    if options['noconfig'] != 1:
+
+    if options.configfile:
         try:
-            config = Config(options['configfile'],root='config',element2attr_mappings={'active':'active'}).config
+            config = Config(options.configfile, root='config',
+                            element2attr_mappings={'active':'active'}).config
         except SyntaxError:
             import traceback
             #print traceback.format_exc()
             try:
                 from configobj import ConfigObj
-                config = ConfigObj(options['configfile'])
+                config = ConfigObj(options.configfile)
             except:
                 print "hmm, seems we are in trouble reading in any sort of config file"
                 print traceback.format_exc()
         except IOError:
-            print "no config file %r found" % options['configfile']
+            print "Config file %r not found, ignoring" % options.configfile
             pass
 
-    if options['logfile'] != None:
-        if isinstance(config,(ConfigItem,dict)):
+
+    if options.logfile:
+        if isinstance(config, (ConfigItem, dict)):
             if 'logging' not in config:
                 config['logging'] = {}
-            config['logging']['logfile'] = options['logfile']
+            config['logging']['logfile'] = options.logfile
         else:
-            config['logfile'] = options['logfile']
+            config['logfile'] = options.logfile
 
-    for k,v in options['options'].items():
+    # copy options passed by -o/--option into config
+    for k, v in options.options.items():
         if k == 'logfile':
             continue
         config[k] = v
 
-    if options['daemon'] == 1:
-        if isinstance(config,(ConfigItem,dict)):
-            if config.get('logging',None) == None:
+    if options.daemon:
+        if isinstance(config, (ConfigItem, dict)):
+            if not config.get('logging', None):
                 config['logging'] = {}
-            if config['logging'].get('logfile',None) == None:
+            if not config['logging'].get('logfile', None):
                 config['logging']['level'] = 'none'
                 try:
                     del config['logging']['logfile']
                 except KeyError:
                     pass
         else:
-            if config.get('logfile',None) == None:
+            if not config.get('logfile', None):
                 config.set('logmode','none')
                 try:
                     del config['logfile']
@@ -319,10 +171,10 @@ if __name__ == '__main__':
                     pass
 
     use_qt = config.get('qt', 'no') == 'yes'
-    if(config.get('use_dbus', 'no') == 'yes' or
-       config.get('glib', 'no') == 'yes' or
-       use_qt or
-       config.get('transcoding', 'no') == 'yes'):
+    if (config.get('use_dbus', 'no') == 'yes' or
+        config.get('glib', 'no') == 'yes' or
+        use_qt or
+        config.get('transcoding', 'no') == 'yes'):
         if use_qt:
             from coherence.extern import qt4reactor
             qt4reactor.install()
@@ -333,18 +185,18 @@ if __name__ == '__main__':
             except AssertionError:
                 print "error installing glib2reactor"
 
-    if len(options['plugins']) > 0:
+    if options.plugins:
         plugins = config.get('plugin')
-        if isinstance(plugins,dict):
-            config['plugin']=[plugins]
-        if plugins is None:
-            plugins = config.get('plugins',None)
-        if plugins == None:
+        if isinstance(plugins, dict):
+            config['plugin'] = [plugins]
+        if not plugins:
+            plugins = config.get('plugins', None)
+        if not plugins:
             config['plugin'] = []
             plugins = config['plugin']
 
-        while len(options['plugins']) > 0:
-            p = options['plugins'].pop()
+        while len(options.plugins) > 0:
+            p = options.plugins.pop()
             plugin = {}
             plugin_conf = p.split(',')
             for pair in plugin_conf:
