@@ -1,68 +1,146 @@
-.TH "coherence" "1" "Thur Mar 19 2009" "Frank Scholz" "Python UPnP Framwork"
-.SH "NAME"
-.LP 
-Coherence \- Is a Python UPnP framework which enabling your application to
+.\" Man page generated from reStructeredText.
+.
+.TH COHERENCE 1 "Thu, Mar 19 2009" "Version 0.6.7" ""
+.SH NAME
+coherence \- Python UPnP/DLNA Media Server and Framework
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.\" -*- mode: rst -*-
+.
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH SYNOPSIS
+.sp
+\fBcoherence\fP <options> [\-\-plugin=<BACKEND> [ , <PARAM_NAME> : <PARAM_VALUE> ] ...]
+.SH DESCRIPTION
+.sp
+Coherence is a Python UPnP framework which enabling your application to
 participate in digital living networks, at the moment primarily the
 UPnP universe.
-
+.sp
 Its goal is to relieve your application from all the membership and UPnP
 related tasks as much as possible.
-
+.sp
 The core of Coherence provides a (hopefully complete) implementation
 of:
-  * a SSDP server,
-  * a MSEARCH client,
-  * server and client for HTTP/SOAP requests, and
-  * server and client for Event Subscription and Notification (GENA).
-.SH "SYNTAX"
-.LP 
-coherence \-\-<\fIOPTION\fP> : <\fISTORE_TYPE\fP>, url:<\fIURL\fP>, key:<\fIKEY\fP>
-.SH "OPTIONS"
-.LP 
-.TP 
-\fB\-d\fR \fB\-\-daemon\fR daemonize
-.TP 
-\fB\-v\fR \fB\-\-version\fR print version
-.TP 
-\fB\-c\fR \fB\-\-configfile=\fR<\fIPATH\fP> Path to config file
-.TP 
-\fB  \fR \fB\-\-noconfig\fR ignore any config file found
-.TP 
-\fB\-o\fR \fB\-\-option=\fR activate option
-.TP 
-\fB\-l\fR \fB\-\-logfile=<\fIPATH\fP> Path to log file.
-.TP 
-\fB  \fR \fB\-\-help  Displays coherence options.
-.SH "AVAILABLE STORES"
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.IP \(bu 2
+.
+a SSDP server,
+.IP \(bu 2
+.
+a MSEARCH client,
+.IP \(bu 2
+.
+server and client for HTTP/SOAP requests, and
+.IP \(bu 2
+.
+server and client for Event Subscription and Notification (GENA).
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH OPTIONS
+.INDENT 0.0
+.TP
+.B \-v,  \-\-version
+.
+Show program\(aqs version number and exit
+.TP
+.B \-\-help
+.
+Show help message and exit
+.TP
+.B \-d,  \-\-daemon
+.
+Daemonize
+.TP
+.BI \-c,  \-\-configfile\fB= PATH
+.
+Path to config file
+.TP
+.B \-\-noconfig
+.
+ignore any config file found
+.TP
+.BI \-o,  \-\-option\fB= OPTION
+.
+activate option
+.TP
+.BI \-l,  \-\-logfile\fB= PATH
+.
+Path to log file.
+.UNINDENT
+.SH EXAMPLES
+.INDENT 0.0
+.TP
+.B coherence \-\-plugin=backend:FSStore,name:MyCoherence
+.
+Start coherence activating the \fIFSStore\fP backend.
+.TP
+.B coherence \-\-plugin=backend:MediaStore,medialocation:$HOME/Music/,mediadb:/tmp/media.db
+.
+Start coherence activating the \fIMediaStore\fP backend with media
+located in \fI$HOME/Music\fP and the media metadata store in
+\fI/tmp/media.db\fP.
+.UNINDENT
+.SH AVAILABLE STORES
+.sp
 BetterLight, AmpacheStore, FlickrStore, MiroStore, ElisaPlayer,
-.br 
-ElisaMediaStore, Gallery2Store, DVBDStore, FSStore,
-.br 
-BuzztardPlayer, BuzztardStore, GStreamerPlayer, SimpleLight,
-.br 
-ITVStore, SWR3Store, TrackerStore, LolcatsStore, BBCStore,
-.br 
-MediaStore, AppleTrailerStore, LastFMStore, AxisCamStore, 
-.br 
-YouTubeStore, TEDStore, IRadioStore
-.SH "FILES"
-.LP 
-\fI/home/name/.coherence\fP
-.SH "ENVIRONMENT VARIABLES"
-.LP 
-.TP 
-\fBCOHERENCE_DEBUG=<\fISTORE\fP>\fP
+ElisaMediaStore, Gallery2Store, DVBDStore, FSStore, BuzztardPlayer,
+BuzztardStore, GStreamerPlayer, SimpleLight, ITVStore, SWR3Store,
+TrackerStore, LolcatsStore, BBCStore, MediaStore, AppleTrailerStore,
+LastFMStore, AxisCamStore, YouTubeStore, TEDStore, IRadioStore
+.SH FILES
+.INDENT 0.0
+.TP
+.B $HOME/.coherence
+.
+default config file
+.UNINDENT
+.SH ENVIRONMENT VARIABLES
+.INDENT 0.0
+.TP
+.B COHERENCE_DEBUG=<STORE>
+.
 Supplies debug information pertaining to the named store.
-.SH "EXAMPLES"
-.LP 
-coherence \-\-plugin=backend:FSStore,name:MyCoherence
-.LP
-coherence \-\-plugin=backend:MediaStore,medialocation:$HOME/Music/,mediadb:/tmp/media.db
-.SH "AUTHORS"
-.LP 
-Coherence was written by Frank Scholz <coherence@beebits.net>.
-This man page was created by Charlie Smotherman <cjsmo@cableone.net> for Frank Scholz and the Debian Project.
-.SH "SEE ALSO"
-.LP 
-http://coherence.beebits.net/
+.UNINDENT
+.SH SEE ALSO
+.sp
+Project Homepage \fI\%http://coherence.beebits.net/\fP
+.SH AUTHOR
+Coherence was written by Frank Scholz
+<coherence@beebits.net>. This man page was created by
+Charlie Smotherman <cjsmo@cableone.net> for
+Frank Scholz and the Debian Project.
 
+Licence: GNU Public Licence v3 (GPLv3)
+.\" Generated by docutils manpage writer.
+.\"
+.

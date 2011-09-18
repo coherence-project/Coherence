@@ -28,6 +28,57 @@ except:
 
 packages.append('misc')
 
+from distutils.core import Command
+from distutils import log
+import os
+
+class build_docs(Command):
+    description = "build documentation from rst-files"
+    user_options=[]
+
+    def initialize_options (self): pass
+    def finalize_options (self):
+        self.docpages = DOCPAGES
+
+    def run(self):
+        substitutions = ('.. |VERSION| replace:: '
+                         + self.distribution.get_version())
+        for writer, rstfilename, outfilename in self.docpages:
+            distutils.dir_util.mkpath(os.path.dirname(outfilename))
+            log.info("creating %s page %s", writer, outfilename)
+            if not self.dry_run:
+                try:
+                    rsttext = open(rstfilename).read()
+                except IOError, e:
+                    sys.exit(e)
+                rsttext = '\n'.join((substitutions, rsttext))
+                # docutils.core does not offer easy reading from a
+                # string into a file, so we need to do it ourself :-(
+                doc = docutils.core.publish_string(source=rsttext,
+                                                   source_path=rstfilename,
+                                                   writer_name=writer)
+                try:
+                    rsttext = open(outfilename, 'w').write(doc)
+                except IOError, e:
+                    sys.exit(e)
+
+cmdclass = {}
+
+try:
+    import docutils.core
+    import docutils.io
+    import docutils.writers.manpage
+    import distutils.command.build
+    distutils.command.build.build.sub_commands.append(('build_docs', None))
+    cmdclass['build_docs'] = build_docs
+except ImportError:
+    log.warn("docutils not installed, can not build man pages. "
+             "Using pre-build ones.")
+
+DOCPAGES = (
+    ('manpage', 'docs/man/coherence.rst', 'docs/man/coherence.1'),
+    )
+
 setup_args = {
     'name':"Coherence",
     'version':__version__,
@@ -163,4 +214,4 @@ if haz_setuptools == True:
     """
 
 
-setup(**setup_args)
+setup(cmdclass=cmdclass, **setup_args)
