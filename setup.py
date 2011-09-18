@@ -5,8 +5,8 @@ from coherence import __version__
 try:
     from setuptools import setup, find_packages
     packages = find_packages()
-    haz_setuptools = True
 except:
+    setuptools = None
     from distutils.core import setup
 
     import os
@@ -24,7 +24,6 @@ except:
                 find_packages(next_path)
 
     find_packages('coherence')
-    haz_setuptools = False
 
 packages.append('misc')
 
@@ -157,7 +156,7 @@ Kudos go to:
     },
 }
 
-if haz_setuptools == True:
+if setuptools:
     setup_args['install_requires'] = []
     try:
         from configobj import ConfigObj
