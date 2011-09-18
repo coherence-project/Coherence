@@ -32,9 +32,10 @@ setup_args = {
     'name':"Coherence",
     'version':__version__,
     'description':"""Coherence - DLNA/UPnP framework for the digital living""",
-    'long_description':"""Coherence is a framework written in Python,
-providing a variety of UPnP MediaServer and UPnP MediaRenderer implementations
-for instant use.
+    'long_description':"""
+Coherence is a framework written in Python, providing a variety of
+UPnP MediaServer and UPnP MediaRenderer implementations for instant
+use.
 
 It includes an UPnP ControlPoint, which is accessible via D-Bus too.
 
@@ -46,17 +47,25 @@ membership/the UPnP related tasks as much as possible.
 New in this %s - the Red-Nosed Reindeer - release
 
  * new MediaServer backends that allow access to
-   * Banshee - exports audio and video files from Banshees media db (http://banshee-project.org/)
+   * Banshee - exports audio and video files from Banshees media db
+     (http://banshee-project.org/)
    * FeedStore - a MediaServer serving generic RSS feeds
-   * Playlist - exposes the list of video/audio streams from a m3u playlist (e.g. web TV listings published by french ISPs such as Free, SFR...)
-   * YAMJ - serves the movie/TV series data files and metadata from a given YAMJ (Yet Another Movie Jukebox) library (http://code.google.com/p/moviejukebox/)
+   * Playlist - exposes the list of video/audio streams from a m3u
+     playlist (e.g. web TV listings published by french ISPs such as
+     Free, SFR...)
+   * YAMJ - serves the movie/TV series data files and metadata from a
+     given YAMJ (Yet Another Movie Jukebox) library
+     (http://code.google.com/p/moviejukebox/)
  * updates on Mirabeau - our "UPnP over XMPP" bridge
  * simplifications in the D-Bus API
  * a first implementation of an JSON/REST API
- * advancements of the GStreamer MediaRenderer, supporting now GStreamers playbin2
+ * advancements of the GStreamer MediaRenderer, supporting now GStreamers
+   playbin2
  * upgrade of the DVB-Daemon MediaServer
- * refinements in the transcoding section, having now the choice to use GStreamer pipelines or external processes like mencoder
- * more 'compatibility' improvements for different devices (e.g. Samsung TVs or Apache Felix)
+ * refinements in the transcoding section, having now the choice to use
+   GStreamer pipelines or external processes like mencoder
+ * more 'compatibility' improvements for different devices (e.g.
+   Samsung TVs or Apache Felix)
  * and - as every time - the usual bugfixes and enhancements
 
 Kudos go to:
