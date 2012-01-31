@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from coherence import __version__
+try:
+    from coherence import __version__
+except ImportError:
+    raise SystemExit(1)
+import sys
 
 try:
     from setuptools import setup, find_packages
     packages = find_packages()
-    haz_setuptools = True
 except:
+    setuptools = None
     from distutils.core import setup
 
     import os
@@ -24,17 +28,68 @@ except:
                 find_packages(next_path)
 
     find_packages('coherence')
-    haz_setuptools = False
 
 packages.append('misc')
+
+from distutils.core import Command
+from distutils import log
+import os
+
+class build_docs(Command):
+    description = "build documentation from rst-files"
+    user_options=[]
+
+    def initialize_options (self): pass
+    def finalize_options (self):
+        self.docpages = DOCPAGES
+        
+    def run(self):
+        substitutions = ('.. |VERSION| replace:: '
+                         + self.distribution.get_version())
+        for writer, rstfilename, outfilename in self.docpages:
+            distutils.dir_util.mkpath(os.path.dirname(outfilename))
+            log.info("creating %s page %s", writer, outfilename)
+            if not self.dry_run:
+                try:
+                    rsttext = open(rstfilename).read()
+                except IOError, e:
+                    sys.exit(e)
+                rsttext = '\n'.join((substitutions, rsttext))
+                # docutils.core does not offer easy reading from a
+                # string into a file, so we need to do it ourself :-(
+                doc = docutils.core.publish_string(source=rsttext,
+                                                   source_path=rstfilename,
+                                                   writer_name=writer)
+                try:
+                    rsttext = open(outfilename, 'w').write(doc)
+                except IOError, e:
+                    sys.exit(e)
+
+cmdclass = {}
+
+try:
+    import docutils.core
+    import docutils.io
+    import docutils.writers.manpage
+    import distutils.command.build
+    distutils.command.build.build.sub_commands.append(('build_docs', None))
+    cmdclass['build_docs'] = build_docs
+except ImportError:
+    log.warn("docutils not installed, can not build man pages. "
+             "Using pre-build ones.")
+
+DOCPAGES = (
+    ('manpage', 'docs/man/coherence.rst', 'docs/man/coherence.1'),
+    )
 
 setup_args = {
     'name':"Coherence",
     'version':__version__,
     'description':"""Coherence - DLNA/UPnP framework for the digital living""",
-    'long_description':"""Coherence is a framework written in Python,
-providing a variety of UPnP MediaServer and UPnP MediaRenderer implementations
-for instant use.
+    'long_description':"""
+Coherence is a framework written in Python, providing a variety of
+UPnP MediaServer and UPnP MediaRenderer implementations for instant
+use.
 
 It includes an UPnP ControlPoint, which is accessible via D-Bus too.
 
@@ -46,17 +101,25 @@ membership/the UPnP related tasks as much as possible.
 New in this %s - the Red-Nosed Reindeer - release
 
  * new MediaServer backends that allow access to
-   * Banshee - exports audio and video files from Banshees media db (http://banshee-project.org/)
+   * Banshee - exports audio and video files from Banshees media db
+     (http://banshee-project.org/)
    * FeedStore - a MediaServer serving generic RSS feeds
-   * Playlist - exposes the list of video/audio streams from a m3u playlist (e.g. web TV listings published by french ISPs such as Free, SFR...)
-   * YAMJ - serves the movie/TV series data files and metadata from a given YAMJ (Yet Another Movie Jukebox) library (http://code.google.com/p/moviejukebox/)
+   * Playlist - exposes the list of video/audio streams from a m3u
+     playlist (e.g. web TV listings published by french ISPs such as
+     Free, SFR...)
+   * YAMJ - serves the movie/TV series data files and metadata from a
+     given YAMJ (Yet Another Movie Jukebox) library
+     (http://code.google.com/p/moviejukebox/)
  * updates on Mirabeau - our "UPnP over XMPP" bridge
  * simplifications in the D-Bus API
  * a first implementation of an JSON/REST API
- * advancements of the GStreamer MediaRenderer, supporting now GStreamers playbin2
+ * advancements of the GStreamer MediaRenderer, supporting now GStreamers
+   playbin2
  * upgrade of the DVB-Daemon MediaServer
- * refinements in the transcoding section, having now the choice to use GStreamer pipelines or external processes like mencoder
- * more 'compatibility' improvements for different devices (e.g. Samsung TVs or Apache Felix)
+ * refinements in the transcoding section, having now the choice to use
+   GStreamer pipelines or external processes like mencoder
+ * more 'compatibility' improvements for different devices (e.g.
+   Samsung TVs or Apache Felix)
  * and - as every time - the usual bugfixes and enhancements
 
 Kudos go to:
@@ -97,18 +160,12 @@ Kudos go to:
     },
 }
 
-if haz_setuptools == True:
-    setup_args['install_requires'] = []
-    try:
-        from configobj import ConfigObj
-    except ImportError:
-        setup_args['install_requires'].append('ConfigObj >= 4.3')
-    try:
-        import netifaces
-    except ImportError:
-        import sys
-        if sys.platform in ('win32','sunos5'):
-            setup_args['install_requires'].append('Netifaces >= 0.4')
+if setuptools:
+    setup_args['install_requires'] = [
+        'ConfigObj >= 4.3'
+        ]
+    if sys.platform in ('win32','sunos5'):
+        setup_args['install_requires'].append('Netifaces >= 0.4')
 
     setup_args['entry_points'] = """
         [coherence.plugins.backend.media_server]
@@ -154,4 +211,4 @@ if haz_setuptools == True:
     """
 
 
-setup(**setup_args)
+setup(cmdclass=cmdclass, **setup_args)
