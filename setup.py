@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import sys
+import os
 try:
     from coherence import __version__
 except ImportError:
     raise SystemExit(1)
-import sys
 
 try:
     import setuptools
@@ -13,8 +14,6 @@ try:
 except:
     setuptools = None
     from distutils.core import setup
-
-    import os
 
     packages = ['coherence',]
 
@@ -34,7 +33,6 @@ packages.append('misc')
 
 from distutils.core import Command
 from distutils import log
-import os
 
 class build_docs(Command):
     description = "build documentation from rst-files"
