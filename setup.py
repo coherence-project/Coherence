@@ -29,8 +29,6 @@ except:
 
     find_packages('coherence')
 
-packages.append('misc')
-
 from distutils.core import Command
 from distutils import log
 
