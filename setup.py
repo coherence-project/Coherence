@@ -7,6 +7,7 @@ except ImportError:
 import sys
 
 try:
+    import setuptools
     from setuptools import setup, find_packages
     packages = find_packages()
 except:
