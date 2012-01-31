@@ -52,7 +52,7 @@ class build_docs(Command):
                 try:
                     rsttext = open(rstfilename).read()
                 except IOError, e:
-                    sys.exit(e)
+                    raise SystemExit(e)
                 rsttext = '\n'.join((substitutions, rsttext))
                 # docutils.core does not offer easy reading from a
                 # string into a file, so we need to do it ourself :-(
@@ -62,7 +62,7 @@ class build_docs(Command):
                 try:
                     rsttext = open(outfilename, 'w').write(doc)
                 except IOError, e:
-                    sys.exit(e)
+                    raise SystemExit(e)
 
 cmdclass = {}
 
