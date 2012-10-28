@@ -10,8 +10,8 @@
 
     usable as Nautilus Extension
 
-    for use an extension, copy it to ~/.nautilus/python-extensions
-    or for a system-wide installation to /usr/lib/nautilus/extensions-2.0/python
+    for use an extension, copy it to ~/.Nautilus/python-extensions
+    or for a system-wide installation to /usr/lib/Nautilus/extensions-2.0/python
 
     connection to Coherence is established via DBus
 
@@ -21,7 +21,7 @@ import time
 
 from urllib import unquote
 
-import nautilus
+from gi.repository import Nautilus, GObject, Gtk, GdkPixbuf
 
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
@@ -32,7 +32,7 @@ import dbus.service
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'
 
-class CoherencePlayExtension(nautilus.MenuProvider):
+class CoherencePlayExtension(GObject.GObject, Nautilus.MenuProvider):
 
     def __init__(self):
         print "CoherencePlayExtension", os.getpid()
@@ -67,15 +67,20 @@ class CoherencePlayExtension(nautilus.MenuProvider):
             print device['friendly_name'],device['device_type']
             if device['device_type'].split(':')[3] == 'MediaRenderer':
                 if i == 0:
-                    menuitem = nautilus.MenuItem('CoherencePlayExtension::Play', 'Play on MediaRenderer', 'Play the selected file(s) on a DLNA/UPnP MediaRenderer')
-                    submenu = nautilus.Menu()
+                    menuitem = Nautilus.MenuItem(name='CoherencePlayExtension::Play',
+                        label='Play on MediaRenderer', 
+                        tip='Play the selected file(s) on a DLNA/UPnP MediaRenderer',
+                        icon='media')
+                    submenu = Nautilus.Menu()
                     menuitem.set_submenu(submenu)
 
-                item = nautilus.MenuItem('CoherencePlayExtension::Play%d' %i, device['friendly_name'], '')
+                item = Nautilus.MenuItem(name='CoherencePlayExtension::Play%d' %i, 
+                    label=device['friendly_name'], 
+                    tip='')
                 for service in device['services']:
                     service_type = service.split('/')[-1]
                     if service_type == 'AVTransport':
-                        item.connect('activate', self.play,service, device['path'], files)
+                        item.connect('activate', self.play, service, device['path'], files)
                         break
                 submenu.append_item(item)
                 i += 1
@@ -85,7 +90,7 @@ class CoherencePlayExtension(nautilus.MenuProvider):
 
         return menuitem,
 
-    def play(self,menu,service,uuid,files):
+    def play(self, menu, service, uuid, files):
         print "play",uuid,service,files
         #pin = self.coherence.get_pin('Nautilus::MediaServer::%d'%os.getpid())
         #if pin == 'Coherence::Pin::None':
@@ -94,7 +99,6 @@ class CoherencePlayExtension(nautilus.MenuProvider):
         file = os.path.abspath(file)
 
         uri = self.coherence.create_oob(file)
-
         #result = self.coherence.call_plugin(pin,'get_url_by_name',{'name':file})
         #print 'result', result
         print uri
