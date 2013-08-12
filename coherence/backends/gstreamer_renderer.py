@@ -86,6 +86,11 @@ class Player(log.Loggable):
                 self.player.set_name('oggplayer')
                 self.set_volume = self.set_volume_dsp_pcm_sink
                 self.get_volume = self.get_volume_dsp_pcm_sink
+            elif mimetype == 'application/flac':
+                self.player = gst.parse_launch('gnomevfssrc name=source ! flacdemux ! flacdec ! audioconvert ! dsppcmsink name=sink')
+                self.player.set_name('flacplayer')
+                self.set_volume = self.set_volume_dsp_pcm_sink
+                self.get_volume = self.get_volume_dsp_pcm_sink
             else:
                 self.player = gst.parse_launch('gnomevfssrc name=source ! id3lib ! dspmp3sink name=sink')
                 self.player.set_name('mp3player')
@@ -634,6 +639,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
             _,ext =  os.path.splitext(uri)
             if ext == '.ogg':
                 mimetype = 'application/ogg'
+            elif ext == '.flac':
+                mimetype = 'application/flac'
             else:
                 mimetype = 'audio/mpeg'
         self.player.load( uri, mimetype)
@@ -881,6 +888,10 @@ class GStreamerPlayer(log.Loggable,Plugin):
                              'http-get:*:audio/ogg:*',
                              'internal:%s:video/ogg:*' % self.server.coherence.hostname,
                              'http-get:*:video/ogg:*',
+                             'internal:%s:application/flac:*' % self.server.coherence.hostname,
+                             'http-get:*:application/flac:*',
+                             'internal:%s:audio/flac:*' % self.server.coherence.hostname,
+                             'http-get:*:audio/flac:*',
                              'internal:%s:video/x-msvideo:*' % self.server.coherence.hostname,
                              'http-get:*:video/x-msvideo:*',
                              'internal:%s:video/mp4:*' % self.server.coherence.hostname,
