@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 
-from coherence import __version__
 import sys
+import os
+try:
+    from coherence import __version__
+except ImportError:
+    raise SystemExit(1)
 
 try:
+    import setuptools
     from setuptools import setup, find_packages
     packages = find_packages()
 except:
     setuptools = None
     from distutils.core import setup
-
-    import os
 
     packages = ['coherence',]
 
@@ -26,11 +29,8 @@ except:
 
     find_packages('coherence')
 
-packages.append('misc')
-
 from distutils.core import Command
 from distutils import log
-import os
 
 class build_docs(Command):
     description = "build documentation from rst-files"
@@ -50,7 +50,7 @@ class build_docs(Command):
                 try:
                     rsttext = open(rstfilename).read()
                 except IOError, e:
-                    sys.exit(e)
+                    raise SystemExit(e)
                 rsttext = '\n'.join((substitutions, rsttext))
                 # docutils.core does not offer easy reading from a
                 # string into a file, so we need to do it ourself :-(
@@ -60,7 +60,7 @@ class build_docs(Command):
                 try:
                     rsttext = open(outfilename, 'w').write(doc)
                 except IOError, e:
-                    sys.exit(e)
+                    raise SystemExit(e)
 
 cmdclass = {}
 
@@ -159,7 +159,8 @@ Kudos go to:
 
 if setuptools:
     setup_args['install_requires'] = [
-        'ConfigObj >= 4.3'
+        'ConfigObj >= 4.3',
+        'zope.interface',
         ]
     if sys.platform in ('win32','sunos5'):
         setup_args['install_requires'].append('Netifaces >= 0.4')
