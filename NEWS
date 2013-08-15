@@ -1,204 +1,265 @@
-0.6.6.1 - Red-Nosed Reindeer Reloaded - 20091222
+0.6.6.1 - Red-Nosed Reindeer Reloaded - 2009-12-22
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * fixing the broken tarball of the 0.6.6 release and
-   adding a missing import that made some backends unfeasible
+* fixing the broken tarball of the 0.6.6 release and adding a missing
+  import that made some backends unfeasible
 
-0.6.6 - Red-Nosed Reindeer - 20091220
 
- * new MediaServer backends that allow access to
-   * Banshee - exports audio and video files from Banshees media db
-     (http://banshee-project.org/)
-   * FeedStore - a MediaServer serving generic RSS feeds
-   * Playlist - exposes the list of video/audio streams from a m3u playlist
-     (e.g. web TV listings published by french ISPs such as Free, SFR...)
-   * YAMJ - serves the movie/TV series data files and metadata
-     from a given YAMJ (Yet Another Movie Jukebox) library
-     (http://code.google.com/p/moviejukebox/)
- * updates on Mirabeau - our "UPnP over XMPP" bridge
- * simplifications in the D-Bus API
- * a first implementation of an JSON/REST API
- * advancements of the GStreamer MediaRenderer, supporting now GStreamers playbin2
- * upgrade of the DVB-Daemon MediaServer
- * refinements in the transcoding section, having now the choice to use GStreamer pipelines
-   or external processes like mencoder
- * more 'compatibility' improvements for different devices (e.g. Samsung TVs or Apache Felix)
- * and - as every time - the usual bugfixes and enhancements
+0.6.6 - Red-Nosed Reindeer - 2009-12-20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* new MediaServer backends that allow access to
+  * Banshee - exports audio and video files from Banshees media db
+    (http://banshee-project.org/)
+  * FeedStore - a MediaServer serving generic RSS feeds
+  * Playlist - exposes the list of video/audio streams from a m3u
+    playlist (e.g. web TV listings published by french ISPs such as
+    Free, SFR...)
+  * YAMJ - serves the movie/TV series data files and metadata from a
+    given YAMJ (Yet Another Movie Jukebox) library
+    (http://code.google.com/p/moviejukebox/)
+* updates on Mirabeau - our "UPnP over XMPP" bridge
+* simplifications in the D-Bus API
+* a first implementation of an JSON/REST API
+* advancements of the GStreamer MediaRenderer, supporting now
+  GStreamers playbin2
+* upgrade of the DVB-Daemon MediaServer
+* refinements in the transcoding section, having now the choice to
+  use GStreamer pipelines or external processes like mencoder
+* more 'compatibility' improvements for different devices (e.g.
+  Samsung TVs or Apache Felix)
+* and - as every time - the usual bugfixes and enhancements
 
 Kudos go to Benjamin (lightyear) Kampmann,
-            Dominik (schrei5) Ruf,
-            Frank (dev) Scholz,
-            Friedrich (frinring) Kossebau,
-            Jean-Michel (jmsizun) Sizun,
-            Philippe (philn) Normand,
-            Sebastian (sebp) Pölsterl,
-            Zaheer (zaheerm) Merali
+           Dominik (schrei5) Ruf,
+           Frank (dev) Scholz,
+           Friedrich (frinring) Kossebau,
+           Jean-Michel (jmsizun) Sizun,
+           Philippe (philn) Normand,
+           Sebastian (sebp) Pölsterl,
+           Zaheer (zaheerm) Merali
 
-0.6.4 - Pont Mirabeau - 20090512
 
- * new MediaServer backends that allow access to
-   * Picasa Web Albums (http://picasa.google.com)
-   * a TestServer to easily serve and test interaction with
-     * one or more items and adjust 'upnp_class', 'mimetype' and 'DLNA-flags',
-     * items that are a GStreamer pipeline or an external program
- * a new - used in parallel - D-Bus API with an 'org.DLNA' interface
-   with the goal to create a common API for all UPnP/DNLA frameworks
- * support for the dlna-playcontainer URI
-   (http://netzflocken.de/2009/4/23/media-collection-playing-the-dlna-way)
- * enchancements to the GStreamer MediaRenderer, supporting now
-   dlna-playcontainer and SetNextAVTransportURI, and jumping to previous
-   and next tracks
- * support for video items served by Ampache (http://ampache.org)
- * base classes for a ScheduledRecording service
- * some 'compatibility' adjustments for different devices
- * and - as every time - the usual bugfixes and enhancements
+0.6.4 - Pont Mirabeau - 2009-05-12
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Kudos go to jmsizun, Stecchino, cjsmo, chewi, and lightyear.
+* new MediaServer backends that allow access to
+  * Picasa Web Albums (http://picasa.google.com)
+  * a TestServer to easily serve and test interaction with
+    * one or more items and adjust 'upnp_class', 'mimetype' and
+      'DLNA-flags',
+    * items that are a GStreamer pipeline or an external program
+* a new - used in parallel - D-Bus API with an 'org.DLNA' interface
+  with the goal to create a common API for all UPnP/DNLA frameworks
+* support for the dlna-playcontainer URI
+  (http://netzflocken.de/2009/4/23/media-collection-playing-the-dlna-way)
+* enchancements to the GStreamer MediaRenderer, supporting now
+  dlna-playcontainer and SetNextAVTransportURI, and jumping to
+  previous and next tracks
+* support for video items served by Ampache (http://ampache.org)
+* base classes for a ScheduledRecording service
+* some 'compatibility' adjustments for different devices
+* and - as every time - the usual bugfixes and enhancements
 
-0.6.2 - Rosenmontag - 20090223
+Kudos go to jmsizun, Stecchino, cjsmo, chewi, and lightyear.
 
- * new MediaServer backends that allow access to
-   * YouTube videos (http://youtube.com)
-   * the MiroGuide for online videos (https://www.miroguide.com)
-   * the videos provided by Shoutcast TV (http://www.shoutcast.com)
-   * the SWR3 podcasts, a German radio station (http://swr3.de)
- * adjustments to the Ampache backend to work with newer Ampache versions (http://ampache.org)
- * a lot of 'compatibility' enhancements for different devices
- * a 'port' to the OpenEmbedded platform (http://www.openembedded.org/),
-   bringing Coherence to the BeagleBoard (http://beagleboard.org/)
- * and - as every time - the usual bugfixes and enhancements
 
-   Kudos go especially to jmsizun for his work on the new backends!
+0.6.2 - Rosenmontag - 2009-02-23
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-0.6.0 - The late Pumpkin - 20081231
+* new MediaServer backends that allow access to
+  * YouTube videos (http://youtube.com)
+  * the MiroGuide for online videos (https://www.miroguide.com)
+  * the videos provided by Shoutcast TV (http://www.shoutcast.com)
+  * the SWR3 podcasts, a German radio station (http://swr3.de)
+* adjustments to the Ampache backend to work with newer Ampache
+  versions (http://ampache.org)
+* a lot of 'compatibility' enhancements for different devices
+* a 'port' to the OpenEmbedded platform (http://www.openembedded.org/),
+  bringing Coherence to the BeagleBoard (http://beagleboard.org/)
+* and - as every time - the usual bugfixes and enhancements
 
- * new MediaServer backends that allow access to
-   * movie trailers from the Apple HD trailers site (http://www.apple.com/trailers)
-   * images hosted at a Gallery site - an open source web based photo album organizer (http://gallery.menalto.com)
-   * Lolcats images from http://icanhascheezburger.com
-   * podcasts from the BBC (http://open.bbc.co.uk/labs/)
-   * videos from TED (http://www.ted.com)
- * an extended Flickr MediaServer backend
-   * enables user-authenticated access to your Flickr account
-   * access to your images and the one of your frieds via an UPnP device
-   * upload an image directly from an UPnP device to your Flickr account
- * transcoding of audio files based on GStreamer for DLNA devices like the PS3, and even XBox 360
- * several plugins for the Nautlilus filemanager (http://www.gnome.org/projects/nautilus)
-   * sharing folders from within Nautilus
-   * upload files from Nautilus to UPnP A/V MediaServers
-   * play files from Nautilus on an UPnP A/V MediaRenderer
- * an experimental plugin for EOG - the Gnome Image Viewer (http://projects.gnome.org/eog/)
- * greatly improved XBox 360 support, including audio transcoding
- * and the usual bugfixes and enhancements
-   Kudos go especially to jmsizun, lightyear, superdump for their work
-   on the backends and their patient debugging sessions!
+Kudos go especially to jmsizun for his work on the new backends!
+
+
+0.6.0 - The late Pumpkin - 2008-12-31
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* new MediaServer backends that allow access to
+  * movie trailers from the Apple HD trailers site
+    (http://www.apple.com/trailers)
+  * images hosted at a Gallery site - an open source web based photo
+    album organizer (http://gallery.menalto.com)
+  * Lolcats images from http://icanhascheezburger.com
+  * podcasts from the BBC (http://open.bbc.co.uk/labs/)
+  * videos from TED (http://www.ted.com)
+* an extended Flickr MediaServer backend
+  * enables user-authenticated access to your Flickr account
+  * access to your images and the one of your frieds via an UPnP device
+  * upload an image directly from an UPnP device to your Flickr account
+* transcoding of audio files based on GStreamer for DLNA devices like
+  the PS3, and even XBox 360
+* several plugins for the Nautlilus filemanager
+  (http://www.gnome.org/projects/nautilus)
+  * sharing folders from within Nautilus
+  * upload files from Nautilus to UPnP A/V MediaServers
+  * play files from Nautilus on an UPnP A/V MediaRenderer
+* an experimental plugin for EOG - the Gnome Image Viewer
+  (http://projects.gnome.org/eog/)
+* greatly improved XBox 360 support, including audio transcoding
+* and the usual bugfixes and enhancements
+
+Kudos go especially to jmsizun, lightyear, superdump for their work on
+the backends and their patient debugging sessions!
+
 
 0.5.8 - Trix and Flix - 20080630
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * a MediaServer backend for DVB-Daemon (http://www.k-d-w.org/node/42)
-   * exporting atm the stored recordings
-   * allowing to delete recordings from within a UPnP client, when enabled on the backend
-   * will export EPG data and allow scheduling via UPnP in the future
- * client device and service implementations for BinaryLight and DimmableLight devices
- * rework of the D-Bus support
-   * should now be usable from other languages (C,Perl,..) too
-   * support for activating/deactivation a backend via D-Bus, allowing for instance to start a MediaServer backend via D-Bus
- * a plugin for Totem (http://www.gnome.org/projects/totem/)
-   * enabling Totem to detect and browse UPnP A/V MediaServers
-   * using only D-Bus to communicate with a Coherence instance
- * a basic reusable PyGTK based UPnP A/V ControlPoint widget, used in the Totem plugin
- * rework (again) of the XBox 360 support - getting closer
- * our first set of unit tests
- * include a copy of Louie (http://pylouie.org) to solve a setuptools runtime dependency issue and make the life of distribution packagers a bit easier
- * and the usual bugfixes and enhancements
+* a MediaServer backend for DVB-Daemon (http://www.k-d-w.org/node/42)
+  * exporting atm the stored recordings
+  * allowing to delete recordings from within a UPnP client, when
+    enabled on the backend
+  * will export EPG data and allow scheduling via UPnP in the future
+* client device and service implementations for BinaryLight and
+  DimmableLight devices
+* rework of the D-Bus support
+  * should now be usable from other languages (C,Perl,..) too
+  * support for activating/deactivation a backend via D-Bus, allowing
+    for instance to start a MediaServer backend via D-Bus
+* a plugin for Totem (http://www.gnome.org/projects/totem/)
+  * enabling Totem to detect and browse UPnP A/V MediaServers
+  * using only D-Bus to communicate with a Coherence instance
+* a basic reusable PyGTK based UPnP A/V ControlPoint widget, used in
+  the Totem plugin
+* rework (again) of the XBox 360 support - getting closer
+* our first set of unit tests
+* include a copy of Louie (http://pylouie.org) to solve a setuptools
+  runtime dependency issue and make the life of distribution
+  packagers a bit easier
+* and the usual bugfixes and enhancements
 
-0.5.6 - Walpurgisnacht - 20080430
 
- * a MediaServer backend for Meta Tracker (http://www.gnome.org/projects/tracker)
- * simplify the IP-address detection on Windows with the help of
-   the optional Python package netifaces (http://alastairs-place.net/netifaces)
- * proper handling of filename encoding issues in the filesystem based MediaServer
- * and a lot of community driven fixes and enhancements,
-   kudos given representatively to Lawrence and veerz
+0.5.6 - Walpurgisnacht - 2008-04-30
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-0.5.4 - Fools Garden - 20080401
+* a MediaServer backend for Meta Tracker
+  (http://www.gnome.org/projects/tracker)
+* simplify the IP-address detection on Windows with the help of the
+  optional Python package netifaces (http://alastairs-place.net/netifaces)
+* proper handling of filename encoding issues in the filesystem based
+  MediaServer
+* and a lot of community driven fixes and enhancements,
+  kudos given representatively to Lawrence and veerz
 
- * a DesktopApplet to easily start a Coherence instance from your desktops panel
-   Thx to Erwan Velu, Helio Chissini de Castro and Nicolas Lécureuil!
- * more efforts to simplify the ordinary user experience
-   * allow now the backend definition via commandline, to just start up
-     a MediaServer or anything else, without bothering oneself with the config file
-   * specify logfile location and daemonization on the commandline too
-   * a bit more usable --help output
-   Thx again Erwan Velu!
- * a MediaServer backend for Ampache - a Web-based Audio file manager (http://ampache.org)
-   Thx to the awesome help of Karl Vollmer!
- * device implementations for BinaryLight and DimmableLight
- * a little helper to extract device and service xml files and
-   send them to us - a beginning of our UPnP device fingerprint program
- * and the usual bugfixes and enhancements
+
+0.5.4 - Fools Garden - 2008-04-01
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* a DesktopApplet to easily start a Coherence instance from your
+  desktops panel. Thx to Erwan Velu, Helio Chissini de Castro and
+  Nicolas Lécureuil!
+* more efforts to simplify the ordinary user experience
+
+  * allow now the backend definition via commandline, to just start up
+    a MediaServer or anything else, without bothering oneself with
+    the config file
+  * specify logfile location and daemonization on the commandline too
+  * a bit more usable --help output
+  Thx again Erwan Velu!
+
+* a MediaServer backend for Ampache - a Web-based Audio file manager
+  (http://ampache.org)
+  Thx to the awesome help of Karl Vollmer!
+* device implementations for BinaryLight and DimmableLight
+* a little helper to extract device and service xml files and send
+  them to us - a beginning of our UPnP device fingerprint program
+* and the usual bugfixes and enhancements
 
 0.5.2 - Little Leap - 20080229
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * rework of the XBox 360 support
- * refinements and improvements on the client side API, incorporating things we learned on extending the Rhythmbox UPnP plugin
- * some efforts on smoothing the "just use it as a MediaServer/-Renderer" user experience
- * rearrangement in the way multiple res elements are ordered, fixes issues which we had with some UPnP stacks and their 'wayward' interpretation of the specs
- * and a lot more of the usual bugfixes and enhancements
+* rework of the XBox 360 support
+* refinements and improvements on the client side API, incorporating
+  things we learned on extending the Rhythmbox UPnP plugin
+* some efforts on smoothing the "just use it as a
+  MediaServer/-Renderer" user experience
+* rearrangement in the way multiple res elements are ordered, fixes
+  issues which we had with some UPnP stacks and their 'wayward'
+  interpretation of the specs
+* and a lot more of the usual bugfixes and enhancements
 
-0.5.0 - 20071231
 
- * better DLNA support, in particular for the Sony Playstation 3
- * a MediaServer backend for Shoutcast internet radio streams
- * an experimental last.fm MediaServer backend for the last.fm service
- * provide methods to remove local devices from a Coherence instance
- * slow move to an XML based configuration file
- * support for BSD systems - thx kraft!
- * an emerging D-Bus interface
- * more platform independency for our Twisted inotify module,
-   using libc when possible
- * and a lot more of the usual bugfixes and enhancements
+0.5.0 - 2007-12-31
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-0.4.0 - 20070731
+* better DLNA support, in particular for the Sony Playstation 3
+* a MediaServer backend for Shoutcast internet radio streams
+* an experimental last.fm MediaServer backend for the last.fm service
+* provide methods to remove local devices from a Coherence instance
+* slow move to an XML based configuration file
+* support for BSD systems - thx kraft!
+* an emerging D-Bus interface
+* more platform independency for our Twisted inotify module,
+  using libc when possible
+* and a lot more of the usual bugfixes and enhancements
 
- * integration of a new logging module
-    logging can now be configured via the config file or through an
-    environment variable COHERENCE_DEBUG, which overrides the config values.
 
-    Usage is like
+0.4.0 - 2007-07-31
+~~~~~~~~~~~~~~~~~~
 
-        COHERENCE_DEBUG=*:3 emit INFO level messages from all modules
-        COHERENCE_DEBUG=*:2,ssdp:4 WARNING level messages from all modules,
-                                           plus debug level for the ssdp module
+* integration of a new logging module.
 
- * removed the dependency for SOAPpy, now using own methods and ElementTree only
- * start reworking the client API, to make things there easier too,
-   see as an example https://coherence.beebits.net/wiki/CoherenceMediaRenderer
- * serving cover art now to DLNA MediaRenderers
- * refinements on the object creation and the import into the MediaServers
- * an installable package for the Nokia Maemo platform on the N800,
-   complete with all dependencies, thanks to Rob Taylor of http://codethink.co.uk
- * and a lot more of the usual bugfixes and enhancements
+  Logging can now be configured via the config file or through an
+  environment variable COHERENCE_DEBUG, which overrides the config values.
 
-0.3.0 - 20070611
+   Usage is like::
 
- * better DLNA support, especially for the PlayStation 3
- * cover art in the MediaServers
- * object creation and import in the MediaServers
- * a new experimental MediaServer with an All, Artist, Album based structure
- * support for deployment on the Nokia N800 - notably a working GStreamer
-   UPnP MediaRenderer there, with mp3 and ogg playback
- * an album art (helper) module to fetch the album covers from the Amazon WebService
- * icon support in the UPnP device description
- * the usual bugfixes
+    COHERENCE_DEBUG=*:3 emit INFO level messages from all modules
+    COHERENCE_DEBUG=*:2,ssdp:4 WARNING level messages from all modules,
+                                       plus debug level for the ssdp module
 
-0.2.1 - 20070403
+* removed the dependency for SOAPpy, now using own methods and
+  ElementTree only
+* start reworking the client API, to make things there easier too,
+  see as an example
+  https://coherence.beebits.net/wiki/CoherenceMediaRenderer
+* serving cover art now to DLNA MediaRenderers
+* refinements on the object creation and the import into the
+  MediaServers
+* an installable package for the Nokia Maemo platform on the N800,
+  complete with all dependencies, thanks to Rob Taylor of
+  http://codethink.co.uk
+* and a lot more of the usual bugfixes and enhancements
 
- * bugfix release
 
-0.2.0 - 200070401
+0.3.0 - 2007-06-11
+~~~~~~~~~~~~~~~~~~
 
- * fixes,fixes and more fixes
+* better DLNA support, especially for the PlayStation 3
+* cover art in the MediaServers
+* object creation and import in the MediaServers
+* a new experimental MediaServer with an All, Artist, Album based
+  structure
+* support for deployment on the Nokia N800 - notably a working
+  GStreamer UPnP MediaRenderer there, with mp3 and ogg playback
+* an album art (helper) module to fetch the album covers from the
+  Amazon WebService
+* icon support in the UPnP device description
+* the usual bugfixes
 
-0.1.0 - 20070215
 
- * first public release
+0.2.1 - 2007-04-03
+~~~~~~~~~~~~~~~~~~
+
+* bugfix release
+
+0.2.0 - 2007-04-01
+~~~~~~~~~~~~~~~~~~
+
+* fixes,fixes and more fixes
+
+0.1.0 - 2007-02-15
+~~~~~~~~~~~~~~~~~~
+
+* first public release
