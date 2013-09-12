@@ -3,23 +3,10 @@
 #
 # Copyright 2005, Tim Potter <tpot@samba.org>
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
-#
-#
-# uses uuid4 method from http://zesty.ca/python/uuid.html
-# Copyright 2006, Ka-Ping Yee <ping@zesty.ca>
+# Copyright 2013, Hartmut Goebel <h.goebel@crazy-compilers.com>
 #
 
-try: 
-   from uuid import uuid4
-except ImportError:
-    try:
-        from coherence.extern.uuid.uuid import uuid4
-    except ImportError:
-        print 'fallback: define own uuid4'
-        def uuid4():
-            import random
-            import string
-            return ''.join(map(lambda x: random.choice(string.letters), xrange(20)))
+from uuid import uuid4
 
 class UUID:
 

@@ -130,7 +130,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                     request.setHeader('CONTENT-LENGTH', 0)
                     return ""
             except:
-                from uuid import UUID
+                from .uuid import UUID
                 sid = UUID()
                 s = { 'sid' : str(sid),
                       'callback' : headers['callback'][1:len(headers['callback'])-1],
