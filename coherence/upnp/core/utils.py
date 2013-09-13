@@ -900,37 +900,23 @@ class BufferFileTransfer(object):
 from datetime import datetime, tzinfo, timedelta
 import random
 
-class CET(tzinfo):
-
-    def __init__(self):
-        self.__offset = timedelta(minutes=60)
-        self.__name = 'CET'
-
+class _tz(tzinfo):
     def utcoffset(self, dt):
-        return self.__offset
+        return self._offset
 
     def tzname(self, dt):
-        return self.__name
+        return self._name
 
     def dst(self,dt):
         return timedelta(0)
 
+class CET(_tz):
+    _offset = timedelta(minutes=60)
+    _name = 'CET'
 
-class CEST(tzinfo):
-
-    def __init__(self):
-        self.__offset = timedelta(minutes=120)
-        self.__name = 'CEST'
-
-    def utcoffset(self, dt):
-        return self.__offset
-
-    def tzname(self, dt):
-        return self.__name
-
-    def dst(self,dt):
-        return timedelta(0)
-
+class CEST(_tz):
+    _offset = timedelta(minutes=120)
+    _name = 'CEST'
 
 bdates = [ datetime(1997,2,28,17,20,tzinfo=CET()),   # Sebastian Oliver
            datetime(1999,9,19,4,12,tzinfo=CEST()),   # Patrick Niklas
