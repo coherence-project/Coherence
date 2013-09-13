@@ -618,115 +618,11 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
     return factory.deferred
 
 
-class StaticFile(static.File):
-    """ taken from twisted.web.static and modified
-        accordingly to the patch by John-Mark Gurney
-        http://resnet.uoregon.edu/~gurney_j/jmpc/dist/twisted.web.static.patch
-    """
+# StaticFile used to be a patched version of static.File. The later
+# was fixed in TwistedWeb 8.2.0 and 9.0.0, while the patched variant
+# contained deprecated and removed code.
+StaticFile = static.File
 
-    # BEGIN patch for #266
-    def __init__(self, path, defaultType="text/html", ignoredExts=(), registry=None, allowExt=0):
-        static.File.__init__(self, unquote(path), defaultType=defaultType, ignoredExts=ignoredExts, registry=registry, allowExt=allowExt) # added for #
-    # END patch for #266
-
-    def render(self, request):
-        #print ""
-        #print "StaticFile", request
-        #print "StaticFile in", request.received_headers
-
-        """You know what you doing."""
-        self.restat()
-
-        if self.type is None:
-            self.type, self.encoding = static.getTypeAndEncoding(self.basename(),
-                                                          self.contentTypes,
-                                                          self.contentEncodings,
-                                                          self.defaultType)
-
-        if not self.exists():
-            return self.childNotFound.render(request)
-
-        if self.isdir():
-            return self.redirect(request)
-
-        #for content-length
-        fsize = size = self.getFileSize()
-
-        request.setHeader('accept-ranges','bytes')
-
-        if self.type:
-            request.setHeader('content-type', self.type)
-        if self.encoding:
-            request.setHeader('content-encoding', self.encoding)
-
-        try:
-            f = self.openForReading()
-        except IOError, e:
-            import errno
-            if e[0] == errno.EACCES:
-                return error.ForbiddenResource().render(request)
-            else:
-                raise
-        if request.setLastModified(self.getmtime()) is http.CACHED:
-            return ''
-        trans = True
-
-        range = request.getHeader('range')
-        #print "StaticFile", range
-
-        tsize = size
-        if range is not None:
-            # This is a request for partial data...
-            bytesrange = range.split('=')
-            assert bytesrange[0] == 'bytes',\
-                   "Syntactically invalid http range header!"
-            start, end = bytesrange[1].split('-', 1)
-            if start:
-                f.seek(int(start))
-                if end:
-                    end = int(end)
-                else:
-                    end = size - 1
-            else:
-                lastbytes = int(end)
-                if size < lastbytes:
-                    lastbytes = size
-                start = size - lastbytes
-                f.seek(start)
-                fsize = lastbytes
-                end = size - 1
-            size = end + 1
-            fsize = end - int(start) + 1
-            # start is the byte offset to begin, and end is the byte offset
-            # to end..  fsize is size to send, tsize is the real size of
-            # the file, and size is the byte position to stop sending.
-
-            if fsize <= 0:
-                request.setResponseCode(http.REQUESTED_RANGE_NOT_SATISFIABLE)
-                fsize = tsize
-                trans = False
-            else:
-                request.setResponseCode(http.PARTIAL_CONTENT)
-                request.setHeader('content-range',"bytes %s-%s/%s " % (
-                    str(start), str(end), str(tsize)))
-                #print "StaticFile", start, end, tsize
-
-        request.setHeader('content-length', str(fsize))
-
-        if request.method == 'HEAD' or trans == False:
-            # pretend we're a HEAD request, so content-length
-            # won't be overwritten.
-            #print "HEAD request"
-            request.method = 'HEAD'
-            return ''
-
-        #print "StaticFile out", request.headers, request.code
-
-        # return data
-        # size is the byte position to stop sending, not how many bytes to send
-        static.FileTransfer(f, size, request)
-        # and make sure the connection doesn't get closed
-        return server.NOT_DONE_YET
 
 class BufferFile(static.File):
     """ taken from twisted.web.static and modified
