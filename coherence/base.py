@@ -258,7 +258,6 @@ class Coherence(log.Loggable):
             logmode = config.get('logging').get('level','warning')
         except (KeyError,AttributeError):
             logmode = config.get('logmode', 'warning')
-        _debug = []
 
         try:
             subsystems = config.get('logging')['subsystem']
@@ -271,23 +270,20 @@ class Coherence(log.Loggable):
                 except (KeyError,TypeError):
                     pass
                 self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
-                _debug.append('%s:%d' % (subsystem['name'].lower(), log.human2level(subsystem['level'])))
+                logging.getLogger(subsystem['name'].lower()).setLevel(subsystem['level'].upper())
+
         except (KeyError,TypeError):
             subsystem_log = config.get('subsystem_log',{})
             for subsystem,level in subsystem_log.items():
                 #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
-                _debug.append('%s:%d' % (subsystem.lower(), log.human2level(level)))
-        if len(_debug) > 0:
-            _debug = ','.join(_debug)
-        else:
-            _debug = '*:%d' % log.human2level(logmode)
+                logging.getLogger(subsystem.lower()).setLevel(level)
         try:
             logfile = config.get('logging').get('logfile',None)
             if logfile != None:
                 logfile = unicode(logfile)
         except (KeyError,AttributeError,TypeError):
             logfile = config.get('logfile', None)
-        log.init(logfile, _debug)
+        log.init(logfile, logmode.upper())
 
         self.warning("Coherence UPnP framework version %s starting..." % __version__)
 
