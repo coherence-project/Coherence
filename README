@@ -1,3 +1,8 @@
+
+===========================================================================
+Coherence - a DLNA/UPnP Media Server and  Framework for the Digital Living
+===========================================================================
+
 Coherence is a framework written in Python,
 providing several UPnP MediaServers and MediaRenderers,
 and enabling your application to participate in digital living networks.
@@ -25,27 +30,27 @@ and have a look @ http://coherence-project.org
 Installation from source
 ========================
 
-After downloading and extracting the archive or having done a svn checkout,
-move into the freshly created 'Coherence' folder and install the files
-with
+After downloading and extracting the archive or having done a git
+clone, move into the freshly created 'Coherence' folder and install
+the files with
 
   sudo python ./setup.py install
 
-This will copy the Python module files into your local Python package folder
-and the coherence executable to '/usr/bin/coherence'.
+This will copy the Python module files into your local Python package
+folder and the coherence executable to '/usr/bin/coherence'.
 
-  http://coherence-project.org/wiki/DocumentationDepartment
+http://coherence-project.org/wiki/DocumentationDepartment
 
 
 Quickstart
 ==========
 
 To just export some files on your hard-disk fire up Coherence with
-an UPnP MediaServer with a file-system backend enabled.
+an UPnP MediaServer with a file-system backend enabled::
 
   coherence --plugin=backend:FSStore,content:/path/to/your/media/files
 
-A list of all available backends will get printed with
+A list of all available backends will get printed with::
 
   coherence --help
 
@@ -57,8 +62,9 @@ For a continuous operation the use of a config file is highly recommended.
 
   http://coherence-project.org/wiki/XMLConfig
 
-The config file can be placed anywhere, coherence looks by default for $HOME/.coherence,
-but you can pass the path via the commandline option '-c' to it too.
+The config file can be placed anywhere, coherence looks by default for
+``$HOME/.coherence``, but you can pass the path via the commandline option
+'-c' to it too::
 
   coherence -o /path/to/config/file -more -options
 
@@ -73,9 +79,9 @@ networking issue are responsible for that.
  
    Specify the network interface to use in the config file.
 
- - Add a multicast route, pointing to the proper network interface
+ - Add a multicast route, pointing to the proper network interface::
 
-   route add -net 239.0.0.0 netmask 255.0.0.0 eth0
+     route add -net 239.0.0.0 netmask 255.0.0.0 eth0
 
  - Any firewall on your system?
 
@@ -83,9 +89,9 @@ networking issue are responsible for that.
 Support
 =======
 
-First there is our wiki at http://coherence-project.org/. If you find an error there
-or think there is some information missing please get yourself an account and correct
-that issue. Thx!
+First there is our wiki at http://coherence-project.org/. If you find
+an error there or think there is some information missing please get
+yourself an account and correct that issue. Thx!
 
 Then we have a mailinglist coherence-dev@lists.beebits.net.
 You add yourself here:
@@ -97,3 +103,9 @@ And last but not least, there is our irc channel
   irc://irc.freenode.net/#coherence
 
 where a lot of other users and most of the developers are around.
+
+..
+  Local Variables:
+  mode: rst
+  ispell-local-dictionary: "american"
+  End:
