@@ -8,6 +8,7 @@ import socket
 import os, sys
 import traceback
 import copy
+import logging
 
 from twisted.python import filepath, util
 from twisted.internet.tcp import CannotListenError
