@@ -5,6 +5,8 @@
 import warnings
 from coherence.dispatcher import Dispatcher
 
+warnings.warn("extern.louie will soon be deprecated in favor of coherence.dispatcher.")
+
 class Any(object): pass
 class All(object): pass
 class Anonymous(object): pass
@@ -40,15 +42,11 @@ global _global_dispatcher
 _global_dispatcher = GlobalDispatcher()
 _global_receivers_pool = {}
 
-def _display_deprecation_warning():
-    warnings.warn("extern.louie will soon be deprecated in favor of coherence.dispatcher.")
 
 def connect(receiver, signal=All, sender=Any, weak=True):
     callback = receiver
     if signal in (Any, All):
         raise NotImplemented("This is not allowed. Signal HAS to be something")
-    if sender not in (Any, All):
-        _display_deprecation_warning()
     receiver = _global_dispatcher.connect(signal, callback)
     _global_receivers_pool[(callback, signal)] = receiver
     return receiver
@@ -57,16 +55,12 @@ def disconnect(receiver, signal=All, sender=Any, weak=True):
     callback = receiver
     if signal in (Any, All):
         raise NotImplemented("This is not allowed. Signal HAS to be something")
-    if sender not in (Any, All):
-        _display_deprecation_warning()
     receiver = _global_receivers_pool.pop((callback, signal))
     return _global_dispatcher.disconnect(receiver)
 
 def send(signal=All, sender=Anonymous, *arguments, **named):
     if signal in (Any, All):
         raise NotImplemented("This is not allowed. Signal HAS to be something")
-    if sender not in (Anonymous, None):
-        _display_deprecation_warning()
     # the first value of the callback shall always be the signal:
     return _global_dispatcher.save_emit(signal, *arguments, **named)
 
