@@ -814,10 +814,10 @@ class _CEST(_tz):
     _offset = timedelta(minutes=120)
     _name = 'CEST'
 
-_bdates = [datetime(1997,2,28,17,20,tzinfo=CET()),  # Sebastian Oliver
-           datetime(1999,9,19,4,12,tzinfo=CEST()),  # Patrick Niklas
-           datetime(2000,9,23,4,8,tzinfo=CEST()),   # Saskia Alexa
-           datetime(2003,7,23,1,18,tzinfo=CEST()),  # Mara Sophie
+_bdates = [datetime(1997,2,28,17,20,tzinfo=_CET()),  # Sebastian Oliver
+           datetime(1999,9,19,4,12,tzinfo=_CEST()),  # Patrick Niklas
+           datetime(2000,9,23,4,8,tzinfo=_CEST()),   # Saskia Alexa
+           datetime(2003,7,23,1,18,tzinfo=_CEST()),  # Mara Sophie
                                                      # you are the best!
          ]
 
