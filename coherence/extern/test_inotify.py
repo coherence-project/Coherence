@@ -10,7 +10,7 @@ from twisted.internet import defer, reactor
 from twisted.python import filepath
 from twisted.trial import unittest
 
-import inotify
+from . import inotify
 
 class TestINotify(unittest.TestCase):
     def setUp(self):
