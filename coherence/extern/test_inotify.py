@@ -139,20 +139,34 @@ class TestINotify(unittest.TestCase):
         self.inotify.ignore(self.dirname)
         self.assert_(not self.inotify.isWatched(self.dirname))
 
-    def test_watchPoint(self):
-        """
-        Test that Watch methods work as advertised
-        """
-        w = inotify.Watch('/tmp/foobar')
-        f = lambda : 5
-        w.addCallback(f)
-        self.assert_(w.callbacks, [(f, None)])
-
     def test_flagToHuman(self):
         """
         Test the helper function
         """
-        for mask, value in inotify._FLAG_TO_HUMAN.iteritems():
+        FLAG_TO_HUMAN = {
+            inotify.IN_ACCESS: 'access',
+            inotify.IN_MODIFY: 'modify',
+            inotify.IN_ATTRIB: 'attrib',
+            inotify.IN_CLOSE_WRITE: 'close_write',
+            inotify.IN_CLOSE_NOWRITE: 'close_nowrite',
+            inotify.IN_OPEN: 'open',
+            inotify.IN_MOVED_FROM: 'moved_from',
+            inotify.IN_MOVED_TO: 'moved_to',
+            inotify.IN_CREATE: 'create',
+            inotify.IN_DELETE: 'delete',
+            inotify.IN_DELETE_SELF: 'delete_self',
+            inotify.IN_MOVE_SELF: 'move_self',
+            inotify.IN_UNMOUNT: 'unmount',
+            inotify.IN_Q_OVERFLOW: 'queue_overflow',
+            inotify.IN_IGNORED: 'ignored',
+            inotify.IN_ONLYDIR: 'only_dir',
+            inotify.IN_DONT_FOLLOW: 'dont_follow',
+            inotify.IN_MASK_ADD: 'mask_add',
+            inotify.IN_ISDIR: 'is_dir',
+            inotify.IN_ONESHOT: 'one_shot'
+            }
+
+        for mask, value in FLAG_TO_HUMAN.iteritems():
             self.assert_(inotify.flag_to_human(mask)[0], value)
 
         checkMask = inotify.IN_CLOSE_WRITE|inotify.IN_ACCESS|inotify.IN_OPEN
