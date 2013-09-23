@@ -1,23 +1,15 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 """
-
 This is a compatibility-wrapper for the old coherence.external.inotify
 interface.
 
 DO NOT USE THIS anymore, directly use twisted.internet.inotify instead.
-
 """
 # Copyright 2006-2009 Frank Scholz <coherence@beebits.net>
 # Modified by Colin Laplace, added is_watched() function
 # Copyright 2008 Adroll.com and Valentino Volonghi <dialtone@adroll.com>
-# Modified by Valentino Volonghi.
-#  * Increased isWatched efficiency, now it's O(1)
-#  * Code reorganization, added docstrings, Twisted coding style
-#  * Introduced an hack to partially solve a race condition in auto_add.
-#  * Removed code that didn't use libc 2.4 but magic hacks
-#    -> reverted, as it might still be needed somewhere (fs)
-#  * Used fdesc.readFromFD to read during doRead
+# Copyright 2013 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 from functools import partial
 
@@ -32,7 +24,9 @@ def flag_to_human(mask):
 
 class INotify(inotify.INotify):
     """
-    Compatibility class for old coherence.external.inotify interface
+    Compatibility class for old coherence.external.inotify interface.
+
+    DO NOT USE THIS anymore, directly use twisted.internet.inotify instead.
     """
     def __init__(self, *args, **kwargs):
         super(INotify, self).__init__(*args, **kwargs)

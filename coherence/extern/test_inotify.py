@@ -1,10 +1,7 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 # Copyright 2008 Adroll.com and Valentino Volonghi <dialtone@adroll.com>
-
-# 20090113 Frank Scholz <coherence@beebits.net>
-# renamed watch() kwarg autoAdd back to auto_add, to not break
-# existing applications
+# Copyright 2013 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 from twisted.internet import defer, reactor
 from twisted.python import filepath
