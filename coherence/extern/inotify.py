@@ -13,6 +13,9 @@ DO NOT USE THIS anymore, directly use twisted.internet.inotify instead.
 
 from functools import partial
 
+import warnings
+warnings.warn("coherence.extern.inotify is deprecated.")
+
 from twisted.internet import inotify
 from twisted.internet.inotify import *
 from twisted.python.filepath import FilePath
