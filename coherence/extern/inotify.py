@@ -42,7 +42,7 @@ class INotify(inotify.INotify):
               callbacks=None, recursive=False):
         if not isinstance(path, FilePath):
             path = FilePath(path)
-        if callbacks is not None:
+        if callbacks is not None and not isinstance(callbacks, list):
             assert len(callbacks) == 2, callbacks
             callback = partial(callbacks[0], data=callbacks[1])
             callbacks=[callbacks]
