@@ -112,7 +112,6 @@ class TestINotify(unittest.TestCase):
                 # first call, it's the create subdir
                 calls.append(filename)
                 reactor.callLater(0.1, _)
-
             else:
                 reactor.callLater(0.1, _eb)
 
@@ -259,19 +258,14 @@ class TestINotify(unittest.TestCase):
         SUBDIR = self.dirname.child('test')
         SUBDIR2 = SUBDIR.child('test2')
         SUBDIR3 = SUBDIR2.child('test3')
-        SOME_FILES = set(["file1.dat", "file2.dat", "file3.dat"])
-        d = defer.Deferred()
         SUBDIR3.makedirs()
+        d = defer.Deferred()
 
         # Add some files in pretty much all the directories so that we
         # see that we process all of them.
-        for i, filename in enumerate(SOME_FILES):
-            if not i:
-                S = SUBDIR
-            if i == 1:
-                S = SUBDIR2
-            else:
-                S = SUBDIR3
-
-            S.child(filename).setContent(filename)
+        SOME_FILES = set()
+        for i, dir in enumerate([SUBDIR, SUBDIR2, SUBDIR3]):
+            filename = "file%i.dat" % i
+            SOME_FILES.add(filename)
+            dir.child(filename).setContent(filename)
         return d
