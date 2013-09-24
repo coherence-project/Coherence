@@ -44,7 +44,7 @@ class INotify(inotify.INotify):
             path = FilePath(path)
         if callbacks is not None and not isinstance(callbacks, list):
             assert len(callbacks) == 2, callbacks
-            callback = partial(callbacks[0], data=callbacks[1])
+            callbacks = partial(callbacks[0], data=callbacks[1])
             callbacks=[callbacks]
         return super(INotify, self).watch(
             path, mask, autoAdd=auto_add,
