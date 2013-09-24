@@ -5,6 +5,29 @@ This is a compatibility-wrapper for the old coherence.external.inotify
 interface.
 
 DO NOT USE THIS anymore, directly use twisted.internet.inotify instead.
+
+Sorry, but the old coherence.external.inotify implementation had some
+nasty bugs. So it's better to make a rather hard cut instead of
+trying to keep the bugs.
+
+
+Converting your callbacks:
+----------------------------
+
+Instead of::
+
+  my_inotify.watch(..., callbacks=(_callback, EXTRA_ARG))
+  my_inotify.watch(..., callbacks=(my_callback, None))
+
+use::
+
+  from functools import partial
+  my_inotify.watch(..., callbacks=[partial(_callbacks, data=EXTRA_ARG)])
+  my_inotify.watch(..., callbacks=[my_callback])
+
+Please note: The callbacks are now called with a FilePath as second
+argument.
+
 """
 # Copyright 2006-2009 Frank Scholz <coherence@beebits.net>
 # Modified by Colin Laplace, added is_watched() function
@@ -31,38 +54,20 @@ class INotify(inotify.INotify):
 
     DO NOT USE THIS anymore, directly use twisted.internet.inotify instead.
     """
-    def __init__(self, *args, **kwargs):
-        super(INotify, self).__init__(*args, **kwargs)
+    def __init__(self, reactor=None):
+        super(INotify, self).__init__(reactor)
         self.startReading()
 
-    def watch(self, path, mask=IN_WATCH_MASK, auto_add=None,
+    def watch(self, path, mask=IN_WATCH_MASK, autoAdd=None,
               callbacks=None, recursive=False):
         if not isinstance(path, FilePath):
             path = FilePath(path)
-        if callbacks is not None and not isinstance(callbacks, list):
-            assert len(callbacks) == 2, callbacks
-            callbacks = partial(callbacks[0], data=callbacks[1])
-            callbacks=[callbacks]
+        assert callbacks is None or isinstance(callbacks, list)
         return super(INotify, self).watch(
-            path, mask, autoAdd=auto_add,
-            callbacks=callbacks, recursive=recursive)
+            path, mask, autoAdd, callbacks, recursive)
 
     def release(self):
         return self.connectionLost(None)
-
-    def isWatched(self, path):
-        """
-        Helper function that checks if the path is already monitored
-        and returns its watchdescriptor if so.
-
-        @param path: The path that should be checked
-        @type path: L{FilePath} or C{unicode} or C{str}
-        """
-
-        if not isinstance(path, FilePath):
-            path = FilePath(path)
-        return self._isWatched(path)
-
 
     def flag_to_human(self,mask):
         return flag_to_human(mask)
@@ -76,11 +81,11 @@ if __name__ == '__main__':
 
     i = INotify()
     print i
-    i.watch(unicode('/tmp/aaa'), auto_add=True, callbacks=(notify,None),
+    i.watch(unicode('/tmp/aaa'), autoAdd=True, callbacks=[notify],
             recursive=True)
 
     i2 = INotify()
     print i2
-    i2.watch('/', auto_add=True, callbacks=(notify,None), recursive=False)
+    i2.watch('/', autoAdd=True, callbacks=[notify], recursive=False)
 
     reactor.run()

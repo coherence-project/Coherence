@@ -3,6 +3,8 @@
 # Copyright 2008 Adroll.com and Valentino Volonghi <dialtone@adroll.com>
 # Copyright 2013 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
+from functools import partial
+
 from twisted.internet import defer, reactor
 from twisted.python import filepath
 from twisted.trial import unittest
@@ -34,7 +36,7 @@ class TestINotify(unittest.TestCase):
         # and one when we close the file after writing it.
         def _callback(wp, filename, mask, data):
             try:
-                self.assertEquals(filename, NEW_FILENAME)
+                self.assertEquals(filename.basename(), NEW_FILENAME)
                 self.assertEquals(data, EXTRA_ARG)
                 calls.append(filename)
                 if len(calls) == 2:
@@ -47,7 +49,7 @@ class TestINotify(unittest.TestCase):
 
         self.inotify.watch(
             self.dirname, mask=checkMask,
-            callbacks=(_callback, EXTRA_ARG)
+            callbacks=[partial(_callback, data=EXTRA_ARG)]
         )
         d = defer.Deferred()
         f = self.dirname.child(NEW_FILENAME).open('wb')
@@ -60,12 +62,12 @@ class TestINotify(unittest.TestCase):
         Test that when a subdirectory is added to a watched directory
         it is also added to the watched list.
         """
-        def _callback(wp, filename, mask, data):
+        def _callback(wp, filename, mask):
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
                 try:
-                    self.assert_(self.inotify.isWatched(SUBDIR.path))
+                    self.assert_(self.inotify._isWatched(SUBDIR))
                     d.callback(None)
                 except Exception, e:
                     d.errback(e)
@@ -73,8 +75,8 @@ class TestINotify(unittest.TestCase):
 
         checkMask = inotify.IN_ISDIR | inotify.IN_CREATE
         self.inotify.watch(
-            self.dirname, mask=checkMask, auto_add=True,
-            callbacks=(_callback, None)
+            self.dirname, mask=checkMask, autoAdd=True,
+            callbacks=[_callback]
         )
         SUBDIR = self.dirname.child('test')
         d = defer.Deferred()
@@ -87,12 +89,12 @@ class TestINotify(unittest.TestCase):
         also removed from the watchlist
         """
         calls = []
-        def _callback(wp, filename, mask, data):
+        def _callback(wp, filename, mask):
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
                 try:
-                    self.assert_(self.inotify.isWatched(SUBDIR.path))
+                    self.assert_(self.inotify._isWatched(SUBDIR))
                     SUBDIR.remove()
                 except Exception, e:
                     print e
@@ -100,7 +102,7 @@ class TestINotify(unittest.TestCase):
             def _eb():
                 # second call, we have just removed the subdir
                 try:
-                    self.assert_(not self.inotify.isWatched(SUBDIR.path))
+                    self.assert_(not self.inotify._isWatched(SUBDIR))
                     d.callback(None)
                 except Exception, e:
                     print e
@@ -116,8 +118,8 @@ class TestINotify(unittest.TestCase):
 
         checkMask = inotify.IN_ISDIR | inotify.IN_CREATE
         self.inotify.watch(
-            self.dirname, mask=checkMask, auto_add=True,
-            callbacks=(_callback, None)
+            self.dirname, mask=checkMask, autoAdd=True,
+            callbacks=[_callback]
         )
         SUBDIR = self.dirname.child('test')
         d = defer.Deferred()
@@ -130,11 +132,11 @@ class TestINotify(unittest.TestCase):
         watchlist without removing it from the filesystem.
         """
         self.inotify.watch(
-            self.dirname, auto_add=True
+            self.dirname, autoAdd=True
         )
-        self.assert_(self.inotify.isWatched(self.dirname))
+        self.assert_(self.inotify._isWatched(self.dirname))
         self.inotify.ignore(self.dirname)
-        self.assert_(not self.inotify.isWatched(self.dirname))
+        self.assert_(not self.inotify._isWatched(self.dirname))
 
     def test_flagToHuman(self):
         """
@@ -186,18 +188,18 @@ class TestINotify(unittest.TestCase):
         # let's even call this twice so that we test that nothing breaks
         self.inotify.watch(self.dirname, recursive=True)
         for d in DIRS:
-            self.assert_(self.inotify.isWatched(d))
+            self.assert_(self.inotify._isWatched(d))
 
     def test_noAutoAddSubdirectory(self):
         """
-        Test that if auto_add is off we don't add a new directory
+        Test that if autoAdd is off we don't add a new directory
         """
-        def _callback(wp, filename, mask, data):
+        def _callback(wp, filename, mask):
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
                 try:
-                    self.assert_(not self.inotify.isWatched(SUBDIR.path))
+                    self.assert_(not self.inotify._isWatched(SUBDIR))
                     d.callback(None)
                 except Exception, e:
                     d.errback(e)
@@ -205,8 +207,8 @@ class TestINotify(unittest.TestCase):
 
         checkMask = inotify.IN_ISDIR | inotify.IN_CREATE
         self.inotify.watch(
-            self.dirname, mask=checkMask, auto_add=False,
-            callbacks=(_callback, None)
+            self.dirname, mask=checkMask, autoAdd=False,
+            callbacks=[_callback]
         )
         SUBDIR = self.dirname.child('test')
         d = defer.Deferred()
@@ -222,14 +224,14 @@ class TestINotify(unittest.TestCase):
         This is basically the most critical testcase for inotify.
         """
         calls = set()
-        def _callback(wp, filename, mask, data):
+        def _callback(wp, filename, mask):
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
                 try:
-                    self.assert_(self.inotify.isWatched(SUBDIR.path))
-                    self.assert_(self.inotify.isWatched(SUBDIR2.path))
-                    self.assert_(self.inotify.isWatched(SUBDIR3.path))
+                    self.assert_(self.inotify._isWatched(SUBDIR))
+                    self.assert_(self.inotify._isWatched(SUBDIR2))
+                    self.assert_(self.inotify._isWatched(SUBDIR3))
                     CREATED = SOME_FILES.union(
                         set([SUBDIR.basename(),
                              SUBDIR2.basename(),
@@ -247,12 +249,12 @@ class TestINotify(unittest.TestCase):
                 # works for this we know that there's a new extra cycle
                 # every subdirectory
                 reactor.callLater(0.1, _)
-            calls.add(filename)
+            calls.add(filename.basename())
 
         checkMask = inotify.IN_ISDIR | inotify.IN_CREATE
         self.inotify.watch(
-            self.dirname, mask=checkMask, auto_add=True,
-            callbacks=(_callback, None)
+            self.dirname, mask=checkMask, autoAdd=True,
+            callbacks=[_callback]
         )
         SUBDIR = self.dirname.child('test')
         SUBDIR2 = SUBDIR.child('test2')
