@@ -29,7 +29,7 @@ import coherence.extern.louie as louie
 class TestContentDirectoryServer(unittest.TestCase):
 
     def setUp(self):
-        self.tmp_content = FilePath('tmp_content_coherence-%d'%os.getpid())
+        self.tmp_content = FilePath(self.mktemp())
         f = self.tmp_content.child('content')
         audio = f.child('audio')
         f.child('images').makedirs()
