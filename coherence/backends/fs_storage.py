@@ -39,12 +39,11 @@ from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import utils
 
 try:
-    from coherence.extern.inotify import INotify
-    from coherence.extern.inotify import IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO, IN_ISDIR
-    from coherence.extern.inotify import IN_CHANGED
-    haz_inotify = True
+    from coherence.extern.inotify import (
+        INotify, IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO,
+        IN_ISDIR, IN_CHANGED)
 except Exception,msg:
-    haz_inotify = False
+    INotify = None
     no_inotify_reason = msg
 
 from coherence.extern.xdg import xdg_content
@@ -485,7 +484,7 @@ class FSStore(BackendStore):
         self.inotify = None
 
         if kwargs.get('enable_inotify','yes') == 'yes':
-            if haz_inotify == True:
+            if INotify:
                 try:
                     self.inotify = INotify()
                 except Exception,msg:
@@ -699,7 +698,9 @@ class FSStore(BackendStore):
             if mimetype == 'directory':
                 if self.inotify is not None:
                     mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
-                    self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
+                    self.inotify.watch(
+                        path, mask=mask, autoAdd=False,
+                        callbacks=[partial(self.notify, parameter=id)])
                 return self.store[id]
         except OSError, msg:
             """ seems we have some permissions issues along the content path """
@@ -727,13 +728,9 @@ class FSStore(BackendStore):
             pass
 
 
-    def notify(self, iwp, filename, mask, parameter=None):
-        self.info("Event %s on %s %s - parameter %r" % (
-                    ', '.join(self.inotify.flag_to_human(mask)), iwp.path, filename, parameter))
-
-        path = iwp.path
-        if filename:
-            path = os.path.join(path, filename)
+    def notify(self, ignore, path, mask, parameter=None):
+        self.info("Event %s on %s - parameter %r" % (
+            ', '.join(self.inotify.flag_to_human(mask)), path.path, parameter))
 
         if mask & IN_CHANGED:
             # FIXME react maybe on access right changes, loss of read rights?
@@ -741,21 +738,21 @@ class FSStore(BackendStore):
             pass
 
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
-            self.info('%s was deleted, parent %r (%s)' % (path, parameter, iwp.path))
-            id = self.get_id_by_name(parameter,os.path.join(iwp.path,filename))
+            self.info('%s was deleted, parent %r (%s)' % (path.path, parameter, path.parent.path))
+            id = self.get_id_by_name(parameter,path.path)
             if id != None:
                 self.remove(id)
         if(mask & IN_CREATE or mask & IN_MOVED_TO):
             if mask & IN_ISDIR:
-                self.info('directory %s was created, parent %r (%s)' % (path, parameter, iwp.path))
+                self.info('directory %s was created, parent %r (%s)' % (path.path, parameter, path.parent.path))
             else:
-                self.info('file %s was created, parent %r (%s)' % (path, parameter, iwp.path))
-            if self.get_id_by_name(parameter,os.path.join(iwp.path,filename)) is None:
-                if os.path.isdir(path):
-                    self.walk(path, self.get_by_id(parameter), self.ignore_file_pattern)
+                self.info('file %s was created, parent %r (%s)' % (path.path, parameter, path.parent.path))
+            if self.get_id_by_name(parameter,path.path) is None:
+                if path.isdir():
+                    self.walk(path.path, self.get_by_id(parameter), self.ignore_file_pattern)
                 else:
                     if self.ignore_file_pattern.match(filename) == None:
-                        self.append(path, self.get_by_id(parameter))
+                        self.append(path.path, self.get_by_id(parameter))
 
     def getnextID(self):
         ret = self.next_id
@@ -917,7 +914,10 @@ class FSStore(BackendStore):
 
             if self.inotify is not None:
                 mask = IN_CREATE | IN_DELETE | IN_MOVED_FROM | IN_MOVED_TO | IN_CHANGED
-                self.inotify.watch(path, mask=mask, auto_add=False, callbacks=(self.notify,id))
+                self.inotify.watch(
+                    path, mask=mask, autoAdd=False,
+                    callbacks=[partial(self.notify, parameter=id)])
+
 
             new_item = self.get_by_id(id)
             didl = DIDLElement()
