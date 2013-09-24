@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     i = INotify()
     print i
-    i.watch(unicode('/tmp'), auto_add=True, callbacks=(notify,None),
+    i.watch(unicode('/tmp/aaa'), auto_add=True, callbacks=(notify,None),
             recursive=True)
 
     i2 = INotify()
