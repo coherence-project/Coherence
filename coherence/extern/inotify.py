@@ -71,8 +71,9 @@ class INotify(inotify.INotify):
         return flag_to_human(mask)
 
 if __name__ == '__main__':
+    from twisted.internet import reactor
 
-    def notify(self, filepath, mask):
+    def notify(self, filepath, mask, data=None):
         print "event %s on %s" % (
             ', '.join(inotify.humanReadableMask(mask)), filepath)
 
