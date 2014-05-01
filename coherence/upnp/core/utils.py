@@ -518,48 +518,14 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
     protocol = myHTTPPageGetter
     noisy = False
 
-    def __init__(self, url, method='GET', postdata=None, headers=None,
-                 agent="Coherence PageGetter", timeout=0, cookies=None,
-                 followRedirect=True, redirectLimit=20):
-        self.followRedirect = followRedirect
-        self.redirectLimit = redirectLimit
-        self._redirectCount = 0
-        self.timeout = timeout
-        self.agent = agent
-
-        if cookies is None:
-            cookies = {}
-        self.cookies = cookies
-        if headers is not None:
-            self.headers = InsensitiveDict(headers)
-        else:
-            self.headers = InsensitiveDict()
-        if postdata is not None:
-            self.headers.setdefault('Content-Length', len(postdata))
-            # just in case a broken http/1.1 decides to keep connection alive
-            self.headers.setdefault("connection", "close")
-        self.postdata = postdata
-        self.method = method
-
-        self.setURL(url)
-
-        self.waiting = 1
-        self.deferred = defer.Deferred()
-        self.response_headers = None
-
     def buildProtocol(self, addr):
-        p = protocol.ClientFactory.buildProtocol(self, addr)
+        p = client.HTTPClientFactory.buildProtocol(self, addr)
         p.method = self.method
         p.followRedirect = self.followRedirect
-        if self.timeout:
-            timeoutCall = reactor.callLater(self.timeout, p.timeout)
-            self.deferred.addBoth(self._cancelTimeout, timeoutCall)
         return p
 
     def page(self, page):
-        if self.waiting:
-            self.waiting = 0
-            self.deferred.callback((page, self.response_headers))
+        client.HTTPClientFactory.page(self, (page, self.response_headers))
 
 
 class HeaderAwareHTTPDownloader(client.HTTPDownloader):
@@ -578,24 +544,22 @@ class HeaderAwareHTTPDownloader(client.HTTPDownloader):
                 self.requestedPartial = 0
 
 
+
 def getPage(url, contextFactory=None, *args, **kwargs):
-    """Download a web page as a string.
+    """
+    Download a web page as a string.
 
     Download a page. Return a deferred, which will callback with a
     page (as a string) or errback with a description of the error.
 
     See HTTPClientFactory to see what extra args can be passed.
     """
-    scheme, host, port, path = client._parse(url)
-    factory = HeaderAwareHTTPClientFactory(url, *args, **kwargs)
-    if scheme == 'https':
-        from twisted.internet import ssl
-        if contextFactory is None:
-            contextFactory = ssl.ClientContextFactory()
-        reactor.connectSSL(host, port, factory, contextFactory)
-    else:
-        reactor.connectTCP(host, port, factory)
-    return factory.deferred
+    kwargs['agent'] = "Coherence PageGetter"
+    return client._makeGetterFactory(
+        url,
+        HeaderAwareHTTPClientFactory,
+        contextFactory=contextFactory,
+        *args, **kwargs).deferred
 
 
 def downloadPage(url, file, contextFactory=None, *args, **kwargs):

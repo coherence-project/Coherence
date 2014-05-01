@@ -9,9 +9,14 @@
 Test cases for L{upnp.core.utils}
 """
 
+import os
 from twisted.trial import unittest
+from twisted.python.filepath import FilePath
+from twisted.internet import reactor
+from twisted.web import static, server
+from twisted.protocols import policies
 
-from coherence.upnp.core.utils import *
+from coherence.upnp.core import utils
 
 # This data is joined using CRLF pairs.
 testChunkedData = ['200',
@@ -121,9 +126,49 @@ class TestUpnpUtils(unittest.TestCase):
             based on a test and data provided by Lawrence
         """
         testData = '\r\n'.join(testChunkedData)
-        newData = de_chunk_payload(testData)
+        newData = utils.de_chunk_payload(testData)
         # see whether we can parse the result
         self.assertEqual(newData, '\r\n'.join( testChunkedDataResult))
+
+
+class TestClient(unittest.TestCase):
+
+    def _listen(self, site):
+        return reactor.listenTCP(0, site, interface="127.0.0.1")
+
+    def setUp(self):
+        name = self.mktemp()
+        os.mkdir(name)
+        FilePath(name).child("file").setContent("0123456789")
+        r = static.File(name)
+        self.site = server.Site(r, timeout=None)
+        self.wrapper = policies.WrappingFactory(self.site)
+        self.port = self._listen(self.wrapper)
+        self.portno = self.port.getHost().port
+
+    def tearDown(self):
+        return self.port.stopListening()
+
+    def getURL(self, path):
+        return "http://127.0.0.1:%d/%s" % (self.portno, path)
+
+    def assertResponse(self, original, content, headers):
+        self.assertIsInstance(original, tuple)
+        self.assertEqual(original[0], content)
+        originalHeaders = original[1]
+        for header in headers:
+            self.assertIn(header, originalHeaders)
+            self.assertEqual(originalHeaders[header], headers[header])
+
+    def test_getPage(self):
+        content = '0123456789'
+        headers = {'accept-ranges': ['bytes'],
+                   'content-length': ['10'],
+                   'content-type': ['text/html']}
+        d = utils.getPage(self.getURL("file"))
+        d.addCallback(self.assertResponse, content, headers)
+        return d
+
 
 
 # $Id:$
