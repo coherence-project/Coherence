@@ -69,6 +69,6 @@ def init(logfilename=None, loglevel=logging.WARN):
                         format=LOG_FORMAT)
 
     if ENV_VAR_NAME in os.environ:
-        logger.setLevel(os.environ[envVarName])
+        logger.setLevel(os.environ[ENV_VAR_NAME])
     else:
         logger.setLevel(loglevel)
