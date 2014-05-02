@@ -14,7 +14,7 @@ LOG_FORMAT =('%(levelname)s %(name)-27s '
 ENV_VAR_NAME = 'COHERENCE_DEBUG'
 
 
-class Loggable(logging.Logger):
+class Loggable(object):
     """
     Base class for objects that want to be able to log messages with
     different level of severity.  The levels are, in order from least
