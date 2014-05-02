@@ -264,8 +264,9 @@ def subscribe(service, action='subscribe'):
     send a subscribe/renewal/unsubscribe request to a service
     return the device response
     """
-    log_category = "event_protocol"
-    log.info(log_category, "event.subscribe, action: %r", action)
+
+    logger = log.getLogger("event_protocol")
+    logger.info("event.subscribe, action: %r", action)
 
     _,host_port,path,_,_ = urlsplit(service.get_base_url())
     if host_port.find(':') != -1:
@@ -276,8 +277,8 @@ def subscribe(service, action='subscribe'):
         port = 80
 
     def send_request(p, action):
-        log.info(log_category, "event.subscribe.send_request %r, action: %r %r",
-                 p, action, service.get_event_sub_url())
+        logger.info("event.subscribe.send_request %r, action: %r %r",
+                    p, action, service.get_event_sub_url())
         _,_,event_path,_,_ = urlsplit(service.get_event_sub_url())
         if action == 'subscribe':
             timeout = service.timeout
@@ -309,29 +310,29 @@ def subscribe(service, action='subscribe'):
         request.append( "")
         request.append( "")
         request = '\r\n'.join(request)
-        log.debug(log_category, "event.subscribe.send_request %r %r", request, p)
+        logger.debug("event.subscribe.send_request %r %r", request, p)
         try:
             p.transport.writeSomeData(request)
         except AttributeError:
-            log.info(log_category, "transport for event %r already gone", action)
+            logger.info("transport for event %r already gone", action)
        # print "event.subscribe.send_request", d
         #return d
 
     def got_error(failure, action):
-        log.info(log_category, "error on %s request with %s" % (action,service.get_base_url()))
-        log.debug(log_category, failure)
+        logger.info("error on %s request with %s", action, service.get_base_url())
+        logger.debug(failure)
 
     def teardown_connection(c, d):
-        log.info(log_category, "event.subscribe.teardown_connection")
+        logger.info("event.subscribe.teardown_connection")
         del d
         del c
 
     def prepare_connection( service, action):
-        log.info(log_category, "event.subscribe.prepare_connection action: %r %r",
+        logger.info("event.subscribe.prepare_connection action: %r %r",
                  action, service.event_connection)
         if service.event_connection == None:
             c = ClientCreator(reactor, EventProtocol, service=service, action=action)
-            log.info(log_category, "event.subscribe.prepare_connection: %r %r",
+            logger.info("event.subscribe.prepare_connection: %r %r",
                      host, port)
             d = c.connectTCP(host, port)
             d.addCallback(send_request, action=action)
@@ -388,7 +389,7 @@ def send_notification(s, xml):
     send a notification a subscriber
     return its response
     """
-    log_category = "notification_protocol"
+    logger = log.getLogger("notification_protocol")
 
     _,host_port,path,_,_ = urlsplit(s['callback'])
     if path == '':
@@ -413,9 +414,9 @@ def send_notification(s, xml):
                     xml]
 
         request = '\r\n'.join(request)
-        log.info(log_category, "send_notification.send_request to %r %r",
+        logger.info("send_notification.send_request to %r %r",
                  s['sid'], s['callback'])
-        log.debug(log_category, "request: %r", request)
+        logger.debug("request: %r", request)
         s['seq'] += 1
         if s['seq'] > 0xffffffff:
             s['seq'] = 1
@@ -425,9 +426,9 @@ def send_notification(s, xml):
 
     def got_error(failure,port_item):
         port_item.disconnect()
-        log.info(log_category, "error sending notification to %r %r",
+        logger.info("error sending notification to %r %r",
                  s['sid'], s['callback'])
-        log.debug(log_category, failure)
+        logger.debug(failure)
 
     #c = ClientCreator(reactor, NotificationProtocol)
     #d = c.connectTCP(host, port)
