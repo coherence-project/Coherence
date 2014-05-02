@@ -157,7 +157,9 @@ Kudos go to:
 if setuptools:
     setup_args['install_requires'] = [
         'ConfigObj >= 4.3',
+        'Twisted >= 2.5',
         'zope.interface',
+        'louie',
         ]
     if sys.platform in ('win32','sunos5'):
         setup_args['install_requires'].append('Netifaces >= 0.4')
