@@ -24,6 +24,15 @@ class Loggable(object):
     """
 
     logCategory = 'default'
+    _Loggable__logger = None
+
+    def __init__(self):
+        self.__getLogger()
+
+    def __getLogger(self):
+        # :fixme: get rid of this. Every subclass of Loggable should
+        # call Loggable.__init__.
+        self.__logger = logging.getLogger(self.logCategory)
 
     def logObjectName(self):
         """Overridable object name function."""
@@ -31,29 +40,35 @@ class Loggable(object):
         for name in ['logName', 'name']:
             if hasattr(self, name):
                 return getattr(self, name)
-
         return None
 
     def log(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).log(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.log(message, *args, **kwargs)
 
     def warning(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).warning(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.warning(message, *args, **kwargs)
 
     def info(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).info(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.info(message, *args, **kwargs)
 
     def critical(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).critical(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.critical(message, *args, **kwargs)
 
     def debug(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).debug(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.debug(message, *args, **kwargs)
 
     def error(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).error(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.error(message, *args, **kwargs)
 
     def exception(self, message, *args, **kwargs):
-        logging.getLogger(self.logCategory).exception(message, *args, **kwargs)
+        if self.__logger is None: self.__getLogger()
+        self.__logger.exception(message, *args, **kwargs)
 
     fatal = critical
     warn = warning
