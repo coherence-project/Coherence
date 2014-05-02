@@ -5,7 +5,6 @@
 
 import os
 import logging
-from logging import *
 
 LOG_FORMAT =('%(levelname)s %(name)-27s '
              '%(asctime)s %(message)s '
@@ -60,6 +59,7 @@ class Loggable(object):
     warn = warning
     msg = info
 
+getLogger = logging.getLogger
 
 def init(logfilename=None, loglevel=logging.WARN):
     logger = logging.getLogger()
