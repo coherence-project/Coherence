@@ -1167,9 +1167,6 @@ class FlickrStore(BackendStore):
         return d
 
 def main():
-
-    log.init(None, 'debug')
-
     f = FlickrStore(None,userid='x',password='xx',
                     permissions='xxx',
                     authtoken='xxx-x')
