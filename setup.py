@@ -2,10 +2,7 @@
 
 import sys
 import os
-try:
-    from coherence import __version__
-except ImportError:
-    raise SystemExit(1)
+__version__ =  "0.6.7"
 
 try:
     import setuptools
