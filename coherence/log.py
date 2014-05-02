@@ -4,6 +4,7 @@
 # Copyright 2013, Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 import os
+import sys
 import logging
 
 LOG_FORMAT =('%(asctime)s %(levelname)s '
@@ -11,6 +12,47 @@ LOG_FORMAT =('%(asctime)s %(levelname)s '
              '(%(filename)s:%(lineno))')
 
 ENV_VAR_NAME = 'COHERENCE_DEBUG'
+
+# This is taken from std.-module logging, see Logger.findCaller below.
+# _srcfile is used when walking the stack to check when we've got the first
+# caller stack frame.
+#
+if hasattr(sys, 'frozen'): #support for py2exe
+    _srcfile = "coherence%slog%s" % (os.sep, __file__[-4:])
+elif __file__[-4:].lower() in ['.pyc', '.pyo']:
+    _srcfile = __file__[:-4] + '.py'
+else:
+    _srcfile = __file__
+_srcfile = os.path.normcase(_srcfile)
+_srcfiles = (_srcfile, logging._srcfile)
+
+class Logger(logging.Logger):
+
+    def findCaller(self):
+        # This is nearly a plain copy of logging.Logger.findCaller
+        # Since findCaller tests for _srcfile to find the caller, we
+        # need to test for this file and the loggin module.
+        #
+        # :fixme: If each subclass of Loggable calls __init__ properly
+        # (see Loggable.__getLogger below), we can build a different
+        # delegation and remove this hak/work-around.
+        f = logging.currentframe()
+        #On some versions of IronPython, currentframe() returns None if
+        #IronPython isn't run with -X:Frames.
+        if f is not None:
+            f = f.f_back
+        rv = "(unknown file)", 0, "(unknown function)"
+        while hasattr(f, "f_code"):
+            co = f.f_code
+            filename = os.path.normcase(co.co_filename)
+            if filename in _srcfiles: ## chaanged line
+                f = f.f_back
+                continue
+            rv = (co.co_filename, f.f_lineno, co.co_name)
+            break
+        return rv
+
+logging.setLoggerClass(Logger)
 
 
 class Loggable(object):
@@ -74,7 +116,9 @@ class Loggable(object):
     warn = warning
     msg = info
 
+
 getLogger = logging.getLogger
+
 
 def init(logfilename=None, loglevel=logging.WARN):
     logger = logging.getLogger()
