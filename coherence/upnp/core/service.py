@@ -987,7 +987,7 @@ class scpdXML(static.Data):
 
 from twisted.python.util import OrderedDict
 
-class ServiceControl:
+class ServiceControl(log.Loggable):
 
     def get_action_results(self, result, action, instance):
         """ check for out arguments
