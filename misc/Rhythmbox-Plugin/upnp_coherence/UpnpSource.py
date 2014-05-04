@@ -78,7 +78,9 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
         self.browse_count -= 1
 
     def state_variable_change(self, variable, udn=None):
-        self.info("%s changed from >%s< to >%s<", variable.name, variable.old_value, variable.value)
+        self.info('%(name)r changed from %(old_value)r to %(value)r',
+                  vars(variable))
+
         if variable.old_value == '':
             return
 

@@ -81,9 +81,9 @@ class Action(log.Loggable):
             return None
 
     def call(self, *args, **kwargs):
-        self.info("calling", self.name)
+        self.info("calling %s", self.name)
         in_arguments = self.get_in_arguments()
-        self.info("in arguments", [a.get_name() for a in in_arguments])
+        self.info("in arguments %s", [a.get_name() for a in in_arguments])
         instance_id = 0
         for arg_name, arg in kwargs.iteritems():
             l = [ a for a in in_arguments if arg_name == a.get_name()]

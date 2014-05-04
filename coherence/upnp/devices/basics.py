@@ -44,7 +44,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = static.File(p)
-        self.info('DeviceHttpRoot ch ', ch)
+        self.info('DeviceHttpRoot ch  %s', ch)
         return ch
 
     def listchilds(self, uri):

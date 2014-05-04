@@ -316,7 +316,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
     def process_child(self,ch,name,request):
         if ch != None:
-            self.info('Child found', ch)
+            self.info('Child found %s', ch)
             if(request.method == 'GET' or
                request.method == 'HEAD'):
                 headers = request.getAllHeaders()
@@ -364,7 +364,7 @@ class MSRoot(resource.Resource, log.Loggable):
             p = util.sibpath(__file__, name)
             if os.path.exists(p):
                 ch = StaticFile(p)
-        self.info('MSRoot ch', ch)
+        self.info('MSRoot ch %s', ch)
         return ch
 
     def getChild(self, name, request):
@@ -377,7 +377,7 @@ class MSRoot(resource.Resource, log.Loggable):
         return self.process_child(ch,name,request)
 
     def list_content(self, name, item, request):
-        self.info('list_content', name, item, request)
+        self.info('list_content %s %s %s', name, item, request)
         page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
                                             (item.get_name().encode('ascii','xmlcharrefreplace'),
                                              item.get_name().encode('ascii','xmlcharrefreplace'))
@@ -394,7 +394,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     for c in r:
                         if hasattr(c,'get_url'):
                             path = c.get_url()
-                            self.debug('has get_url', path)
+                            self.debug('has get_url %s', path)
                         elif hasattr(c,'get_path') and c.get_path != None:
                             #path = c.get_path().encode('utf-8').encode('string_escape')
                             path = c.get_path()
@@ -402,14 +402,14 @@ class MSRoot(resource.Resource, log.Loggable):
                                 path = path.encode('ascii','xmlcharrefreplace')
                             else:
                                 path = path.decode('utf-8').encode('ascii','xmlcharrefreplace')
-                            self.debug('has get_path', path)
+                            self.debug('has get_path %s', path)
                         else:
                             path = request.uri.split('/')
                             path[-1] = str(c.get_id())
                             path = '/'.join(path)
-                            self.debug('got path', path)
+                            self.debug('got path %s', path)
                         title = c.get_name()
-                        self.debug( 'title is:', type(title))
+                        self.debug('title is: %s', type(title))
                         try:
                             if isinstance(title,unicode):
                                 title = title.encode('ascii','xmlcharrefreplace')
@@ -626,7 +626,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
-            self.warning( 'ConnectionManagerServer', msg)
+            self.warning('ConnectionManagerServer %s', msg)
             raise LookupError(msg)
 
         try:
@@ -636,7 +636,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
             self.content_directory_server = ContentDirectoryServer(self,transcoding=transcoding)
             self._services.append(self.content_directory_server)
         except LookupError,msg:
-            self.warning( 'ContentDirectoryServer', msg)
+            self.warning('ContentDirectoryServer %s', msg)
             raise LookupError(msg)
 
         try:
@@ -644,13 +644,13 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                                         backend=FakeMediaReceiverRegistrarBackend())
             self._services.append(self.media_receiver_registrar_server)
         except LookupError,msg:
-            self.warning( 'MediaReceiverRegistrarServer (optional)', msg)
+            self.warning('MediaReceiverRegistrarServer (optional) %s', msg)
 
         try:
             self.scheduled_recording_server = ScheduledRecordingServer(self)
             self._services.append(self.scheduled_recording_server)
         except LookupError,msg:
-            self.info( 'ScheduledRecordingServer', msg)
+            self.info('ScheduledRecordingServer %s', msg)
 
         upnp_init = getattr(self.backend, "upnp_init", None)
         if upnp_init:

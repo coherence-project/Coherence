@@ -200,7 +200,7 @@ class FlickrItem(log.Loggable):
     def set_item_size_and_date(self):
 
         def gotPhoto(result):
-            self.debug("gotPhoto", result)
+            self.debug("gotPhoto %s", result)
             _, headers = result
             length = headers.get('content-length',None)
             modified = headers.get('last-modified',None)
@@ -211,7 +211,7 @@ class FlickrItem(log.Loggable):
                 self.item.date = datetime(*parsedate_tz(modified[0])[0:6])
 
         def gotError(failure, url):
-            self.warning("error requesting", failure, url)
+            self.warning("error requesting %s %s", failure, url)
             self.info(failure)
 
         getPage(self.real_url,method='HEAD',timeout=60).addCallbacks(gotPhoto, gotError, None, None, [self.real_url], None)
@@ -464,7 +464,7 @@ class FlickrStore(BackendStore):
 
         def update_photo_details(result, photo):
             dates = result.find('dates')
-            self.debug("update_photo_details", dates.get('posted'), dates.get('taken'))
+            self.debug("update_photo_details %s %s", dates.get('posted'), dates.get('taken'))
             photo.item.date = datetime(*time.strptime(dates.get('taken'),
                                                "%Y-%m-%d %H:%M:%S")[0:6])
 
@@ -519,7 +519,7 @@ class FlickrStore(BackendStore):
 
         def update_photo_details(result, photo):
             dates = result.find('dates')
-            self.debug("update_photo_details", dates.get('posted'), dates.get('taken'))
+            self.debug("update_photo_details %s %s", dates.get('posted'), dates.get('taken'))
             photo.item.date = datetime(*time.strptime(dates.get('taken'),
                                                "%Y-%m-%d %H:%M:%S")[0:6])
 
@@ -672,20 +672,22 @@ class FlickrStore(BackendStore):
             new_ones[photo.get('id')] = photo
         for id,child in old_ones.items():
             if new_ones.has_key(id):
-                self.debug(id, "already there")
+                self.debug("%s already there", id)
                 del new_ones[id]
             elif child.id != UNSORTED_CONTAINER_ID:
-                self.debug(child.get_flickr_id(), "needs removal")
+                self.debug("%s needs removal", child.get_flickr_id())
                 del old_ones[id]
                 self.remove(child.get_id())
-        self.info("refresh pass 1:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+        self.info("refresh pass 1: old: %i - new: %i - store: %i",
+                  len(old_ones), len(new_ones), len(self.store))
         for photo in new_ones.values():
             if element == 'photo':
                 self.appendPhoto(photo, parent)
             elif element == 'photoset':
                 self.appendPhotoset(photo, parent)
 
-        self.debug("refresh pass 2:", "old", len(old_ones), "new", len(new_ones), "store", len(self.store))
+        self.debug("refresh pass 2: old: %i - new: %i - store: %i",
+                   len(old_ones), len(new_ones), len(self.store))
         if len(new_ones) > 0:
             self.info("updated %s with %d new %ss" % (parent.get_name(), len(new_ones), element))
 
@@ -1000,7 +1002,7 @@ class FlickrStore(BackendStore):
             self.backend_import(item,StringIO.StringIO(result[0]))
 
         def gotError(error, url):
-            self.warning("error requesting", url)
+            self.warning("error requesting %s", url)
             self.info(error)
             return failure.Failure(errorCode(718))
 

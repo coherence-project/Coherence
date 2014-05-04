@@ -91,7 +91,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         self.active = active
 
     def going_live(self):
-        self.info("add a view to the DevicesFragment", self._athenaID)
+        self.info("add a view to the DevicesFragment %s", self._athenaID)
         self.page.menu.add_tab('Devices', self.active, self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback(self.remove_me)
@@ -160,7 +160,7 @@ class LoggingFragment(athena.LiveElement, log.Loggable):
         self.active = active
 
     def going_live(self):
-        self.info("add a view to the LoggingFragment",self._athenaID)
+        self.info("add a view to the LoggingFragment %s",self._athenaID)
         self.page.menu.add_tab('Logging',self.active,self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback( self.remove_me)
@@ -219,7 +219,7 @@ class WebUI(athena.LivePage, log.Loggable):
             ch = super(WebUI, self).childFactory(ctx, name)
             if ch is None:
                 p = util.sibpath(__file__, name)
-                self.info('looking for file',p)
+                self.info('looking for file %s',p)
                 if os.path.exists(p):
                     ch = static.File(p)
             return ch

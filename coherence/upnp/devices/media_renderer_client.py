@@ -107,4 +107,6 @@ class MediaRendererClient(log.Loggable):
                                client=self,udn=self.device.udn)
 
     def state_variable_change( self, variable):
-        self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
+        self.info('%(name)r changed from %(old_value)r to %(value)r',
+                  vars(variable))
+

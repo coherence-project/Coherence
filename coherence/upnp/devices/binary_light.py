@@ -63,7 +63,7 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
             self.switch_power_server = SwitchPowerServer(self)
             self._services.append(self.switch_power_server)
         except LookupError,msg:
-            self.warning( 'SwitchPowerServer', msg)
+            self.warning('SwitchPowerServer %s', msg)
             raise LookupError(msg)
 
         upnp_init = getattr(self.backend, "upnp_init", None)

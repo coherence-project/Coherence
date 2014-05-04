@@ -67,21 +67,21 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
         except LookupError,msg:
-            self.warning( 'ConnectionManagerServer', msg)
+            self.warning('ConnectionManagerServer %s', msg)
             raise LookupError(msg)
 
         try:
             self.rendering_control_server = RenderingControlServer(self)
             self._services.append(self.rendering_control_server)
         except LookupError,msg:
-            self.warning( 'RenderingControlServer', msg)
+            self.warning('RenderingControlServer %s', msg)
             raise LookupError(msg)
 
         try:
             self.av_transport_server = AVTransportServer(self)
             self._services.append(self.av_transport_server)
         except LookupError,msg:
-            self.warning( 'AVTransportServer', msg)
+            self.warning('AVTransportServer %s', msg)
             raise LookupError(msg)
 
         upnp_init = getattr(self.backend, "upnp_init", None)

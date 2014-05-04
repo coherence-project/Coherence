@@ -147,7 +147,7 @@ class Service(log.Loggable):
         return client
 
     def remove(self):
-        self.info("removal of ", self.device.friendly_name, self.service_type, self.id)
+        self.info("removal of  %s %s %s", self.device.friendly_name, self.service_type, self.id)
         try:
             self.renew_subscription_call.cancel()
         except:
@@ -157,7 +157,7 @@ class Service(log.Loggable):
         if self.subscription_id != None:
             self.unsubscribe()
         for name,action in self._actions.items():
-            self.debug("remove", name,action)
+            self.debug("remove %s %s", name,action)
             del self._actions[name]
             del action
         for instance,variables in self._variables.items():
@@ -377,8 +377,8 @@ class Service(log.Loggable):
             """
 
         def gotError(failure, url):
-            self.warning('error requesting', url)
-            self.info('failure', failure)
+            self.warning('error requesting %s', url)
+            self.info('failure %s', failure)
             louie.send('Coherence.UPnP.Service.detection_failed', self.device, device=self.device)
 
         #print 'getPage', self.get_scpd_url()
@@ -480,7 +480,7 @@ class ServiceServer(log.Loggable):
         for vdict in self._variables.values():
             notify += [v for v in vdict.values() if v.send_events == True]
 
-        self.info("new_subscriber", subscriber, notify)
+        self.info("new_subscriber %s %s", subscriber, notify)
         if len(notify) <= 0:
             return
 
@@ -998,7 +998,7 @@ class ServiceControl(log.Loggable):
                             if no:  get StateVariable values and
                                     add them to result dict
         """
-        self.debug('get_action_results', result)
+        self.debug('get_action_results %s', result)
         #print 'get_action_results', action, instance
         r = result
         notify = []
@@ -1018,13 +1018,13 @@ class ServiceControl(log.Loggable):
                     #print "r", r
             self.service.propagate_notification(notify)
         #r= { '%sResponse'%action.name: r}
-        self.info( 'action_results unsorted', action.name, r)
+        self.info('action_results unsorted %s %s', action.name, r)
         if len(r) == 0:
             return r
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
             ordered_result[argument.name] = r[argument.name]
-        self.info( 'action_results sorted', action.name, ordered_result)
+        self.info('action_results sorted %s %s', action.name, ordered_result)
         return ordered_result
 
     def soap__generic(self, *args, **kwargs):
@@ -1042,7 +1042,7 @@ class ServiceControl(log.Loggable):
         except:
             instance = 0
 
-        self.info("soap__generic", action, __name__, kwargs)
+        self.info("soap__generic %s %s %s", action, __name__, kwargs)
         del kwargs['soap_methodName']
         if( kwargs.has_key('X_UPnPClient') and
                 kwargs['X_UPnPClient'] == 'XBox'):

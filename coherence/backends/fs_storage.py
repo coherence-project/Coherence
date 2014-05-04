@@ -645,7 +645,7 @@ class FSStore(BackendStore):
                 self.warning("UnicodeDecodeError - there is something wrong with a file located in %r", container.get_path())
 
     def create(self, mimetype, path, parent):
-        self.debug("create ", mimetype, path, type(path), parent)
+        self.debug("create  %s %s %s %s", mimetype, path, type(path), parent)
         UPnPClass = classChooser(mimetype)
         if UPnPClass == None:
             return None
@@ -676,7 +676,7 @@ class FSStore(BackendStore):
         return id
 
     def append(self,path,parent):
-        self.debug("append ", path, type(path), parent)
+        self.debug("append  %s %s %s", path, type(path), parent)
         if os.path.exists(path) == False:
             self.warning("path %r not available - ignored", path)
             return None
@@ -848,7 +848,7 @@ class FSStore(BackendStore):
                             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         def gotError(error, url):
-            self.warning("error requesting", url)
+            self.warning("error requesting %s", url)
             self.info(error)
             os.unlink(tmp_path)
             return failure.Failure(errorCode(718))

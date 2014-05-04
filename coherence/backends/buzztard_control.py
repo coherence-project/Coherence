@@ -30,7 +30,7 @@ class BzClient(LineReceiver, log.Loggable):
         self.factory.clientReady(self)
 
     def lineReceived(self, line):
-        self.debug( "received:", line)
+        self.debug("received: %s", line)
 
         if line == 'flush':
             louie.send('Buzztard.Response.flush', None)
@@ -53,10 +53,10 @@ class BzFactory(protocol.ClientFactory, log.Loggable):
         self.backend = backend
 
     def clientConnectionFailed(self, connector, reason):
-        self.error('connection failed:', reason.getErrorMessage())
+        self.error('connection failed: %s', reason.getErrorMessage())
 
     def clientConnectionLost(self, connector, reason):
-        self.error('connection lost:', reason.getErrorMessage())
+        self.error('connection lost: %s', reason.getErrorMessage())
 
     def startFactory(self):
         self.messageQueue = []
@@ -142,11 +142,11 @@ class BuzztardItem(log.Loggable):
 
 
     def __del__(self):
-        self.debug("BuzztardItem __del__", self.id, self.name)
+        self.debug("BuzztardItem __del__ %s %s", self.id, self.name)
         pass
 
     def remove(self,store):
-        self.debug("BuzztardItem remove", self.id, self.name, self.parent)
+        self.debug("BuzztardItem remove %s %s %s", self.id, self.name, self.parent)
         while len(self.children) > 0:
             child = self.children.pop()
             self.remove_child(child)
@@ -414,7 +414,7 @@ class BuzztardPlayer(log.Loggable):
         self.buzztard.connection.sendMessage('status')
 
     def load( self, uri, metadata):
-        self.debug("load", uri, metadata)
+        self.debug("load %s %s", uri, metadata)
         self.duration = None
         self.metadata = metadata
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)

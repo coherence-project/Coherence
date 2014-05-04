@@ -106,10 +106,11 @@ class MediaServerClient(log.Loggable):
         self.info('detection_completed for %r' % self)
 
     def state_variable_change( self, variable, usn):
-        self.info(variable.name, 'changed from', variable.old_value, 'to', variable.value)
+        self.info('%(name)r changed from %(old_value)r to %(value)r',
+                  vars(variable))
 
     def print_results(self, results):
-        self.info("results=", results)
+        self.info("results= %s", results)
 
     def process_meta( self, results):
         for k,v in results.iteritems():

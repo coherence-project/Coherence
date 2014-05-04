@@ -805,7 +805,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 self.playcontainer = [int(kw['StartingIndex']),uri,elt.getItems()[:],action,kw]
 
                 def browse_more(starting_index,number_returned,total_matches):
-                    self.info("browse_more", starting_index,number_returned,total_matches)
+                    self.info("browse_more %s %s %s", starting_index,number_returned,total_matches)
                     try:
 
                         def handle_error(r):

@@ -62,7 +62,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                             if no:  get StateVariable values and
                                     add them to result dict
         """
-        self.debug('get_action_results', result)
+        self.debug('get_action_results %s', result)
         #print 'get_action_results', action, instance
         notify = []
         for argument in action.get_out_arguments():
@@ -75,7 +75,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                     notify.append(variable)
 
             self.service.propagate_notification(notify)
-        self.info( 'action_results unsorted', action.name, result)
+        self.info('action_results unsorted %s %s', action.name, result)
         if len(result) == 0:
             return result
         ordered_result = OrderedDict()
@@ -102,7 +102,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                     ordered_result[argument.name] = result[argument.name].decode('utf-8')
             else:
                 ordered_result[argument.name] = result[argument.name].decode('utf-8').encode('utf-8')
-        self.info( 'action_results sorted', action.name, ordered_result)
+        self.info('action_results sorted %s %s', action.name, ordered_result)
         return ordered_result
 
     def soap__generic(self, *args, **kwargs):
@@ -120,7 +120,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         except:
             instance = 0
 
-        self.info("soap__generic", action, __name__, kwargs)
+        self.info("soap__generic %s %s %s", action, __name__, kwargs)
         del kwargs['soap_methodName']
 
         in_arguments = action.get_in_arguments()

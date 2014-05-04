@@ -90,7 +90,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
         self.msg('SSDP command %s %s - from %s:%d' % (cmd[0], cmd[1], host, port))
-        self.debug('with headers:', headers)
+        self.debug('with headers: %s', headers)
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
             self.discoveryRequest(headers, (host, port))
@@ -153,7 +153,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         details of the SSDP service announced."""
 
         self.info('Notification from (%s,%d) for %s' % (host, port, headers['nt']))
-        self.debug('Notification headers:', headers)
+        self.debug('Notification headers: %s', headers)
 
         if headers['nts'] == 'ssdp:alive':
             try:
@@ -233,7 +233,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
         resp.extend(('', ''))
-        self.debug('doNotify content', resp)
+        self.debug('doNotify content %s', resp)
         try:
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
@@ -259,7 +259,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             del stcpy['last-seen']
             resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
             resp.extend(('', ''))
-            self.debug('doByebye content', resp)
+            self.debug('doByebye content %s', resp)
             if self.transport:
                 try:
                     self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))

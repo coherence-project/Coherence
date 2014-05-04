@@ -53,8 +53,8 @@ class SOAPProxy(log.Loggable):
         payload = soap_lite.build_soap_call("{%s}%s" % (self.namespace[1], self.action), arguments,
                                             encoding=None)
 
-        self.info("callRemote soapaction: ", self.action,self.url)
-        self.debug("callRemote payload: ", payload)
+        self.info("callRemote soapaction:  %s %s", self.action,self.url)
+        self.debug("callRemote payload:  %s", payload)
 
         def gotError(error, url):
             self.warning("error requesting url %r" % url)
@@ -98,7 +98,7 @@ class SOAPProxy(log.Loggable):
         if response == None:
             """ fallback for improper SOAP action responses """
             response = body.find('%sResponse' % self.action)
-        self.debug("callRemote response ", response)
+        self.debug("callRemote response  %s", response)
         result = {}
         if response != None:
             for elem in response:

@@ -125,8 +125,8 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
             d.addCallbacks(got_playlist, got_error)
             return server.NOT_DONE_YET
              
-        self.info("this is our render method",request.method, request.uri, request.client, request.clientproto)
-        self.info("render", request.getAllHeaders())
+        self.info("this is our render method %s %s %s %s",request.method, request.uri, request.client, request.clientproto)
+        self.info("render %s", request.getAllHeaders())
         if request.clientproto == 'HTTP/1.1':
             self.connection = request.getHeader('connection')
             if self.connection:

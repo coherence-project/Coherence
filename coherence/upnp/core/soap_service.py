@@ -36,7 +36,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
     envelope_attrib = None
 
     def _sendResponse(self, request, response, status=200):
-        self.debug('_sendResponse', status, response)
+        self.debug('_sendResponse %s %s', status, response)
         if status == 200:
             request.setResponseCode(200)
         else:
@@ -58,7 +58,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         self._sendResponse(request, response, status=401)
 
     def _gotResult(self, result, request, methodName, ns):
-        self.debug('_gotResult', result, request, methodName, ns)
+        self.debug('_gotResult %s %s %s %s', result, request, methodName, ns)
 
         response = soap_lite.build_soap_call("{%s}%s" % (ns, methodName), result,
                                                 is_response=True,
@@ -67,7 +67,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         self._sendResponse(request, response)
 
     def _gotError(self, failure, request, methodName, ns):
-        self.info('_gotError', failure, failure.value)
+        self.info('_gotError %s %s', failure, failure.value)
         e = failure.value
         status = 500
 
@@ -92,7 +92,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         """Handle a SOAP command."""
         data = request.content.read()
         headers = request.getAllHeaders()
-        self.info('soap_request:', headers)
+        self.info('soap_request: %s', headers)
 
         # allow external check of data
         louie.send('UPnPTest.Control.Client.CommandReceived', None, headers, data)
@@ -153,7 +153,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
                 keywords['X_UPnPClient'] = 'Philips-TV'
             for k, v in kwargs.items():
                 keywords[str(k)] = v
-            self.info('call', methodName, keywords)
+            self.info('call %s %s', methodName, keywords)
             if hasattr(function, "useKeywords"):
                 d = defer.maybeDeferred(function, **keywords)
             else:

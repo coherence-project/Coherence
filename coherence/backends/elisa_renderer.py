@@ -114,7 +114,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def query_position( self):
         def got_result(result):
-            self.info("query_position", result)
+            self.info("query_position %s", result)
             position, duration = result
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)

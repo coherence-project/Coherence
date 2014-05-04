@@ -62,16 +62,16 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        self.info("ProxyStream requestFinished:",result)
+        self.info("ProxyStream requestFinished: %s",result)
         if hasattr(self,'connection'):
             self.connection.transport.loseConnection()
 
 
     def render(self, request):
 
-        self.info("VideoProxy render", request, self.stream_url, self.video_url)
-        self.info("VideoProxy headers:", request.getAllHeaders())
-        self.info("VideoProxy id:", self.id)
+        self.info("VideoProxy render %s %s %s", request, self.stream_url, self.video_url)
+        self.info("VideoProxy headers: %s", request.getAllHeaders())
+        self.info("VideoProxy id: %s", self.id)
 
         d = request.notifyFinish()
         d.addBoth(self.requestFinished)
@@ -113,7 +113,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         return server.NOT_DONE_YET
 
     def followRedirects(self, request):
-        self.info("HTTP redirect ", request, self.stream_url)
+        self.info("HTTP redirect  %s %s", request, self.stream_url)
         d = utils.getPage(self.stream_url, method="HEAD", followRedirect=0)
 
         def gotHeader(result,request):
@@ -135,7 +135,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 self.resetUri(self.stream_url)
                 return self.followRedirects(request)
             else:
-                self.warning("Error while retrieving page header for URI ", self.stream_url)
+                self.warning("Error while retrieving page header for URI  %s", self.stream_url)
                 self.requestFinished(None)
                 return error
 
@@ -235,7 +235,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             filesize = os.path.getsize(filepath)
             if ((filesize >= buffer_size) or (filesize == self.filesize)):
                 rendering = True
-                self.info("Render file", filepath, self.filesize, filesize, buffer_size)
+                self.info("Render file %s %s %s %s", filepath, self.filesize, filesize, buffer_size)
                 bufferFile = utils.BufferFile(filepath, self.filesize, MPEG4_MIMETYPE)
                 bufferFile.type = self.getMimetype()
                 bufferFile.encoding = None

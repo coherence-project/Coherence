@@ -240,12 +240,12 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
             local_protocol_infos = self.get_variable('SinkProtocolInfo').value
         if self.device.device_type == 'MediaServer':
             local_protocol_infos = self.get_variable('SourceProtocolInfo').value
-        self.debug('ProtocalInfos:',RemoteProtocolInfo, '--', local_protocol_infos)
+        self.debug('ProtocalInfos: %s -- %s',RemoteProtocolInfo, local_protocol_infos)
 
         try:
             remote_protocol,remote_network,remote_content_format,_ = RemoteProtocolInfo.split(':')
         except:
-            self.warning("unable to process RemoteProtocolInfo", RemoteProtocolInfo)
+            self.warning("unable to process RemoteProtocolInfo %s", RemoteProtocolInfo)
             return failure.Failure(errorCode(701))
 
         for protocol_info in local_protocol_infos.split(','):

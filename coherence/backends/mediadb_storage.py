@@ -634,7 +634,7 @@ class MediaStore(BackendStore):
                 item = self.db.getItemByID(id-1000)
             except:
                 item = None
-        self.info("get_by_id found", item)
+        self.info("get_by_id found %s", item)
         return item
 
     def upnp_init(self):

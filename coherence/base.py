@@ -63,7 +63,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
         try:
             return self.coherence.children[name]
         except:
-            self.warning("Cannot find device for requested name:", name)
+            self.warning("Cannot find device for requested name: %s", name)
             request.setResponseCode(404)
             return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name,'text/html')
 
@@ -637,12 +637,12 @@ class Coherence(log.Loggable):
         return [d for d in self.devices if d.manifestation == 'remote']
 
     def create_device(self, device_type, infos):
-        self.info("creating ", infos['ST'],infos['USN'])
+        self.info("creating  %s %s", infos['ST'],infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
-            self.info("creating upnp:rootdevice ", infos['USN'])
+            self.info("creating upnp:rootdevice  %s", infos['USN'])
             root = RootDevice(infos)
         else:
-            self.info("creating device/service ",infos['USN'])
+            self.info("creating device/service  %s",infos['USN'])
             root_id = infos['USN'][:-len(infos['ST'])-2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
@@ -652,11 +652,11 @@ class Coherence(log.Loggable):
         #    self.callback("new_device", infos['ST'], infos)
 
     def add_device(self, device):
-        self.info("adding device",device.get_id(),device.get_usn(),device.friendly_device_type)
+        self.info("adding device %s %s %s",device.get_id(),device.get_usn(),device.friendly_device_type)
         self.devices.append(device)
 
     def remove_device(self, device_type, infos):
-        self.info("removed device",infos['ST'],infos['USN'])
+        self.info("removed device %s %s",infos['ST'],infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
             louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])

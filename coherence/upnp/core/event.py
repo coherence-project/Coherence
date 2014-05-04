@@ -46,9 +46,9 @@ class EventServer(resource.Resource, log.Loggable):
         louie.send('UPnP.Event.Server.message_received', None, command, headers, data)
 
         if request.code != 200:
-            self.info("data:", data)
+            self.info("data: %s", data)
         else:
-            self.debug("data:", data)
+            self.debug("data: %s", data)
             headers = request.getAllHeaders()
             sid = headers['sid']
             try:
@@ -114,7 +114,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         louie.send('UPnP.Event.Client.message_received', None, command, headers, data)
 
         if request.code != 200:
-            self.debug("data:", data)
+            self.debug("data: %s", data)
         else:
             headers = request.getAllHeaders()
             try:
@@ -159,7 +159,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         louie.send('UPnP.Event.Client.message_received', None, command, headers, data)
 
         if request.code != 200:
-            self.debug("data:", data)
+            self.debug("data: %s", data)
         else:
             headers = request.getAllHeaders()
             try:

@@ -84,7 +84,7 @@ class StateVariable(log.Loggable):
         self.never_evented = utils.means_true(value)
 
     def update(self, value):
-        self.info("variable check for update", self.name, value, self.service)
+        self.info("variable check for update %s %s %s", self.name, value, self.service)
         if not isinstance( self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
                 old_value = self.value
@@ -174,7 +174,7 @@ class StateVariable(log.Loggable):
         if new_value == 'Coherence_Value_Error':
             return
         if new_value == self.value:
-            self.info("variable NOT updated, no value change", self.name, self.value)
+            self.info("variable NOT updated, no value change %s %s", self.name, self.value)
             return
         self.old_value = self.value
         self.value = new_value
@@ -190,7 +190,7 @@ class StateVariable(log.Loggable):
             self.updated = True
             if self.service.last_change != None:
                 self.service.last_change.updated = True
-        self.info("variable updated", self.name, self.value)
+        self.info("variable updated %s %s", self.name, self.value)
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
