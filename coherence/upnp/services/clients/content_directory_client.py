@@ -38,8 +38,8 @@ class ContentDirectoryClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
     def get_search_capabilities(self):
         action = self.service.get_action('GetSearchCapabilities')
@@ -85,17 +85,17 @@ class ContentDirectoryClient:
                 i['id'] = item.id
                 i['title'] = item.title
                 i['parent_id'] = item.parentID
-                if hasattr(item,'childCount'):
+                if hasattr(item, 'childCount'):
                     i['child_count'] = str(item.childCount)
-                if hasattr(item,'date') and item.date:
+                if hasattr(item, 'date') and item.date:
                     i['date'] = item.date
-                if hasattr(item,'album') and item.album:
+                if hasattr(item, 'album') and item.album:
                     i['album'] = item.album
-                if hasattr(item,'artist') and item.artist:
+                if hasattr(item, 'artist') and item.artist:
                     i['artist'] = item.artist
-                if hasattr(item,'albumArtURI') and item.albumArtURI:
+                if hasattr(item, 'albumArtURI') and item.albumArtURI:
                     i['album_art_uri'] = item.albumArtURI
-                if hasattr(item,'res'):
+                if hasattr(item, 'res'):
                     resources = {}
                     for res in item.res:
                         url = res.data
@@ -108,10 +108,10 @@ class ContentDirectoryClient:
         action = self.service.get_action('Browse')
         d = action.call(ObjectID=object_id,
                             BrowseFlag=browse_flag,
-                            Filter=filter,SortCriteria=sort_criteria,
+                            Filter=filter, SortCriteria=sort_criteria,
                             StartingIndex=str(starting_index),
                             RequestedCount=str(requested_count))
-        if process_result in [True,1,'1','true','True','yes','Yes']:
+        if process_result in [True, 1, '1', 'true', 'True', 'yes', 'Yes']:
             d.addCallback(got_process_result)
         #else:
         #    d.addCallback(got_result)
@@ -144,15 +144,15 @@ class ContentDirectoryClient:
         return d
 
     def dict2item(self, elements):
-        upnp_class = DIDLLite.upnp_classes.get(elements.get('upnp_class',None),None)
+        upnp_class = DIDLLite.upnp_classes.get(elements.get('upnp_class', None), None)
         if upnp_class is None:
             return None
 
         del elements['upnp_class']
         item = upnp_class(id='',
-                          parentID=elements.get('parentID',None),
-                          title=elements.get('title',None),
-                          restricted=elements.get('restricted',None))
+                          parentID=elements.get('parentID', None),
+                          title=elements.get('title', None),
+                          restricted=elements.get('restricted', None))
         for k, v in elements.items():
             attribute = getattr(item, k, None)
             if attribute is None:
@@ -164,7 +164,7 @@ class ContentDirectoryClient:
     def create_object(self, container_id, elements):
         if isinstance(elements, dict):
             elements = self.dict2item(elements)
-        if isinstance(elements,DIDLLite.Object):
+        if isinstance(elements, DIDLLite.Object):
             didl = DIDLLite.DIDLElement()
             didl.addItem(elements)
             elements = didl.toString()

@@ -65,29 +65,29 @@ class ControlPoint(object):
 
     def _connect(self):
         self.bus = dbus.SessionBus()
-        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+        self.coherence = self.bus.get_object(BUS_NAME, OBJECT_PATH)
 
 
 class DeviceExportWidget(object):
 
-    def __init__(self,name='Nautilus',standalone=True,root=None):
+    def __init__(self, name='Nautilus', standalone=True, root=None):
         self.root = root
         self.uuid = None
         self.name = name
         self.standalone = standalone
 
-        icon = resource_filename(__name__, os.path.join('icons','emblem-new.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'emblem-new.png'))
         self.new_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, os.path.join('icons','emblem-shared.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'emblem-shared.png'))
         self.shared_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, os.path.join('icons','emblem-unreadable.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'emblem-unreadable.png'))
         self.unshared_icon = gtk.gdk.pixbuf_new_from_file(icon)
 
-        self.filestore = gtk.ListStore(str,gtk.gdk.Pixbuf)
+        self.filestore = gtk.ListStore(str, gtk.gdk.Pixbuf)
 
         self.coherence = ControlPoint().coherence
 
-    def build_ui(self,root=None):
+    def build_ui(self, root=None):
         if root != None:
             self.root = root
         self.window = gtk.VBox(homogeneous=False, spacing=0)
@@ -102,30 +102,30 @@ class DeviceExportWidget(object):
         column.pack_start(text_cell, True)
 
         column.set_attributes(text_cell, text=0)
-        column.add_attribute(icon_cell, "pixbuf",1)
+        column.add_attribute(icon_cell, "pixbuf", 1)
 
-        self.window.pack_start(self.fileview,expand=True,fill=True)
+        self.window.pack_start(self.fileview, expand=True, fill=True)
 
         buttonbox = gtk.HBox(homogeneous=False, spacing=0)
         button = gtk.Button(stock=gtk.STOCK_ADD)
         button.set_sensitive(False)
         button.connect("clicked", self.new_files)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
         button = gtk.Button(stock=gtk.STOCK_REMOVE)
         #button.set_sensitive(False)
         button.connect("clicked", self.remove_files)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
         button = gtk.Button(stock=gtk.STOCK_CANCEL)
         button.connect("clicked", self.share_cancel)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
         button = gtk.Button(stock=gtk.STOCK_APPLY)
         button.connect("clicked", self.share_files)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
 
-        self.window.pack_end(buttonbox,expand=False,fill=False)
+        self.window.pack_end(buttonbox, expand=False, fill=False)
         return self.window
 
-    def share_cancel(self,button):
+    def share_cancel(self, button):
         for row in self.filestore:
             print row
             if row[1] == self.new_icon:
@@ -139,7 +139,7 @@ class DeviceExportWidget(object):
         else:
             self.root.hide()
 
-    def share_files(self,button):
+    def share_files(self, button):
         print "share_files with", self.uuid
         folders = []
         for row in self.filestore:
@@ -151,21 +151,21 @@ class DeviceExportWidget(object):
         if self.uuid == None:
             if len(folders) > 0:
                 self.uuid = self.coherence.add_plugin('FSStore', {'name': self.name,
-                                                              'version':'1',
+                                                              'version': '1',
                                                               'create_root': 'yes',
                                                               'import_folder': '/tmp/UPnP Imports',
-                                                              'content':','.join(folders)},
+                                                              'content': ','.join(folders)},
                                             dbus_interface=BUS_NAME)
                 #self.coherence.pin('Nautilus::MediaServer::%d'%os.getpid(),self.uuid)
         else:
-            result = self.coherence.call_plugin(self.uuid,'update_config',{'content':','.join(folders)})
+            result = self.coherence.call_plugin(self.uuid, 'update_config', {'content': ','.join(folders)})
             if result != self.uuid:
                 print "something failed", result
         for row in self.filestore:
             row[1] = self.shared_icon
         self.root.hide()
 
-    def add_files(self,files):
+    def add_files(self, files):
         print "add_files", files
         for filename in files:
             for row in self.filestore:
@@ -174,13 +174,13 @@ class DeviceExportWidget(object):
             else:
                 self.add_file(filename)
 
-    def add_file(self,filename):
-        self.filestore.append([os.path.abspath(filename),self.new_icon])
+    def add_file(self, filename):
+        self.filestore.append([os.path.abspath(filename), self.new_icon])
 
-    def new_files(self,button):
+    def new_files(self, button):
         print "new_files"
 
-    def remove_files(self,button):
+    def remove_files(self, button):
         print "remove_files"
         selection = self.fileview.get_selection()
         print selection
@@ -193,7 +193,7 @@ class DeviceExportWidget(object):
 
 class DeviceImportWidget(object):
 
-    def __init__(self,standalone=True,root=None):
+    def __init__(self, standalone=True, root=None):
         self.standalone = standalone
         self.root = root
         self.build_ui()
@@ -206,7 +206,7 @@ class DeviceImportWidget(object):
                                    str,  # 1: device udn
                                    gtk.gdk.Pixbuf)
 
-        icon = resource_filename(__name__, os.path.join('icons','network-server.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'network-server.png'))
         self.device_icon = gtk.gdk.pixbuf_new_from_file(icon)
 
         # create a CellRenderers to render the data
@@ -217,7 +217,7 @@ class DeviceImportWidget(object):
         self.combobox.pack_start(text_cell, True)
 
         self.combobox.set_attributes(text_cell, text=0)
-        self.combobox.add_attribute(icon_cell, "pixbuf",2)
+        self.combobox.add_attribute(icon_cell, "pixbuf", 2)
 
         self.combobox.set_model(self.store)
 
@@ -228,7 +228,7 @@ class DeviceImportWidget(object):
         self.store.set_value(item, 2, None)
         self.combobox.set_active(0)
 
-        self.window.pack_start(self.combobox,expand=False,fill=False)
+        self.window.pack_start(self.combobox, expand=False, fill=False)
 
         self.filestore = gtk.ListStore(str)
 
@@ -240,69 +240,69 @@ class DeviceImportWidget(object):
         column.pack_start(text_cell, True)
         column.set_attributes(text_cell, text=0)
 
-        self.window.pack_start(self.fileview,expand=True,fill=True)
+        self.window.pack_start(self.fileview, expand=True, fill=True)
 
         buttonbox = gtk.HBox(homogeneous=False, spacing=0)
         button = gtk.Button(stock=gtk.STOCK_ADD)
         button.set_sensitive(False)
         button.connect("clicked", self.new_files)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
         button = gtk.Button(stock=gtk.STOCK_REMOVE)
         button.set_sensitive(False)
         button.connect("clicked", self.remove_files)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
         button = gtk.Button(stock=gtk.STOCK_CANCEL)
         if self.standalone:
             button.connect("clicked", gtk.main_quit)
         else:
             button.connect("clicked", lambda x: self.root.destroy())
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
         button = gtk.Button(stock=gtk.STOCK_APPLY)
         button.connect("clicked", self.import_files)
-        buttonbox.pack_start(button, expand=False,fill=False, padding=2)
+        buttonbox.pack_start(button, expand=False, fill=False, padding=2)
 
-        self.window.pack_end(buttonbox,expand=False,fill=False)
+        self.window.pack_end(buttonbox, expand=False, fill=False)
 
-    def add_file(self,filename):
+    def add_file(self, filename):
         self.filestore.append([os.path.abspath(filename)])
 
-    def new_files(self,button):
+    def new_files(self, button):
         print "new_files"
 
-    def remove_files(self,button):
+    def remove_files(self, button):
         print "remove_files"
 
-    def import_files(self,button):
+    def import_files(self, button):
         print "import_files"
         active = self.combobox.get_active()
         if active <= 0:
             print "no MediaServer selected"
             return None
-        friendlyname, uuid,_ = self.store[active]
+        friendlyname, uuid, _ = self.store[active]
 
         try:
             row = self.filestore[0]
-            print 'import to', friendlyname,os.path.basename(row[0])
+            print 'import to', friendlyname, os.path.basename(row[0])
 
             def success(r):
-                print 'success',r
+                print 'success', r
                 self.filestore.remove(self.filestore.get_iter(0))
                 self.import_files(None)
 
             def reply(r):
-                print 'reply',r['Result'], r['ObjectID']
+                print 'reply', r['Result'], r['ObjectID']
                 from coherence.upnp.core import DIDLLite
 
                 didl = DIDLLite.DIDLElement.fromString(r['Result'])
                 item = didl.getItems()[0]
                 res = item.res.get_matching(['*:*:*:*'], protocol_type='http-get')
                 if len(res) > 0:
-                    print 'importURI',res[0].importUri
-                    self.coherence.put_resource(res[0].importUri,row[0],
+                    print 'importURI', res[0].importUri
+                    self.coherence.put_resource(res[0].importUri, row[0],
                                                 reply_handler=success,
                                                 error_handler=self.handle_error)
 
-            mimetype,_ = mimetypes.guess_type(row[0], strict=False)
+            mimetype, _ = mimetypes.guess_type(row[0], strict=False)
             if mimetype.startswith('image/'):
                 upnp_class = 'object.item.imageItem'
             elif mimetype.startswith('video/'):
@@ -312,8 +312,8 @@ class DeviceImportWidget(object):
             else:
                 upnp_class = 'object.item'
 
-            self.coherence.create_object(uuid,'DLNA.ORG_AnyContainer',
-                                            {'parentID':'DLNA.ORG_AnyContainer','upnp_class':upnp_class,'title':os.path.basename(row[0])},
+            self.coherence.create_object(uuid, 'DLNA.ORG_AnyContainer',
+                                            {'parentID': 'DLNA.ORG_AnyContainer', 'upnp_class': upnp_class, 'title': os.path.basename(row[0])},
                                             reply_handler=reply,
                                             error_handler=self.handle_error)
 
@@ -321,10 +321,10 @@ class DeviceImportWidget(object):
             pass
 
 
-    def handle_error(self,error):
+    def handle_error(self, error):
         print error
 
-    def handle_devices_reply(self,devices):
+    def handle_devices_reply(self, devices):
         for device in devices:
             if device['device_type'].split(':')[3] == 'MediaServer':
                 self.media_server_found(device)
@@ -342,12 +342,12 @@ class DeviceImportWidget(object):
         self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_removed', self.media_server_removed, dbus_interface=BUS_NAME)
         self.devices = {}
 
-    def media_server_found(self,device,udn=None):
+    def media_server_found(self, device, udn=None):
         for service in device['services']:
             service_type = service.split('/')[-1]
             if service_type == 'ContentDirectory':
 
-                def got_icons(r,udn,item):
+                def got_icons(r, udn, item):
                     print 'got_icons', r
                     for icon in r:
                         ###FIXME, we shouldn't just use the first icon
@@ -355,13 +355,13 @@ class DeviceImportWidget(object):
                         icon_loader.write(urllib.urlopen(str(icon['url'])).read())
                         icon_loader.close()
                         icon = icon_loader.get_pixbuf()
-                        icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
+                        icon = icon.scale_simple(16, 16, gtk.gdk.INTERP_BILINEAR)
                         self.store.set_value(item, 2, icon)
                         break
 
-                def reply(r,udn):
+                def reply(r, udn):
                     if 'CreateObject' in r:
-                        self.devices[udn] = {'ContentDirectory':{}}
+                        self.devices[udn] = {'ContentDirectory': {}}
                         self.devices[udn]['ContentDirectory']['actions'] = r
 
                         item = self.store.append(None)
@@ -369,13 +369,13 @@ class DeviceImportWidget(object):
                         self.store.set_value(item, 1, str(device['udn']))
                         self.store.set_value(item, 2, self.device_icon)
 
-                        d = self.bus.get_object(BUS_NAME + '.device',device['path'])
-                        d.get_device_icons(reply_handler=lambda x: got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
+                        d = self.bus.get_object(BUS_NAME + '.device', device['path'])
+                        d.get_device_icons(reply_handler=lambda x: got_icons(x, str(device['udn']), item), error_handler=self.handle_error)
 
-                s = self.bus.get_object(BUS_NAME + '.service',service)
-                s.get_available_actions(reply_handler=lambda x: reply(x,str(device['udn'])),error_handler=self.handle_error)
+                s = self.bus.get_object(BUS_NAME + '.service', service)
+                s.get_available_actions(reply_handler=lambda x: reply(x, str(device['udn'])), error_handler=self.handle_error)
 
-    def media_server_removed(self,udn):
+    def media_server_removed(self, udn):
         row_count = 0
         for row in self.store:
             if udn == row[1]:
@@ -387,7 +387,7 @@ class DeviceImportWidget(object):
 
 class TreeWidget(object):
 
-    def __init__(self,cb_item_dbl_click=None,
+    def __init__(self, cb_item_dbl_click=None,
                       cb_resource_chooser=None):
 
         self.cb_item_dbl_click = cb_item_dbl_click
@@ -401,15 +401,15 @@ class TreeWidget(object):
         self.window = gtk.ScrolledWindow()
         self.window.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
-        icon = resource_filename(__name__, os.path.join('icons','network-server.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'network-server.png'))
         self.device_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, os.path.join('icons','folder.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'folder.png'))
         self.folder_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, os.path.join('icons','audio-x-generic.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'audio-x-generic.png'))
         self.audio_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, os.path.join('icons','video-x-generic.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'video-x-generic.png'))
         self.video_icon = gtk.gdk.pixbuf_new_from_file(icon)
-        icon = resource_filename(__name__, os.path.join('icons','image-x-generic.png'))
+        icon = resource_filename(__name__, os.path.join('icons', 'image-x-generic.png'))
         self.image_icon = gtk.gdk.pixbuf_new_from_file(icon)
 
         self.store = gtk.TreeStore(str,  # 0: name or title
@@ -435,7 +435,7 @@ class TreeWidget(object):
         self.column.pack_start(text_cell, True)
 
         self.column.set_attributes(text_cell, text=0)
-        self.column.add_attribute(icon_cell, "pixbuf",6)
+        self.column.add_attribute(icon_cell, "pixbuf", 6)
         #self.column.set_cell_data_func(self.cellpb, get_icon)
 
         #self.treeview.insert_column_with_attributes(-1, 'MediaServers', cell, text=0)
@@ -453,7 +453,7 @@ class TreeWidget(object):
         def end_scrolling():
             self.we_are_scrolling = None
 
-        def start_scrolling(w,e):
+        def start_scrolling(w, e):
             if self.we_are_scrolling != None:
                 gobject.source_remove(self.we_are_scrolling)
             self.we_are_scrolling = gobject.timeout_add(800, end_scrolling)
@@ -469,18 +469,18 @@ class TreeWidget(object):
         try:
             path = self.treeview.get_dest_row_at_pos(x, y)
             iter = self.store.get_iter(path[0])
-            title,object_id,upnp_class,item = self.store.get(iter,NAME_COLUMN,ID_COLUMN,UPNP_CLASS_COLUMN,DIDL_COLUMN)
+            title, object_id, upnp_class, item = self.store.get(iter, NAME_COLUMN, ID_COLUMN, UPNP_CLASS_COLUMN, DIDL_COLUMN)
             from coherence.upnp.core import DIDLLite
             if upnp_class == 'object.item.videoItem':
                 self.tooltip_path = object_id
                 item = DIDLLite.DIDLElement.fromString(item).getItems()[0]
-                tooltip_icon, = self.store.get(iter,TOOLTIP_ICON_COLUMN)
+                tooltip_icon, = self.store.get(iter, TOOLTIP_ICON_COLUMN)
                 if tooltip_icon != None:
                     tooltip.set_icon(tooltip_icon)
                 else:
                     tooltip.set_icon(self.video_icon)
                     for res in item.res:
-                        protocol,network,content_format,additional_info = res.protocolInfo.split(':')
+                        protocol, network, content_format, additional_info = res.protocolInfo.split(':')
                         if(content_format == 'image/jpeg' and
                            'DLNA.ORG_PN=JPEG_TN' in additional_info.split(';')):
                             icon_loader = gtk.gdk.PixbufLoader()
@@ -491,13 +491,13 @@ class TreeWidget(object):
                             self.store.set_value(iter, TOOLTIP_ICON_COLUMN, icon)
                             #print "got poster", icon
                             break
-                title = title.replace('&','&amp;')
+                title = title.replace('&', '&amp;')
                 try:
-                    director = item.director.replace('&','&amp;')
+                    director = item.director.replace('&', '&amp;')
                 except AttributeError:
                     director = ""
                 try:
-                    description = item.description.replace('&','&amp;')
+                    description = item.description.replace('&', '&amp;')
                 except AttributeError:
                     description = ""
                 tooltip.set_markup("<b>%s</b>\n"
@@ -522,10 +522,10 @@ class TreeWidget(object):
             return self.cb_item_right_click(widget, event)
         return 0
 
-    def handle_error(self,error):
+    def handle_error(self, error):
         print error
 
-    def handle_devices_reply(self,devices):
+    def handle_devices_reply(self, devices):
         for device in devices:
             if device['device_type'].split(':')[3] == 'MediaServer':
                 self.media_server_found(device)
@@ -545,7 +545,7 @@ class TreeWidget(object):
         self.coherence.connect_to_signal('UPnP_ControlPoint_MediaServer_removed', self.media_server_removed, dbus_interface=BUS_NAME)
         self.devices = {}
 
-    def device_has_action(self,udn,service,action):
+    def device_has_action(self, udn, service, action):
         try:
             self.devices[udn][service]['actions'].index(action)
             return True
@@ -589,13 +589,13 @@ class TreeWidget(object):
                             while child:
                                 self.store.remove(child)
                                 child = self.store.iter_children(match_iter)
-                            self.browse(self.treeview,path,None,
-                                        starting_index=0,requested_count=0,force=True,expand=expanded)
+                            self.browse(self.treeview, path, None,
+                                        starting_index=0, requested_count=0, force=True, expand=expanded)
 
                         break
                     row_count += 1
 
-    def media_server_found(self,device,udn=None):
+    def media_server_found(self, device, udn=None):
         #print "media_server_found", device['friendly_name']
         item = self.store.append(None)
         self.store.set_value(item, NAME_COLUMN, device['friendly_name'])
@@ -607,19 +607,19 @@ class TreeWidget(object):
         self.store.set_value(item, DIDL_COLUMN, '')
         self.store.set_value(item, TOOLTIP_ICON_COLUMN, None)
 
-        self.store.append(item, ('...loading...','','placeholder',-1,'','',None,'',None))
+        self.store.append(item, ('...loading...', '', 'placeholder', -1, '', '', None, '', None))
 
-        self.devices[str(device['udn'])] = {'ContentDirectory':{}}
+        self.devices[str(device['udn'])] = {'ContentDirectory': {}}
         for service in device['services']:
             service_type = service.split('/')[-1]
             if service_type == 'ContentDirectory':
                 self.store.set_value(item, SERVICE_COLUMN, service)
                 self.devices[str(device['udn'])]['ContentDirectory'] = {}
 
-                def reply(r,udn):
+                def reply(r, udn):
                     self.devices[udn]['ContentDirectory']['actions'] = r
 
-                def got_icons(r,udn,item):
+                def got_icons(r, udn, item):
                     #print 'got_icons', r
                     for icon in r:
                         ###FIXME, we shouldn't just use the first icon
@@ -627,25 +627,25 @@ class TreeWidget(object):
                         icon_loader.write(urllib.urlopen(str(icon['url'])).read())
                         icon_loader.close()
                         icon = icon_loader.get_pixbuf()
-                        icon = icon.scale_simple(16,16,gtk.gdk.INTERP_BILINEAR)
+                        icon = icon.scale_simple(16, 16, gtk.gdk.INTERP_BILINEAR)
                         self.store.set_value(item, ICON_COLUMN, icon)
                         break
 
 
                 def reply_subscribe(udn, service, r):
-                    for k,v in r.iteritems():
-                        self.state_variable_change(udn,service,k,v)
+                    for k, v in r.iteritems():
+                        self.state_variable_change(udn, service, k, v)
 
-                s = self.bus.get_object(BUS_NAME + '.service',service)
+                s = self.bus.get_object(BUS_NAME + '.service', service)
                 s.connect_to_signal('StateVariableChanged', self.state_variable_change, dbus_interface=BUS_NAME + '.service')
-                s.get_available_actions(reply_handler=lambda x: reply(x,str(device['udn'])),error_handler=self.handle_error)
-                s.subscribe(reply_handler=reply_subscribe,error_handler=self.handle_error)
+                s.get_available_actions(reply_handler=lambda x: reply(x, str(device['udn'])), error_handler=self.handle_error)
+                s.subscribe(reply_handler=reply_subscribe, error_handler=self.handle_error)
 
-                d = self.bus.get_object(BUS_NAME + '.device',device['path'])
-                d.get_device_icons(reply_handler=lambda x: got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
+                d = self.bus.get_object(BUS_NAME + '.device', device['path'])
+                d.get_device_icons(reply_handler=lambda x: got_icons(x, str(device['udn']), item), error_handler=self.handle_error)
 
 
-    def media_server_removed(self,udn):
+    def media_server_removed(self, udn):
         #print "media_server_removed", udn
         row_count = 0
         for row in self.store:
@@ -655,20 +655,20 @@ class TreeWidget(object):
                 break
             row_count += 1
 
-    def row_expanded(self,view,iter,row_path):
+    def row_expanded(self, view, iter, row_path):
         #print "row_expanded", view,iter,row_path
         child = self.store.iter_children(iter)
         if child:
-            upnp_class, = self.store.get(child,UPNP_CLASS_COLUMN)
+            upnp_class, = self.store.get(child, UPNP_CLASS_COLUMN)
             if upnp_class == 'placeholder':
-                self.browse(view,row_path,None)
+                self.browse(view, row_path, None)
 
-    def browse(self,view,row_path,column,starting_index=0,requested_count=0,force=False,expand=False):
+    def browse(self, view, row_path, column, starting_index=0, requested_count=0, force=False, expand=False):
         #print "browse", view,row_path,column,starting_index,requested_count,force
         iter = self.store.get_iter(row_path)
         child = self.store.iter_children(iter)
         if child:
-            upnp_class, = self.store.get(child,UPNP_CLASS_COLUMN)
+            upnp_class, = self.store.get(child, UPNP_CLASS_COLUMN)
             if upnp_class != 'placeholder':
                 if force == False:
                     if view.row_expanded(row_path):
@@ -677,13 +677,13 @@ class TreeWidget(object):
                         view.expand_row(row_path, False)
                     return
 
-        title,object_id,upnp_class = self.store.get(iter,NAME_COLUMN,ID_COLUMN,UPNP_CLASS_COLUMN)
+        title, object_id, upnp_class = self.store.get(iter, NAME_COLUMN, ID_COLUMN, UPNP_CLASS_COLUMN)
         if(not upnp_class.startswith('object.container') and
            not upnp_class == 'root'):
-            url, = self.store.get(iter,SERVICE_COLUMN)
+            url, = self.store.get(iter, SERVICE_COLUMN)
             if url == '':
                 return
-            print "request to play:", title,object_id,url
+            print "request to play:", title, object_id, url
             if self.cb_item_dbl_click != None:
                 self.cb_item_dbl_click(url)
             return
@@ -694,14 +694,14 @@ class TreeWidget(object):
 
             child = self.store.iter_children(iter)
             if child:
-                upnp_class, = self.store.get(child,UPNP_CLASS_COLUMN)
+                upnp_class, = self.store.get(child, UPNP_CLASS_COLUMN)
                 if upnp_class == 'placeholder':
                     self.store.remove(child)
 
-            title, = self.store.get(iter,NAME_COLUMN)
+            title, = self.store.get(iter, NAME_COLUMN)
             try:
                 title = title[:title.rindex('(')]
-                self.store.set_value(iter,NAME_COLUMN, "%s(%d)" % (title,int(r['TotalMatches'])))
+                self.store.set_value(iter, NAME_COLUMN, "%s(%d)" % (title, int(r['TotalMatches'])))
             except ValueError:
                 pass
             didl = DIDLLite.DIDLElement.fromString(r['Result'])
@@ -709,10 +709,10 @@ class TreeWidget(object):
                 #print item.title, item.id, item.upnp_class
                 if item.upnp_class.startswith('object.container'):
                     icon = self.folder_icon
-                    service, = self.store.get(iter,SERVICE_COLUMN)
+                    service, = self.store.get(iter, SERVICE_COLUMN)
                     child_count = item.childCount
                     try:
-                        title = "%s (%d)" % (item.title,item.childCount)
+                        title = "%s (%d)" % (item.title, item.childCount)
                     except TypeError:
                         title = "%s (n/a)" % item.title
                         child_count = -1
@@ -728,7 +728,7 @@ class TreeWidget(object):
                             res = item.res.get_matching(['*:*:*:*'], protocol_type='http-get')
                         if len(res) > 0:
                             res = res[0]
-                            remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                            remote_protocol, remote_network, remote_content_format, _ = res.protocolInfo.split(':')
                             service = res.data
 
                     child_count = -1
@@ -742,9 +742,9 @@ class TreeWidget(object):
 
                 stored_didl = DIDLLite.DIDLElement()
                 stored_didl.addItem(item)
-                new_iter = self.store.append(iter, (title,item.id,item.upnp_class,child_count,'',service,icon,stored_didl.toString(),None))
+                new_iter = self.store.append(iter, (title, item.id, item.upnp_class, child_count, '', service, icon, stored_didl.toString(), None))
                 if item.upnp_class.startswith('object.container'):
-                    self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None,'',None))
+                    self.store.append(new_iter, ('...loading...', '', 'placeholder', -1, '', '', None, '', None))
 
 
             if((int(r['TotalMatches']) > 0 and force == False) or
@@ -754,29 +754,29 @@ class TreeWidget(object):
             if(requested_count != int(r['NumberReturned']) and
                int(r['NumberReturned']) < (int(r['TotalMatches']) - starting_index)):
                 print "seems we have been returned only a part of the result"
-                print "requested %d, starting at %d" % (requested_count,starting_index)
+                print "requested %d, starting at %d" % (requested_count, starting_index)
                 print "got %d out of %d" % (int(r['NumberReturned']), int(r['TotalMatches']))
                 print "requesting more starting now at %d" % (starting_index + int(r['NumberReturned']))
 
-                self.browse(view,row_path,column,
+                self.browse(view, row_path, column,
                             starting_index=starting_index + int(r['NumberReturned']),
                             force=True)
 
-        service, = self.store.get(iter,SERVICE_COLUMN)
+        service, = self.store.get(iter, SERVICE_COLUMN)
         if service == '':
             return
-        s = self.bus.get_object(BUS_NAME + '.service',service)
+        s = self.bus.get_object(BUS_NAME + '.service', service)
         s.action('browse',
-                 {'object_id':object_id,'process_result':'no',
-                  'starting_index':str(starting_index),'requested_count':str(requested_count)},
-                 reply_handler=reply,error_handler=self.handle_error)
+                 {'object_id': object_id, 'process_result': 'no',
+                  'starting_index': str(starting_index), 'requested_count': str(requested_count)},
+                 reply_handler=reply, error_handler=self.handle_error)
 
     def destroy_object(self, row_path):
         #print "destroy_object", row_path
         iter = self.store.get_iter(row_path)
-        object_id, = self.store.get(iter,ID_COLUMN)
+        object_id, = self.store.get(iter, ID_COLUMN)
         parent_iter = self.store.iter_parent(iter)
-        service, = self.store.get(parent_iter,SERVICE_COLUMN)
+        service, = self.store.get(parent_iter, SERVICE_COLUMN)
         if service == '':
             return
 
@@ -784,10 +784,10 @@ class TreeWidget(object):
             #print "destroy_object reply", r
             pass
 
-        s = self.bus.get_object(BUS_NAME + '.service',service)
+        s = self.bus.get_object(BUS_NAME + '.service', service)
         s.action('destroy_object',
-                 {'object_id':object_id},
-                 reply_handler=reply,error_handler=self.handle_error)
+                 {'object_id': object_id},
+                 reply_handler=reply, error_handler=self.handle_error)
 
 
 if __name__ == '__main__':

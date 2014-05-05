@@ -13,7 +13,7 @@ from coherence.upnp.core import service
 from coherence import log
 
 
-class DimmingControl(service.ServiceControl,UPnPPublisher):
+class DimmingControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
         self.service = server

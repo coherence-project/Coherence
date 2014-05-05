@@ -51,10 +51,10 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
-                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+                cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
         return cl
 
-    def render(self,request):
+    def render(self, request):
         return '<html><p>root of the %s %s</p><p><ul>%s</ul></p></html>' % (self.server.backend.name,
                                                                            self.server.device_type,
                                                                            self.listchilds(request.uri))
@@ -82,7 +82,7 @@ class RootDeviceXML(static.Data):
         uuid = str(uuid)
         root = ET.Element('root')
         root.attrib['xmlns'] = xmlns
-        device_type_uri = ':'.join((device_uri_base,device_type, str(version)))
+        device_type_uri = ':'.join((device_uri_base, device_type, str(version)))
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement(e, 'major').text = '1'
         ET.SubElement(e, 'minor').text = '0'
@@ -136,7 +136,7 @@ class RootDeviceXML(static.Data):
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                if(hasattr(service,'version') and
+                if(hasattr(service, 'version') and
                     service.version < version):
                     v = service.version
                 else:
@@ -146,7 +146,7 @@ class RootDeviceXML(static.Data):
                     namespace = service.id_namespace
                 except:
                     namespace = 'upnp-org'
-                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace,id)
+                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace, id)
                 ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
                 ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
                 ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
@@ -166,11 +166,11 @@ class RootDeviceXML(static.Data):
                         icon_path = os.path.join(os.path.expanduser('~'), ".face")
                     else:
                         from pkg_resources import resource_filename
-                        icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
+                        icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..', '..', '..', 'misc', 'device-icons', icon['url'])))
 
                 if os.path.exists(icon_path) == True:
                     i = ET.SubElement(e, 'icon')
-                    for k,v in icon.items():
+                    for k, v in icon.items():
                         if k == 'url':
                             if v.startswith('file://'):
                                 ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
@@ -194,8 +194,8 @@ class BasicDeviceMixin(object):
 
     def __init__(self, coherence, backend, **kwargs):
         self.coherence = coherence
-        if not hasattr(self,'version'):
-            self.version = int(kwargs.get('version',self.coherence.config.get('version',2)))
+        if not hasattr(self, 'version'):
+            self.version = int(kwargs.get('version', self.coherence.config.get('version', 2)))
 
         try:
             self.uuid = kwargs['uuid']
@@ -215,7 +215,7 @@ class BasicDeviceMixin(object):
         self.icons = kwargs.get('iconlist', kwargs.get('icons', []))
         if len(self.icons) == 0:
             if kwargs.has_key('icon'):
-                if isinstance(kwargs['icon'],dict):
+                if isinstance(kwargs['icon'], dict):
                     self.icons.append(kwargs['icon'])
                 else:
                     self.icons = kwargs['icon']
@@ -227,7 +227,7 @@ class BasicDeviceMixin(object):
     def init_failed(self, backend, msg):
         if self.backend != backend:
             return
-        self.warning('backend not installed, %s activation aborted - %s' % (self.device_type,msg.getErrorMessage()))
+        self.warning('backend not installed, %s activation aborted - %s' % (self.device_type, msg.getErrorMessage()))
         self.debug(msg)
         try:
             del self.coherence.active_backends[str(self.uuid)]
@@ -270,7 +270,7 @@ class BasicDeviceMixin(object):
         for service in self._services:
             device_version = self.version
             service_version = self.version
-            if hasattr(service,'version'):
+            if hasattr(service, 'version'):
                 service_version = service.version
             silent = False
 
@@ -281,12 +281,12 @@ class BasicDeviceMixin(object):
                     namespace = 'schemas-upnp-org'
 
                 device_description_tmpl = 'description-%d.xml' % device_version
-                if hasattr(service,'device_description_tmpl'):
+                if hasattr(service, 'device_description_tmpl'):
                     device_description_tmpl = service.device_description_tmpl
 
                 s.register('local',
-                            '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, service_version),
-                            'urn:%s:service:%s:%d' % (namespace,service.id, service_version),
+                            '%s::urn:%s:service:%s:%d' % (uuid, namespace, service.id, service_version),
+                            'urn:%s:service:%s:%d' % (namespace, service.id, service_version),
                             self.coherence.urlbase + uuid[5:] + '/' + device_description_tmpl,
                             silent=silent,
                             host=host)
@@ -297,10 +297,10 @@ class BasicDeviceMixin(object):
 
     def unregister(self):
 
-        if self.backend != None and hasattr(self.backend,'release'):
+        if self.backend != None and hasattr(self.backend, 'release'):
             self.backend.release()
 
-        if not hasattr(self,'_services'):
+        if not hasattr(self, '_services'):
             """ seems we never made it to actually
                 completing that device
             """
@@ -311,14 +311,14 @@ class BasicDeviceMixin(object):
                 service.check_subscribers_loop.stop()
             except:
                 pass
-            if hasattr(service,'check_moderated_loop') and service.check_moderated_loop != None:
+            if hasattr(service, 'check_moderated_loop') and service.check_moderated_loop != None:
                 try:
                     service.check_moderated_loop.stop()
                 except:
                     pass
-            if hasattr(service,'release'):
+            if hasattr(service, 'release'):
                 service.release()
-            if hasattr(service,'_release'):
+            if hasattr(service, '_release'):
                 service._release()
 
         s = self.coherence.ssdp_server
@@ -329,13 +329,13 @@ class BasicDeviceMixin(object):
         while version > 0:
             s.doByebye('%s::urn:schemas-upnp-org:device:%s:%d' % (uuid, self.device_type, version))
             for service in self._services:
-                if hasattr(service,'version') and service.version < version:
+                if hasattr(service, 'version') and service.version < version:
                     continue
                 try:
                     namespace = service.namespace
                 except AttributeError:
                     namespace = 'schemas-upnp-org'
-                s.doByebye('%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, version))
+                s.doByebye('%s::urn:%s:service:%s:%d' % (uuid, namespace, service.id, version))
 
             version -= 1
 

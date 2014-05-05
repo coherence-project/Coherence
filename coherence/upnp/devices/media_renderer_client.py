@@ -84,7 +84,7 @@ class MediaRendererClient(log.Loggable):
         #del self
 
     def service_notified(self, service):
-        self.info("Service %r sent notification", service);
+        self.info("Service %r sent notification", service); 
         if self.detection_completed == True:
             return
         if self.rendering_control != None:
@@ -104,7 +104,7 @@ class MediaRendererClient(log.Loggable):
                 return
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
-                               client=self,udn=self.device.udn)
+                               client=self, udn=self.device.udn)
 
     def state_variable_change(self, variable):
         self.info('%(name)r changed from %(old_value)r to %(value)r',

@@ -8,7 +8,7 @@
 """
 
 def AudioItem(func):
-    def add(*args,**kwargs):
+    def add(*args, **kwargs):
         result = func(*args, **kwargs)
         e = result.find('upnp:albumArtURI')
         if e != None:

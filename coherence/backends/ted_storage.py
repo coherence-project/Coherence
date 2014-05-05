@@ -43,7 +43,7 @@ class TEDStore(LolcatsStore):
     ROOT_ID = 0
 
     def __init__(self, server, *args, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.name = kwargs.get('name', 'TEDtalks')
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
@@ -117,5 +117,5 @@ class TEDStore(LolcatsStore):
 
         if self.server:
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-            value = (self.ROOT_ID,self.container.update_id)
+            value = (self.ROOT_ID, self.container.update_id)
             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)

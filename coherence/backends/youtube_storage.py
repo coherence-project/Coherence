@@ -14,12 +14,12 @@ from twisted.web.error import PageRedirect
 from coherence.upnp.core import utils
 from coherence.upnp.core.utils import ReverseProxyUriResource, ReverseProxyResource
 from coherence.upnp.core import DIDLLite
-from coherence.backend import BackendStore,BackendItem
+from coherence.backend import BackendStore, BackendItem
 
 from coherence import log
 
 from gdata.youtube.service import YouTubeService
-from coherence.extern.youtubedl import FileDownloader,YoutubeIE,MetacafeIE,YoutubePlaylistIE
+from coherence.extern.youtubedl import FileDownloader, YoutubeIE, MetacafeIE, YoutubePlaylistIE
 from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
 
 MPEG4_MIMETYPE = 'video/mp4'
@@ -39,7 +39,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         ReverseProxyUriResource.__init__(self, uri)
 
         self.id = id
-        if isinstance(self.id,int):
+        if isinstance(self.id, int):
             self.id = '%d' % self.id
         self.proxy_mode = proxy_mode
 
@@ -62,8 +62,8 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
-        self.info("ProxyStream requestFinished: %s",result)
-        if hasattr(self,'connection'):
+        self.info("ProxyStream requestFinished: %s", result)
+        if hasattr(self, 'connection'):
             self.connection.transport.loseConnection()
 
 
@@ -78,7 +78,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
         if self.stream_url is None:
 
-            web_url = "http://%s%s" % (self.host,self.path)
+            web_url = "http://%s%s" % (self.host, self.path)
             self.info("Web_url: %s", web_url)
 
             def got_real_urls(real_urls):
@@ -97,7 +97,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
                 self.info("Video URL: %s", self.stream_url)
-                self.video_url = self.stream_url[:]
+                self.video_url = self.stream_url[: ]
                 d = self.followRedirects(request)
                 d.addCallback(self.proxyURL)
                 d.addErrback(self.requestFinished)
@@ -109,27 +109,27 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 got_real_url(web_url)
             return server.NOT_DONE_YET
 
-        reactor.callLater(0.05,self.proxyURL,request)
+        reactor.callLater(0.05, self.proxyURL, request)
         return server.NOT_DONE_YET
 
     def followRedirects(self, request):
         self.info("HTTP redirect  %s %s", request, self.stream_url)
         d = utils.getPage(self.stream_url, method="HEAD", followRedirect=0)
 
-        def gotHeader(result,request):
-            data,header = result
+        def gotHeader(result, request):
+            data, header = result
             self.info("finally got something %r", header)
             #FIXME what do we do here if the headers aren't there?
             self.filesize = int(header['content-length'][0])
             self.mimetype = header['content-type'][0]
             return request
 
-        def gotError(error,request):
+        def gotError(error, request):
             # error should be a "Failure" instance at this point
             self.info("gotError %s", error)
 
             error_value = error.value
-            if (isinstance(error_value,PageRedirect)):
+            if (isinstance(error_value, PageRedirect)):
                 self.info("got PageRedirect %r", error_value.location)
                 self.stream_url = error_value.location
                 self.resetUri(self.stream_url)
@@ -140,23 +140,23 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 return error
 
         d.addCallback(gotHeader, request)
-        d.addErrback(gotError,request)
+        d.addErrback(gotError, request)
         return d
 
     def proxyURL(self, request):
-        self.info("proxy_mode: %s, request %s", self.proxy_mode,request.method)
+        self.info("proxy_mode: %s, request %s", self.proxy_mode, request.method)
 
         if self.proxy_mode == 'redirect':
             # send stream url to client for redirection
             request.redirect(self.stream_url)
             request.finish()
         elif self.proxy_mode in ('proxy', ):
-            res = ReverseProxyResource.render(self,request)
-            if isinstance(res,int):
+            res = ReverseProxyResource.render(self, request)
+            if isinstance(res, int):
                 return res
             request.write(res)
             return
-        elif self.proxy_mode in ('buffer','buffered'):
+        elif self.proxy_mode in ('buffer', 'buffered'):
             # download stream to cache,
             # and send it to the client in // after X bytes
             filepath = os.path.join(self.cache_directory, self.id)
@@ -165,7 +165,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             if (os.path.exists(filepath)
                 and os.path.getsize(filepath) == self.filesize):
                 res = self.renderFile(request, filepath)
-                if isinstance(res,int):
+                if isinstance(res, int):
                     return res
                 request.write(res)
                 request.finish()
@@ -194,8 +194,8 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                                 end + 10 > self.filesize and
                                 end - start < 200000):
                                 #print "let's hand that through, it is probably a mp4 index request"
-                                res = ReverseProxyResource.render(self,request)
-                                if isinstance(res,int):
+                                res = ReverseProxyResource.render(self, request)
+                                if isinstance(res, int):
                                     return res
                                 request.write(res)
                                 return
@@ -203,7 +203,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 res = self.renderBufferFile(request, filepath, self.buffer_size)
                 if res == '' and request.method != 'HEAD':
                     return server.NOT_DONE_YET
-                if not isinstance(res,int):
+                if not isinstance(res, int):
                     request.write(res)
                 if request.method == 'HEAD':
                     request.finish()
@@ -219,7 +219,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         return type
 
 
-    def renderFile(self,request,filepath):
+    def renderFile(self, request, filepath):
         self.info('Cache file available %r %r ', request, filepath)
         downloadedFile = utils.StaticFile(filepath, self.mimetype)
         downloadedFile.type = self.getMimetype()
@@ -241,12 +241,12 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 bufferFile.encoding = None
                 try:
                     return bufferFile.render(request)
-                except Exception,error:
+                except Exception, error:
                     self.info(error)
 
         if request.method != 'HEAD':
             self.info('Will retry later to render buffer file')
-            reactor.callLater(0.5, self.renderBufferFile, request,filepath,buffer_size)
+            reactor.callLater(0.5, self.renderBufferFile, request, filepath, buffer_size)
         return ''
 
     def downloadFinished(self, result):
@@ -289,7 +289,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 path2 = "%s%s%s" % (self.cache_directory, os.sep, filename2)
                 cmp = int(os.stat(path1).st_atime - os.stat(path2).st_atime)
                 return cmp
-            cache_listdir = sorted(cache_listdir,compare_atime)
+            cache_listdir = sorted(cache_listdir, compare_atime)
 
             while (cache_size > cache_targetsize):
                 filename = cache_listdir.pop(0)
@@ -330,7 +330,7 @@ class YoutubeVideoItem(BackendItem):
                 'format': format,
                 'outtmpl': u'%(id)s.%(ext)s',
                 'ignoreerrors': True,
-                'ratelimit': None,
+                'ratelimit': None, 
                 }
             if len(self.store.login) > 0:
                 kwargs['username'] = self.store.login
@@ -352,7 +352,7 @@ class YoutubeVideoItem(BackendItem):
 
         self.location = TestVideoProxy(url, self.external_id,
                                    store.proxy_mode,
-                                   store.cache_directory, store.cache_maxsize,store.buffer_size,
+                                   store.cache_directory, store.cache_maxsize, store.buffer_size,
                                    extractDataURL, quality=self.store.quality)
 
 
@@ -394,32 +394,32 @@ class YouTubeStore(AbstractBackendStore):
 
     description = ('Youtube', 'connects to the YouTube service and exposes the standard feeds (public) and the uploads/favorites/playlists/subscriptions of a given user.', None)
 
-    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
-       {'option':'refresh','text':'Refresh period','type':'string'},
-       {'option':'login','text':'User ID:','type':'string','group':'User Account'},
-       {'option':'password','text':'Password:','type':'string','group':'User Account'},
-       {'option':'location','text':'Locale:','type':'string'},
-       {'option':'quality','text':'Video quality:','type':'string', 'default':'sd','enum': ('sd','hd')},
-       {'option':'standard_feeds','text':'Include standard feeds:','type':'bool', 'default': True},
-       {'option':'proxy_mode','text':'Proxy mode:','type':'string', 'enum': ('redirect','proxy','cache','buffered')},
-       {'option':'buffer_size','text':'Buffering size:','type':'int'},
-       {'option':'cache_directory','text':'Cache directory:','type':'dir', 'group':'Cache'},
-       {'option':'cache_maxsize','text':'Cache max size:','type':'int', 'group':'Cache'},
+    options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'refresh', 'text': 'Refresh period', 'type': 'string'},
+       {'option': 'login', 'text': 'User ID:', 'type': 'string', 'group': 'User Account'},
+       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'},
+       {'option': 'location', 'text': 'Locale:', 'type': 'string'},
+       {'option': 'quality', 'text': 'Video quality:', 'type': 'string', 'default': 'sd', 'enum': ('sd', 'hd')},
+       {'option': 'standard_feeds', 'text': 'Include standard feeds:', 'type': 'bool', 'default': True},
+       {'option': 'proxy_mode', 'text': 'Proxy mode:', 'type': 'string', 'enum': ('redirect', 'proxy', 'cache', 'buffered')},
+       {'option': 'buffer_size', 'text': 'Buffering size:', 'type': 'int'},
+       {'option': 'cache_directory', 'text': 'Cache directory:', 'type': 'dir', 'group': 'Cache'},
+       {'option': 'cache_maxsize', 'text': 'Cache max size:', 'type': 'int', 'group': 'Cache'}, 
     ]
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name','YouTube')
+        self.name = kwargs.get('name', 'YouTube')
 
-        self.login = kwargs.get('userid',kwargs.get('login',''))
-        self.password = kwargs.get('password','')
-        self.locale = kwargs.get('location',None)
-        self.quality = kwargs.get('quality','sd')
-        self.showStandardFeeds = (kwargs.get('standard_feeds','True') in ['Yes','yes','true','True','1'])
-        self.refresh = int(kwargs.get('refresh',60)) * 60
+        self.login = kwargs.get('userid', kwargs.get('login', ''))
+        self.password = kwargs.get('password', '')
+        self.locale = kwargs.get('location', None)
+        self.quality = kwargs.get('quality', 'sd')
+        self.showStandardFeeds = (kwargs.get('standard_feeds', 'True') in ['Yes', 'yes', 'true', 'True', '1'])
+        self.refresh = int(kwargs.get('refresh', 60)) * 60
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
         try:
@@ -450,8 +450,8 @@ class YouTubeStore(AbstractBackendStore):
 
         if len(self.login) > 0:
             userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
-            self.appendFeed('My Uploads', userfeeds_uri % (self.login,'uploads'), rootItem)
-            self.appendFeed('My Favorites', userfeeds_uri % (self.login,'favorites'), rootItem)
+            self.appendFeed('My Uploads', userfeeds_uri % (self.login, 'uploads'), rootItem)
+            self.appendFeed('My Favorites', userfeeds_uri % (self.login, 'favorites'), rootItem)
             playlistsItem = LazyContainer(rootItem, 'My Playlists', None, self.refresh, self.retrievePlaylistFeeds)
             rootItem.add_child(playlistsItem)
             subscriptionsItem = LazyContainer(rootItem, 'My Subscriptions', None, self.refresh, self.retrieveSubscriptionFeeds)
@@ -518,7 +518,7 @@ class YouTubeStore(AbstractBackendStore):
 
     def retrievePlaylistFeedItems (self, parent, playlist_id):
 
-        feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistVideoFeed,playlist_id=playlist_id)
+        feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistVideoFeed, playlist_id=playlist_id)
         def gotFeed(feed):
            if feed is None:
                self.warning("Unable to retrieve playlist items %s", feed_uri)
@@ -533,7 +533,7 @@ class YouTubeStore(AbstractBackendStore):
         return feed
 
     def retrieveSubscriptionFeedItems (self, parent, uri):
-        entry = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionEntry,uri)
+        entry = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionEntry, uri)
 
         def gotEntry(entry):
            if entry is None:
@@ -579,7 +579,7 @@ class YouTubeStore(AbstractBackendStore):
                type = entry.GetSubscriptionType()
                title = entry.title.text
                uri = entry.id.text
-               name = "[%s] %s" % (type,title)
+               name = "[%s] %s" % (type, title)
 
                item = LazyContainer(parent, name, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
                item.parent = parent

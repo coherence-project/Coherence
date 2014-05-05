@@ -79,7 +79,7 @@ class PicasaPhotoItem(BackendItem):
         if self.item == None:
             upnp_id = self.get_id()
             upnp_parent_id = self.parent.get_id()
-            self.item = DIDLLite.Photo(upnp_id,upnp_parent_id,self.name)
+            self.item = DIDLLite.Photo(upnp_id, upnp_parent_id, self.name)
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             self.item.res.append(res)
         self.item.childCount = 0
@@ -100,24 +100,24 @@ class PicasaStore(AbstractBackendStore):
 
     description = ('Picasa Web Albums', 'connects to the Picasa Web Albums service and exposes the featured photos and albums for a given user.', None)
 
-    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
-       {'option':'refresh','text':'Refresh period','type':'string'},
-       {'option':'login','text':'User ID:','type':'string','group':'User Account'},
-       {'option':'password','text':'Password:','type':'string','group':'User Account'},
+    options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'refresh', 'text': 'Refresh period', 'type': 'string'},
+       {'option': 'login', 'text': 'User ID:', 'type': 'string', 'group': 'User Account'},
+       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'}, 
     ]
 
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name','Picasa Web Albums')
+        self.name = kwargs.get('name', 'Picasa Web Albums')
 
-        self.refresh = int(kwargs.get('refresh',60)) * 60
+        self.refresh = int(kwargs.get('refresh', 60)) * 60
 
-        self.login = kwargs.get('userid',kwargs.get('login',''))
-        self.password = kwargs.get('password','')
+        self.login = kwargs.get('userid', kwargs.get('login', ''))
+        self.password = kwargs.get('password', '')
 
         rootContainer = Container(None, self.name)
         self.set_root_item(rootContainer)

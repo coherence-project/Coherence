@@ -7,7 +7,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2009-2010, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
-from twisted.internet import defer,reactor
+from twisted.internet import defer, reactor
 from twisted.python.failure import Failure
 from twisted.web import server
 
@@ -39,7 +39,7 @@ genre_families = {
     "Themes": ["Adult", "Best Of", "Chill", "Experimental", "Female", "Heartache", "LGBT", "Love/Romance", "Party Mix", "Patriotic", "Rainy Day Mix", "Reality", "Sexy", "Shuffle", "Travel Mix", "Tribute", "Trippy", "Work Mix"],
     "Rap": ["Alternative Rap", "Dirty South", "East Coast Rap", "Freestyle", "Hip Hop", "Gangsta Rap", "Mixtapes", "Old School", "Turntablism", "Underground Hip-Hop", "West Coast Rap"],
     "Inspirational": ["Christian", "Christian Metal", "Christian Rap", "Christian Rock", "Classic Christian", "Contemporary Gospel", "Gospel", "Praise/Worship", "Sermons/Services", "Southern Gospel", "Traditional Gospel"],
-    "International": ["African", "Afrikaans", "Arabic", "Asian", "Brazilian", "Caribbean", "Celtic", "European", "Filipino", "Greek", "Hawaiian/Pacific", "Hindi", "Indian", "Japanese", "Jewish",  "Klezmer", "Mediterranean", "Middle Eastern", "North American", "Polskie", "Polska", "Soca", "South American", "Tamil", "Worldbeat", "Zouk"],
+    "International": ["African", "Afrikaans", "Arabic", "Asian", "Brazilian", "Caribbean", "Celtic", "European", "Filipino", "Greek", "Hawaiian/Pacific", "Hindi", "Indian", "Japanese", "Jewish", "Klezmer", "Mediterranean", "Middle Eastern", "North American", "Polskie", "Polska", "Soca", "South American", "Tamil", "Worldbeat", "Zouk"],
     "Jazz": ["Acid Jazz", "Avant Garde", "Big Band", "Bop", "Classic Jazz", "Cool Jazz", "Fusion", "Hard Bop", "Latin Jazz", "Smooth Jazz", "Swing", "Vocal Jazz", "World Fusion"],
     "Latin": ["Bachata", "Banda", "Bossa Nova", "Cumbia", "Latin Dance", "Latin Pop", "Latin Rap/Hip-Hop", "Latin Rock", "Mariachi", "Merengue", "Ranchera", "Reggaeton", "Regional Mexican", "Salsa", "Tango", "Tejano", "Tropicalia"],
     "Metal": ["Black Metal", "Classic Metal", "Extreme Metal", "Grindcore", "Hair Metal", "Heavy Metal", "Metalcore", "Power Metal", "Progressive Metal", "Rap Metal"],
@@ -51,7 +51,7 @@ genre_families = {
     "Seasonal/Holiday": ["Anniversary", "Birthday", "Christmas", "Halloween", "Hanukkah", "Honeymoon", "Valentine", "Wedding", "Winter"],
     "Soundtracks": ["Anime", "Bollywood", "Kids", "Original Score", "Showtunes", "Video Game Music"],
     "Talk": ["Comedy", "Community", "Educational", "Government", "News", "Old Time Radio", "Other Talk", "Political", "Public Radio", "Scanner", "Spoken Word", "Sports", "Technology", "Hardcore", "Eclectic", "Instrumental"],
-    "Misc": [],
+    "Misc": [], 
 }
 
 synonym_genres = {
@@ -66,7 +66,7 @@ synonym_genres = {
   "Hip Hop": ["Hip", "Hop", "Hippop", "Hip Hop"],
   "Islam": ["Islam", "Islamic"],
   "Italy": ["Italia", "Italian", "Italiana", "Italo", "Italy"],
-  "Latina": ["Latin", "Latina", "Latino"],
+  "Latina": ["Latin", "Latina", "Latino"], 
 }
 useless_title_content = [
     # TODO: extend list with title expressions which are clearly useless
@@ -125,7 +125,7 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
             d.addCallbacks(got_playlist, got_error)
             return server.NOT_DONE_YET
 
-        self.info("this is our render method %s %s %s %s",request.method, request.uri, request.client, request.clientproto)
+        self.info("this is our render method %s %s %s %s", request.method, request.uri, request.client, request.clientproto)
         self.info("render %s", request.getAllHeaders())
         if request.clientproto == 'HTTP/1.1':
             self.connection = request.getHeader('connection')
@@ -189,12 +189,12 @@ class IRadioStore(AbstractBackendStore):
     genre_parent_items = {}  # will list the parent genre for every given genre
 
     def __init__(self, server, **kwargs):
-        AbstractBackendStore.__init__(self,server,**kwargs)
+        AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name','iRadioStore')
-        self.refresh = int(kwargs.get('refresh',60)) * 60
+        self.name = kwargs.get('name', 'iRadioStore')
+        self.refresh = int(kwargs.get('refresh', 60)) * 60
 
-        self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
+        self.shoutcast_ws_url = self.config.get('genrelist', SHOUTCAST_WS_URL)
 
         # set root item
         root_item = Container(None, self.name)
@@ -226,9 +226,9 @@ class IRadioStore(AbstractBackendStore):
         family_item = LazyContainer(parent, title, genre, self.refresh, self.retrieveItemsForGenre, genres=same_genres, per_page=1)
         # we will use a specific child items sorter
         # in order to get the sub-genre containers first
-        def childs_sort(x,y):
+        def childs_sort(x, y):
             if x.__class__ == y.__class__:
-                return cmp(x.name,y.name)  # same class, we compare the names
+                return cmp(x.name, y.name)  # same class, we compare the names
             else:
                 # the IRadioItem is deemed the lowest item class,
                 # other classes are compared by name (as usual)
@@ -237,7 +237,7 @@ class IRadioStore(AbstractBackendStore):
                 elif isinstance(y, IRadioItem):
                     return -1
                 else:
-                    return cmp(x.name,y.name)
+                    return cmp(x.name, y.name)
         family_item.sorting_method = childs_sort
 
         parent.add_child(family_item, external_id=genre)
@@ -277,8 +277,8 @@ class IRadioStore(AbstractBackendStore):
             result = utils.parse_xml(result, encoding='utf-8')
             tunein = result.find('tunein')
             if tunein != None:
-                tunein = tunein.get('base','/sbin/tunein-station.pls')
-            prot,host_port,path,_,_ = urlsplit(self.shoutcast_ws_url)
+                tunein = tunein.get('base', '/sbin/tunein-station.pls')
+            prot, host_port, path, _, _ = urlsplit(self.shoutcast_ws_url)
             tunein = prot + '://' + host_port + tunein
 
             stations = {}
@@ -295,12 +295,12 @@ class IRadioStore(AbstractBackendStore):
 
                 sameStation = stations.get(lower_name)
                 if sameStation == None or bitrate > sameStation['bitrate']:
-                    station = {'name':name,
-                               'station_id':station_id,
-                               'mimetype':mimetype,
-                               'id':station_id,
-                               'url':url,
-                               'bitrate':bitrate}
+                    station = {'name': name,
+                               'station_id': station_id,
+                               'mimetype': mimetype,
+                               'id': station_id,
+                               'url': url,
+                               'bitrate': bitrate}
                     stations[lower_name] = station
 
             for station in stations.values():

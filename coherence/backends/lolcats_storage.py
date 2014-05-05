@@ -172,7 +172,7 @@ class LolcatsStore(BackendStore):
 
     def __init__(self, server, *args, **kwargs):
         # first we inizialize our heritage
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         # When a Backend is initialized, the configuration is given as keyword
         # arguments to the initialization. We receive it here as a dicitonary
@@ -221,7 +221,7 @@ class LolcatsStore(BackendStore):
         print "asked for", id, type(id)
         # what ever we are asked for, we want to return the container only
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         if int(id) == self.ROOT_ID:
             return self.container
@@ -256,7 +256,7 @@ class LolcatsStore(BackendStore):
         if self.server:
             self.server.content_directory_server.set_variable(0,
                     'SystemUpdateID', self.update_id)
-            value = (self.ROOT_ID,self.container.update_id)
+            value = (self.ROOT_ID, self.container.update_id)
             self.server.content_directory_server.set_variable(0,
                     'ContainerUpdateIDs', value)
         return result

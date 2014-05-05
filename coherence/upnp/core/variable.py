@@ -53,16 +53,16 @@ class StateVariable(log.Loggable):
 
     def as_tuples(self):
         r = []
-        r.append(('Name',self.name))
+        r.append(('Name', self.name))
         if self.send_events:
-            r.append(('Evented','yes'))
+            r.append(('Evented', 'yes'))
         else:
-            r.append(('Evented','no'))
-        r.append(('Data Type',self.data_type))
-        r.append(('Default Value',self.default_value))
-        r.append(('Current Value',unicode(self.value)))
+            r.append(('Evented', 'no'))
+        r.append(('Data Type', self.data_type))
+        r.append(('Default Value', self.default_value))
+        r.append(('Current Value', unicode(self.value)))
         if(self.allowed_values != None and len(self.allowed_values) > 0):
-            r.append(('Allowed Values',','.join(self.allowed_values)))
+            r.append(('Allowed Values', ','.join(self.allowed_values)))
         return r
 
     def set_default_value(self, value):
@@ -70,7 +70,7 @@ class StateVariable(log.Loggable):
         self.default_value = self.value
 
     def set_allowed_values(self, values):
-        if not isinstance(values,(list,tuple)):
+        if not isinstance(values, (list, tuple)):
             values = [values]
         self.allowed_values = values
 
@@ -96,7 +96,7 @@ class StateVariable(log.Loggable):
                             if v[i] == str(value[0]):
                                 del v[i:i + 2]
                                 old_value = ','.join(v)
-                                break;
+                                break; 
                             i += 2
                         if len(old_value):
                             new_value = old_value + ',' + str(value[0]) + ',' + str(value[1])
@@ -114,12 +114,12 @@ class StateVariable(log.Loggable):
                         new_value = value
             else:
                 if self.data_type == 'string':
-                    if isinstance(value,basestring):
+                    if isinstance(value, basestring):
                         value = value.split(',')
-                    if(isinstance(value,tuple) or
-                       isinstance(value,Set)):
+                    if(isinstance(value, tuple) or
+                       isinstance(value, Set)):
                         value = list(value)
-                    if not isinstance(value,list):
+                    if not isinstance(value, list):
                         value = [value]
                     new_value = []
                     for v in value:
@@ -203,7 +203,7 @@ class StateVariable(log.Loggable):
         #if self.old_value == '':
         #    return
         louie.send(signal='Coherence.UPnP.StateVariable.%s.changed' % self.name, sender=self.service, variable=self)
-        louie.send(signal='Coherence.UPnP.StateVariable.changed',sender=self.service, variable=self)
+        louie.send(signal='Coherence.UPnP.StateVariable.changed', sender=self.service, variable=self)
         #print "CALLBACKS %s %r %r" % (self.name,self.instance,self._callbacks)
         for callback in self._callbacks:
             callback(self)

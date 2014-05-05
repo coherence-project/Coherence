@@ -53,13 +53,13 @@ class EventServer(resource.Resource, log.Loggable):
             sid = headers['sid']
             try:
                 tree = utils.parse_xml(data).getroot()
-            except (SyntaxError,AttributeError):
+            except (SyntaxError, AttributeError):
                 self.warning("malformed event notification from %r", request.client)
                 self.debug("data: %r", data)
                 request.setResponseCode(400)
                 return ""
 
-            event = Event(sid,tree,raw=data)
+            event = Event(sid, tree, raw=data)
             if len(event) != 0:
                 self.control_point.propagate(event)
         return ""
@@ -175,7 +175,7 @@ class Event(dict, log.Loggable):
     logCategory = 'event'
     ns = "urn:schemas-upnp-org:event-1-0"
 
-    def __init__(self, sid,elements=None,raw=None):
+    def __init__(self, sid, elements=None, raw=None):
         dict.__init__(self)
         self._sid = sid
         self.raw = raw
@@ -185,7 +185,7 @@ class Event(dict, log.Loggable):
     def get_sid(self):
         return self._sid
 
-    def from_elements(self,elements):
+    def from_elements(self, elements):
         for prop in elements.findall('{%s}property' % self.ns):
             self._update_event(prop)
         if len(self) == 0:
@@ -194,7 +194,7 @@ class Event(dict, log.Loggable):
             for prop in elements.findall('property'):
                 self._update_event(prop)
 
-    def _update_event(self,prop):
+    def _update_event(self, prop):
         for var in prop.getchildren():
             tag = var.tag
             idx = tag.find('}') + 1
@@ -268,9 +268,9 @@ def subscribe(service, action='subscribe'):
     logger = log.getLogger("event_protocol")
     logger.info("event.subscribe, action: %r", action)
 
-    _,host_port,path,_,_ = urlsplit(service.get_base_url())
+    _, host_port, path, _, _ = urlsplit(service.get_base_url())
     if host_port.find(':') != -1:
-        host,port = tuple(host_port.split(':'))
+        host, port = tuple(host_port.split(':'))
         port = int(port)
     else:
         host = host_port
@@ -279,19 +279,19 @@ def subscribe(service, action='subscribe'):
     def send_request(p, action):
         logger.info("event.subscribe.send_request %r, action: %r %r",
                     p, action, service.get_event_sub_url())
-        _,_,event_path,_,_ = urlsplit(service.get_event_sub_url())
+        _, _, event_path, _, _ = urlsplit(service.get_event_sub_url())
         if action == 'subscribe':
             timeout = service.timeout
             if timeout == 0:
                 timeout = 1800
             request = ["SUBSCRIBE %s HTTP/1.1" % event_path,
                         "HOST: %s:%d" % (host, port),
-                        "TIMEOUT: Second-%d" % timeout,
+                        "TIMEOUT: Second-%d" % timeout, 
                         ]
             service.event_connection = p
         else:
             request = ["UNSUBSCRIBE %s HTTP/1.1" % event_path,
-                        "HOST: %s:%d" % (host, port),
+                        "HOST: %s:%d" % (host, port), 
                         ]
 
         if service.get_sid():
@@ -391,17 +391,17 @@ def send_notification(s, xml):
     """
     logger = log.getLogger("notification_protocol")
 
-    _,host_port,path,_,_ = urlsplit(s['callback'])
+    _, host_port, path, _, _ = urlsplit(s['callback'])
     if path == '':
         path = '/'
     if host_port.find(':') != -1:
-        host,port = tuple(host_port.split(':'))
+        host, port = tuple(host_port.split(':'))
         port = int(port)
     else:
         host = host_port
         port = 80
 
-    def send_request(p,port_item):
+    def send_request(p, port_item):
         request = ['NOTIFY %s HTTP/1.1' % path,
                     'HOST:  %s:%d' % (host, port),
                     'SEQ:  %d' % s['seq'],
@@ -424,7 +424,7 @@ def send_notification(s, xml):
         port_item.disconnect()
         #return p.transport.write(request)
 
-    def got_error(failure,port_item):
+    def got_error(failure, port_item):
         port_item.disconnect()
         logger.info("error sending notification to %r %r",
                  s['sid'], s['callback'])
@@ -440,4 +440,4 @@ def send_notification(s, xml):
     d.addCallback(send_request, port_item)
     d.addErrback(got_error, port_item)
 
-    return d,port_item
+    return d, port_item

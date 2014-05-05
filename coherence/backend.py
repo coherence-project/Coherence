@@ -15,9 +15,9 @@ import coherence.extern.louie as louie
 from coherence.upnp.core.utils import getPage
 from coherence.extern.et import parse_xml
 from coherence.upnp.core import DIDLLite
-from twisted.internet import defer,reactor
+from twisted.internet import defer, reactor
 
-class Backend(log.Loggable,Plugin):
+class Backend(log.Loggable, Plugin):
 
     """ the base class for all backends
 
@@ -34,7 +34,7 @@ class Backend(log.Loggable,Plugin):
 
     logCategory = 'backend'
 
-    def __init__(self,server,**kwargs):
+    def __init__(self, server, **kwargs):
         """ the init method for a backend,
             should probably most of the time be overwritten
             when the init is done, send a signal to its device
@@ -83,7 +83,7 @@ class BackendStore(Backend):
 
     logCategory = 'backend_store'
 
-    def __init__(self,server,*args,**kwargs):
+    def __init__(self, server, *args, **kwargs):
         """ the init method for a MediaServer backend,
             should probably most of the time be overwritten
             when the init is done, send a signal to its device
@@ -106,18 +106,18 @@ class BackendStore(Backend):
             the BackendItem should pass an URI assembled
             of urlbase + '/' + id to the DIDLLite.Resource
         """
-        self.urlbase = kwargs.get('urlbase','')
+        self.urlbase = kwargs.get('urlbase', '')
         if not self.urlbase.endswith('/'):
             self.urlbase += '/'
 
-        self.wmc_mapping = {'4':'4', '5':'5', '6':'6','7':'7','14':'14','F':'F',
-                            '11':'11','16':'16','B':'B','C':'C','D':'D',
-                            '13':'13', '17':'17',
-                            '8':'8', '9':'9', '10':'10', '15':'15', 'A':'A', 'E':'E'}
+        self.wmc_mapping = {'4': '4', '5': '5', '6': '6', '7': '7', '14': '14', 'F': 'F',
+                            '11': '11', '16': '16', 'B': 'B', 'C': 'C', 'D': 'D',
+                            '13': '13', '17': '17',
+                            '8': '8', '9': '9', '10': '10', '15': '15', 'A': 'A', 'E': 'E'}
 
-        self.wmc_mapping.update({'4':lambda: self._get_all_items(0),
-                                 '8':lambda: self._get_all_items(0),
-                                 'B':lambda: self._get_all_items(0),
+        self.wmc_mapping.update({'4': lambda: self._get_all_items(0),
+                                 '8': lambda: self._get_all_items(0),
+                                 'B': lambda: self._get_all_items(0), 
                                 })
 
         """ and send out the signal when ready
@@ -132,7 +132,7 @@ class BackendStore(Backend):
         pass
 
 
-    def _get_all_items(self,id):
+    def _get_all_items(self, id):
         """ a helper method to get all items as a response
             to some XBox 360 UPnP Search action
             probably never be used as the backend will overwrite
@@ -146,14 +146,14 @@ class BackendStore(Backend):
                 container = containers.pop()
                 if container.mimetype not in ['root', 'directory']:
                     continue
-                for child in container.get_children(0,0):
+                for child in container.get_children(0, 0):
                     if child.mimetype in ['root', 'directory']:
                         containers.append(child)
                     else:
                         items.append(child)
         return items
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         """ called by the CDS or the MediaServer web
 
             id is the id property of our DIDLLite item
@@ -225,7 +225,7 @@ class BackendItem(log.Loggable):
         self.cover = None # if we have some album art image, let's put
                           # the filepath or link into here
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         """ called by the CDS and the MediaServer web
             should return
 
@@ -289,7 +289,7 @@ class BackendItem(log.Loggable):
 
 class BackendRssMixin:
 
-    def update_data(self,rss_url,container=None,encoding="utf-8"):
+    def update_data(self, rss_url, container=None, encoding="utf-8"):
         """ creates a deferred chain to retrieve the rdf file,
             parse and extract the metadata and reschedule itself
         """
@@ -302,19 +302,19 @@ class BackendRssMixin:
         dfr = getPage(rss_url)
         dfr.addCallback(parse_xml, encoding=encoding)
         dfr.addErrback(fail)
-        dfr.addCallback(self.parse_data,container)
+        dfr.addCallback(self.parse_data, container)
         dfr.addErrback(fail)
-        dfr.addBoth(self.queue_update,rss_url,container)
+        dfr.addBoth(self.queue_update, rss_url, container)
         return dfr
 
-    def parse_data(self,xml_data,container):
+    def parse_data(self, xml_data, container):
         """ extract media info and create BackendItems
         """
         pass
 
-    def queue_update(self, error_or_failure,rss_url,container):
+    def queue_update(self, error_or_failure, rss_url, container):
         from twisted.internet import reactor
-        reactor.callLater(self.refresh, self.update_data,rss_url,container)
+        reactor.callLater(self.refresh, self.update_data, rss_url, container)
 
 class Container(BackendItem):
 
@@ -342,8 +342,8 @@ class Container(BackendItem):
         self.item = None
 
         self.sorted = False
-        def childs_sort(x,y):
-            return cmp(x.name,y.name)
+        def childs_sort(x, y):
+            return cmp(x.name, y.name)
         self.sorting_method = childs_sort
 
 
@@ -448,9 +448,9 @@ class LazyContainer(Container, log.Loggable):
         # let's classify the item between items to be removed,
         # to be updated or to be added
         self.debug("Refresh pass 1:%d %d", len(new_children), len(old_children))
-        for id,item in old_children.items():
+        for id, item in old_children.items():
             children_to_be_removed[id] = item
-        for id,item in new_children.items():
+        for id, item in new_children.items():
             if old_children.has_key(id):
                 #print(id, "already there")
                 children_to_be_replaced[id] = old_children[id]
@@ -463,10 +463,10 @@ class LazyContainer(Container, log.Loggable):
         # to the list of items
         self.debug("Refresh pass 2: %d %d %d", len(children_to_be_removed), len(children_to_be_replaced), len(children_to_be_added))
         # Remove relevant items from Container children
-        for id,item in children_to_be_removed.items():
+        for id, item in children_to_be_removed.items():
             self.remove_child(item, external_id=id, update=False)
         # Update relevant items from Container children
-        for id,item in children_to_be_replaced.items():
+        for id, item in children_to_be_replaced.items():
             old_item = item
             new_item = new_children[id]
             replaced = False
@@ -478,7 +478,7 @@ class LazyContainer(Container, log.Loggable):
                 self.remove_child(old_item, external_id=id, update=False)
                 self.add_child(new_item, external_id=id, update=False)
         # Add relevant items to COntainer children
-        for id,item in children_to_be_added.items():
+        for id, item in children_to_be_added.items():
             self.add_child(item, external_id=id, update=False)
 
         self.update_id += 1
@@ -544,7 +544,7 @@ class LazyContainer(Container, log.Loggable):
             return self.children
 
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
 
         # Check if an update is needed since last update
         current_time = time.time()
@@ -596,13 +596,13 @@ class AbstractBackendStore (BackendStore):
         item.store = None
 
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0].split('.')[0]
         try:
             return self.store[int(id)]
-        except (ValueError,KeyError):
+        except (ValueError, KeyError):
             pass
         return None
 

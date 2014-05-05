@@ -8,7 +8,7 @@
 from datetime import datetime
 from email.Utils import parsedate_tz
 
-from coherence.backend import BackendStore,BackendRssMixin
+from coherence.backend import BackendStore, BackendRssMixin
 from coherence.backend import BackendItem
 from coherence.upnp.core import DIDLLite
 
@@ -68,15 +68,15 @@ class Container(BackendItem):
     def add_child(self, child):
         id = child.id
         if isinstance(child.id, basestring):
-            _,id = child.id.split('.')
+            _, id = child.id.split('.')
         self.children.append(child)
         self.item.childCount += 1
         self.sorted = False
 
     def get_children(self, start=0, end=0):
         if self.sorted == False:
-            def childs_sort(x,y):
-                r = cmp(x.name,y.name)
+            def childs_sort(x, y):
+                r = cmp(x.name, y.name)
                 return r
 
             self.children.sort(cmp=childs_sort)
@@ -101,12 +101,12 @@ class Container(BackendItem):
         return self.id
 
 
-class SWR3Store(BackendStore,BackendRssMixin):
+class SWR3Store(BackendStore, BackendRssMixin):
 
     implements = ['MediaServer']
 
     def __init__(self, server, *args, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.name = kwargs.get('name', 'SWR3')
         self.opml = kwargs.get('opml', 'http://www.swr3.de/rdf-feed/podcast/')
@@ -119,7 +119,7 @@ class SWR3Store(BackendStore,BackendRssMixin):
         self.store = {}
 
         self.store[ROOT_CONTAINER_ID] = \
-                        Container(ROOT_CONTAINER_ID,self,-1, self.name)
+                        Container(ROOT_CONTAINER_ID, self, -1, self.name)
 
         self.parse_opml()
         self.init_completed()
@@ -136,10 +136,10 @@ class SWR3Store(BackendStore,BackendRssMixin):
                 if(feed.attrib['type'] == 'link' and
                    feed.attrib['url'] not in feeds):
                     feeds.append(feed.attrib['url'])
-                    self.update_data(feed.attrib['url'],self.get_next_id(),encoding=self.encoding)
+                    self.update_data(feed.attrib['url'], self.get_next_id(), encoding=self.encoding)
 
         dfr = getPage(self.opml)
-        dfr.addCallback(parse_xml,encoding=self.encoding)
+        dfr.addCallback(parse_xml, encoding=self.encoding)
         dfr.addErrback(fail)
         dfr.addCallback(create_containers)
         dfr.addErrback(fail)
@@ -148,13 +148,13 @@ class SWR3Store(BackendStore,BackendRssMixin):
         self.next_id += 1
         return self.next_id
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         try:
             return self.store[int(id)]
-        except (ValueError,KeyError):
+        except (ValueError, KeyError):
             pass
         return None
 
@@ -163,13 +163,13 @@ class SWR3Store(BackendStore,BackendRssMixin):
             self.server.connection_manager_server.set_variable(\
                 0, 'SourceProtocolInfo', ['http-get:*:audio/mpeg:*'])
 
-    def parse_data(self,xml_data,container):
+    def parse_data(self, xml_data, container):
         root = xml_data.getroot()
 
         title = root.find("./channel/title").text
         title = title.encode(self.encoding).decode('utf-8')
         self.store[container] = \
-                        Container(container,self,ROOT_CONTAINER_ID, title)
+                        Container(container, self, ROOT_CONTAINER_ID, title)
         description = root.find("./channel/description").text
         description = description.encode(self.encoding).decode('utf-8')
         self.store[container].description = description

@@ -102,7 +102,7 @@ class MediaServerClient(log.Loggable):
                 return
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
-                               client=self,udn=self.device.udn)
+                               client=self, udn=self.device.udn)
         self.info('detection_completed for %r', self)
 
     def state_variable_change(self, variable, usn):
@@ -113,6 +113,6 @@ class MediaServerClient(log.Loggable):
         self.info("results= %s", results)
 
     def process_meta(self, results):
-        for k,v in results.iteritems():
+        for k, v in results.iteritems():
             dfr = self.content_directory.browse(k, "BrowseMetadata")
             dfr.addCallback(self.print_results)

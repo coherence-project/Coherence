@@ -63,15 +63,15 @@ class Container(BackendItem):
     def add_child(self, child):
         id = child.id
         if isinstance(child.id, basestring):
-            _,id = child.id.split('.')
+            _, id = child.id.split('.')
         self.children.append(child)
         self.item.childCount += 1
         self.sorted = False
 
     def get_children(self, start=0, end=0):
         if self.sorted == False:
-            def childs_sort(x,y):
-                r = cmp(x.name,y.name)
+            def childs_sort(x, y):
+                r = cmp(x.name, y.name)
                 return r
 
             self.children.sort(cmp=childs_sort)
@@ -102,7 +102,7 @@ class BBCStore(BackendStore):
     rss_url = "http://open.bbc.co.uk/rad/uriplay/availablecontent"
 
     def __init__(self, server, *args, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.name = kwargs.get('name', 'BBC')
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
@@ -118,14 +118,14 @@ class BBCStore(BackendStore):
         self.next_id += 1
         return self.next_id
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         #print "looking for id %r" % id
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         try:
             return self.store[int(id)]
-        except (ValueError,KeyError):
+        except (ValueError, KeyError):
             pass
         return None
 
@@ -155,9 +155,9 @@ class BBCStore(BackendStore):
         self.store = {}
 
         self.store[ROOT_CONTAINER_ID] = \
-                        Container(ROOT_CONTAINER_ID,self,-1, self.name)
+                        Container(ROOT_CONTAINER_ID, self, -1, self.name)
         self.store[SERIES_CONTAINER_ID] = \
-                        Container(SERIES_CONTAINER_ID,self,ROOT_CONTAINER_ID, 'Series')
+                        Container(SERIES_CONTAINER_ID, self, ROOT_CONTAINER_ID, 'Series')
         self.store[ROOT_CONTAINER_ID].add_child(self.store[SERIES_CONTAINER_ID])
 
 
@@ -180,7 +180,7 @@ class BBCStore(BackendStore):
                             if first == None:
                                 id = self.get_next_id()
                                 self.store[id] = \
-                                        Container(id,self,SERIES_CONTAINER_ID,brand.find('./{http://purl.org/dc/elements/1.1/}title').text)
+                                        Container(id, self, SERIES_CONTAINER_ID, brand.find('./{http://purl.org/dc/elements/1.1/}title').text)
                                 self.store[SERIES_CONTAINER_ID].add_child(self.store[id])
                                 first = self.store[id]
 

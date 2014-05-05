@@ -87,7 +87,7 @@ class Mirabeau(log.Loggable):
             for mapping in mappings:
                 if mapping["NewPortMappingDescription"] == description:
                     self.warning("UPnP port-mapping available")
-                    self._portmapping_ready = (mapping["NewRemoteHost"],mapping["NewExternalPort"])
+                    self._portmapping_ready = (mapping["NewRemoteHost"], mapping["NewExternalPort"])
                     return None
 
             internal_port = self._coherence.web_server_port
@@ -102,14 +102,14 @@ class Mirabeau(log.Loggable):
                                            enabled=True,
                                            port_mapping_description=description,
                                            lease_duration=0)
-            def mapping_ok(r,t):
+            def mapping_ok(r, t):
                 self._portmapping_ready = t
                 self.warning("UPnP port-mapping succeeded")
                 return None
             def mapping_failed(r):
                 self.warning("UPnP port-mapping failed")
                 return None
-            dfr.addCallback(mapping_ok,('',internal_port))
+            dfr.addCallback(mapping_ok, ('', internal_port))
             dfr.addErrback(mapping_failed)
         return dfr
 
@@ -146,7 +146,7 @@ class Mirabeau(log.Loggable):
 
         self.tube_publisher.stop()
         if self._portmapping_ready:
-            remote_host,external_port = self._portmapping_ready
+            remote_host, external_port = self._portmapping_ready
             dfr = self._igd_service.delete_port_mapping(remote_host=remote_host,
                                                    external_port=external_port,
                                                    protocol='TCP')

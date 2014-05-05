@@ -25,7 +25,7 @@ class TestCoherence(unittest.TestCase):
 
     def setUp(self):
         louie.reset()
-        self.coherence = Coherence({'unittest':'yes','logmode':'error'})
+        self.coherence = Coherence({'unittest': 'yes', 'logmode': 'error'})
 
     def tearDown(self):
 
@@ -40,16 +40,16 @@ class TestCoherence(unittest.TestCase):
     def test_singleton(self):
         d = Deferred()
 
-        c1 = Coherence({'unittest':'no','logmode':'error'})
-        c2 = Coherence({'unittest':'no','logmode':'error'})
-        c3 = Coherence({'unittest':'no','logmode':'error'})
+        c1 = Coherence({'unittest': 'no', 'logmode': 'error'})
+        c2 = Coherence({'unittest': 'no', 'logmode': 'error'})
+        c3 = Coherence({'unittest': 'no', 'logmode': 'error'})
 
-        def shutdown(r,instance):
+        def shutdown(r, instance):
             return instance.shutdown()
 
-        d.addCallback(shutdown,c1)
-        d.addCallback(shutdown,c2)
-        d.addCallback(shutdown,c3)
+        d.addCallback(shutdown, c1)
+        d.addCallback(shutdown, c2)
+        d.addCallback(shutdown, c3)
 
         reactor.callLater(3, d.callback, None)
 

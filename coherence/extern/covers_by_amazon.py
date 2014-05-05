@@ -75,7 +75,7 @@ class WorkQueue(object):
     _instance_ = None  # Singleton
 
     def __new__(cls, *args, **kwargs):
-        obj = getattr(cls,'_instance_',None)
+        obj = getattr(cls, '_instance_', None)
         if obj is not None:
             return obj
         else:
@@ -87,7 +87,7 @@ class WorkQueue(object):
             return obj
 
     def __init__(self, method, *args, **kwargs):
-        self.queue.append((method,args,kwargs))
+        self.queue.append((method, args, kwargs))
         self.queue_run()
 
     def queue_run(self):
@@ -97,14 +97,14 @@ class WorkQueue(object):
             #print "WorkQueue - all workers busy"
             return
         work = self.queue.pop()
-        d = defer.maybeDeferred(work[0], *work[1],**work[2])
+        d = defer.maybeDeferred(work[0], *work[1], **work[2])
         self.workers.append(d)
         d.addCallback(self.remove_from_workers, d)
         d.addErrback(self.remove_from_workers, d)
 
     def remove_from_workers(self, result, d):
         self.workers.remove(d)
-        reactor.callLater(1,self.queue_run)  # a very,very weak attempt
+        reactor.callLater(1, self.queue_run)  # a very,very weak attempt
 
 class CoverGetter(object):
 
@@ -155,20 +155,20 @@ class CoverGetter(object):
         self.filename = filename
         self.callback = callback
         self._errcall = not_found_callback
-        self.server = 'http://ecs.amazonaws.%s' % aws_server.get(locale,'com')
+        self.server = 'http://ecs.amazonaws.%s' % aws_server.get(locale, 'com')
         self.image_size = image_size
 
         def sanitize(s):
             if s is not None:
                 s = unicode(s.lower())
-                s = s.replace(unicode(u'ä'),unicode('ae'))
-                s = s.replace(unicode(u'ö'),unicode('oe'))
-                s = s.replace(unicode(u'ü'),unicode('ue'))
-                s = s.replace(unicode(u'ß'),unicode('ss'))
-                if isinstance(s,unicode):
-                    s = s.encode('ascii','ignore')
+                s = s.replace(unicode(u'ä'), unicode('ae'))
+                s = s.replace(unicode(u'ö'), unicode('oe'))
+                s = s.replace(unicode(u'ü'), unicode('ue'))
+                s = s.replace(unicode(u'ß'), unicode('ss'))
+                if isinstance(s, unicode):
+                    s = s.encode('ascii', 'ignore')
                 else:
-                    s = s.decode('utf-8').encode('ascii','ignore')
+                    s = s.decode('utf-8').encode('ascii', 'ignore')
             return s
 
         if asin != None:
@@ -186,7 +186,7 @@ class CoverGetter(object):
         url = self.server + self.aws_base_query + aws_response_group + query
         WorkQueue(self.send_request, url)
 
-    def send_request(self,url,*args,**kwargs):
+    def send_request(self, url, *args, **kwargs):
         #print "send_request", url
         d = client.getPage(url)
         d.addCallback(self.got_response)
@@ -201,7 +201,7 @@ class CoverGetter(object):
                 import Image
 
                 im = Image.open(StringIO.StringIO(result))
-                name,file_ext = os.path.splitext(self.filename)
+                name, file_ext = os.path.splitext(self.filename)
                 self.filename = name + convert_to
 
                 im.save(self.filename)
@@ -215,19 +215,19 @@ class CoverGetter(object):
 
         if self.callback is not None:
             #print "got_image", self.callback
-            if isinstance(self.callback,tuple):
+            if isinstance(self.callback, tuple):
                 if len(self.callback) == 3:
-                    c,a,kw = self.callback
-                    if not isinstance(a,tuple):
+                    c, a, kw = self.callback
+                    if not isinstance(a, tuple):
                         a = (a, )
                     a = (data, ) + a
-                    c(*a,**kw)
+                    c(*a, **kw)
                 if len(self.callback) == 2:
-                    c,a = self.callback
-                    if isinstance(a,dict):
-                        c(data,**a)
+                    c, a = self.callback
+                    if isinstance(a, dict):
+                        c(data, **a)
                     else:
-                        if not isinstance(a,tuple):
+                        if not isinstance(a, tuple):
                             a = (a, )
                         a = (data, ) + a
                         c(*a)
@@ -240,19 +240,19 @@ class CoverGetter(object):
     def got_response(self, result):
         convert_from = convert_to = ''
         result = parse_xml(result, encoding='utf-8')
-        image_tag = result.find('.//{%s}%s' % (aws_ns,aws_image_size.get(self.image_size,'large')))
+        image_tag = result.find('.//{%s}%s' % (aws_ns, aws_image_size.get(self.image_size, 'large')))
         if image_tag != None:
             image_url = image_tag.findtext('{%s}URL' % aws_ns)
             if self.filename == None:
                 d = client.getPage(image_url)
             else:
-                _,file_ext = os.path.splitext(self.filename)
+                _, file_ext = os.path.splitext(self.filename)
                 if file_ext == '':
-                    _,image_ext = os.path.splitext(image_url)
+                    _, image_ext = os.path.splitext(image_url)
                     if image_ext != '':
                         self.filename = ''.join((self.filename, image_ext))
                 else:
-                    _,image_ext = os.path.splitext(image_url)
+                    _, image_ext = os.path.splitext(image_url)
                     if image_ext != '' and file_ext != image_ext:
                         #print "hmm, we need a conversion..."
                         convert_from = image_ext
@@ -265,18 +265,18 @@ class CoverGetter(object):
             d.addErrback(self.got_error, image_url)
         else:
             if self._errcall is not None:
-                if isinstance(self._errcall,tuple):
+                if isinstance(self._errcall, tuple):
                     if len(self._errcall) == 3:
-                        c,a,kw = self._errcall
-                        if not isinstance(a,tuple):
+                        c, a, kw = self._errcall
+                        if not isinstance(a, tuple):
                             a = (a, )
-                        c(*a,**kw)
+                        c(*a, **kw)
                     if len(self._errcall) == 2:
-                        c,a = self._errcall
-                        if isinstance(a,dict):
+                        c, a = self._errcall
+                        if isinstance(a, dict):
                             c(**a)
                         else:
-                            if not isinstance(a,tuple):
+                            if not isinstance(a, tuple):
                                 a = (a, )
                             c(*a)
                     if len(self._errcall) == 1:
@@ -296,7 +296,7 @@ if __name__ == '__main__':
         optParameters = [['artist', 'a', '', 'artist name'],
                          ['title', 't', '', 'title'],
                          ['asin', 's', '', 'ASIN'],
-                         ['filename', 'f', 'cover.jpg', 'filename'],
+                         ['filename', 'f', 'cover.jpg', 'filename'], 
                     ]
 
     options = Options()
@@ -312,10 +312,10 @@ if __name__ == '__main__':
         print "Mylady, it is an image and its name is", filename, args, kwargs
 
     aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-    print options['asin'],options['artist'],options['title']
+    print options['asin'], options['artist'], options['title']
     if len(options['asin']):
-        reactor.callWhenRunning(CoverGetter,options['filename'],aws_key, callback=got_it,asin=options['asin'])
+        reactor.callWhenRunning(CoverGetter, options['filename'], aws_key, callback=got_it, asin=options['asin'])
     elif len(options['artist']) and len(options['title']):
-        reactor.callWhenRunning(CoverGetter,options['filename'],aws_key, callback=got_it,artist=options['artist'],title=options['title'])
+        reactor.callWhenRunning(CoverGetter, options['filename'], aws_key, callback=got_it, artist=options['artist'], title=options['title'])
 
     reactor.run()

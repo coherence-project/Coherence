@@ -61,12 +61,12 @@ from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence.backend import BackendItem, BackendStore
 
-KNOWN_AUDIO_TYPES = {'.mp3':'audio/mpeg',
-                     '.ogg':'application/ogg',
-                     '.mpc':'audio/x-musepack',
-                     '.flac':'audio/x-wavpack',
-                     '.wv':'audio/x-wavpack',
-                     '.m4a':'audio/mp4', }
+KNOWN_AUDIO_TYPES = {'.mp3': 'audio/mpeg',
+                     '.ogg': 'application/ogg',
+                     '.mpc': 'audio/x-musepack',
+                     '.flac': 'audio/x-wavpack',
+                     '.wv': 'audio/x-wavpack',
+                     '.m4a': 'audio/mp4', }
 
 
 def _dict_from_tags(tag):
@@ -134,8 +134,8 @@ AUDIO_ALBUM_CONTAINER_ID = 103
 def sanitize(filename):
     badchars = ''.join(set(string.punctuation) - set('-_+.~'))
     f = unicode(filename.lower())
-    for old, new in ((u'ä','ae'),(u'ö','oe'),(u'ü','ue'),(u'ß','ss')):
-        f = f.replace(unicode(old),unicode(new))
+    for old, new in ((u'ä', 'ae'), (u'ö', 'oe'), (u'ü', 'ue'), (u'ß', 'ss')):
+        f = f.replace(unicode(old), unicode(new))
     f = f.replace(badchars, '_')
     return f
 
@@ -144,7 +144,7 @@ class Container(BackendItem):
 
     get_path = None
 
-    def __init__(self, id, parent_id, name, children_callback=None,store=None,play_container=False):
+    def __init__(self, id, parent_id, name, children_callback=None, store=None, play_container=False):
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -160,7 +160,7 @@ class Container(BackendItem):
     def add_child(self, child):
         self.children.append(child)
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         if callable(self.children):
             children = self.children()
         else:
@@ -177,11 +177,11 @@ class Container(BackendItem):
             return len(self.children)
 
     def get_item(self):
-        item = DIDLLite.Container(self.id, self.parent_id,self.name)
+        item = DIDLLite.Container(self.id, self.parent_id, self.name)
         item.childCount = self.get_child_count()
         if self.store and self.play_container == True:
             if item.childCount > 0:
-                res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=self.get_children()[0].get_id())
+                res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=self.get_children()[0].get_id())
                 item.res.append(res)
         return item
 
@@ -192,7 +192,7 @@ class Container(BackendItem):
         return self.id
 
 
-class Artist(item.Item,BackendItem):
+class Artist(item.Item, BackendItem):
     """ definition for an artist """
 
     schemaVersion = 1
@@ -204,25 +204,25 @@ class Artist(item.Item,BackendItem):
 
     get_path = None
 
-    def get_artist_all_tracks(self,start=0,request_count=0):
-        children = [x[1] for x in list(self.store.query((Album,Track),
+    def get_artist_all_tracks(self, start=0, request_count=0):
+        children = [x[1] for x in list(self.store.query((Album, Track),
                             attributes.AND(Album.artist == self,
                                            Track.album == Album.storeID),
-                            sort=(Album.title.ascending,Track.track_nr.ascending)
+                            sort=(Album.title.ascending, Track.track_nr.ascending)
                             ))]
         if request_count == 0:
             return children[start:]
         else:
             return children[start:request_count]
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         all_id = 'artist_all_tracks_%d' % (self.storeID + 1000)
         self.store.containers[all_id] = \
                 Container(all_id, self.storeID + 1000, 'All tracks of %s' % self.name,
                           children_callback=self.get_artist_all_tracks,
-                          store=self.store,play_container=True)
+                          store=self.store, play_container=True)
 
-        children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self,sort=Album.title.ascending))
+        children = [self.store.containers[all_id]] + list(self.store.query(Album, Album.artist == self, sort=Album.title.ascending))
         if request_count == 0:
             return children[start:]
         else:
@@ -247,7 +247,7 @@ class Artist(item.Item,BackendItem):
                % (self.storeID, self.name.encode('ascii', 'ignore'), self.musicbrainz_id)
 
 
-class Album(item.Item,BackendItem):
+class Album(item.Item, BackendItem):
     """ definition for an album """
 
     schemaVersion = 1
@@ -262,8 +262,8 @@ class Album(item.Item,BackendItem):
 
     get_path = None
 
-    def get_children(self,start=0,request_count=0):
-        children = list(self.store.query(Track, Track.album == self,sort=Track.track_nr.ascending))
+    def get_children(self, start=0, request_count=0):
+        children = list(self.store.query(Track, Track.album == self, sort=Track.track_nr.ascending))
         if request_count == 0:
             return children[start:]
         else:
@@ -277,11 +277,11 @@ class Album(item.Item,BackendItem):
         item.artist = self.artist.name
         item.childCount = self.get_child_count()
         if len(self.cover) > 0:
-            _,ext = os.path.splitext(self.cover)
-            item.albumArtURI = ''.join((self.store.urlbase,str(self.get_id()),'?cover',ext))
+            _, ext = os.path.splitext(self.cover)
+            item.albumArtURI = ''.join((self.store.urlbase, str(self.get_id()), '?cover', ext))
 
         if self.get_child_count() > 0:
-            res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=self.get_children()[0].get_id())
+            res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=self.get_children()[0].get_id())
             item.res.append(res)
         return item
 
@@ -303,46 +303,46 @@ class Album(item.Item,BackendItem):
                   self.musicbrainz_id)
 
 
-class Track(item.Item,BackendItem):
+class Track(item.Item, BackendItem):
     """ definition for a track """
 
     schemaVersion = 1
     typeName = 'track'
 
     title = attributes.text(allowNone=False, indexed=True)
-    track_nr = attributes.integer(default=1,allowNone=False)
-    cd_nr = attributes.integer(default=1,allowNone=False)
+    track_nr = attributes.integer(default=1, allowNone=False)
+    cd_nr = attributes.integer(default=1, allowNone=False)
     album = attributes.reference(allowNone=False, indexed=True)
     location = attributes.text(allowNone=False)
-    rating = attributes.integer(default=0,allowNone=False)
+    rating = attributes.integer(default=0, allowNone=False)
     last_played = attributes.timestamp()
-    added = attributes.timestamp(default=Time(),allowNone=False)
+    added = attributes.timestamp(default=Time(), allowNone=False)
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         return []
 
     def get_child_count(self):
         return 0
 
     def get_item(self):
-        item = DIDLLite.MusicTrack(self.storeID + 1000, self.album.storeID + 1000,self.title)
+        item = DIDLLite.MusicTrack(self.storeID + 1000, self.album.storeID + 1000, self.title)
         item.artist = self.album.artist.name
         item.album = self.album.title
         if self.album.cover != '':
-            _,ext = os.path.splitext(self.album.cover)
+            _, ext = os.path.splitext(self.album.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
-            item.albumArtURI = ''.join((self.store.urlbase,str(self.storeID + 1000),'?cover',ext))
+            item.albumArtURI = ''.join((self.store.urlbase, str(self.storeID + 1000), '?cover', ext))
         item.originalTrackNumber = self.track_nr
         item.server_uuid = str(self.store.server.uuid)[5:]
 
-        _,host_port,_,_,_ = urlsplit(self.store.urlbase)
+        _, host_port, _, _, _ = urlsplit(self.store.urlbase)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
         else:
             host = host_port
 
-        _,ext = os.path.splitext(self.location)
+        _, ext = os.path.splitext(self.location)
         ext = ext.lower()
 
         try:
@@ -352,7 +352,7 @@ class Track(item.Item,BackendItem):
 
         statinfo = os.stat(self.location)
 
-        res = DIDLLite.Resource('file://' + self.location, 'internal:%s:%s:*' % (host,mimetype))
+        res = DIDLLite.Resource('file://' + self.location, 'internal:%s:%s:*' % (host, mimetype))
         try:
             res.size = statinfo.st_size
         except:
@@ -421,7 +421,7 @@ class Track(item.Item,BackendItem):
                   self.location.encode('ascii', 'ignore'))
 
 
-class Playlist(item.Item,BackendItem):
+class Playlist(item.Item, BackendItem):
     """ definition for a playlist
 
         - has a name
@@ -445,25 +445,25 @@ class MediaStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.info("MediaStore __init__")
         self.update_id = 0
 
-        self.medialocation = kwargs.get('medialocation','tests/content/audio')
-        self.coverlocation = kwargs.get('coverlocation',None)
+        self.medialocation = kwargs.get('medialocation', 'tests/content/audio')
+        self.coverlocation = kwargs.get('coverlocation', None)
         if self.coverlocation is not None and self.coverlocation[-1] != '/':
             self.coverlocation = self.coverlocation + '/'
-        self.mediadb = kwargs.get('mediadb',MEDIA_DB)
+        self.mediadb = kwargs.get('mediadb', MEDIA_DB)
 
-        self.name = kwargs.get('name','MediaStore')
+        self.name = kwargs.get('name', 'MediaStore')
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
-                Container(ROOT_CONTAINER_ID,-1, self.name)
+                Container(ROOT_CONTAINER_ID, -1, self.name)
 
-        self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
-                                 '7': lambda: self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
-                                 '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+        self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),  # all tracks
+                                 '7': lambda: self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),  # all albums
+                                 '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),  # all artists
                                 })
 
 
@@ -473,12 +473,12 @@ class MediaStore(BackendStore):
         #print "walk", path
         if os.path.exists(path):
             for filename in os.listdir(path):
-                if os.path.isdir(os.path.join(path,filename)):
-                    self.walk(os.path.join(path,filename))
+                if os.path.isdir(os.path.join(path, filename)):
+                    self.walk(os.path.join(path, filename))
                 else:
-                    _,ext = os.path.splitext(filename)
+                    _, ext = os.path.splitext(filename)
                     if ext.lower() in KNOWN_AUDIO_TYPES:
-                        self.filelist.append(os.path.join(path,filename))
+                        self.filelist.append(os.path.join(path, filename))
 
     def get_music_files(self, musiclocation):
         if not isinstance(musiclocation, list):
@@ -512,54 +512,54 @@ class MediaStore(BackendStore):
             track = tags.get('track', 0)
 
             if len(artist) == 0:
-                return;
+                return; 
                 artist = u'UNKNOWN_ARTIST'
             if len(album) == 0:
-                return;
+                return; 
                 album = u'UNKNOWN_ALBUM'
             if len(title) == 0:
-                return;
+                return; 
                 title = u'UNKNOWN_TITLE'
 
             #print "Tags:", file, album, artist, title, track
 
-            artist_ds = self.db.findOrCreate(Artist, name=unicode(artist,'utf8'))
+            artist_ds = self.db.findOrCreate(Artist, name=unicode(artist, 'utf8'))
             album_ds = self.db.findOrCreate(Album,
-                                            title=unicode(album,'utf8'),
+                                            title=unicode(album, 'utf8'),
                                             artist=artist_ds)
             if len(album_ds.cover) == 0:
-                dirname = unicode(os.path.dirname(file),'utf-8')
+                dirname = unicode(os.path.dirname(file), 'utf-8')
                 album_ds.cover = check_for_cover_art(dirname)
                 if len(album_ds.cover) > 0:
                     filename = u"%s - %s" % (album_ds.artist.name, album_ds.title)
                     filename = sanitize(filename + os.path.splitext(album_ds.cover)[1])
-                    filename = os.path.join(dirname,filename)
-                    shutil.move(os.path.join(dirname,album_ds.cover),filename)
+                    filename = os.path.join(dirname, filename)
+                    shutil.move(os.path.join(dirname, album_ds.cover), filename)
                     album_ds.cover = filename
             #print album_ds.cover
             track_ds = self.db.findOrCreate(Track,
-                                            title=unicode(title,'utf8'),
+                                            title=unicode(title, 'utf8'),
                                             track_nr=int(track),
                                             album=album_ds,
-                                            location=unicode(file,'utf8'))
+                                            location=unicode(file, 'utf8'))
 
         for file in self.filelist:
-            d = defer.maybeDeferred(get_tags,file)
+            d = defer.maybeDeferred(get_tags, file)
             d.addBoth(got_tags, file)
 
 
     def show_db(self):
-        for album in list(self.db.query(Album,sort=Album.title.ascending)):
+        for album in list(self.db.query(Album, sort=Album.title.ascending)):
             print album
-            for track in list(self.db.query(Track, Track.album == album,sort=Track.track_nr.ascending)):
+            for track in list(self.db.query(Track, Track.album == album, sort=Track.track_nr.ascending)):
                 print track
 
     def show_albums(self):
-        for album in list(self.db.query(Album,sort=Album.title.ascending)):
+        for album in list(self.db.query(Album, sort=Album.title.ascending)):
             print album
 
     def show_artists(self):
-        for artist in list(self.db.query(Artist,sort=Artist.name.ascending)):
+        for artist in list(self.db.query(Artist, sort=Artist.name.ascending)):
             print artist
 
     def show_tracks_by_artist(self, artist_name):
@@ -570,7 +570,7 @@ class MediaStore(BackendStore):
             for track in list(self.db.query(Track, Track.album == album,sort=Track.title.ascending)):
                 print track
         """
-        for track in [x[2] for x in list(self.db.query((Artist,Album,Track),
+        for track in [x[2] for x in list(self.db.query((Artist, Album, Track),
                             attributes.AND(Artist.name == artist_name,
                                            Album.artist == Artist.storeID,
                                            Track.album == Album.storeID),
@@ -579,13 +579,13 @@ class MediaStore(BackendStore):
             print track
 
     def show_tracks_by_title(self, title_or_part):
-            for track in list(self.db.query(Track, Track.title.like(u'%',title_or_part,u'%'),sort=Track.title.ascending)):
+            for track in list(self.db.query(Track, Track.title.like(u'%', title_or_part, u'%'), sort=Track.title.ascending)):
                 print track
 
     def show_tracks_to_filename(self, title_or_part):
-        for track in list(self.db.query(Track, Track.title.like(u'%',title_or_part,u'%'),sort=Track.title.ascending)):
+        for track in list(self.db.query(Track, Track.title.like(u'%', title_or_part, u'%'), sort=Track.title.ascending)):
             print track.title, track.album.artist.name, track.track_nr
-            _,ext = os.path.splitext(track.path)
+            _, ext = os.path.splitext(track.path)
             f = "%02d - %s - %s%s" % (track.track_nr, track.album.artist.name,
                                        track.title, ext)
             f = sanitize(f)
@@ -598,25 +598,25 @@ class MediaStore(BackendStore):
             filename = sanitize(filename)
 
             if self.coverlocation is not None:
-                cover_path = os.path.join(self.coverlocation,filename + '.jpg')
+                cover_path = os.path.join(self.coverlocation, filename + '.jpg')
                 if os.path.exists(cover_path) is True:
                     print "cover found:", cover_path
                     album.cover = cover_path
                 else:
-                    def got_it(f,a):
-                        print "cover saved:",f, a.title
+                    def got_it(f, a):
+                        print "cover saved:", f, a.title
                         a.cover = f
 
                     aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-                    CoverGetter(cover_path,aws_key,
-                                callback=(got_it,(album)),
+                    CoverGetter(cover_path, aws_key,
+                                callback=(got_it, (album)),
                                 artist=album.artist.name,
                                 title=album.title)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         self.info("get_by_id %s", id)
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0].split('.')[0]
         if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
             try:
@@ -645,17 +645,17 @@ class MediaStore(BackendStore):
         self.db = store.Store(self.mediadb)
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container(AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda:list(self.db.query(Track,sort=Track.title.ascending)),
-                          store=self,play_container=True)
+                Container(AUDIO_ALL_CONTAINER_ID, ROOT_CONTAINER_ID, 'All tracks',
+                          children_callback=lambda: list(self.db.query(Track, sort=Track.title.ascending)),
+                          store=self, play_container=True)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container(AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
-                          children_callback=lambda:list(self.db.query(Album,sort=Album.title.ascending)))
+                Container(AUDIO_ALBUM_CONTAINER_ID, ROOT_CONTAINER_ID, 'Albums',
+                          children_callback=lambda: list(self.db.query(Album, sort=Album.title.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container(AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
-                          children_callback=lambda:list(self.db.query(Artist,sort=Artist.name.ascending)))
+                Container(AUDIO_ARTIST_CONTAINER_ID, ROOT_CONTAINER_ID, 'Artists',
+                          children_callback=lambda: list(self.db.query(Artist, sort=Artist.name.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.db.server = self.server

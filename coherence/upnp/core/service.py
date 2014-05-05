@@ -75,65 +75,65 @@ class Service(log.Loggable):
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
-        self.info("%s %s %s initialized", self.device.friendly_name,self.service_type,self.id)
+        self.info("%s %s %s initialized", self.device.friendly_name, self.service_type, self.id)
 
     def as_tuples(self):
         r = []
 
-        def append(name,attribute):
+        def append(name, attribute):
             try:
-                if isinstance(attribute,tuple):
+                if isinstance(attribute, tuple):
                     if callable(attribute[0]):
                         v1 = attribute[0]()
-                    elif hasattr(self,attribute[0]):
-                        v1 = getattr(self,attribute[0])
+                    elif hasattr(self, attribute[0]):
+                        v1 = getattr(self, attribute[0])
                     else:
                         v1 = attribute[0]
-                    if v1 in [None,'None']:
+                    if v1 in [None, 'None']:
                         return
                     if callable(attribute[1]):
                         v2 = attribute[1]()
-                    elif hasattr(self,attribute[1]):
-                        v2 = getattr(self,attribute[1])
+                    elif hasattr(self, attribute[1]):
+                        v2 = getattr(self, attribute[1])
                     else:
                         v2 = attribute[1]
-                    if v2 in [None,'None']:
+                    if v2 in [None, 'None']:
                         return
                     if len(attribute) > 2:
-                        r.append((name,(v1,v2,attribute[2])))
+                        r.append((name, (v1, v2, attribute[2])))
                     else:
-                        r.append((name,(v1,v2)))
+                        r.append((name, (v1, v2)))
                     return
                 elif callable(attribute):
                     v = attribute()
-                elif hasattr(self,attribute):
-                    v = getattr(self,attribute)
+                elif hasattr(self, attribute):
+                    v = getattr(self, attribute)
                 else:
                     v = attribute
-                if v not in [None,'None']:
-                    r.append((name,v))
+                if v not in [None, 'None']:
+                    r.append((name, v))
             except:
                 import traceback
                 self.debug(traceback.format_exc())
 
-        r.append(('Location',(self.device.get_location(),self.device.get_location())))
-        append('URL base',self.device.get_urlbase)
-        r.append(('UDN',self.device.get_id()))
-        r.append(('Type',self.service_type))
-        r.append(('ID',self.id))
-        append('Service Description URL',(self.scpd_url,lambda: self.device.make_fullyqualified(self.scpd_url)))
-        append('Control URL',(self.control_url,lambda: self.device.make_fullyqualified(self.control_url),False))
-        append('Event Subscription URL',(self.event_sub_url,lambda: self.device.make_fullyqualified(self.event_sub_url),False))
+        r.append(('Location', (self.device.get_location(), self.device.get_location())))
+        append('URL base', self.device.get_urlbase)
+        r.append(('UDN', self.device.get_id()))
+        r.append(('Type', self.service_type))
+        r.append(('ID', self.id))
+        append('Service Description URL', (self.scpd_url, lambda: self.device.make_fullyqualified(self.scpd_url)))
+        append('Control URL', (self.control_url, lambda: self.device.make_fullyqualified(self.control_url), False))
+        append('Event Subscription URL', (self.event_sub_url, lambda: self.device.make_fullyqualified(self.event_sub_url), False))
 
         return r
 
     def as_dict(self):
-        d = {'type':self.service_type}
+        d = {'type': self.service_type}
         d['actions'] = [a.as_dict() for a in self._actions.values()]
         return d
 
     def __repr__(self):
-        return "Service %s %s" % (self.service_type,self.id)
+        return "Service %s %s" % (self.service_type, self.id)
 
     #def __del__(self):
     #    print "Service deleted"
@@ -143,7 +143,7 @@ class Service(log.Loggable):
         url = self.get_control_url()
         namespace = self.get_type()
         action = "%s#%s" % (namespace, name)
-        client = SOAPProxy(url, namespace=("u",namespace), soapaction=action)
+        client = SOAPProxy(url, namespace=("u", namespace), soapaction=action)
         return client
 
     def remove(self):
@@ -156,11 +156,11 @@ class Service(log.Loggable):
             self.event_connection.teardown()
         if self.subscription_id != None:
             self.unsubscribe()
-        for name,action in self._actions.items():
-            self.debug("remove %s %s", name,action)
+        for name, action in self._actions.items():
+            self.debug("remove %s %s", name, action)
             del self._actions[name]
             del action
-        for instance,variables in self._variables.items():
+        for instance, variables in self._variables.items():
             for name, variable in variables.items():
                 del variables[name]
                 del variable
@@ -176,15 +176,15 @@ class Service(log.Loggable):
         return self.service_type
 
     def set_timeout(self, timeout):
-        self.info("set timout for %s/%s to %d", self.device.friendly_name,self.service_type,int(timeout))
+        self.info("set timout for %s/%s to %d", self.device.friendly_name, self.service_type, int(timeout))
         self.timeout = timeout
         try:
             self.renew_subscription_call.reset(int(self.timeout) - 30)
-            self.info("reset renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout) - 30)
+            self.info("reset renew subscription call for %s/%s to %d", self.device.friendly_name, self.service_type, int(self.timeout) - 30)
         except:
             self.renew_subscription_call = reactor.callLater(int(self.timeout) - 30,
                                                                  self.renew_subscription)
-            self.info("starting renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout) - 30)
+            self.info("starting renew subscription call for %s/%s to %d", self.device.friendly_name, self.service_type, int(self.timeout) - 30)
 
     def get_timeout(self):
         return self.timeout
@@ -196,7 +196,7 @@ class Service(log.Loggable):
         return self.subscription_id
 
     def set_sid(self, sid):
-        self.info("set subscription id for %s/%s to %s", self.device.friendly_name,self.service_type,sid)
+        self.info("set subscription id for %s/%s to %s", self.device.friendly_name, self.service_type, sid)
         self.subscription_id = sid
         if sid is not None:
             subscribe(self)
@@ -271,8 +271,8 @@ class Service(log.Loggable):
         self.info("renew_subscription")
         event.subscribe(self)
 
-    def process_event(self,event):
-        self.info("process event %r %r", self,event)
+    def process_event(self, event):
+        self.info("process event %r %r", self, event)
         for var_name, var_value  in event.items():
             if var_name == 'LastChange':
                 self.info("we have a LastChange event")
@@ -281,11 +281,11 @@ class Service(log.Loggable):
                 namespace_uri, tag = tree.tag[1:].split("}", 1)
                 for instance in tree.findall('{%s}InstanceID' % namespace_uri):
                     instance_id = instance.attrib['val']
-                    self.info("instance_id %r %r", instance,instance_id)
+                    self.info("instance_id %r %r", instance, instance_id)
                     for var in instance.getchildren():
                         self.info("var %r", var)
                         namespace_uri, tag = var.tag[1:].split("}", 1)
-                        self.info("%r %r %r", namespace_uri, tag,var.attrib['val'])
+                        self.info("%r %r %r", namespace_uri, tag, var.attrib['val'])
                         self.get_state_variable(tag, instance_id).update(var.attrib['val'])
                         self.info("updated var %r", var)
                         if len(var.attrib) > 1:
@@ -309,10 +309,10 @@ class Service(log.Loggable):
                                     #self.debug("%r update %r %r %r", self,namespace_uri, tag, var.attrib['val'])
                                     self.get_state_variable(tag, instance_id).update(var.attrib['val'])
                                     self.debug("updated 'attributed' var %r", var)
-                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value,event.raw))
+                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed', None, self, (var_name, var_value, event.raw))
             else:
                 self.get_state_variable(var_name, 0).update(var_value)
-                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed',None,self,(var_name,var_value,event.raw))
+                louie.send('Coherence.UPnP.DeviceClient.Service.Event.processed', None, self, (var_name, var_value, event.raw))
         if self.last_time_updated == None:
             # The clients (e.g. media_server_client) check for last time to detect whether service detection is complete
             # so we need to set it here and now to avoid a potential race condition
@@ -342,7 +342,7 @@ class Service(log.Loggable):
                 self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
             for var_node in tree.findall('.//{%s}stateVariable' % ns):
-                send_events = var_node.attrib.get('sendEvents','yes')
+                send_events = var_node.attrib.get('sendEvents', 'yes')
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
@@ -398,7 +398,7 @@ moderated_variables = \
          'urn:schemas-upnp-org:service:RenderingControl:1':
             ['LastChange'],
          'urn:schemas-upnp-org:service:ScheduledRecording:1':
-            ['LastChange'],
+            ['LastChange'], 
         }
 
 class ServiceServer(log.Loggable):
@@ -472,7 +472,7 @@ class ServiceServer(log.Loggable):
     def get_subscribers(self):
         return self._subscribers
 
-    def rm_notification(self,result,d):
+    def rm_notification(self, result, d):
         del self._pending_notifications[d]
 
     def new_subscriber(self, subscriber):
@@ -503,9 +503,9 @@ class ServiceServer(log.Loggable):
 
         if evented_variables > 0:
             xml = ET.tostring(root, encoding='utf-8')
-            d,p = event.send_notification(subscriber, xml)
+            d, p = event.send_notification(subscriber, xml)
             self._pending_notifications[d] = p
-            d.addBoth(self.rm_notification,d)
+            d.addBoth(self.rm_notification, d)
         self._subscribers[subscriber['sid']] = subscriber
 
     def get_id(self):
@@ -547,9 +547,9 @@ class ServiceServer(log.Loggable):
                 len(self._subscribers) > 0):
                 xml = self.build_single_notification(instance, variable_name, variable.value)
                 for s in self._subscribers.values():
-                    d,p = event.send_notification(s, xml)
+                    d, p = event.send_notification(s, xml)
                     self._pending_notifications[d] = p
-                    d.addBoth(self.rm_notification,d)
+                    d.addBoth(self.rm_notification, d)
         try:
             variable = self._variables[int(instance)][variable_name]
             if isinstance(value, defer.Deferred):
@@ -631,9 +631,9 @@ class ServiceServer(log.Loggable):
         xml = ET.tostring(root, encoding='utf-8')
         #print "propagate_notification", xml
         for s in self._subscribers.values():
-            d,p = event.send_notification(s,xml)
+            d, p = event.send_notification(s, xml)
             self._pending_notifications[d] = p
-            d.addBoth(self.rm_notification,d)
+            d.addBoth(self.rm_notification, d)
 
     def check_subscribers(self):
         for s in self._subscribers.values():
@@ -673,17 +673,17 @@ class ServiceServer(log.Loggable):
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
     def get_scpdXML(self):
-        if not hasattr(self,'scpdXML') or self.scpdXML == None:
+        if not hasattr(self, 'scpdXML') or self.scpdXML == None:
             self.scpdXML = scpdXML(self)
             self.scpdXML = self.scpdXML.build_xml()
         return self.scpdXML
 
-    def register_vendor_variable(self,name,implementation='optional',
+    def register_vendor_variable(self, name, implementation='optional',
                                       instance=0, evented='no',
                                       data_type='string',
                                       dependant_variable=None,
                                       default_value=None,
-                                      allowed_values=None,has_vendor_values=False,allowed_value_range=None,
+                                      allowed_values=None, has_vendor_values=False, allowed_value_range=None,
                                       moderated=False):
         """
         enables a backend to add an own, vendor defined, StateVariable to the service
@@ -710,8 +710,8 @@ class ServiceServer(log.Loggable):
             send_events = 'no'
         else:
             send_events = evented
-        new_variable = variable.StateVariable(self,name,implementation,instance,send_events,
-                                                   data_type,allowed_values)
+        new_variable = variable.StateVariable(self, name, implementation, instance, send_events,
+                                                   data_type, allowed_values)
         if default_value == None:
             new_variable.default_value = ''
         else:
@@ -726,7 +726,7 @@ class ServiceServer(log.Loggable):
         self._variables.get(instance)[name] = new_variable
         return new_variable
 
-    def register_vendor_action(self,name,implementation,arguments=None,needs_callback=True):
+    def register_vendor_action(self, name, implementation, arguments=None, needs_callback=True):
         """
         enables a backend to add an own, vendor defined, Action to the service
 
@@ -754,17 +754,17 @@ class ServiceServer(log.Loggable):
                 issue a warning for now
             """
             if implementation == 'optional':
-                self.info('%s has a missing callback for %s action %s, action disabled', self.id,implementation,name)
+                self.info('%s has a missing callback for %s action %s, action disabled', self.id, implementation, name)
                 return
             else:
-                if((hasattr(self,'implementation') and self.implementation == 'required') or
-                    not hasattr(self,'implementation')):
-                    self.warning('%s has a missing callback for %s action %s, service disabled', self.id,implementation,name)
+                if((hasattr(self, 'implementation') and self.implementation == 'required') or
+                    not hasattr(self, 'implementation')):
+                    self.warning('%s has a missing callback for %s action %s, service disabled', self.id, implementation, name)
                 raise LookupError("missing callback")
 
         arguments_list = []
         for argument in arguments:
-            arguments_list.append(action.Argument(argument[0],argument[1].lower(),argument[2]))
+            arguments_list.append(action.Argument(argument[0], argument[1].lower(), argument[2]))
 
         new_action = action.Action(self, name, implementation, arguments_list)
         self._actions[name] = new_action
@@ -818,13 +818,13 @@ class ServiceServer(log.Loggable):
                     issue a warning for now
                 """
                 if implementation == 'optional':
-                    self.info('%s has a missing callback for %s action %s, action disabled', self.id,implementation,name)
+                    self.info('%s has a missing callback for %s action %s, action disabled', self.id, implementation, name)
                     continue
                 else:
-                    if((hasattr(self,'implementation') and self.implementation == 'required') or
-                        not hasattr(self,'implementation')):
-                        self.warning('%s has a missing callback for %s action %s, service disabled', self.id,implementation,name)
-                    raise LookupError,"missing callback"
+                    if((hasattr(self, 'implementation') and self.implementation == 'required') or
+                        not hasattr(self, 'implementation')):
+                        self.warning('%s has a missing callback for %s action %s, service disabled', self.id, implementation, name)
+                    raise LookupError, "missing callback"
 
             new_action = action.Action(self, name, implementation, arguments)
             self._actions[name] = new_action
@@ -836,7 +836,7 @@ class ServiceServer(log.Loggable):
         backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
         service_value_defaults = None
         if backend_vendor_value_defaults:
-            service_value_defaults = backend_vendor_value_defaults.get(self.id,None)
+            service_value_defaults = backend_vendor_value_defaults.get(self.id, None)
 
         backend_vendor_range_defaults = getattr(self.backend, "vendor_range_defaults", None)
         service_range_defaults = None
@@ -936,7 +936,7 @@ class scpdXML(static.Data):
     def render(self, request):
         if self.data == None:
             self.data = self.build_xml()
-        return static.Data.render(self,request)
+        return static.Data.render(self, request)
 
     def build_xml(self):
         root = ET.Element('scpd')
@@ -974,12 +974,12 @@ class scpdXML(static.Data):
             if(var.allowed_value_range != None and
                 len(var.allowed_value_range) > 0):
                 complete = True
-                for name,value in var.allowed_value_range.items():
+                for name, value in var.allowed_value_range.items():
                     if value == None:
                         complete = False
                 if complete == True:
                     avl = ET.SubElement(s, 'allowedValueRange')
-                    for name,value in var.allowed_value_range.items():
+                    for name, value in var.allowed_value_range.items():
                          if value != None:
                             ET.SubElement(avl, name).text = str(value)
 
@@ -1060,11 +1060,11 @@ class ServiceControl(log.Loggable):
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.critical('argument %s not valid for action %s', arg_name,action.name)
+                self.critical('argument %s not valid for action %s', arg_name, action.name)
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
             self.critical('argument %s missing for action %s',
-                                [a.get_name() for a in in_arguments],action.name)
+                                [a.get_name() for a in in_arguments], action.name)
             return failure.Failure(errorCode(402))
 
         def callit(*args, **kwargs):

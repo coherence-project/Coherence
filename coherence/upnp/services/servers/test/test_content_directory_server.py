@@ -43,9 +43,9 @@ class TestContentDirectoryServer(unittest.TestCase):
         album.child('track-1.ogg').touch()
         album.child('track-2.ogg').touch()
         louie.reset()
-        self.coherence = Coherence({'unittest':'yes','logmode':'debug','subsystem_log':{'controlpoint':'error',
-                                                                                        'action':'error',
-                                                                                        'soap':'error'},'controlpoint':'yes'})
+        self.coherence = Coherence({'unittest': 'yes', 'logmode': 'debug', 'subsystem_log': {'controlpoint': 'error',
+                                                                                        'action': 'error',
+                                                                                        'soap': 'error'}, 'controlpoint': 'yes'})
         self.uuid = UUID()
         p = self.coherence.add_plugin('FSStore',
                                       name='MediaServer-%d' % os.getpid(),
@@ -75,7 +75,7 @@ class TestContentDirectoryServer(unittest.TestCase):
             except:
                 d.errback()
 
-            def got_second_answer(r,childcount):
+            def got_second_answer(r, childcount):
                 try:
                     self.assertEqual(int(r['TotalMatches']), childcount)
                     d.callback(None)
@@ -97,7 +97,7 @@ class TestContentDirectoryServer(unittest.TestCase):
 
                 call = mediaserver.client.content_directory.browse(object_id=item.id,
                                                          process_result=False)
-                call.addCallback(got_second_answer,item.childCount)
+                call.addCallback(got_second_answer, item.childCount)
                 return call
 
             call = mediaserver.client.content_directory.browse(process_result=False)
@@ -133,7 +133,7 @@ class TestContentDirectoryServer(unittest.TestCase):
                     return
                 d.callback(None)
 
-            call = mediaserver.client.content_directory.browse(object_id='0',browse_flag='BrowseMetadata',process_result=False)
+            call = mediaserver.client.content_directory.browse(object_id='0', browse_flag='BrowseMetadata', process_result=False)
             call.addCallback(got_first_answer)
             call.addErrback(lambda x: d.errback(None))
 
@@ -161,17 +161,17 @@ class TestContentDirectoryServer(unittest.TestCase):
                     return
                 d.callback(None)
 
-            def my_browse(*args,**kwargs):
+            def my_browse(*args, **kwargs):
                 kwargs['ContainerID'] = kwargs['ObjectID']
                 del kwargs['ObjectID']
                 del kwargs['BrowseFlag']
                 kwargs['SearchCriteria'] = ''
-                return 'Search',kwargs
+                return 'Search', kwargs
 
             #mediaserver.client.overlay_actions = {'Browse':my_browse}
-            mediaserver.client.overlay_headers = {'user-agent':'Xbox/Coherence emulation'}
+            mediaserver.client.overlay_headers = {'user-agent': 'Xbox/Coherence emulation'}
 
-            call = mediaserver.client.content_directory.browse(object_id='4',process_result=False)
+            call = mediaserver.client.content_directory.browse(object_id='4', process_result=False)
             call.addCallback(got_first_answer)
             call.addErrback(lambda x: d.errback(None))
 
@@ -206,9 +206,9 @@ class TestContentDirectoryServer(unittest.TestCase):
                     return
                 d.callback(None)
 
-            mediaserver.client.overlay_headers = {'user-agent':'Xbox/Coherence emulation'}
+            mediaserver.client.overlay_headers = {'user-agent': 'Xbox/Coherence emulation'}
 
-            call = mediaserver.client.content_directory.browse(object_id='0',browse_flag='BrowseMetadata',process_result=False)
+            call = mediaserver.client.content_directory.browse(object_id='0', browse_flag='BrowseMetadata', process_result=False)
             call.addCallback(got_first_answer)
             call.addErrback(lambda x: d.errback(None))
 
@@ -235,7 +235,7 @@ class TestContentDirectoryServer(unittest.TestCase):
                     d.errback()
                 d.callback(None)
 
-            mediaserver.client.overlay_headers = {'user-agent':'Xbox/Coherence emulation'}
+            mediaserver.client.overlay_headers = {'user-agent': 'Xbox/Coherence emulation'}
 
             call = mediaserver.client.content_directory.search(container_id='4',
                                                                criteria='')

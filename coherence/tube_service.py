@@ -86,11 +86,11 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                 for item in didl.getItems():
                     new_res = DIDLLite.Resources()
                     for res in item.res:
-                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                        remote_protocol, remote_network, remote_content_format, _ = res.protocolInfo.split(':')
                         if remote_protocol == 'http-get' and remote_network == '*':
                             quoted_url = urllib.quote_plus(res.data)
                             print "modifying", res.data
-                            res.data = urlparse.urlunsplit(('http', self.service.device.external_address,'mirabeau',quoted_url,""))
+                            res.data = urlparse.urlunsplit(('http', self.service.device.external_address, 'mirabeau', quoted_url, ""))
                             print "--->", res.data
                             new_res.append(res)
                             changed = True
@@ -131,11 +131,11 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.critical('argument %s not valid for action %s', arg_name,action.name)
+                self.critical('argument %s not valid for action %s', arg_name, action.name)
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
             self.critical('argument %s missing for action %s',
-                                [a.get_name() for a in in_arguments],action.name)
+                                [a.get_name() for a in in_arguments], action.name)
             return failure.Failure(errorCode(402))
 
 
@@ -149,7 +149,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         #print 'callit action', action
         #print 'callit dbus action', self.service.service.action
         d = defer.Deferred()
-        self.service.service.call_action(action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler=d.callback, error_handler=d.errback,utf8_strings=True)
+        self.service.service.call_action(action.name, dbus.Dictionary(kwargs, signature='ss'), reply_handler=d.callback, error_handler=d.errback, utf8_strings=True)
         d.addCallback(self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d
@@ -194,7 +194,7 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
             self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
         for var_node in tree.findall('.//{%s}stateVariable' % ns):
-            send_events = var_node.attrib.get('sendEvents','yes')
+            send_events = var_node.attrib.get('sendEvents', 'yes')
             name = var_node.findtext('{%s}name' % ns)
             data_type = var_node.findtext('{%s}dataType' % ns)
             values = []
@@ -219,7 +219,7 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
 class TubeDeviceProxy(log.Loggable):
     logCategory = 'dbus'
 
-    def __init__(self, coherence, tube_device,external_address):
+    def __init__(self, coherence, tube_device, external_address):
         log.Loggable.__init__(self)
         self.device = tube_device
         self.coherence = coherence
@@ -308,7 +308,7 @@ class TubeDeviceProxy(log.Loggable):
         for service in self._services:
             device_version = self.version
             service_version = self.version
-            if hasattr(service,'version'):
+            if hasattr(service, 'version'):
                 service_version = service.version
             silent = False
 
@@ -319,12 +319,12 @@ class TubeDeviceProxy(log.Loggable):
                     namespace = 'schemas-upnp-org'
 
                 device_description_tmpl = 'description-%d.xml' % device_version
-                if hasattr(service,'device_description_tmpl'):
+                if hasattr(service, 'device_description_tmpl'):
                     device_description_tmpl = service.device_description_tmpl
 
                 s.register('local',
-                            '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, service_version),
-                            'urn:%s:service:%s:%d' % (namespace,service.id, service_version),
+                            '%s::urn:%s:service:%s:%d' % (uuid, namespace, service.id, service_version),
+                            'urn:%s:service:%s:%d' % (namespace, service.id, service_version),
                             self.coherence.urlbase + uuid[5:] + '/' + device_description_tmpl,
                             silent=silent,
                             host=host)

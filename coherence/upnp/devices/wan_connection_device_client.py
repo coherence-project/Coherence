@@ -48,7 +48,7 @@ class WANConnectionDeviceClient(log.Loggable):
             self.wan_ppp_connection.remove()
 
     def service_notified(self, service):
-        self.info("Service %r sent notification", service);
+        self.info("Service %r sent notification", service); 
         if self.detection_completed == True:
             return
         if self.wan_ip_connection != None:

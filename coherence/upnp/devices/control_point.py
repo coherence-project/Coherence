@@ -38,7 +38,7 @@ class DeviceQuery(object):
     def fire(self, device):
         if callable(self.callback):
             self.callback(device)
-        elif isinstance(self.callback,basestring):
+        elif isinstance(self.callback, basestring):
             louie.send(self.callback, None, device=device)
         self.fired = True
 
@@ -58,7 +58,7 @@ class DeviceQuery(object):
 class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
 
-    def __init__(self,coherence,auto_client=['MediaServer','MediaRenderer','BinaryLight','DimmableLight']):
+    def __init__(self, coherence, auto_client=['MediaServer', 'MediaRenderer', 'BinaryLight', 'DimmableLight']):
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -83,7 +83,7 @@ class ControlPoint(log.Loggable):
         louie.disconnect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
         louie.disconnect(self.completed, 'Coherence.UPnP.DeviceClient.detection_completed', louie.Any)
 
-    def auto_client_append(self,device_type):
+    def auto_client_append(self, device_type):
         if device_type in self.auto_client:
             return
         self.auto_client.append(device_type)
@@ -108,15 +108,15 @@ class ControlPoint(log.Loggable):
         else:
             self.queries.append(query)
 
-    def connect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+    def connect(self, receiver, signal=louie.signal.All, sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.connect
         """
-        louie.connect(receiver,signal=signal,sender=sender,weak=weak)
+        louie.connect(receiver, signal=signal, sender=sender, weak=weak)
 
-    def disconnect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+    def disconnect(self, receiver, signal=louie.signal.All, sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.disconnect
         """
-        louie.disconnect(receiver,signal=signal,sender=sender,weak=weak)
+        louie.disconnect(receiver, signal=signal, sender=sender, weak=weak)
 
     def get_devices(self):
         return self.coherence.get_devices()
@@ -155,11 +155,11 @@ class ControlPoint(log.Loggable):
     def completed(self, client, udn):
         self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected %r', client.device_type, udn)
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
-                               client=client,udn=udn)
+                               client=client, udn=udn)
 
     def remove_client(self, udn, client):
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, udn=udn)
-        self.info("removed %s %s", client.device_type,client.device.get_friendly_name())
+        self.info("removed %s %s", client.device_type, client.device.get_friendly_name())
         client.remove()
 
     def propagate(self, event):

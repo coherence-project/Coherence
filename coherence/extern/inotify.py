@@ -69,7 +69,7 @@ class INotify(inotify.INotify):
     def release(self):
         return self.connectionLost(None)
 
-    def flag_to_human(self,mask):
+    def flag_to_human(self, mask):
         return flag_to_human(mask)
 
 if __name__ == '__main__':

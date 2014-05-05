@@ -138,7 +138,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             self._methodNotFound(request, methodName)
             return server.NOT_DONE_YET
         else:
-            keywords = {'soap_methodName':methodName}
+            keywords = {'soap_methodName': methodName}
             if(headers.has_key('user-agent') and
                     headers['user-agent'].find('Xbox/') == 0):
                 keywords['X_UPnPClient'] = 'XBox'

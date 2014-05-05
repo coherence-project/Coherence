@@ -90,14 +90,14 @@ class Gallery:
         url = self.url
         if (len(request) > 0):
             url += '?'
-            for key,value in request.iteritems():
-                url += '%s=%s&' % (key,value)
+            for key, value in request.iteritems():
+                url += '%s=%s&' % (key, value)
         headers = None
         if self.cookie != '':
              headers = {'Cookie': self.cookie}
 
         def gotPage(result):
-            data,headers = result
+            data, headers = result
             response = self._parse_response(data)
             if response['status'] != '0':
                 raise Exception(response['status_text'])
@@ -224,17 +224,17 @@ class Gallery:
             albums = {}
             for x in range(1, int(response['album_count']) + 1):
                 album = {}
-                album['name']                   = self._get(response,'album.name.' + str(x))
-                album['title']                  = self._get(response,'album.title.' + str(x))
-                album['summary']                = self._get(response,'album.summary.' + str(x))
-                album['parent']                 = self._get(response,'album.parent.' + str(x))
-                album['resize_size']            = self._get(response,'album.resize_size.' + str(x))
-                album['perms.add']              = self._get(response,'album.perms.add.' + str(x))
-                album['perms.write']            = self._get(response,'album.perms.write.' + str(x))
-                album['perms.del_item']         = self._get(response,'album.perms.del_item.' + str(x))
-                album['perms.del_alb']          = self._get(response,'album.perms.del_alb.' + str(x))
-                album['perms.create_sub']       = self._get(response,'album.perms.create_sub.' + str(x))
-                album['perms.info.extrafields'] = self._get(response,'album.info.extrafields' + str(x))
+                album['name']                   = self._get(response, 'album.name.' + str(x))
+                album['title']                  = self._get(response, 'album.title.' + str(x))
+                album['summary']                = self._get(response, 'album.summary.' + str(x))
+                album['parent']                 = self._get(response, 'album.parent.' + str(x))
+                album['resize_size']            = self._get(response, 'album.resize_size.' + str(x))
+                album['perms.add']              = self._get(response, 'album.perms.add.' + str(x))
+                album['perms.write']            = self._get(response, 'album.perms.write.' + str(x))
+                album['perms.del_item']         = self._get(response, 'album.perms.del_item.' + str(x))
+                album['perms.del_alb']          = self._get(response, 'album.perms.del_alb.' + str(x))
+                album['perms.create_sub']       = self._get(response, 'album.perms.create_sub.' + str(x))
+                album['perms.info.extrafields'] = self._get(response, 'album.info.extrafields' + str(x))
 
                 albums[album['name']] = album
             return albums
@@ -274,17 +274,17 @@ class Gallery:
 
             for x in range(1, int(response['album_count']) + 1):
                 album = {}
-                album['name']                   = self._get(response,'album.name.' + str(x))
-                album['title']                  = self._get(response,'album.title.' + str(x))
-                album['summary']                = self._get(response,'album.summary.' + str(x))
-                album['parent']                 = self._get(response,'album.parent.' + str(x))
-                album['resize_size']            = self._get(response,'album.resize_size.' + str(x))
-                album['perms.add']              = self._get(response,'album.perms.add.' + str(x))
-                album['perms.write']            = self._get(response,'album.perms.write.' + str(x))
-                album['perms.del_item']         = self._get(response,'album.perms.del_item.' + str(x))
-                album['perms.del_alb']          = self._get(response,'album.perms.del_alb.' + str(x))
-                album['perms.create_sub']       = self._get(response,'album.perms.create_sub.' + str(x))
-                album['perms.info.extrafields'] = self._get(response,'album.info.extrafields' + str(x))
+                album['name']                   = self._get(response, 'album.name.' + str(x))
+                album['title']                  = self._get(response, 'album.title.' + str(x))
+                album['summary']                = self._get(response, 'album.summary.' + str(x))
+                album['parent']                 = self._get(response, 'album.parent.' + str(x))
+                album['resize_size']            = self._get(response, 'album.resize_size.' + str(x))
+                album['perms.add']              = self._get(response, 'album.perms.add.' + str(x))
+                album['perms.write']            = self._get(response, 'album.perms.write.' + str(x))
+                album['perms.del_item']         = self._get(response, 'album.perms.del_item.' + str(x))
+                album['perms.del_alb']          = self._get(response, 'album.perms.del_alb.' + str(x))
+                album['perms.create_sub']       = self._get(response, 'album.perms.create_sub.' + str(x))
+                album['perms.info.extrafields'] = self._get(response, 'album.info.extrafields' + str(x))
 
                 albums[album['name']] = album
 

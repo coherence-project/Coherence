@@ -20,7 +20,7 @@ from coherence.upnp.core import service
 
 from coherence import log
 
-class ContentDirectoryControl(service.ServiceControl,UPnPPublisher):
+class ContentDirectoryControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
         self.service = server
@@ -32,7 +32,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                              log.Loggable):
     logCategory = 'content_directory_server'
 
-    def __init__(self, device, backend=None,transcoding=False):
+    def __init__(self, device, backend=None, transcoding=False):
         self.device = device
         self.transcoding = transcoding
         if backend == None:
@@ -50,10 +50,10 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
-                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+                cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
         return cl
 
-    def render(self,request):
+    def render(self, request):
         return '<html><p>root of the ContentDirectory</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)
 
     def upnp_Search(self, *args, **kwargs):
@@ -91,7 +91,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def got_error(r):
             return r
 
-        def process_result(result,total=None,found_item=None):
+        def process_result(result, total=None, found_item=None):
             if result == None:
                 result = []
 
@@ -133,7 +133,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                 d = defer.maybeDeferred(result.get_artist_all_tracks, StartingIndex, StartingIndex + RequestedCount)
             else:
                 d = defer.maybeDeferred(result.get_children, StartingIndex, StartingIndex + RequestedCount)
-            d.addCallback(process_result,found_item=result)
+            d.addCallback(process_result, found_item=result)
             d.addErrback(got_error)
             return d
 
@@ -158,9 +158,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                                 items = item[StartingIndex:]
                             else:
                                 items = item[StartingIndex:StartingIndex + RequestedCount]
-                            return process_result(items,total=total)
+                            return process_result(items, total=total)
                         else:
-                            if isinstance(item,defer.Deferred):
+                            if isinstance(item, defer.Deferred):
                                 item.addCallback(proceed)
                                 return item
                             else:
@@ -168,9 +168,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
                 item = self.backend.get_by_id(root_id)
                 if item == None:
-                    return process_result([],total=0)
+                    return process_result([], total=0)
 
-                if isinstance(item,defer.Deferred):
+                if isinstance(item, defer.Deferred):
                     item.addCallback(proceed)
                     return item
                 else:
@@ -181,7 +181,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         if item == None:
             return failure.Failure(errorCode(701))
 
-        if isinstance(item,defer.Deferred):
+        if isinstance(item, defer.Deferred):
             item.addCallback(proceed)
             return item
         else:
@@ -224,7 +224,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def got_error(r):
             return r
 
-        def process_result(result,total=None,found_item=None):
+        def process_result(result, total=None, found_item=None):
             if result == None:
                 result = []
             if BrowseFlag == 'BrowseDirectChildren':
@@ -284,7 +284,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             else:
                 d = defer.maybeDeferred(result.get_item)
 
-            d.addCallback(process_result,found_item=result)
+            d.addCallback(process_result, found_item=result)
             d.addErrback(got_error)
             return d
 
@@ -307,9 +307,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             items = item[StartingIndex:]
                         else:
                             items = item[StartingIndex:StartingIndex + RequestedCount]
-                        return process_result(items,total=total)
+                        return process_result(items, total=total)
                     else:
-                        if isinstance(item,defer.Deferred):
+                        if isinstance(item, defer.Deferred):
                             item.addCallback(proceed)
                             return item
                         else:
@@ -317,9 +317,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
             item = self.backend.get_by_id(root_id)
             if item == None:
-                return process_result([],total=0)
+                return process_result([], total=0)
 
-            if isinstance(item,defer.Deferred):
+            if isinstance(item, defer.Deferred):
                 item.addCallback(proceed)
                 return item
             else:
@@ -329,7 +329,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         if item == None:
             return failure.Failure(errorCode(701))
 
-        if isinstance(item,defer.Deferred):
+        if isinstance(item, defer.Deferred):
             item.addCallback(proceed)
             return item
         else:

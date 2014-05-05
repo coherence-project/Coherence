@@ -29,12 +29,12 @@ class ElisaPlayer(log.Loggable, Plugin):
     logCategory = 'elisa_player'
 
     implements = ['MediaRenderer']
-    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'}}
-    vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
+    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel': 'Master'}}
+    vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum': 100}}}
 
     def __init__(self, device, **kwargs):
-        self.name = kwargs.get('name','Elisa MediaRenderer')
-        self.host = kwargs.get('host','127.0.0.1')
+        self.name = kwargs.get('name', 'Elisa MediaRenderer')
+        self.host = kwargs.get('host', '127.0.0.1')
         self.player = None
         self.metadata = None
 
@@ -93,7 +93,7 @@ class ElisaPlayer(log.Loggable, Plugin):
             self.info("poll_player %r", result)
             if self.server != None:
                 connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-            if result in ('STOPPED','READY'):
+            if result in ('STOPPED', 'READY'):
                 transport_state = 'STOPPED'
             if result == 'PLAYING':
                 transport_state = 'PLAYING'
@@ -121,31 +121,31 @@ class ElisaPlayer(log.Loggable, Plugin):
                 self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
 
             if position is not None:
-                m,s = divmod(position / 1000000000, 60)
-                h,m = divmod(m,60)
+                m, s = divmod(position / 1000000000, 60)
+                h, m = divmod(m, 60)
                 if self.server != None:
-                    self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                    self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                    self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h, m, s))
+                    self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h, m, s))
 
             if duration is not None:
-                m,s = divmod(duration / 1000000000, 60)
-                h,m = divmod(m,60)
+                m, s = divmod(duration / 1000000000, 60)
+                h, m = divmod(m, 60)
 
                 if self.server != None:
-                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-                    self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
+                    self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h, m, s))
+                    self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h, m, s))
 
                 if self.duration is None:
                     if self.metadata is not None:
                         elt = DIDLLite.DIDLElement.fromString(self.metadata)
                         for item in elt:
                             for res in item.findall('res'):
-                                res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                                res.attrib['duration'] = "%d:%02d:%02d" % (h, m, s)
                         self.metadata = elt.toString()
 
                         if self.server != None:
-                            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
-                            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
+                            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData', self.metadata)
+                            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData', self.metadata)
 
                     self.duration = duration
 
@@ -160,13 +160,13 @@ class ElisaPlayer(log.Loggable, Plugin):
             self.metadata = metadata
             self.tags = {}
             connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','Play,Stop,Pause')
-            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions', 'Play,Stop,Pause')
+            self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks', 1)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI', uri)
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI', uri)
+            self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData', metadata)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI', uri)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData', metadata)
 
         self.call_player("set_uri", got_result, uri)
 
@@ -291,7 +291,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         local_protocol_infos = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
         #print '>>>', local_protocol_infos
         if len(CurrentURIMetaData) == 0:
-            self.load(CurrentURI,CurrentURIMetaData)
+            self.load(CurrentURI, CurrentURIMetaData)
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
             if elt.numItems() == 1:
@@ -301,8 +301,8 @@ class ElisaPlayer(log.Loggable, Plugin):
                     res = item.res.get_matching(local_protocol_infos)
                 if len(res) > 0:
                     res = res[0]
-                    remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
-                    self.load(res.data,CurrentURIMetaData)
+                    remote_protocol, remote_network, remote_content_format, _ = res.protocolInfo.split(':')
+                    self.load(res.data, CurrentURIMetaData)
                     return {}
         return failure.Failure(errorCode(714))
 
@@ -310,7 +310,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         InstanceID = int(kwargs['InstanceID'])
         Channel = kwargs['Channel']
         DesiredMute = kwargs['DesiredMute']
-        if DesiredMute in ['TRUE', 'True', 'true', '1','Yes','yes']:
+        if DesiredMute in ['TRUE', 'True', 'true', '1', 'Yes', 'yes']:
             self.mute()
         else:
             self.unmute()
@@ -332,7 +332,7 @@ def main():
         f.get_mute()
         f.poll_player()
 
-    reactor.callLater(2,call_player)
+    reactor.callLater(2, call_player)
 
 if __name__ == '__main__':
 

@@ -26,8 +26,8 @@ class AVTransportClient(log.Loggable):
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
     def set_av_transport_uri(self, instance_id=0, current_uri='', current_uri_metadata=''):
         action = self.service.get_action('SetAVTransportURI')
@@ -75,7 +75,7 @@ class AVTransportClient(log.Loggable):
 
     def play(self, instance_id=0, speed=1):
         action = self.service.get_action('Play')
-        return action.call(InstanceID=instance_id,Speed=speed)
+        return action.call(InstanceID=instance_id, Speed=speed)
 
     def stop(self, instance_id=0):
         action = self.service.get_action('Stop')

@@ -43,10 +43,10 @@ class ElisaMediaStore(Plugin):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        self.name = kwargs.get('name','Elisa')
-        self.host = kwargs.get('host','127.0.0.1')
-        self.urlbase = kwargs.get('urlbase','')
-        ignore_patterns = kwargs.get('ignore_patterns',[])
+        self.name = kwargs.get('name', 'Elisa')
+        self.host = kwargs.get('host', '127.0.0.1')
+        self.urlbase = kwargs.get('urlbase', '')
+        ignore_patterns = kwargs.get('ignore_patterns', [])
 
         if self.urlbase[len(self.urlbase) - 1] != '/':
             self.urlbase += '/'
@@ -64,7 +64,7 @@ class ElisaMediaStore(Plugin):
         reactor.connectTCP(self.host, 8789, factory)
         return factory.getRootObject()
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         try:
             return self.store[int(id)]
         except:
@@ -107,7 +107,7 @@ class ElisaMediaStore(Plugin):
                                       elisa_item['parent_id'],
                                       elisa_item['name'])
                 if isinstance(upnp_item, Container):
-                    upnp_item.childCount = len(elisa_item.get('children',[]))
+                    upnp_item.childCount = len(elisa_item.get('children', []))
                     if len(Filter) > 0:
                         upnp_item.searchable = True
                         upnp_item.searchClass = ('object', )
@@ -138,7 +138,7 @@ class ElisaMediaStore(Plugin):
 
         def got_result(elisa_item):
             didl = DIDLElement()
-            children = elisa_item.get('children',[])
+            children = elisa_item.get('children', [])
             if BrowseFlag == 'BrowseDirectChildren':
                 if RequestedCount == 0:
                     childs = children[StartingIndex:]
@@ -192,7 +192,7 @@ if __name__ == '__main__':
         def got_result(result):
             print result
 
-        f = MediaStore(None,'my media',p, 'http://localhost/',())
+        f = MediaStore(None, 'my media', p, 'http://localhost/', ())
 
         dfr = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
                             RequestedCount=0,

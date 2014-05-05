@@ -29,13 +29,13 @@ class HttpRoot(DeviceHttpRoot):
     logCategory = 'mediarenderer'
 
 
-class MediaRenderer(log.Loggable,BasicDeviceMixin):
+class MediaRenderer(log.Loggable, BasicDeviceMixin):
     logCategory = 'mediarenderer'
     device_type = 'MediaRenderer'
 
-    def fire(self,backend,**kwargs):
+    def fire(self, backend, **kwargs):
 
-        if kwargs.get('no_thread_needed',False) == False:
+        if kwargs.get('no_thread_needed', False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
 
@@ -66,21 +66,21 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('ConnectionManagerServer %s', msg)
             raise LookupError(msg)
 
         try:
             self.rendering_control_server = RenderingControlServer(self)
             self._services.append(self.rendering_control_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('RenderingControlServer %s', msg)
             raise LookupError(msg)
 
         try:
             self.av_transport_server = AVTransportServer(self)
             self._services.append(self.av_transport_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('AVTransportServer %s', msg)
             raise LookupError(msg)
 
@@ -126,16 +126,16 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                 if icon['url'].startswith('file://'):
                     if os.path.exists(icon['url'][7:]):
                         self.web_resource.putChild(os.path.basename(icon['url']),
-                                                   StaticFile(icon['url'][7:],defaultType=icon['mimetype']))
+                                                   StaticFile(icon['url'][7:], defaultType=icon['mimetype']))
                 elif icon['url'] == '.face':
                     face_path = os.path.abspath(os.path.join(os.path.expanduser('~'), ".face"))
                     if os.path.exists(face_path):
-                        self.web_resource.putChild('face-icon.png',StaticFile(face_path,defaultType=icon['mimetype']))
+                        self.web_resource.putChild('face-icon.png', StaticFile(face_path, defaultType=icon['mimetype']))
                 else:
                     from pkg_resources import resource_filename
-                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
+                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..', '..', '..', 'misc', 'device-icons', icon['url'])))
                     if os.path.exists(icon_path):
-                        self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
+                        self.web_resource.putChild(icon['url'], StaticFile(icon_path, defaultType=icon['mimetype']))
 
 
         self.register()

@@ -23,8 +23,8 @@ class WANPPPConnectionClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
     def get_external_ip_address(self):
         action = self.service.get_action('GetExternalIPAddress')
@@ -42,33 +42,33 @@ class WANPPPConnectionClient:
                 action = variable.service.get_action('GetGenericPortMappingEntry')
                 d = self.get_generic_port_mapping_entry(i)
 
-                def add_index(r,index):
+                def add_index(r, index):
                     r['NewPortMappingIndex'] = index
                     return r
-                d.addCallback(add_index,i + 1)
+                d.addCallback(add_index, i + 1)
                 d.addErrback(handle_error)
                 l.append(d)
 
-        def request_cb(r,last_updated_timestamp,v):
+        def request_cb(r, last_updated_timestamp, v):
             if last_updated_timestamp == v.last_time_touched:
                 mappings = [m[1] for m in r if m[0] == True]
-                mappings.sort(cmp=lambda x,y: cmp(x['NewPortMappingIndex'],y['NewPortMappingIndex']))
+                mappings.sort(cmp=lambda x, y: cmp(x['NewPortMappingIndex'], y['NewPortMappingIndex']))
                 return mappings
             else:
                 #FIXME - we should raise something here, as the mappings have changed during our query
                 return None
 
         dl = defer.DeferredList(l)
-        dl.addCallback(request_cb,variable.last_time_touched,variable)
+        dl.addCallback(request_cb, variable.last_time_touched, variable)
         dl.addErrback(handle_error)
         return dl
 
 
-    def get_generic_port_mapping_entry(self,port_mapping_index):
+    def get_generic_port_mapping_entry(self, port_mapping_index):
         action = self.service.get_action('GetGenericPortMappingEntry')
         return action.call(NewPortMappingIndex=port_mapping_index)
 
-    def get_specific_port_mapping_entry(self,remote_host='',
+    def get_specific_port_mapping_entry(self, remote_host='',
                                              external_port=0,
                                              protocol='TCP'):
         action = self.service.get_action('GetSpecificPortMappingEntry')
@@ -76,7 +76,7 @@ class WANPPPConnectionClient:
                            NewExternalPort=int(external_port),
                            NewProtocol=protocol)
 
-    def add_port_mapping(self,remote_host='',
+    def add_port_mapping(self, remote_host='',
                               external_port=0,
                               protocol='TCP',
                               internal_port=None,
@@ -94,7 +94,7 @@ class WANPPPConnectionClient:
                            NewPortMappingDescription=port_mapping_description,
                            NewLeaseDuration=int(lease_duration))
 
-    def delete_port_mapping(self,remote_host='',
+    def delete_port_mapping(self, remote_host='',
                               external_port=0,
                               protocol='TCP'):
         action = self.service.get_action('DeletePortMapping')

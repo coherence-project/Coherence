@@ -24,7 +24,7 @@ except ImportError:
         m.update(s)
         return m.hexdigest()
 
-from twisted.internet import reactor,defer
+from twisted.internet import reactor, defer
 from twisted.python import failure
 
 from coherence.upnp.core import DIDLLite
@@ -54,15 +54,15 @@ class ProxySong(utils.ReverseProxyResource):
 
     def __init__(self, uri):
         self.uri = uri
-        _,host_port,path,query,_ = urlsplit(uri)
+        _, host_port, path, query, _ = urlsplit(uri)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
             port = int(port)
         else:
             host = host_port
             port = 80
 
-        utils.ReverseProxyResource.__init__(self, host, port, '?'.join((path,query)))
+        utils.ReverseProxyResource.__init__(self, host, port, '?'.join((path, query)))
 
 
 class Container(BackendItem):
@@ -71,7 +71,7 @@ class Container(BackendItem):
 
     get_path = None
 
-    def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container,play_container=False):
+    def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container, play_container=False):
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -96,14 +96,14 @@ class Container(BackendItem):
             self.childCount = 0
         self.childCount += 1
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         self.info("container.get_children %r %r", start, end)
         if(end - start > 250 or
            end - start == 0):
             end = start + 250
 
         if callable(self.children):
-            return self.children(start,end - start)
+            return self.children(start, end - start)
         else:
             children = self.children
         if end == 0:
@@ -120,7 +120,7 @@ class Container(BackendItem):
         return self.childCount
 
     def get_item(self):
-        item = self.container_class(self.id, self.parent_id,self.name)
+        item = self.container_class(self.id, self.parent_id, self.name)
         item.childCount = self.get_child_count()
         #if self.store and self.play_container == True:
         #    if item.childCount > 0:
@@ -164,7 +164,7 @@ class Playlist(BackendItem):
         except:
             self.cover = None
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         return self.store.ampache_query('playlist_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
@@ -205,7 +205,7 @@ class Album(BackendItem):
         except:
             self.cover = None
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         return self.store.ampache_query('album_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
@@ -263,7 +263,7 @@ class Artist(BackendItem):
             self.count_songs = None
         self.name = element.find('name').text
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         return self.store.ampache_query('artist_albums', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
@@ -313,7 +313,7 @@ class Genre(BackendItem):
             self.count_songs = None
         self.name = element.find('name').text
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         return self.store.ampache_query('genre_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
@@ -363,7 +363,7 @@ class Tag(BackendItem):
             self.count_songs = None
         self.name = element.find('name').text
 
-    def get_children(self,start=0,end=0):
+    def get_children(self, start=0, end=0):
         return self.store.ampache_query('tag_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
@@ -393,7 +393,7 @@ class Track(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self,store,element):
+    def __init__(self, store, element):
         self.store = store
         self.id = 'song.%d' % int(element.get('id'))
         self.parent_id = 'album.%d' % int(element.find('album').get('id'))
@@ -424,7 +424,7 @@ class Track(BackendItem):
         try:
             self.mimetype = element.find('mime').text
         except:
-            self.mimetype,_ = mimetypes.guess_type(self.url, strict=False)
+            self.mimetype, _ = mimetypes.guess_type(self.url, strict=False)
         if self.mimetype == None:
             self.mimetype = "audio/mpeg"
         try:
@@ -443,10 +443,10 @@ class Track(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.debug("Track get_item %r @ %r", self.id,self.parent_id)
+        self.debug("Track get_item %r @ %r", self.id, self.parent_id)
 
         # create item
-        item = DIDLLite.MusicTrack(self.id,self.parent_id)
+        item = DIDLLite.MusicTrack(self.id, self.parent_id)
         item.album = self.album
 
         item.artist = self.artist
@@ -489,7 +489,7 @@ class Video(BackendItem):
 
     logCategory = 'ampache_store'
 
-    def __init__(self,store,element):
+    def __init__(self, store, element):
         self.store = store
         self.id = 'video.%d' % int(element.get('id'))
 
@@ -514,7 +514,7 @@ class Video(BackendItem):
         try:
             self.mimetype = element.find('mime').text
         except:
-            self.mimetype,_ = mimetypes.guess_type(self.url, strict=False)
+            self.mimetype, _ = mimetypes.guess_type(self.url, strict=False)
         if self.mimetype == None:
             self.mimetype = "video/avi"
         try:
@@ -533,10 +533,10 @@ class Video(BackendItem):
 
     def get_item(self, parent_id=VIDEO_CONTAINER_ID):
 
-        self.debug("video get_item %r @ %r", self.id,parent_id)
+        self.debug("video get_item %r @ %r", self.id, parent_id)
 
         # create item
-        item = DIDLLite.VideoItem(self.id,parent_id)
+        item = DIDLLite.VideoItem(self.id, parent_id)
         item.title = self.title
 
         item.albumArtURI = self.cover
@@ -577,14 +577,14 @@ class AmpacheStore(BackendStore):
     logCategory = 'ampache_store'
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.config = kwargs
-        self.name = kwargs.get('name','Ampache')
-        self.key = kwargs.get('password',kwargs.get('key',''))
-        self.user = kwargs.get('user',None)
-        self.url = kwargs.get('url','http://localhost/ampache/server/xml.server.php')
+        self.name = kwargs.get('name', 'Ampache')
+        self.key = kwargs.get('password', kwargs.get('key', ''))
+        self.user = kwargs.get('user', None)
+        self.url = kwargs.get('url', 'http://localhost/ampache/server/xml.server.php')
 
-        if kwargs.get('proxy','no') in [1,'Yes','yes','True','true']:
+        if kwargs.get('proxy', 'no') in [1, 'Yes', 'yes', 'True', 'true']:
             self.proxy = True
         else:
             self.proxy = False
@@ -596,7 +596,7 @@ class AmpacheStore(BackendStore):
         self.albums = 0
         self.artists = 0
 
-        self.api_version = int(kwargs.get('api_version',350001))
+        self.api_version = int(kwargs.get('api_version', 350001))
         #self.api_version=int(kwargs.get('api_version',340001))
 
         self.get_token()
@@ -605,10 +605,10 @@ class AmpacheStore(BackendStore):
         return "Ampache storage"
 
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         self.info("looking for id %r", id)
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
             try:
@@ -621,14 +621,14 @@ class AmpacheStore(BackendStore):
             item = self.containers[id]
         except ValueError:
             try:
-                type,id = id.split('.')
-                if type in ['song','artist','album','playlist','genre','tag','video']:
+                type, id = id.split('.')
+                if type in ['song', 'artist', 'album', 'playlist', 'genre', 'tag', 'video']:
                     item = self.ampache_query(type, filter=str(id))
             except ValueError:
                 return None
         return item
 
-    def got_auth_response(self,response,renegotiate=False):
+    def got_auth_response(self, response, renegotiate=False):
         self.info("got_auth_response %r", response)
         try:
             response = utils.parse_xml(response, encoding='utf-8')
@@ -663,12 +663,12 @@ class AmpacheStore(BackendStore):
                     self.videos = 0
                 self.info('ampache returned auth token %r', self.token)
                 self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d, Videos %d',
-                          self.songs, self.artists,self.albums,self.playlists,self.genres,self.tags,self.videos)
+                          self.songs, self.artists, self.albums, self.playlists, self.genres, self.tags, self.videos)
 
                 if renegotiate == False:
                     self.containers = {}
                     self.containers[ROOT_CONTAINER_ID] = \
-                                Container(ROOT_CONTAINER_ID,-1, self.name, store=self)
+                                Container(ROOT_CONTAINER_ID, -1, self.name, store=self)
 
                     self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
                                              '5': lambda: self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
@@ -682,12 +682,12 @@ class AmpacheStore(BackendStore):
             except AttributeError:
                 raise ValueError('no authorization token returned')
 
-    def got_auth_error(self,e,renegotiate=False):
+    def got_auth_error(self, e, renegotiate=False):
         self.warning('error calling ampache %r', e)
         if renegotiate == False:
             louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg=e)
 
-    def get_token(self,renegotiate=False):
+    def get_token(self, renegotiate=False):
         """ ask Ampache for the authorization token """
         timestamp = int(time.time())
         if self.api_version < 350001:
@@ -701,8 +701,8 @@ class AmpacheStore(BackendStore):
             request = ''.join((request, '&version=%s' % str(self.api_version)))
         self.info("auth_request %r", request)
         d = utils.getPage(request)
-        d.addCallback(self.got_auth_response,renegotiate)
-        d.addErrback(self.got_auth_error,renegotiate)
+        d.addCallback(self.got_auth_response, renegotiate)
+        d.addErrback(self.got_auth_error, renegotiate)
         return d
 
     def got_error(self, e):
@@ -736,51 +736,51 @@ class AmpacheStore(BackendStore):
                 return d
             raise ValueError(error.text)
         except AttributeError:
-            if query_item in ('song','artist','album','playlist','genre','tag','video'):
+            if query_item in ('song', 'artist', 'album', 'playlist', 'genre', 'tag', 'video'):
                 q = response.find(query_item)
                 if q == None:
                     return None
                 else:
                     if q.tag in ['song']:
-                        return Track(self,q)
+                        return Track(self, q)
                     if q.tag == 'artist':
-                        return Artist(self,q)
+                        return Artist(self, q)
                     if q.tag in ['album']:
-                        return Album(self,q)
+                        return Album(self, q)
                     if q.tag in ['playlist']:
-                        return Playlist(self,q)
+                        return Playlist(self, q)
                     if q.tag in ['genre']:
-                        return Genre(self,q)
+                        return Genre(self, q)
                     if q.tag in ['tag']:
-                        return Tag(self,q)
+                        return Tag(self, q)
                     if q.tag in ['video']:
-                        return Video(self,q)
+                        return Video(self, q)
             else:
-                if query_item in ('songs','artists','albums','playlists','genres','tags','videos'):
+                if query_item in ('songs', 'artists', 'albums', 'playlists', 'genres', 'tags', 'videos'):
                     query_item = query_item[:-1]
-                if query_item in ('playlist_songs','album_songs','genre_songs','tag_songs'):
+                if query_item in ('playlist_songs', 'album_songs', 'genre_songs', 'tag_songs'):
                     query_item = 'song'
                 if query_item in ('artist_albums', ):
                     query_item = 'album'
                 for q in response.findall(query_item):
                     if query_item in ('song', ):
-                        items.append(Track(self,q))
+                        items.append(Track(self, q))
                     if query_item in ('artist', ):
-                        items.append(Artist(self,q))
+                        items.append(Artist(self, q))
                     if query_item in ('album', ):
-                        items.append(Album(self,q))
+                        items.append(Album(self, q))
                     if query_item in ('playlist', ):
-                        items.append(Playlist(self,q))
+                        items.append(Playlist(self, q))
                     if query_item in ('genre', ):
-                        items.append(Genre(self,q))
+                        items.append(Genre(self, q))
                     if query_item in ('tag', ):
-                        items.append(Tag(self,q))
+                        items.append(Tag(self, q))
                     if query_item in ('video', ):
-                        items.append(Video(self,q))
+                        items.append(Video(self, q))
         return items
 
     def ampache_query(self, item, start=0, request_count=0, filter=None):
-        request = ''.join((self.url, '?action=%s&auth=%s&offset=%d' % (item,self.token, start)))
+        request = ''.join((self.url, '?action=%s&auth=%s&offset=%d' % (item, self.token, start)))
         if request_count > 0:
             request = ''.join((request, '&limit=%d' % request_count))
         if filter != None:
@@ -824,7 +824,7 @@ class AmpacheStore(BackendStore):
                              'http-get:*:video/quicktime:*', ])
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container(AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                Container(AUDIO_ALL_CONTAINER_ID, ROOT_CONTAINER_ID, 'All tracks',
                           store=self,
                           children_callback=self.ampache_query_songs,
                           play_container=True)
@@ -832,21 +832,21 @@ class AmpacheStore(BackendStore):
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
 
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container(AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                Container(AUDIO_ALBUM_CONTAINER_ID, ROOT_CONTAINER_ID, 'Albums',
                           store=self,
                           children_callback=self.ampache_query_albums)
         self.containers[AUDIO_ALBUM_CONTAINER_ID].childCount = self.albums
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container(AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                Container(AUDIO_ARTIST_CONTAINER_ID, ROOT_CONTAINER_ID, 'Artists',
                           store=self,
                           children_callback=self.ampache_query_artists)
         self.containers[AUDIO_ARTIST_CONTAINER_ID].childCount = self.artists
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
-                Container(AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                Container(AUDIO_PLAYLIST_CONTAINER_ID, ROOT_CONTAINER_ID, 'Playlists',
                           store=self,
                           children_callback=self.ampache_query_playlists,
                           container_class=DIDLLite.PlaylistContainer)
@@ -854,21 +854,21 @@ class AmpacheStore(BackendStore):
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
         self.containers[AUDIO_GENRE_CONTAINER_ID] = \
-                Container(AUDIO_GENRE_CONTAINER_ID,ROOT_CONTAINER_ID, 'Genres',
+                Container(AUDIO_GENRE_CONTAINER_ID, ROOT_CONTAINER_ID, 'Genres',
                           store=self,
                           children_callback=self.ampache_query_genres)
         self.containers[AUDIO_GENRE_CONTAINER_ID].childCount = self.genres
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
 
         self.containers[AUDIO_TAG_CONTAINER_ID] = \
-                Container(AUDIO_TAG_CONTAINER_ID,ROOT_CONTAINER_ID, 'Tags',
+                Container(AUDIO_TAG_CONTAINER_ID, ROOT_CONTAINER_ID, 'Tags',
                           store=self,
                           children_callback=self.ampache_query_tags)
         self.containers[AUDIO_TAG_CONTAINER_ID].childCount = self.tags
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_TAG_CONTAINER_ID])
 
         self.containers[VIDEO_CONTAINER_ID] = \
-                Container(VIDEO_CONTAINER_ID,ROOT_CONTAINER_ID, 'Videos',
+                Container(VIDEO_CONTAINER_ID, ROOT_CONTAINER_ID, 'Videos',
                           store=self,
                           children_callback=self.ampache_query_videos)
         self.containers[VIDEO_CONTAINER_ID].childCount = self.videos
@@ -1005,7 +1005,7 @@ class AmpacheStore(BackendStore):
             d.addErrback(got_error)
             return d
 
-        if isinstance(item,defer.Deferred):
+        if isinstance(item, defer.Deferred):
             item.addCallback(proceed)
             return item
         else:
@@ -1020,7 +1020,7 @@ if __name__ == '__main__':
         def got_result(result):
             print "got_result"
 
-        def call_browse(ObjectID=0,StartingIndex=0,RequestedCount=0):
+        def call_browse(ObjectID=0, StartingIndex=0, RequestedCount=0):
             r = f.backend.upnp_Browse(BrowseFlag='BrowseDirectChildren',
                             RequestedCount=RequestedCount,
                             StartingIndex=StartingIndex,
@@ -1030,8 +1030,8 @@ if __name__ == '__main__':
             r.addCallback(got_result)
             r.addErrback(got_result)
 
-        def call_test(start,count):
-            r = f.backend.ampache_query_artists(start,count)
+        def call_test(start, count):
+            r = f.backend.ampache_query_artists(start, count)
             r.addCallback(got_result)
             r.addErrback(got_result)
 

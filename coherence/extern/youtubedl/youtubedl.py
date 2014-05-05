@@ -23,7 +23,7 @@ std_headers = {
     'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.0; en-US; rv:1.9.1.2) Gecko/20090729 Firefox/3.5.2',
     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
     'Accept': 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
-    'Accept-Language': 'en-us,en;q=0.5',
+    'Accept-Language': 'en-us,en;q=0.5', 
 }
 
 
@@ -244,7 +244,7 @@ class FileDownloader(object):
     def to_stdout(self, message, skip_eol=False):
         """Print message to stdout if not in quiet mode."""
         if not self.params.get('quiet', False):
-            print (u'%s%s' % (message, [u'\n', u''][skip_eol])).encode(preferredencoding()),
+            print (u'%s%s' % (message, [u'\n', u''][skip_eol])).encode(preferredencoding()), 
             sys.stdout.flush()
 
     def to_stderr(self, message):
@@ -509,7 +509,7 @@ class YoutubeIE(InfoExtractor):
         '13': '3gp',
         '17': 'mp4',
         '18': 'mp4',
-        '22': 'mp4',
+        '22': 'mp4', 
     }
 
     @staticmethod
@@ -597,7 +597,7 @@ class YoutubeIE(InfoExtractor):
             print "Age confirmed in Youtube"
 
         def gotLoggedInPage(result):
-            data,headers = result
+            data, headers = result
             if re.search(r'(?i)<form[^>]* name="loginForm"', data) is not None:
                 print 'WARNING: unable to log in: bad username or password'
                 return
@@ -605,8 +605,8 @@ class YoutubeIE(InfoExtractor):
 
             # Confirm age
             age_form = {
-                        'next_url':		'/',
-                        'action_confirm':	'Confirm',
+                        'next_url': '/',
+                        'action_confirm': 'Confirm', 
                         }
             postdata = urlencode(age_form)
             d = getPage(self._AGE_URL, postdata=postdata, headers=std_headers)
@@ -618,17 +618,17 @@ class YoutubeIE(InfoExtractor):
             return
 
         def gotLanguageSet(result):
-            data,headers = result
+            data, headers = result
             # No authentication to be performed
             if username is None:
                 return
             # Log in
             login_form = {
                     'current_form': 'loginForm',
-                    'next':        '/',
-                    'action_login':    'Log In',
-                    'username':    username,
-                    'password':    password,
+                    'next': '/',
+                    'action_login': 'Log In',
+                    'username': username,
+                    'password': password, 
             }
             postdata = urlencode(login_form)
             d = getPage(self._LOGIN_URL, method='POST', postdata=postdata, headers=std_headers)
@@ -673,7 +673,7 @@ class YoutubeIE(InfoExtractor):
             video_info_url = '%s&fmt=%s' % (video_info_url, format_param)
 
         def gotPage(result, format_param, video_extension):
-            video_info_webpage,headers = result
+            video_info_webpage, headers = result
 
             # check format
             if (format_param == '22'):
@@ -726,12 +726,12 @@ class YoutubeIE(InfoExtractor):
 
             # Return information
             return [{
-                'id':		video_id.decode('utf-8'),
-                'url':		video_real_url.decode('utf-8'),
-                'uploader':	video_uploader.decode('utf-8'),
-                'title':	video_title,
-                'stitle':	simple_title,
-                'ext':		video_extension.decode('utf-8'),
+                'id': video_id.decode('utf-8'),
+                'url': video_real_url.decode('utf-8'),
+                'uploader': video_uploader.decode('utf-8'),
+                'title': video_title,
+                'stitle': simple_title,
+                'ext': video_extension.decode('utf-8'), 
                 }]
 
         def gotError(error):
@@ -791,7 +791,7 @@ class MetacafeIE(InfoExtractor):
         # Confirm age
         disclaimer_form = {
             'filters': '0',
-            'submit': "Continue - I'm over 18",
+            'submit': "Continue - I'm over 18", 
             }
         request = urllib2.Request(self._FILTER_POST, urllib.urlencode(disclaimer_form), std_headers)
         try:
@@ -861,12 +861,12 @@ class MetacafeIE(InfoExtractor):
         try:
             # Process video information
             self._downloader.process_info({
-                'id':        video_id.decode('utf-8'),
-                'url':        video_url.decode('utf-8'),
-                'uploader':    video_uploader.decode('utf-8'),
-                'title':    video_title,
-                'stitle':    simple_title,
-                'ext':        video_extension.decode('utf-8'),
+                'id': video_id.decode('utf-8'),
+                'url': video_url.decode('utf-8'),
+                'uploader': video_uploader.decode('utf-8'),
+                'title': video_title,
+                'stitle': simple_title,
+                'ext': video_extension.decode('utf-8'), 
             })
         except UnavailableFormatError:
             self._downloader.trouble(u'ERROR: format not available for video')
@@ -1093,7 +1093,7 @@ if __name__ == '__main__':
         parser = optparse.OptionParser(
                 usage='Usage: %prog [options] url...',
             	version='2009.09.13',
-                conflict_handler='resolve',
+                conflict_handler='resolve', 
                 )
         parser.add_option('-h', '--help',
                 action='help', help='print this help text and exit')
@@ -1205,7 +1205,7 @@ if __name__ == '__main__':
             'ignoreerrors': opts.ignoreerrors,
             'ratelimit': opts.ratelimit,
             'nooverwrites': opts.nooverwrites,
-            'continuedl': opts.continue_dl,
+            'continuedl': opts.continue_dl, 
             })
         fd.add_info_extractor(youtube_search_ie)
         fd.add_info_extractor(youtube_pl_ie)

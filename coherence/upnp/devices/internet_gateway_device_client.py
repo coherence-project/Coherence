@@ -41,9 +41,9 @@ class InternetGatewayDeviceClient(log.Loggable):
             self.wan_device.remove()
 
     def embedded_device_notified(self, device):
-        self.info("EmbeddedDevice %r sent notification", device);
+        self.info("EmbeddedDevice %r sent notification", device); 
         if self.detection_completed == True:
             return
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
-                               client=self,udn=self.device.udn)
+                               client=self, udn=self.device.udn)

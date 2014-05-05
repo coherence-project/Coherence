@@ -14,7 +14,7 @@ from twisted.python import filepath, util
 from twisted.internet.tcp import CannotListenError
 from twisted.internet import task, address, defer
 from twisted.internet import reactor
-from twisted.web import resource,static
+from twisted.web import resource, static
 
 import coherence.extern.louie as louie
 
@@ -65,7 +65,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
         except:
             self.warning("Cannot find device for requested name: %s", name)
             request.setResponseCode(404)
-            return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name,'text/html')
+            return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name, 'text/html')
 
 
     def listchilds(self, uri):
@@ -85,7 +85,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
                 cl.append('<li><a href=%s%s>%s</a></li>' % (uri, child, child))
         return "".join(cl)
 
-    def render(self,request):
+    def render(self, request):
         result = """<html><head><title>Coherence</title></head><body>
 <a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
         return result.encode('utf-8')
@@ -106,7 +106,7 @@ class WebServer(log.Loggable):
 
 
             from nevow import __version_info__, __version__
-            if __version_info__ < (0,9,17):
+            if __version_info__ < (0, 9, 17):
                 self.warning("Nevow version %s too old, disabling WebUI", __version__)
                 raise ImportError
 
@@ -163,7 +163,7 @@ class Plugins(log.Loggable):
             try:
                 plugin = plugin.load(require=False)
             except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
-                self.warning("Can't load plugin %s (%s), maybe missing dependencies...", plugin.name,msg)
+                self.warning("Can't load plugin %s (%s), maybe missing dependencies...", plugin.name, msg)
                 self.info(traceback.format_exc())
                 del self._plugins[key]
                 raise KeyError
@@ -171,23 +171,23 @@ class Plugins(log.Loggable):
                 self._plugins[key] = plugin
         return plugin
 
-    def get(self, key,default=None):
+    def get(self, key, default=None):
         try:
             return self.__getitem__(key)
         except KeyError:
             return default
 
     def __setitem__(self, key, value):
-        self._plugins.__setitem__(key,value)
+        self._plugins.__setitem__(key, value)
 
-    def set(self, key,value):
-        return self.__setitem__(key,value)
+    def set(self, key, value):
+        return self.__setitem__(key, value)
 
     def keys(self):
         return self._plugins.keys()
 
     def _collect(self, ids=_valids):
-        if not isinstance(ids, (list,tuple)):
+        if not isinstance(ids, (list, tuple)):
             ids = (ids, )
         if pkg_resources:
             for group in ids:
@@ -202,7 +202,7 @@ class Plugins(log.Loggable):
 
     def _collect_from_module(self):
         from coherence.extern.simple_plugin import Reception
-        reception = Reception(os.path.join(os.path.dirname(__file__),'backends'), log=self.warning)
+        reception = Reception(os.path.join(os.path.dirname(__file__), 'backends'), log=self.warning)
         self.info(reception.guestlist())
         for cls in reception.guestlist():
             self._plugins[cls.__name__.split('.')[-1]] = cls
@@ -256,33 +256,33 @@ class Coherence(log.Loggable):
         """
 
         try:
-            logmode = config.get('logging').get('level','warning')
-        except (KeyError,AttributeError):
+            logmode = config.get('logging').get('level', 'warning')
+        except (KeyError, AttributeError):
             logmode = config.get('logmode', 'warning')
 
         try:
             subsystems = config.get('logging')['subsystem']
-            if isinstance(subsystems,dict):
+            if isinstance(subsystems, dict):
                 subsystems = [subsystems]
             for subsystem in subsystems:
                 try:
                     if subsystem['active'] == 'no':
                         continue
-                except (KeyError,TypeError):
+                except (KeyError, TypeError):
                     pass
-                self.info("setting log-level for subsystem %s to %s", subsystem['name'],subsystem['level'])
+                self.info("setting log-level for subsystem %s to %s", subsystem['name'], subsystem['level'])
                 logging.getLogger(subsystem['name'].lower()).setLevel(subsystem['level'].upper())
 
-        except (KeyError,TypeError):
-            subsystem_log = config.get('subsystem_log',{})
-            for subsystem,level in subsystem_log.items():
+        except (KeyError, TypeError):
+            subsystem_log = config.get('subsystem_log', {})
+            for subsystem, level in subsystem_log.items():
                 #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
                 logging.getLogger(subsystem.lower()).setLevel(level)
         try:
-            logfile = config.get('logging').get('logfile',None)
+            logfile = config.get('logging').get('logfile', None)
             if logfile != None:
                 logfile = unicode(logfile)
-        except (KeyError,AttributeError,TypeError):
+        except (KeyError, AttributeError, TypeError):
             logfile = config.get('logfile', None)
         log.init(logfile, logmode.upper())
 
@@ -319,7 +319,7 @@ class Coherence(log.Loggable):
         else:
             unittest = True
 
-        self.ssdp_server = SSDPServer(test=unittest,interface=self.hostname)
+        self.ssdp_server = SSDPServer(test=unittest, interface=self.hostname)
         louie.connect(self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
         louie.connect(self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
         louie.connect(self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
@@ -328,12 +328,12 @@ class Coherence(log.Loggable):
         self.ssdp_server.subscribe("new_device", self.add_device)
         self.ssdp_server.subscribe("removed_device", self.remove_device)
 
-        self.msearch = MSearch(self.ssdp_server,test=unittest)
+        self.msearch = MSearch(self.ssdp_server, test=unittest)
 
         reactor.addSystemEventTrigger('before', 'shutdown', self.shutdown, force=True)
 
         try:
-            self.web_server = WebServer(self.config.get('web-ui',None), self.web_server_port, self)
+            self.web_server = WebServer(self.config.get('web-ui', None), self.web_server_port, self)
         except CannotListenError:
             self.warning('port %r already in use, aborting!', self.web_server_port)
             reactor.stop()
@@ -349,18 +349,18 @@ class Coherence(log.Loggable):
 
         try:
             plugins = self.config['plugin']
-            if isinstance(plugins,dict):
+            if isinstance(plugins, dict):
                 plugins = [plugins]
         except:
             plugins = None
         if plugins is None:
-            plugins = self.config.get('plugins',None)
+            plugins = self.config.get('plugins', None)
 
         if plugins is None:
             self.info("No plugin defined!")
         else:
-            if isinstance(plugins,dict):
-                for plugin,arguments in plugins.items():
+            if isinstance(plugins, dict):
+                for plugin, arguments in plugins.items():
                     try:
                         if not isinstance(arguments, dict):
                             arguments = {}
@@ -373,7 +373,7 @@ class Coherence(log.Loggable):
                     try:
                         if plugin['active'] == 'no':
                             continue
-                    except (KeyError,TypeError):
+                    except (KeyError, TypeError):
                         pass
                     try:
                         backend = plugin['backend']
@@ -389,14 +389,14 @@ class Coherence(log.Loggable):
                         self.info(traceback.format_exc())
 
 
-        self.external_address = ':'.join((self.hostname,str(self.web_server_port)))
+        self.external_address = ':'.join((self.hostname, str(self.web_server_port)))
 
 
         if(self.config.get('controlpoint', 'no') == 'yes' or
-           self.config.get('json','no') == 'yes'):
+           self.config.get('json', 'no') == 'yes'):
             self.ctrl = ControlPoint(self)
 
-        if self.config.get('json','no') == 'yes':
+        if self.config.get('json', 'no') == 'yes':
             from coherence.json import JsonInterface
             self.json = JsonInterface(self.ctrl)
 
@@ -433,12 +433,12 @@ class Coherence(log.Loggable):
         self.available_plugins = Plugins()
 
         try:
-            plugin_class = self.available_plugins.get(plugin,None)
+            plugin_class = self.available_plugins.get(plugin, None)
             if plugin_class == None:
                 raise KeyError
             for device in plugin_class.implements:
                 try:
-                    device_class = globals().get(device,None)
+                    device_class = globals().get(device, None)
                     if device_class == None:
                         raise KeyError
                     self.info("Activating %s plugin as %s...", plugin, device)
@@ -461,7 +461,7 @@ class Coherence(log.Loggable):
         """ plugin is the object return by add_plugin """
         """ or an UUID string                         """
 
-        if isinstance(plugin,basestring):
+        if isinstance(plugin, basestring):
             try:
                 plugin = self.active_backends[plugin]
             except KeyError:
@@ -480,11 +480,11 @@ class Coherence(log.Loggable):
     def writeable_config(self):
         """ do we have a new-style config file """
         from coherence.extern.simple_config import ConfigItem
-        if isinstance(self.config,ConfigItem):
+        if isinstance(self.config, ConfigItem):
             return True
         return False
 
-    def store_plugin_config(self,uuid,items):
+    def store_plugin_config(self, uuid, items):
         """ find the backend with uuid
             and store in its the config
             the key and value pair(s)
@@ -493,18 +493,18 @@ class Coherence(log.Loggable):
         if plugins is None:
             self.warning("storing a plugin config option is only possible with the new config file format")
             return
-        if isinstance(plugins,dict):
+        if isinstance(plugins, dict):
             plugins = [plugins]
         uuid = str(uuid)
         if uuid.startswith('uuid:'):
             uuid = uuid[5:]
-        if isinstance(items,tuple):
+        if isinstance(items, tuple):
             new = {}
             new[items[0]] = items[1]
         for plugin in plugins:
             try:
                 if plugin['uuid'] == uuid:
-                    for k,v in items.items():
+                    for k, v in items.items():
                         plugin[k] = v
                     self.config.save()
             except:
@@ -517,7 +517,7 @@ class Coherence(log.Loggable):
         #print kwargs
         pass
 
-    def shutdown(self,force=False):
+    def shutdown(self, force=False):
         if force == True:
             self._incarnations_ = 1
         if self._incarnations_ > 1:
@@ -589,16 +589,16 @@ class Coherence(log.Loggable):
                 device.renew_service_subscriptions()
 
     def subscribe(self, name, callback):
-        self._callbacks.setdefault(name,[]).append(callback)
+        self._callbacks.setdefault(name, []).append(callback)
 
     def unsubscribe(self, name, callback):
-        callbacks = self._callbacks.get(name,[])
+        callbacks = self._callbacks.get(name, [])
         if callback in callbacks:
             callbacks.remove(callback)
         self._callbacks[name] = callbacks
 
     def callback(self, name, *args):
-        for callback in self._callbacks.get(name,[]):
+        for callback in self._callbacks.get(name, []):
             callback(*args)
 
     def get_device_by_host(self, host):
@@ -637,12 +637,12 @@ class Coherence(log.Loggable):
         return [d for d in self.devices if d.manifestation == 'remote']
 
     def create_device(self, device_type, infos):
-        self.info("creating  %s %s", infos['ST'],infos['USN'])
+        self.info("creating  %s %s", infos['ST'], infos['USN'])
         if infos['ST'] == 'upnp:rootdevice':
             self.info("creating upnp:rootdevice  %s", infos['USN'])
             root = RootDevice(infos)
         else:
-            self.info("creating device/service  %s",infos['USN'])
+            self.info("creating device/service  %s", infos['USN'])
             root_id = infos['USN'][:-len(infos['ST']) - 2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
@@ -652,11 +652,11 @@ class Coherence(log.Loggable):
         #    self.callback("new_device", infos['ST'], infos)
 
     def add_device(self, device):
-        self.info("adding device %s %s %s",device.get_id(),device.get_usn(),device.friendly_device_type)
+        self.info("adding device %s %s %s", device.get_id(), device.get_usn(), device.friendly_device_type)
         self.devices.append(device)
 
     def remove_device(self, device_type, infos):
-        self.info("removed device %s %s",infos['ST'],infos['USN'])
+        self.info("removed device %s %s", infos['ST'], infos['USN'])
         device = self.get_device_with_usn(infos['USN'])
         if device:
             louie.send('Coherence.UPnP.Device.removed', None, usn=infos['USN'])
@@ -677,12 +677,12 @@ class Coherence(log.Loggable):
             """ probably the backend init failed """
             pass
 
-    def connect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+    def connect(self, receiver, signal=louie.signal.All, sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.connect
         """
-        louie.connect(receiver,signal=signal,sender=sender,weak=weak)
+        louie.connect(receiver, signal=signal, sender=sender, weak=weak)
 
-    def disconnect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+    def disconnect(self, receiver, signal=louie.signal.All, sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.disconnect
         """
-        louie.disconnect(receiver,signal=signal,sender=sender,weak=weak)
+        louie.disconnect(receiver, signal=signal, sender=sender, weak=weak)

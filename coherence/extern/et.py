@@ -119,7 +119,7 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-def parse_xml(data, encoding="utf-8",dump_invalid_data=False):
+def parse_xml(data, encoding="utf-8", dump_invalid_data=False):
     try:
         p = ET.XMLParser(encoding=encoding)
     except exceptions.TypeError:
@@ -136,7 +136,7 @@ def parse_xml(data, encoding="utf-8",dump_invalid_data=False):
         pass
 
     # Guess from who we're getting this?
-    data = data.replace('\x00','')
+    data = data.replace('\x00', '')
     try:
         p.feed(data)
     except Exception, error:

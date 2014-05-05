@@ -25,7 +25,7 @@
 
 import CDDB, DiscID
 
-from twisted.internet import reactor,threads
+from twisted.internet import reactor, threads
 
 from coherence.upnp.core import DIDLLite
 from coherence import log
@@ -41,7 +41,7 @@ TRACK_FOURTH_FIELD = "*"
 class TrackItem(BackendItem):
     logCategory = "audiocd"
 
-    def __init__(self,device_name="/dev/cdrom", track_number=1, artist="Unknown", title="Unknown"):
+    def __init__(self, device_name="/dev/cdrom", track_number=1, artist="Unknown", title="Unknown"):
         self.device_name = device_name
         self.track_number = track_number
         self.artist = artist
@@ -50,7 +50,7 @@ class TrackItem(BackendItem):
         self.fourth_field = TRACK_FOURTH_FIELD
         self.item = None
         self.pipeline = PLAY_TRACK_GST_PIPELINE % (self.device_name, self.track_number)
-        self.location = GStreamerPipeline(self.pipeline,self.mimetype)
+        self.location = GStreamerPipeline(self.pipeline, self.mimetype)
 
     def get_item(self):
         if self.item == None:
@@ -59,7 +59,7 @@ class TrackItem(BackendItem):
             url = self.store.urlbase + str(self.storage_id)
             self.item = DIDLLite.MusicTrack(upnp_id, upnp_parent_id, self.title)
 
-            res = DIDLLite.Resource(url, 'http-get:*:%s:%s' % (self.mimetype,self.fourth_field))
+            res = DIDLLite.Resource(url, 'http-get:*:%s:%s' % (self.mimetype, self.fourth_field))
             #res.duration = self.duration
             #res.size = self.get_size()
             self.item.res.append(res)
@@ -86,9 +86,9 @@ class AudioCDStore(AbstractBackendStore):
 
     description = ('audioCD', '', None)
 
-    options = [{'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
-       {'option':'device_name','text':'device name for audio CD:','type':'string', 'help':'device name containing the audio cd.'}
+    options = [{'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'device_name', 'text': 'device name for audio CD:', 'type': 'string', 'help': 'device name containing the audio cd.'}
     ]
 
     disc_title = None
@@ -98,7 +98,7 @@ class AudioCDStore(AbstractBackendStore):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
         self.name = 'audio CD'
-        self.device_name = kwargs.get('device_name',"/dev/cdom");
+        self.device_name = kwargs.get('device_name', "/dev/cdom"); 
 
         threads.deferToThread(self.extractAudioCdInfo)
 
@@ -141,7 +141,7 @@ class AudioCDStore(AbstractBackendStore):
 
         root_item = Container(None, self.disc_title)
         # we will sort the item by "track_number"
-        def childs_sort(x,y):
+        def childs_sort(x, y):
             return cmp(x.track_number, y.track_number)
         root_item.sorting_method = childs_sort
 
@@ -154,14 +154,14 @@ class AudioCDStore(AbstractBackendStore):
 
         self.info('Sharing audio CD %s', self.disc_title)
 
-        reactor.callLater(2,self.checkIfAudioCdStillPresent)
+        reactor.callLater(2, self.checkIfAudioCdStillPresent)
         self.init_completed()
 
 
     def  checkIfAudioCdStillPresent(self):
         try:
             disc_id = DiscID.disc_id(self.cdrom)
-            reactor.callLater(2,self.checkIfAudioCdStillPresent)
+            reactor.callLater(2, self.checkIfAudioCdStillPresent)
         except:
             self.warning('audio CD %s ejected: closing UPnP server!', self.disc_title)
             self.server.coherence.remove_plugin(self.server)

@@ -6,7 +6,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2008,2009 Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
-from twisted.internet import defer,reactor
+from twisted.internet import defer, reactor
 from twisted.web import server
 
 from coherence.upnp.core import utils
@@ -20,7 +20,7 @@ from coherence.backend import BackendItem, BackendStore
 
 import zlib
 
-from coherence.backend import BackendStore,BackendItem
+from coherence.backend import BackendStore, BackendItem
 
 
 ROOT_CONTAINER_ID = 0
@@ -107,7 +107,7 @@ class Container(BackendItem):
     def add_child(self, child):
         id = child.id
         if isinstance(child.id, basestring):
-            _,id = child.id.split('.')
+            _, id = child.id.split('.')
         if self.children is None:
             self.children = []
         self.children.append(child)
@@ -116,8 +116,8 @@ class Container(BackendItem):
 
     def get_children(self, start=0, end=0):
         if self.sorted == False:
-            def childs_sort(x,y):
-                r = cmp(x.name,y.name)
+            def childs_sort(x, y):
+                r = cmp(x.name, y.name)
                 return r
 
             self.children.sort(cmp=childs_sort)
@@ -186,17 +186,17 @@ class ITVStore(BackendStore):
 
     description = ('Shoutcast TV', 'cexposes the list of video streams from Shoutcast TV.', None)
 
-    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
-       {'option':'genrelist','text':'Server URL','type':'string', 'default':SHOUTCAST_WS_URL}
+    options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'genrelist', 'text': 'Server URL', 'type': 'string', 'default': SHOUTCAST_WS_URL}
     ]
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name','iTV')
+        self.name = kwargs.get('name', 'iTV')
 
         self.update_id = 0
         self.store = {}
@@ -204,7 +204,7 @@ class ITVStore(BackendStore):
         self.wmc_mapping = {'4': 1000}
 
 
-        self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
+        self.shoutcast_ws_url = self.config.get('genrelist', SHOUTCAST_WS_URL)
 
         self.init_completed()
 
@@ -232,13 +232,13 @@ class ITVStore(BackendStore):
     def len(self):
         return len(self.store)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         try:
             return self.store[int(id)]
-        except (ValueError,KeyError):
+        except (ValueError, KeyError):
             pass
         return None
 
@@ -252,10 +252,10 @@ class ITVStore(BackendStore):
 
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                    ['http-get:*:%s:*' % VIDEO_MIMETYPE,
+                                                                    ['http-get:*:%s:*' % VIDEO_MIMETYPE, 
                                                                      ],
                                                                    default=True)
-        rootItem = Container(ROOT_CONTAINER_ID,self,-1, self.name)
+        rootItem = Container(ROOT_CONTAINER_ID, self, -1, self.name)
         self.store[ROOT_CONTAINER_ID] = rootItem
         self.retrieveList_attemptCount = 0
         self.retrieveList(rootItem)
@@ -287,14 +287,14 @@ class ITVStore(BackendStore):
 
                 sameStation = stations.get(name)
                 if sameStation == None or bitrate > sameStation['bitrate']:
-                    station = {'name':name,
-                               'station_id':station_id,
-                               'mimetype':mimetype,
-                               'id':station_id,
-                               'url':url,
-                               'bitrate':bitrate,
-                               'rating':rating,
-                               'genre':genre}
+                    station = {'name': name,
+                               'station_id': station_id,
+                               'mimetype': mimetype,
+                               'id': station_id,
+                               'url': url,
+                               'bitrate': bitrate,
+                               'rating': rating,
+                               'genre': genre}
                     stations[name] = station
 
 
@@ -306,10 +306,10 @@ class ITVStore(BackendStore):
             for station in stations.values():
                 genre = station.get('genre')
                 parentItem = genreItems[genre]
-                self.appendFeed({'name':station.get('name'),
-                                    'mimetype':station['mimetype'],
-                                    'id':station.get('station_id'),
-                                    'url':station.get('url')},
+                self.appendFeed({'name': station.get('name'),
+                                    'mimetype': station['mimetype'],
+                                    'id': station.get('station_id'),
+                                    'url': station.get('url')},
                             parentItem)
 
 

@@ -38,7 +38,7 @@ class Device(log.Loggable):
         louie.connect(self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
     def __repr__(self):
-        return "embedded device %r %r, parent %r" % (self.friendly_name,self.device_type,self.parent)
+        return "embedded device %r %r, parent %r" % (self.friendly_name, self.device_type, self.parent)
 
     #def __del__(self):
     #    #print "Device removal completed"
@@ -52,11 +52,11 @@ class Device(log.Loggable):
              'services': [x.as_dict() for x in self.services]}
         icons = []
         for icon in self.icons:
-            icons.append({"mimetype":icon['mimetype'],"url":icon['url'], "height":icon['height'], "width":icon['width'], "depth":icon['depth']})
+            icons.append({"mimetype": icon['mimetype'], "url": icon['url'], "height": icon['height'], "width": icon['width'], "depth": icon['depth']})
         d['icons'] = icons
         return d
 
-    def remove(self,*args):
+    def remove(self, *args):
         self.info("removal of  %s %s", self.friendly_name, self.udn)
         while len(self.devices) > 0:
             device = self.devices.pop()
@@ -81,7 +81,7 @@ class Device(log.Loggable):
             return
         self.detection_completed = True
         if self.parent != None:
-            self.info("embedded device %r %r initialized, parent %r", self.friendly_name,self.device_type,self.parent)
+            self.info("embedded device %r %r initialized, parent %r", self.friendly_name, self.device_type, self.parent)
         louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
         if self.parent != None:
             louie.send('Coherence.UPnP.Device.detection_completed', self.parent, device=self)
@@ -100,7 +100,7 @@ class Device(log.Loggable):
     def get_embedded_devices(self):
         return self.devices
 
-    def get_embedded_device_by_type(self,type):
+    def get_embedded_device_by_type(self, type):
         r = []
         for device in self.devices:
             if type == device.friendly_device_type:
@@ -110,11 +110,11 @@ class Device(log.Loggable):
     def get_services(self):
         return self.services
 
-    def get_service_by_type(self,type):
-        if not isinstance(type,(tuple,list)):
+    def get_service_by_type(self, type):
+        if not isinstance(type, (tuple, list)):
             type = [type, ]
         for service in self.services:
-            _,_,_,service_class,version = service.service_type.split(':')
+            _, _, _, service_class, version = service.service_type.split(':')
             if service_class in type:
                 return service
 
@@ -194,7 +194,7 @@ class Device(log.Loggable):
                 self.device_type.split(':')[-2:]
         self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
         self.udn = d.findtext('./{%s}UDN' % ns)
-        self.info("found udn %r %r", self.udn,self.friendly_name)
+        self.info("found udn %r %r", self.udn, self.friendly_name)
 
         try:
             self.manufacturer = d.findtext('./{%s}manufacturer' % ns)
@@ -268,7 +268,7 @@ class Device(log.Loggable):
                     i['realurl'] = icon.find('./{%s}url' % ns).text
                     i['url'] = self.make_fullyqualified(i['realurl'])
                     self.icons.append(i)
-                    self.debug("adding icon %r for %r", i,self.friendly_name)
+                    self.debug("adding icon %r for %r", i, self.friendly_name)
                 except:
                     import traceback
                     self.debug(traceback.format_exc())
@@ -333,105 +333,105 @@ class Device(log.Loggable):
         except:
             return ''
 
-    def make_fullyqualified(self,url):
+    def make_fullyqualified(self, url):
         return self.parent.make_fullyqualified(url)
 
     def as_tuples(self):
         r = []
 
-        def append(name,attribute):
+        def append(name, attribute):
             try:
-                if isinstance(attribute,tuple):
+                if isinstance(attribute, tuple):
                     if callable(attribute[0]):
                         v1 = attribute[0]()
                     else:
-                        v1 = getattr(self,attribute[0])
-                    if v1 in [None,'None']:
+                        v1 = getattr(self, attribute[0])
+                    if v1 in [None, 'None']:
                         return
                     if callable(attribute[1]):
                         v2 = attribute[1]()
                     else:
-                        v2 = getattr(self,attribute[1])
-                    if v2 in [None,'None']:
+                        v2 = getattr(self, attribute[1])
+                    if v2 in [None, 'None']:
                         return
-                    r.append((name,(v1,v2)))
+                    r.append((name, (v1, v2)))
                     return
                 elif callable(attribute):
                     v = attribute()
                 else:
-                    v = getattr(self,attribute)
-                if v not in [None,'None']:
-                    r.append((name,v))
+                    v = getattr(self, attribute)
+                if v not in [None, 'None']:
+                    r.append((name, v))
             except:
                 import traceback
                 self.debug(traceback.format_exc())
 
         try:
-            r.append(('Location',(self.get_location(),self.get_location())))
+            r.append(('Location', (self.get_location(), self.get_location())))
         except:
             pass
         try:
-            append('URL base',self.get_urlbase)
+            append('URL base', self.get_urlbase)
         except:
             pass
         try:
-            r.append(('UDN',self.get_id()))
+            r.append(('UDN', self.get_id()))
         except:
             pass
         try:
-            r.append(('Type',self.device_type))
+            r.append(('Type', self.device_type))
         except:
             pass
         try:
-            r.append(('UPnP Version',self.upnp_version))
+            r.append(('UPnP Version', self.upnp_version))
         except:
             pass
         try:
-            r.append(('DLNA Device Class',','.join(self.dlna_dc)))
+            r.append(('DLNA Device Class', ','.join(self.dlna_dc)))
         except:
             pass
         try:
-            r.append(('DLNA Device Capability',','.join(self.dlna_cap)))
+            r.append(('DLNA Device Capability', ','.join(self.dlna_cap)))
         except:
             pass
         try:
-            r.append(('Friendly Name',self.friendly_name))
+            r.append(('Friendly Name', self.friendly_name))
         except:
             pass
         try:
-            append('Manufacturer','manufacturer')
+            append('Manufacturer', 'manufacturer')
         except:
             pass
         try:
-            append('Manufacturer URL',('manufacturer_url','manufacturer_url'))
+            append('Manufacturer URL', ('manufacturer_url', 'manufacturer_url'))
         except:
             pass
         try:
-            append('Model Description','model_description')
+            append('Model Description', 'model_description')
         except:
             pass
         try:
-            append('Model Name','model_name')
+            append('Model Name', 'model_name')
         except:
             pass
         try:
-            append('Model Number','model_number')
+            append('Model Number', 'model_number')
         except:
             pass
         try:
-            append('Model URL',('model_url','model_url'))
+            append('Model URL', ('model_url', 'model_url'))
         except:
             pass
         try:
-            append('Serial Number','serial_number')
+            append('Serial Number', 'serial_number')
         except:
             pass
         try:
-            append('UPC','upc')
+            append('UPC', 'upc')
         except:
             pass
         try:
-            append('Presentation URL',('presentation_url',lambda: self.make_fullyqualified(getattr(self,'presentation_url'))))
+            append('Presentation URL', ('presentation_url', lambda: self.make_fullyqualified(getattr(self, 'presentation_url'))))
         except:
             pass
 
@@ -439,9 +439,9 @@ class Device(log.Loggable):
             r.append(('Icon', (icon['realurl'],
                                self.make_fullyqualified(icon['realurl']),
                                {'Mimetype': icon['mimetype'],
-                                'Width':icon['width'],
-                                'Height':icon['height'],
-                                'Depth':icon['depth']})))
+                                'Width': icon['width'],
+                                'Height': icon['height'],
+                                'Depth': icon['depth']})))
 
         return r
 
@@ -463,7 +463,7 @@ class RootDevice(Device):
         self.parse_description()
 
     def __repr__(self):
-        return "rootdevice %r %r %r %r, manifestation %r" % (self.friendly_name,self.udn,self.st,self.host,self.manifestation)
+        return "rootdevice %r %r %r %r, manifestation %r" % (self.friendly_name, self.udn, self.st, self.host, self.manifestation)
 
     def remove(self, *args):
         result = Device.remove(self, *args)
@@ -517,7 +517,7 @@ class RootDevice(Device):
                 return
         # now must be done, so notify root done
         self.root_detection_completed = True
-        self.info("rootdevice %r %r %r initialized, manifestation %r", self.friendly_name,self.st,self.host,self.manifestation)
+        self.info("rootdevice %r %r %r initialized, manifestation %r", self.friendly_name, self.st, self.host, self.manifestation)
         louie.send('Coherence.UPnP.RootDevice.detection_completed', None, device=self)
 
     def add_device(self, device):
@@ -543,10 +543,10 @@ class RootDevice(Device):
 
             if xml_data is not None:
                 tree = xml_data.getroot()
-                major = tree.findtext('./{%s}specVersion/{%s}major' % (ns,ns))
-                minor = tree.findtext('./{%s}specVersion/{%s}minor' % (ns,ns))
+                major = tree.findtext('./{%s}specVersion/{%s}major' % (ns, ns))
+                minor = tree.findtext('./{%s}specVersion/{%s}minor' % (ns, ns))
                 try:
-                    self.upnp_version = '.'.join((major,minor))
+                    self.upnp_version = '.'.join((major, minor))
                 except:
                     self.upnp_version = 'n/a'
                 try:
@@ -565,7 +565,7 @@ class RootDevice(Device):
 
         utils.getPage(self.location).addCallbacks(gotPage, gotError, None, None, [self.location], None)
 
-    def make_fullyqualified(self,url):
+    def make_fullyqualified(self, url):
         if url.startswith('http://'):
             return url
         import urlparse
@@ -573,7 +573,7 @@ class RootDevice(Device):
         if base != None:
             if base[-1] != '/':
                 base += '/'
-            r = urlparse.urljoin(base,url)
+            r = urlparse.urljoin(base, url)
         else:
-            r = urlparse.urljoin(self.get_location(),url)
+            r = urlparse.urljoin(self.get_location(), url)
         return r

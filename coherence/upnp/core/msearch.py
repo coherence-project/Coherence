@@ -64,7 +64,7 @@ class MSearch(DatagramProtocol, log.Loggable):
                 'MAN: "ssdp:discover"',
                 'MX: 5',
                 'ST: ssdp:all',
-                '','']
+                '', '']
         req = '\r\n'.join(req)
 
         try:

@@ -7,7 +7,7 @@
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2009-2010, Jean-Michel Sizun <jmDOTsizunATfreeDOTfr>
 
-from twisted.internet import defer,reactor
+from twisted.internet import defer, reactor
 from twisted.python.failure import Failure
 from twisted.web import server
 
@@ -78,10 +78,10 @@ class RadiotimeStore(AbstractBackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        AbstractBackendStore.__init__(self,server,**kwargs)
+        AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name','radiotimeStore')
-        self.refresh = int(kwargs.get('refresh',60)) * 60
+        self.name = kwargs.get('name', 'radiotimeStore')
+        self.refresh = int(kwargs.get('refresh', 60)) * 60
 
         self.browse_url = self.config.get('browse_url', OPML_BROWSE_URL)
         self.partner_id = self.config.get('partner_id', 'TMe3Cn6v')

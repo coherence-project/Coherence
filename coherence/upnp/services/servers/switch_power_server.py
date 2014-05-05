@@ -16,7 +16,7 @@ from coherence.upnp.core import service
 from coherence import log
 
 
-class SwitchPowerControl(service.ServiceControl,UPnPPublisher):
+class SwitchPowerControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
         self.service = server

@@ -25,13 +25,13 @@ class HttpRoot(DeviceHttpRoot):
     logCategory = 'binarylight'
 
 
-class BinaryLight(log.Loggable,BasicDeviceMixin):
+class BinaryLight(log.Loggable, BasicDeviceMixin):
     logCategory = 'binarylight'
     device_type = 'BinaryLight'
     version = 1
 
-    def fire(self,backend,**kwargs):
-        if kwargs.get('no_thread_needed',False) == False:
+    def fire(self, backend, **kwargs):
+        if kwargs.get('no_thread_needed', False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
 
@@ -62,7 +62,7 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
         try:
             self.switch_power_server = SwitchPowerServer(self)
             self._services.append(self.switch_power_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('SwitchPowerServer %s', msg)
             raise LookupError(msg)
 

@@ -179,15 +179,15 @@ class QTReactor(PosixReactorBase):
     def getWriters(self):
         return self._writes.keys()
 
-    def callLater(self,howlong, *args, **kargs):
-        rval = super(QTReactor,self).callLater(howlong, *args, **kargs)
+    def callLater(self, howlong, *args, **kargs):
+        rval = super(QTReactor, self).callLater(howlong, *args, **kargs)
         self.reactorInvocation()
         return rval
 
     def crash(self):
-        super(QTReactor,self).crash()
+        super(QTReactor, self).crash()
 
-    def iterate(self,delay=0.0):
+    def iterate(self, delay=0.0):
         t = self.running  # not sure I entirely get the state of running
         self.running = True
         self._timer.stop()  # in case its not (rare?)
@@ -202,11 +202,11 @@ class QTReactor(PosixReactorBase):
                     t = endTime - time.time()
                     if t <= 0.0: return
                     self.qApp.processEvents(QEventLoop.AllEvents |
-                                      QEventLoop.WaitForMoreEvents,t * 1010)
+                                      QEventLoop.WaitForMoreEvents, t * 1010)
         finally:
             self.running = t
 
-    def addReadWrite(self,t):
+    def addReadWrite(self, t):
         self._readWriteQ.append(t)
 
     def runReturn(self, installSignalHandlers=True):
@@ -236,7 +236,7 @@ class QTReactor(PosixReactorBase):
         self.runUntilCurrent()
         t = self.timeout()
         if t is None: t = 0.1
-        else: t = min(t,0.1)
+        else: t = min(t, 0.1)
         self._timer.setInterval(t * 1010)
         self.qApp.processEvents()  # could change interval
         self._timer.start()

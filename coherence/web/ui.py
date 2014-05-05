@@ -35,7 +35,7 @@ class MenuFragment(athena.LiveElement, log.Loggable):
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="coherence_menu_box",class_="coherence_menu_box")[""],
+            tags.div(id="coherence_menu_box", class_="coherence_menu_box")[""], 
         ]
         )
 
@@ -58,11 +58,11 @@ class MenuFragment(athena.LiveElement, log.Loggable):
             return {}
     athena.expose(going_live)
 
-    def add_tab(self,title,active,id):
+    def add_tab(self, title, active, id):
         self.info("add tab %s to the MenuFragment", title)
-        new_tab = {u'title':unicode(title),
-                   u'active':unicode(active),
-                   u'athenaid':u'athenaid:%d' % id}
+        new_tab = {u'title': unicode(title),
+                   u'active': unicode(active),
+                   u'athenaid': u'athenaid:%d' % id}
         for t in self.tabs:
             if t[u'title'] == new_tab[u'title']:
                 return
@@ -79,7 +79,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="Devices-container",class_="coherence_container")[""],
+            tags.div(id="Devices-container", class_="coherence_container")[""], 
         ]
         )
 
@@ -100,7 +100,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         for device in self.coherence.get_devices():
             if device is not None:
                 devices.append({u'name': device.get_markup_name(),
-                        u'usn':unicode(device.get_usn())})
+                        u'usn': unicode(device.get_usn())})
 
         louie.connect(self.add_device,
                 'Coherence.UPnP.Device.detection_completed', louie.Any)
@@ -121,7 +121,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
                                                 device.get_device_type())
         self.callRemote('addDevice',
                 {u'name': device.get_markup_name(),
-                u'usn':unicode(device.get_usn())})
+                u'usn': unicode(device.get_usn())})
 
     def remove_device(self, usn):
         self.info("DevicesFragment remove device %s", usn)
@@ -148,7 +148,7 @@ class LoggingFragment(athena.LiveElement, log.Loggable):
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="Logging-container",class_="coherence_container")[""],
+            tags.div(id="Logging-container", class_="coherence_container")[""], 
         ]
         )
 
@@ -160,8 +160,8 @@ class LoggingFragment(athena.LiveElement, log.Loggable):
         self.active = active
 
     def going_live(self):
-        self.info("add a view to the LoggingFragment %s",self._athenaID)
-        self.page.menu.add_tab('Logging',self.active,self._athenaID)
+        self.info("add a view to the LoggingFragment %s", self._athenaID)
+        self.page.menu.add_tab('Logging', self.active, self._athenaID)
         d = self.page.notifyOnDisconnect()
         d.addCallback(self.remove_me)
         d.addErrback(self.remove_me)
@@ -219,15 +219,15 @@ class WebUI(athena.LivePage, log.Loggable):
             ch = super(WebUI, self).childFactory(ctx, name)
             if ch is None:
                 p = util.sibpath(__file__, name)
-                self.info('looking for file %s',p)
+                self.info('looking for file %s', p)
                 if os.path.exists(p):
                     ch = static.File(p)
             return ch
 
     def render_listmenu(self, ctx, data):
         l = []
-        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/' + 'devices',class_="coherence_menu_link")['Devices']])
-        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/' + 'logging',class_="coherence_menu_link")['Logging']])
+        l.append(tags.div(id="t", class_="coherence_menu_item")[tags.a(href='/' + 'devices', class_="coherence_menu_link")['Devices']])
+        l.append(tags.div(id="t", class_="coherence_menu_item")[tags.a(href='/' + 'logging', class_="coherence_menu_link")['Logging']])
         return ctx.tag[l]
 
     def render_menu(self, ctx, data):
@@ -236,10 +236,10 @@ class WebUI(athena.LivePage, log.Loggable):
 
     def render_devices(self, ctx, data):
         self.info('render_devices')
-        f = DevicesFragment(self,'yes')
+        f = DevicesFragment(self, 'yes')
         return f
 
     def render_logging(self, ctx, data):
         self.info('render_logging')
-        f = LoggingFragment(self,'no')
+        f = LoggingFragment(self, 'no')
         return f

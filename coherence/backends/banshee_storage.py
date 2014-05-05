@@ -138,7 +138,7 @@ class Container(BackendItem):
     def add_child(self, child):
         self.children.append(child)
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         def got_children(children):
             if request_count == 0:
                 return children[start:]
@@ -162,7 +162,7 @@ class Container(BackendItem):
         return count
 
     def get_item(self):
-        item = DIDLLite.Container(self.id, self.parent_id,self.name)
+        item = DIDLLite.Container(self.id, self.parent_id, self.name)
 
         def got_count(count):
             item.childCount = count
@@ -204,7 +204,7 @@ class Artist(BackendItem):
         if self.name:
             self.name = self.name.encode("utf-8")
 
-    def get_children(self,start=0, end=0):
+    def get_children(self, start=0, end=0):
         albums = []
 
         def query_db():
@@ -261,7 +261,7 @@ class Album(BackendItem):
         self.musicbrainz_id = self._row.MusicBrainzID
         self.cd_count = 1
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         tracks = []
 
         def query_db():
@@ -288,7 +288,7 @@ class Album(BackendItem):
         item.artist = self.artist.name
         item.childCount = self.get_child_count()
         if self.cover:
-            _,ext = os.path.splitext(self.cover)
+            _, ext = os.path.splitext(self.cover)
             item.albumArtURI = ''.join((self._db.urlbase,
                                         self.get_id(), '?cover', ext))
 
@@ -446,7 +446,7 @@ class BaseTrack(BackendItem):
         self.location = self._row.Uri
         self.playlist = kwargs.get("playlist")
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         return []
 
     def get_child_count(self):
@@ -454,13 +454,13 @@ class BaseTrack(BackendItem):
 
     def get_resources(self):
         resources = []
-        _,host_port,_,_,_ = urlsplit(self._db.urlbase)
+        _, host_port, _, _, _ = urlsplit(self._db.urlbase)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
         else:
             host = host_port
 
-        _,ext = os.path.splitext(self.location)
+        _, ext = os.path.splitext(self.location)
         ext = ext.lower()
 
         # FIXME: drop this hack when we switch to tagbin
@@ -517,17 +517,17 @@ class Track(BaseTrack):
         self.album = args[2]
 
     def get_item(self):
-        item = DIDLLite.MusicTrack(self.get_id(), self.album.itemID,self.title)
+        item = DIDLLite.MusicTrack(self.get_id(), self.album.itemID, self.title)
         item.artist = self.album.artist.name
         item.album = self.album.title
         item.playlist = self.playlist
 
         if self.album.cover != '':
-            _,ext = os.path.splitext(self.album.cover)
+            _, ext = os.path.splitext(self.album.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
             item.albumArtURI = ''.join((self._db.urlbase, self.get_id(),
-                                        '?cover',ext))
+                                        '?cover', ext))
         item.originalTrackNumber = self.track_nr
         item.server_uuid = str(self._db.server.uuid)[5:]
 
@@ -717,7 +717,7 @@ class BansheeDB(Loggable):
                     albums[row.AlbumID] = album
                 else:
                     album = albums[row.AlbumID]
-                track = Track(row, self.db,album)
+                track = Track(row, self.db, album)
                 tracks.append(track)
                 yield track
 
@@ -756,7 +756,7 @@ class BansheeStore(BackendStore, BansheeDB):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         BansheeDB.__init__(self, kwargs.get("db_path"))
         self.update_id = 0
         self.name = kwargs.get('name', 'Banshee')
@@ -836,10 +836,10 @@ class BansheeStore(BackendStore, BansheeDB):
     def release(self):
         self.db.disconnect()
 
-    def get_by_id(self,item_id):
+    def get_by_id(self, item_id):
         self.info("get_by_id %s", item_id)
         if isinstance(item_id, basestring) and item_id.find('.') > 0:
-            item_id = item_id.split('@',1)
+            item_id = item_id.split('@', 1)
             item_type, item_id = item_id[0].split('.')[:2]
             item_id = int(item_id)
             dfr = self._lookup(item_type, item_id)

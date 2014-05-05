@@ -79,15 +79,15 @@ class LastFMUser(log.Loggable):
                 if len(tuple) == 2:
                     if tuple[0] == "session":
                         self.sessionid = tuple[1]
-                        self.info("Got new sessionid: %r",self.sessionid)
+                        self.info("Got new sessionid: %r", self.sessionid)
                     if tuple[0] == "base_url":
                         if(self.host != tuple[1]):
                             self.host = tuple[1]
-                            self.info("Got new host: %s",self.host)
+                            self.info("Got new host: %s", self.host)
                     if tuple[0] == "base_path":
                         if(self.basepath != tuple[1]):
                             self.basepath = tuple[1]
-                            self.info("Got new path: %s",self.basepath)
+                            self.info("Got new path: %s", self.basepath)
             self.get_tracks()
 
 
@@ -159,15 +159,15 @@ class LastFMUser(log.Loggable):
         self.get_tracks()
 
 
-class LFMProxyStream(utils.ReverseProxyResource,log.Loggable):
+class LFMProxyStream(utils.ReverseProxyResource, log.Loggable):
     logCategory = 'lastFM_stream'
 
     def __init__(self, uri, parent):
         self.uri = uri
         self.parent = parent
-        _,host_port,path,_,_ = urlsplit(uri)
+        _, host_port, path, _, _ = urlsplit(uri)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
             port = int(port)
         else:
             host = host_port
@@ -190,7 +190,7 @@ class LFMProxyStream(utils.ReverseProxyResource,log.Loggable):
 class LastFMItem(log.Loggable):
     logCategory = 'LastFM_item'
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass, update=False):
         self.id = id
 
         self.name = obj.get('name')
@@ -203,14 +203,14 @@ class LastFMItem(log.Loggable):
 
         self.parent = parent
         if parent:
-            parent.add_child(self,update=update)
+            parent.add_child(self, update=update)
 
         if parent == None:
             parent_id = -1
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(id, parent_id, self.title,False,self.creator)
+        self.item = UPnPClass(id, parent_id, self.title, False, self.creator)
         if isinstance(self.item, Container):
             self.item.childCount = 0
         self.child_count = 0
@@ -263,7 +263,7 @@ class LastFMItem(log.Loggable):
             self.children.remove(child)
             self.update_id += 1
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         if request_count == 0:
             return self.children[start:]
         else:
@@ -301,18 +301,18 @@ class LastFMItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url + ' ' + self.name
 
-class LastFMStore(log.Loggable,Plugin):
+class LastFMStore(log.Loggable, Plugin):
 
     logCategory = 'lastFM_store'
 
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name','LastFMStore')
+        self.name = kwargs.get('name', 'LastFMStore')
 
         self.update_id = 0
         self.store = {}
@@ -349,7 +349,7 @@ class LastFMStore(log.Loggable,Plugin):
                 self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             if parent:
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
@@ -365,7 +365,7 @@ class LastFMStore(log.Loggable,Plugin):
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
         except:
@@ -374,9 +374,9 @@ class LastFMStore(log.Loggable,Plugin):
     def len(self):
         return len(self.store)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         id = int(id)
         if id == 0:
@@ -395,7 +395,7 @@ class LastFMStore(log.Loggable,Plugin):
         self.current_connection_id = None
 
 
-        parent = self.append({'name':'LastFM','mimetype':'directory'}, None)
+        parent = self.append({'name': 'LastFM', 'mimetype': 'directory'}, None)
 
 
         self.LFM = LastFMUser(self.config.get("login"), self.config.get("password"))

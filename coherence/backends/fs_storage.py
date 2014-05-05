@@ -42,7 +42,7 @@ try:
     from coherence.extern.inotify import (
         INotify, IN_CREATE, IN_DELETE, IN_MOVED_FROM, IN_MOVED_TO,
         IN_ISDIR, IN_CHANGED)
-except Exception,msg:
+except Exception, msg:
     INotify = None
     no_inotify_reason = msg
 
@@ -63,39 +63,39 @@ def _natural_key(s):
 class NoThumbnailFound(Exception):
     """no thumbnail found"""
 
-def _find_thumbnail(filename,thumbnail_folder='.thumbs'):
+def _find_thumbnail(filename, thumbnail_folder='.thumbs'):
     """ looks for a thumbnail file of the same basename
         in a folder named '.thumbs' relative to the file
 
         returns the filename of the thumb, its mimetype and the correspondig DLNA PN string
         or throws an Exception otherwise
     """
-    name,ext = os.path.splitext(os.path.basename(filename))
-    pattern = os.path.join(os.path.dirname(filename),thumbnail_folder,name + '.*')
+    name, ext = os.path.splitext(os.path.basename(filename))
+    pattern = os.path.join(os.path.dirname(filename), thumbnail_folder, name + '.*')
     for f in glob.glob(pattern):
-        mimetype,_ = mimetypes.guess_type(f, strict=False)
-        if mimetype in ('image/jpeg','image/png'):
+        mimetype, _ = mimetypes.guess_type(f, strict=False)
+        if mimetype in ('image/jpeg', 'image/png'):
             if mimetype == 'image/jpeg':
                 dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
             else:
                 dlna_pn = 'DLNA.ORG_PN=PNG_TN'
-            return os.path.abspath(f),mimetype,dlna_pn
+            return os.path.abspath(f), mimetype, dlna_pn
     else:
         raise NoThumbnailFound()
 
 class FSItem(BackendItem):
     logCategory = 'fs_item'
 
-    def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass,update=False,store=None):
+    def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass, update=False, store=None):
         self.id = object_id
         self.parent = parent
         if parent:
-            parent.add_child(self,update=update)
+            parent.add_child(self, update=update)
         if mimetype == 'root':
             self.location = unicode(path)
         else:
             if mimetype == 'item' and path is None:
-                path = os.path.join(parent.get_realpath(),unicode(self.id))
+                path = os.path.join(parent.get_realpath(), unicode(self.id))
             #self.location = FilePath(unicode(path))
             self.location = FilePath(path)
         self.mimetype = mimetype
@@ -119,33 +119,33 @@ class FSItem(BackendItem):
         self.caption = None
 
 
-        if mimetype in ['directory','root']:
+        if mimetype in ['directory', 'root']:
             self.update_id = 0
             self.get_url = lambda: self.url
             self.get_path = lambda: None
             #self.item.searchable = True
             #self.item.searchClass = 'object'
-            if(isinstance(self.location,FilePath) and
+            if(isinstance(self.location, FilePath) and
                self.location.isdir() == True):
                 self.check_for_cover_art()
                 if hasattr(self, 'cover'):
-                    _,ext = os.path.splitext(self.cover)
+                    _, ext = os.path.splitext(self.cover)
                     """ add the cover image extension to help clients not reacting on
                         the mimetype """
-                    self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+                    self.item.albumArtURI = ''.join((urlbase, str(self.id), '?cover', ext))
         else:
             self.get_url = lambda: self.url
 
             if self.mimetype.startswith('audio/'):
                 if hasattr(parent, 'cover'):
-                    _,ext = os.path.splitext(parent.cover)
+                    _, ext = os.path.splitext(parent.cover)
                     """ add the cover image extension to help clients not reacting on
                         the mimetype """
-                    self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+                    self.item.albumArtURI = ''.join((urlbase, str(self.id), '?cover', ext))
 
-            _,host_port,_,_,_ = urlsplit(urlbase)
+            _, host_port, _, _, _ = urlsplit(urlbase)
             if host_port.find(':') != -1:
-                host,port = tuple(host_port.split(':'))
+                host, port = tuple(host_port.split(':'))
             else:
                 host = host_port
 
@@ -155,7 +155,7 @@ class FSItem(BackendItem):
                 size = 0
 
             if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
-                if self.mimetype in ('application/ogg','audio/ogg',
+                if self.mimetype in ('application/ogg', 'audio/ogg',
                                      'audio/x-wav',
                                      'audio/x-m4a',
                                      'application/x-flac'):
@@ -165,7 +165,7 @@ class FSItem(BackendItem):
                     #self.item.res.append(new_res)
 
             if mimetype != 'item':
-                res = Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+                res = Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host, self.mimetype))
                 res.size = size
                 self.item.res.append(res)
 
@@ -193,13 +193,13 @@ class FSItem(BackendItem):
 
             if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
                 if self.mimetype in ('audio/mpeg',
-                                     'application/ogg','audio/ogg',
+                                     'application/ogg', 'audio/ogg',
                                      'audio/x-wav',
                                      'audio/x-m4a',
                                      'audio/flac',
                                      'application/x-flac'):
                     dlna_pn = 'DLNA.ORG_PN=LPCM'
-                    dlna_tags = simple_dlna_tags[:]
+                    dlna_tags = simple_dlna_tags[: ]
                     #dlna_tags[1] = 'DLNA.ORG_OP=00'
                     dlna_tags[2] = 'DLNA.ORG_CI=1'
                     new_res = Resource(self.url + '?transcoded=lpcm',
@@ -239,13 +239,13 @@ class FSItem(BackendItem):
             if(self.mimetype in ('image/jpeg', 'image/png') or
                self.mimetype.startswith('video/')):
                 try:
-                    filename,mimetype,dlna_pn = _find_thumbnail(self.get_path())
+                    filename, mimetype, dlna_pn = _find_thumbnail(self.get_path())
                 except NoThumbnailFound:
                     pass
                 except:
                     self.warning(traceback.format_exc())
                 else:
-                    dlna_tags = simple_dlna_tags[:]
+                    dlna_tags = simple_dlna_tags[: ]
                     dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
 
                     hash_from_path = str(id(filename))
@@ -259,7 +259,7 @@ class FSItem(BackendItem):
 
             if self.mimetype.startswith('video/'):
                 # check for a subtitles file
-                caption,_ = os.path.splitext(self.get_path())
+                caption, _ = os.path.splitext(self.get_path())
                 caption = caption + '.srt'
                 if os.path.exists(caption):
                     hash_from_path = str(id(caption))
@@ -284,7 +284,7 @@ class FSItem(BackendItem):
         if self.mimetype != 'item':
             return
         #print "rebuild for", self.get_path()
-        mimetype,_ = mimetypes.guess_type(self.get_path(),strict=False)
+        mimetype, _ = mimetypes.guess_type(self.get_path(), strict=False)
         if mimetype == None:
             return
         self.mimetype = mimetype
@@ -292,18 +292,18 @@ class FSItem(BackendItem):
         UPnPClass = classChooser(self.mimetype)
         self.item = UPnPClass(self.id, self.parent.id, self.get_name())
         if hasattr(self.parent, 'cover'):
-            _,ext = os.path.splitext(self.parent.cover)
+            _, ext = os.path.splitext(self.parent.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
-            self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
+            self.item.albumArtURI = ''.join((urlbase, str(self.id), '?cover', ext))
 
-        _,host_port,_,_,_ = urlsplit(urlbase)
+        _, host_port, _, _, _ = urlsplit(urlbase)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
         else:
             host = host_port
 
-        res = Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+        res = Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host, self.mimetype))
         try:
             res.size = self.location.getsize()
         except:
@@ -368,7 +368,7 @@ class FSItem(BackendItem):
             self.update_id += 1
         self.sorted = False
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         if self.sorted == False:
             self.children.sort(key=_natural_key)
             self.sorted = True
@@ -390,30 +390,30 @@ class FSItem(BackendItem):
             return None
 
     def get_path(self):
-        if isinstance(self.location,FilePath):
+        if isinstance(self.location, FilePath):
             return self.location.path
         else:
             self.location
 
     def get_realpath(self):
-        if isinstance(self.location,FilePath):
+        if isinstance(self.location, FilePath):
             return self.location.path
         else:
             self.location
 
-    def set_path(self,path=None,extension=None):
+    def set_path(self, path=None, extension=None):
         if path is None:
             path = self.get_path()
         if extension is not None:
-            path,old_ext = os.path.splitext(path)
-            path = ''.join((path,extension))
-        if isinstance(self.location,FilePath):
+            path, old_ext = os.path.splitext(path)
+            path = ''.join((path, extension))
+        if isinstance(self.location, FilePath):
             self.location = FilePath(path)
         else:
             self.location = path
 
     def get_name(self):
-        if isinstance(self.location,FilePath):
+        if isinstance(self.location, FilePath):
             name = self.location.basename().decode("utf-8", "replace")
         else:
             name = self.location.decode("utf-8", "replace")
@@ -438,7 +438,7 @@ class FSItem(BackendItem):
         return self.item.toString()
 
     def __repr__(self):
-        return 'id: ' + str(self.id) + ' @ ' + self.get_name().encode('ascii','xmlcharrefreplace')
+        return 'id: ' + str(self.id) + ' @ ' + self.get_name().encode('ascii', 'xmlcharrefreplace')
 
 class FSStore(BackendStore):
     logCategory = 'fs_store'
@@ -447,24 +447,24 @@ class FSStore(BackendStore):
 
     description = """MediaServer exporting files from the file-system"""
 
-    options = [{'option':'name','type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-               {'option':'version','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-               {'option':'uuid','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
-               {'option':'content','type':'string','default':xdg_content(),'help':'the path(s) this MediaServer shall export'},
-               {'option':'ignore_patterns','type':'string','help':'list of regex patterns, matching filenames will be ignored'},
-               {'option':'enable_inotify','type':'string','default':'yes','help':'enable real-time monitoring of the content folders'},
-               {'option':'enable_destroy','type':'string','default':'no','help':'enable deleting a file via an UPnP method'},
-               {'option':'import_folder','type':'string','help':'The path to store files imported via an UPnP method, if empty the Import method is disabled'}
+    options = [{'option': 'name', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+               {'option': 'version', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+               {'option': 'uuid', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+               {'option': 'content', 'type': 'string', 'default': xdg_content(), 'help': 'the path(s) this MediaServer shall export'},
+               {'option': 'ignore_patterns', 'type': 'string', 'help': 'list of regex patterns, matching filenames will be ignored'},
+               {'option': 'enable_inotify', 'type': 'string', 'default': 'yes', 'help': 'enable real-time monitoring of the content folders'},
+               {'option': 'enable_destroy', 'type': 'string', 'default': 'no', 'help': 'enable deleting a file via an UPnP method'},
+               {'option': 'import_folder', 'type': 'string', 'help': 'The path to store files imported via an UPnP method, if empty the Import method is disabled'}
               ]
 
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.next_id = 1000
-        self.name = kwargs.get('name','my media')
-        self.content = kwargs.get('content',None)
+        self.name = kwargs.get('name', 'my media')
+        self.content = kwargs.get('content', None)
         if self.content != None:
-                if isinstance(self.content,basestring):
+                if isinstance(self.content, basestring):
                     self.content = [self.content]
                 l = []
                 for a in self.content:
@@ -478,16 +478,16 @@ class FSStore(BackendStore):
         if not isinstance(self.content, list):
             self.content = [self.content]
         self.content = Set([os.path.abspath(x) for x in self.content])
-        ignore_patterns = kwargs.get('ignore_patterns',[])
+        ignore_patterns = kwargs.get('ignore_patterns', [])
         self.store = {}
 
         self.inotify = None
 
-        if kwargs.get('enable_inotify','yes') == 'yes':
+        if kwargs.get('enable_inotify', 'yes') == 'yes':
             if INotify:
                 try:
                     self.inotify = INotify()
-                except Exception,msg:
+                except Exception, msg:
                     self.info("%s", msg)
             else:
                 self.info("%s", no_inotify_reason)
@@ -495,10 +495,10 @@ class FSStore(BackendStore):
             self.info("FSStore content auto-update disabled upon user request")
 
 
-        if kwargs.get('enable_destroy','no') == 'yes':
+        if kwargs.get('enable_destroy', 'no') == 'yes':
             self.upnp_DestroyObject = self.hidden_upnp_DestroyObject
 
-        self.import_folder = kwargs.get('import_folder',None)
+        self.import_folder = kwargs.get('import_folder', None)
         if self.import_folder != None:
             self.import_folder = os.path.abspath(self.import_folder)
             if not os.path.isdir(self.import_folder):
@@ -508,27 +508,27 @@ class FSStore(BackendStore):
         parent = None
         self.update_id = 0
         if(len(self.content) > 1 or
-           utils.means_true(kwargs.get('create_root',False)) or
+           utils.means_true(kwargs.get('create_root', False)) or
            self.import_folder != None):
             UPnPClass = classChooser('root')
             id = str(self.getnextID())
-            parent = self.store[id] = FSItem(id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True,store=self)
+            parent = self.store[id] = FSItem(id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True, store=self)
 
         if self.import_folder != None:
             id = str(self.getnextID())
-            self.store[id] = FSItem(id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True,store=self)
+            self.store[id] = FSItem(id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True, store=self)
             self.import_folder_id = id
 
         for path in self.content:
-            if isinstance(path,(list,tuple)):
+            if isinstance(path, (list, tuple)):
                 path = path[0]
             if self.ignore_file_pattern.match(path):
                 continue
             try:
                 path = path.encode('utf-8')  # patch for #267
                 self.walk(path, parent, self.ignore_file_pattern)
-            except Exception,msg:
-                self.warning('on walk of %r: %r', path,msg)
+            except Exception, msg:
+                self.warning('on walk of %r: %r', path, msg)
                 import traceback
                 self.debug(traceback.format_exc())
 
@@ -550,11 +550,11 @@ class FSStore(BackendStore):
     def len(self):
         return len(self.store)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         #print "get_by_id", id, type(id)
         # we have referenced ids here when we are in WMC mapping mode
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         #try:
         #    id = int(id)
@@ -575,11 +575,11 @@ class FSStore(BackendStore):
         self.info('get_id_by_name %r (%r) %r', parent, type(parent), name)
         try:
             parent = self.store[parent]
-            self.debug("%r %d", parent,len(parent.children))
+            self.debug("%r %d", parent, len(parent.children))
             for child in parent.children:
                 #if not isinstance(name, unicode):
                 #    name = name.decode("utf8")
-                self.debug("%r %r %r", child.get_name(),child.get_realpath(), name == child.get_realpath())
+                self.debug("%r %r %r", child.get_name(), child.get_realpath(), name == child.get_realpath())
                 if name == child.get_realpath():
                     return child.id
         except:
@@ -589,16 +589,16 @@ class FSStore(BackendStore):
 
         return None
 
-    def get_url_by_name(self,parent='0',name=''):
+    def get_url_by_name(self, parent='0', name=''):
         self.info('get_url_by_name %r %r', parent, name)
-        id = self.get_id_by_name(parent,name)
+        id = self.get_id_by_name(parent, name)
         #print 'get_url_by_name', id
         if id == None:
             return ''
         return self.store[id].url
 
 
-    def update_config(self,**kwargs):
+    def update_config(self, **kwargs):
         print "update_config", kwargs
         if 'content' in kwargs:
             new_content = kwargs['content']
@@ -612,13 +612,13 @@ class FSStore(BackendStore):
                 self.add_content_folder(folder)
             self.content = new_content
 
-    def add_content_folder(self,path):
+    def add_content_folder(self, path):
         path = os.path.abspath(path)
         if path not in self.content:
             self.content.add(path)
             self.walk(path, self.store['1000'], self.ignore_file_pattern)
 
-    def remove_content_folder(self,path):
+    def remove_content_folder(self, path):
         path = os.path.abspath(path)
         if path in self.content:
             id = self.get_id_by_name('1000', path)
@@ -628,7 +628,7 @@ class FSStore(BackendStore):
     def walk(self, path, parent=None, ignore_file_pattern=''):
         self.debug("walk %r", path)
         containers = []
-        parent = self.append(path,parent)
+        parent = self.append(path, parent)
         if parent != None:
             containers.append(parent)
         while len(containers) > 0:
@@ -638,7 +638,7 @@ class FSStore(BackendStore):
                 for child in container.location.children():
                     if ignore_file_pattern.match(child.basename()) != None:
                         continue
-                    new_container = self.append(child.path,container)
+                    new_container = self.append(child.path, container)
                     if new_container != None:
                         containers.append(new_container)
             except UnicodeDecodeError:
@@ -651,31 +651,31 @@ class FSStore(BackendStore):
             return None
 
         id = self.getnextID()
-        if mimetype in ('root','directory'):
+        if mimetype in ('root', 'directory'):
             id = str(id)
         else:
-            _,ext = os.path.splitext(path)
+            _, ext = os.path.splitext(path)
             id = str(id) + ext.lower()
         update = False
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FSItem(id, parent, path, mimetype, self.urlbase, UPnPClass, update=True,store=self)
+        self.store[id] = FSItem(id, parent, path, mimetype, self.urlbase, UPnPClass, update=True, store=self)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             #print self.update_id
             if self.server:
-                if hasattr(self.server,'content_directory_server'):
+                if hasattr(self.server, 'content_directory_server'):
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             if parent is not None:
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
-                    if hasattr(self.server,'content_directory_server'):
+                    if hasattr(self.server, 'content_directory_server'):
                         self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         return id
 
-    def append(self,path,parent):
+    def append(self, path, parent):
         self.debug("append  %s %s %s", path, type(path), parent)
         if os.path.exists(path) == False:
             self.warning("path %r not available - ignored", path)
@@ -686,14 +686,14 @@ class FSStore(BackendStore):
             return None
 
         try:
-            mimetype,_ = mimetypes.guess_type(path, strict=False)
+            mimetype, _ = mimetypes.guess_type(path, strict=False)
             if mimetype == None:
                 if os.path.isdir(path):
                     mimetype = 'directory'
             if mimetype == None:
                 return None
 
-            id = self.create(mimetype,path,parent)
+            id = self.create(mimetype, path, parent)
 
             if mimetype == 'directory':
                 if self.inotify is not None:
@@ -720,7 +720,7 @@ class FSStore(BackendStore):
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
@@ -739,7 +739,7 @@ class FSStore(BackendStore):
 
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
             self.info('%s was deleted, parent %r (%s)', path.path, parameter, path.parent.path)
-            id = self.get_id_by_name(parameter,path.path)
+            id = self.get_id_by_name(parameter, path.path)
             if id != None:
                 self.remove(id)
         if(mask & IN_CREATE or mask & IN_MOVED_TO):
@@ -747,7 +747,7 @@ class FSStore(BackendStore):
                 self.info('directory %s was created, parent %r (%s)', path.path, parameter, path.parent.path)
             else:
                 self.info('file %s was created, parent %r (%s)', path.path, parameter, path.parent.path)
-            if self.get_id_by_name(parameter,path.path) is None:
+            if self.get_id_by_name(parameter, path.path) is None:
                 if path.isdir():
                     self.walk(path.path, self.get_by_id(parameter), self.ignore_file_pattern)
                 else:
@@ -759,10 +759,10 @@ class FSStore(BackendStore):
         self.next_id += 1
         return ret
 
-    def backend_import(self,item,data):
+    def backend_import(self, item, data):
         try:
             f = open(item.get_path(), 'w+b')
-            if hasattr(data,'read'):
+            if hasattr(data, 'read'):
                 data = data.read()
             f.write(data)
             f.close()
@@ -770,7 +770,7 @@ class FSStore(BackendStore):
             return 200
         except IOError:
             self.warning("import of file %s failed", item.get_path())
-        except Exception,msg:
+        except Exception, msg:
             import traceback
             self.warning(traceback.format_exc())
         return 500
@@ -828,23 +828,23 @@ class FSStore(BackendStore):
 
         def gotPage(headers):
             #print "gotPage", headers
-            content_type = headers.get('content-type',[])
+            content_type = headers.get('content-type', [])
             if not isinstance(content_type, list):
                 content_type = list(content_type)
             if len(content_type) > 0:
                 extension = mimetypes.guess_extension(content_type[0], strict=False)
-                item.set_path(None,extension)
+                item.set_path(None, extension)
             shutil.move(tmp_path, item.get_path())
             item.rebuild(self.urlbase)
             if hasattr(self, 'update_id'):
                 self.update_id += 1
                 if self.server:
-                    if hasattr(self.server,'content_directory_server'):
+                    if hasattr(self.server, 'content_directory_server'):
                         self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
                 if item.parent is not None:
-                    value = (item.parent.get_id(),item.parent.get_update_id())
+                    value = (item.parent.get_id(), item.parent.get_update_id())
                     if self.server:
-                        if hasattr(self.server,'content_directory_server'):
+                        if hasattr(self.server, 'content_directory_server'):
                             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
         def gotError(error, url):
@@ -904,8 +904,8 @@ class FSStore(BackendStore):
         if item.upnp_class == 'object.container.storageFolder':
             if len(item.res) != 0:
                 return failure.Failure(errorCode(712))
-            path = os.path.join(parent_item.get_path(),item.title)
-            id = self.create('directory',path,parent_item)
+            path = os.path.join(parent_item.get_path(), item.title)
+            id = self.create('directory', path, parent_item)
             try:
                 os.mkdir(path)
             except:
@@ -925,10 +925,10 @@ class FSStore(BackendStore):
             return {'ObjectID': id, 'Result': didl.toString()}
 
         if item.upnp_class.startswith('object.item'):
-            _,_,content_format,_ = item.res[0].protocolInfo.split(':')
+            _, _, content_format, _ = item.res[0].protocolInfo.split(':')
             extension = mimetypes.guess_extension(content_format, strict=False)
-            path = os.path.join(parent_item.get_realpath(),item.title + extension)
-            id = self.create('item',path,parent_item)
+            path = os.path.join(parent_item.get_realpath(), item.title + extension)
+            id = self.create('item', path, parent_item)
 
             new_item = self.get_by_id(id)
             for res in new_item.item.res:
@@ -962,7 +962,7 @@ if __name__ == '__main__':
     from twisted.internet import reactor
 
     p = 'tests/content'
-    f = FSStore(None,name='my media',content=p, urlbase='http://localhost/xyz')
+    f = FSStore(None, name='my media', content=p, urlbase='http://localhost/xyz')
 
     print f.len()
     print f.get_by_id(1000).child_count, f.get_by_id(1000).get_xml()
@@ -971,7 +971,7 @@ if __name__ == '__main__':
     print f.get_by_id(1003).child_count, f.get_by_id(1003).get_xml()
     print f.get_by_id(1004).child_count, f.get_by_id(1004).get_xml()
     print f.get_by_id(1005).child_count, f.get_by_id(1005).get_xml()
-    print f.store[1000].get_children(0,0)
+    print f.store[1000].get_children(0, 0)
     #print f.upnp_Search(ContainerID ='4',
     #                    Filter ='dc:title,upnp:artist',
     #                    RequestedCount = '1000',
@@ -979,6 +979,6 @@ if __name__ == '__main__':
     #                    SearchCriteria = '(upnp:class = "object.container.album.musicAlbum")',
     #                    SortCriteria = '+dc:title')
 
-    f.upnp_ImportResource(SourceURI='http://spiegel.de',DestinationURI='ttt')
+    f.upnp_ImportResource(SourceURI='http://spiegel.de', DestinationURI='ttt')
 
     reactor.run()

@@ -72,7 +72,7 @@ class MovieItem(BackendItem):
         for actor in self.actors:
             self.str_actors.append(actor.text)
 
-        url_mimetype,_ = mimetypes.guess_type(self.movie_url,strict=False)
+        url_mimetype, _ = mimetypes.guess_type(self.movie_url, strict=False)
         if url_mimetype == None:
             url_mimetype = "video"
 
@@ -130,20 +130,20 @@ class YamjStore(AbstractBackendStore):
 
     description = ('YAMJ', 'exposes the movie/TV series data files and metadata from a given YAMJ (Yet Another Movie Jukebox) library.', None)
 
-    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
-       {'option':'refresh','text':'Refresh period','type':'string'},
-       {'option':'yamj_url','text':'Library URL:','type':'string', 'help':'URL to the library root directory.'}
+    options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'refresh', 'text': 'Refresh period', 'type': 'string'},
+       {'option': 'yamj_url', 'text': 'Library URL:', 'type': 'string', 'help': 'URL to the library root directory.'}
     ]
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name','YAMJ')
-        self.yamj_url = kwargs.get('yamj_url',"http://localhost/yamj");
+        self.name = kwargs.get('name', 'YAMJ')
+        self.yamj_url = kwargs.get('yamj_url', "http://localhost/yamj"); 
         self.jukebox_url = self.yamj_url + "/Jukebox/"
-        self.refresh = int(kwargs.get('refresh',60)) * 60
+        self.refresh = int(kwargs.get('refresh', 60)) * 60
 
         self.nbMoviesPerFile = None
 
@@ -193,7 +193,7 @@ class YamjStore(AbstractBackendStore):
                     name = index.get('name')
                     first_filename = index.text
                     root_name = first_filename[:-2]
-                    self.debug("adding index %s:%s", type,name)
+                    self.debug("adding index %s:%s", type, name)
                     parent = categoryItem
                     if (type == 'Other'):
                         parent = parent_item
@@ -202,7 +202,7 @@ class YamjStore(AbstractBackendStore):
             self.init_completed()
 
         def fail_categories_read(f):
-            self.warning("failure reading yamj categories (%s): %r", filepath,f.getErrorMessage())
+            self.warning("failure reading yamj categories (%s): %r", filepath, f.getErrorMessage())
             return f
 
         dfr.addCallback(parse_xml)
@@ -221,11 +221,11 @@ class YamjStore(AbstractBackendStore):
         fileUrl = "%s/%s_%d.xml" % (self.jukebox_url, urllib.quote(root_name), counter)
 
         def fail_readPage(f):
-            self.warning("failure reading yamj index (%s): %r", fileUrl,f.getErrorMessage())
+            self.warning("failure reading yamj index (%s): %r", fileUrl, f.getErrorMessage())
             return f
 
         def fail_parseIndex(f):
-            self.warning("failure parsing yamj index (%s): %r", fileUrl,f.getErrorMessage())
+            self.warning("failure parsing yamj index (%s): %r", fileUrl, f.getErrorMessage())
             return f
 
         def readIndex(data):
@@ -263,7 +263,7 @@ class YamjStore(AbstractBackendStore):
                     files = movie.findall('./files/file')
                     if (len(files) == 1):
                         url = files[0].find('./fileURL').text
-                        external_id = "%s/%s" % (movie_id,url)
+                        external_id = "%s/%s" % (movie_id, url)
                         movieItem = MovieItem(movie, self)
                         parent.add_child(movieItem, external_id)
                     else:
@@ -285,7 +285,7 @@ class YamjStore(AbstractBackendStore):
                                 title = "%s - %s " % (episodeIndex, episodeTitle)
                             episodeUrl = file.find('./fileURL').text
                             fileItem = MovieItem(movie, self, title=title, url=episodeUrl)
-                            file_external_id = "%s/%s" % (movie_id,episodeUrl)
+                            file_external_id = "%s/%s" % (movie_id, episodeUrl)
                             container_item.add_child(fileItem, file_external_id)
 
 

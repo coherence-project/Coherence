@@ -11,12 +11,12 @@ from sets import Set
 
 from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDLElement
 
-from coherence.backend import BackendStore,BackendItem
+from coherence.backend import BackendStore, BackendItem
 
 class AxisCamItem(BackendItem):
     logCategory = 'axis_cam_item'
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass, update=False):
         self.id = id
         if mimetype == 'directory':
             self.name = obj
@@ -27,7 +27,7 @@ class AxisCamItem(BackendItem):
 
         self.parent = parent
         if parent:
-            parent.add_child(self,update=update)
+            parent.add_child(self, update=update)
 
         if parent == None:
             parent_id = -1
@@ -82,7 +82,7 @@ class AxisCamItem(BackendItem):
             self.children.remove(child)
             self.update_id += 1
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         if request_count == 0:
             return self.children[start:]
         else:
@@ -126,11 +126,11 @@ class AxisCamStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name','AxisCamStore')
+        self.name = kwargs.get('name', 'AxisCamStore')
 
         self.update_id = 0
         self.store = {}
@@ -146,7 +146,7 @@ class AxisCamStore(BackendStore):
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
-            protocol,network,content_type,info = obj['protocol'].split(':')
+            protocol, network, content_type, info = obj['protocol'].split(':')
             mimetype = content_type
 
         UPnPClass = classChooser(mimetype)
@@ -163,7 +163,7 @@ class AxisCamStore(BackendStore):
                 self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             if parent:
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
@@ -175,9 +175,9 @@ class AxisCamStore(BackendStore):
     def len(self):
         return len(self.store)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         id = int(id)
         if id == 0:
@@ -198,8 +198,8 @@ class AxisCamStore(BackendStore):
 
         source_protocols = Set()
 
-        for k,v in self.config.items():
-            if isinstance(v,dict):
+        for k, v in self.config.items():
+            if isinstance(v, dict):
                 v['name'] = k
                 source_protocols.add(v['protocol'])
                 self.append(v, parent)

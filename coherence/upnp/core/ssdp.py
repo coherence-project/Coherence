@@ -36,7 +36,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     _callbacks = {}
 
-    def __init__(self,test=False,interface=''):
+    def __init__(self, test=False, interface=''):
         # Create SSDP server
         self.test = test
         if self.test == False:
@@ -44,7 +44,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.port = reactor.listenMulticast(SSDP_PORT, self, listenMultiple=True)
                 #self.port.setLoopbackMode(1)
 
-                self.port.joinGroup(SSDP_ADDR,interface=interface)
+                self.port.joinGroup(SSDP_ADDR, interface=interface)
 
                 self.resend_notify_loop = task.LoopingCall(self.resendNotify)
                 self.resend_notify_loop.start(777.0, now=False)
@@ -171,11 +171,11 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'Notify %s for %s' % (headers['nts'], headers['usn']))
 
 
-    def send_it(self,response,destination,delay,usn):
-        self.info('send discovery response delayed by %ds for %s to %r', delay,usn,destination)
+    def send_it(self, response, destination, delay, usn):
+        self.info('send discovery response delayed by %ds for %s to %r', delay, usn, destination)
         try:
-            self.transport.write(response,destination)
-        except (AttributeError,socket.error), msg:
+            self.transport.write(response, destination)
+        except (AttributeError, socket.error), msg:
             self.info("failure sending out byebye notification: %r", msg)
 
     def discoveryRequest(self, headers, (host, port)):
@@ -202,7 +202,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 for k, v in i.items():
                     if k == 'USN':
                         usn = v
-                    if k not in ('MANIFESTATION','SILENT','HOST'):
+                    if k not in ('MANIFESTATION', 'SILENT', 'HOST'):
                         response.append('%s: %s' % (k, v))
                 response.append('DATE: %s' % datetimeToString())
 
@@ -221,7 +221,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         resp = ['NOTIFY * HTTP/1.1',
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
-            'NTS: ssdp:alive',
+            'NTS: ssdp:alive', 
             ]
         stcpy = dict(self.known[usn].iteritems())
         stcpy['NT'] = stcpy['ST']
@@ -237,7 +237,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         try:
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
             self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-        except (AttributeError,socket.error), msg:
+        except (AttributeError, socket.error), msg:
             self.info("failure sending out alive notification: %r", msg)
 
     def doByebye(self, usn):
@@ -247,7 +247,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         resp = ['NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
-                'NTS: ssdp:byebye',
+                'NTS: ssdp:byebye', 
                 ]
         try:
             stcpy = dict(self.known[usn].iteritems())
@@ -263,7 +263,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if self.transport:
                 try:
                     self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-                except (AttributeError,socket.error), msg:
+                except (AttributeError, socket.error), msg:
                     self.info("failure sending out byebye notification: %r", msg)
         except KeyError, msg:
             self.debug("error building byebye notification: %r", msg)
@@ -281,11 +281,11 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         removable = []
         for usn in self.known:
             if self.known[usn]['MANIFESTATION'] != 'local':
-                _,expiry = self.known[usn]['CACHE-CONTROL'].split('=')
+                _, expiry = self.known[usn]['CACHE-CONTROL'].split('=')
                 expiry = int(expiry)
                 now = time.time()
                 last_seen = self.known[usn]['last-seen']
-                self.debug("Checking if %r is still valid - last seen %d (+%d), now %d", self.known[usn]['USN'],last_seen,expiry,now)
+                self.debug("Checking if %r is still valid - last seen %d (+%d), now %d", self.known[usn]['USN'], last_seen, expiry, now)
                 if last_seen + expiry + 30 < now:
                     self.debug("Expiring: %r", self.known[usn])
                     if self.known[usn]['ST'] == 'upnp:rootdevice':
@@ -296,14 +296,14 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             del self.known[usn]
 
     def subscribe(self, name, callback):
-        self._callbacks.setdefault(name,[]).append(callback)
+        self._callbacks.setdefault(name, []).append(callback)
 
     def unsubscribe(self, name, callback):
-        callbacks = self._callbacks.get(name,[])
+        callbacks = self._callbacks.get(name, [])
         if callback in callbacks:
             callbacks.remove(callback)
         self._callbacks[name] = callbacks
 
     def callback(self, name, *args):
-        for callback in self._callbacks.get(name,[]):
+        for callback in self._callbacks.get(name, []):
             callback(*args)
