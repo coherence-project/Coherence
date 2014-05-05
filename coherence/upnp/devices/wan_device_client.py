@@ -52,7 +52,7 @@ class WANDeviceClient(log.Loggable):
             self.wan_connection_device.remove()
 
     def embedded_device_notified(self, device):
-        self.info("EmbeddedDevice %r sent notification", device); 
+        self.info("EmbeddedDevice %r sent notification", device)
         if self.embedded_device_detection_completed == True:
             return
 
@@ -62,7 +62,7 @@ class WANDeviceClient(log.Loggable):
                                self)
 
     def service_notified(self, service):
-        self.info("Service %r sent notification", service); 
+        self.info("Service %r sent notification", service)
         if self.service_detection_completed == True:
             return
         if self.wan_common_interface_connection != None:

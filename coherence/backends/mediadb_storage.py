@@ -512,13 +512,13 @@ class MediaStore(BackendStore):
             track = tags.get('track', 0)
 
             if len(artist) == 0:
-                return; 
+                return
                 artist = u'UNKNOWN_ARTIST'
             if len(album) == 0:
-                return; 
+                return
                 album = u'UNKNOWN_ALBUM'
             if len(title) == 0:
-                return; 
+                return
                 title = u'UNKNOWN_TITLE'
 
             #print "Tags:", file, album, artist, title, track

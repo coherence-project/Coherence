@@ -141,7 +141,7 @@ class YamjStore(AbstractBackendStore):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
         self.name = kwargs.get('name', 'YAMJ')
-        self.yamj_url = kwargs.get('yamj_url', "http://localhost/yamj"); 
+        self.yamj_url = kwargs.get('yamj_url', "http://localhost/yamj")
         self.jukebox_url = self.yamj_url + "/Jukebox/"
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 

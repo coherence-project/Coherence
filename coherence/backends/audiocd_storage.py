@@ -98,7 +98,7 @@ class AudioCDStore(AbstractBackendStore):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
         self.name = 'audio CD'
-        self.device_name = kwargs.get('device_name', "/dev/cdom"); 
+        self.device_name = kwargs.get('device_name', "/dev/cdom")
 
         threads.deferToThread(self.extractAudioCdInfo)
 

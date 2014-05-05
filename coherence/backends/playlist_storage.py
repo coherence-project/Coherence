@@ -83,7 +83,7 @@ class PlaylistStore(AbstractBackendStore):
        {'option': 'playlist_url', 'text': 'Playlist file URL:', 'type': 'string', 'help': 'URL to the playlist file (M3U).'}, 
     ]
 
-    playlist_url = None; 
+    playlist_url = None
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)

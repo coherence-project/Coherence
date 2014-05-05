@@ -96,7 +96,7 @@ class StateVariable(log.Loggable):
                             if v[i] == str(value[0]):
                                 del v[i:i + 2]
                                 old_value = ','.join(v)
-                                break; 
+                                break
                             i += 2
                         if len(old_value):
                             new_value = old_value + ',' + str(value[0]) + ',' + str(value[1])

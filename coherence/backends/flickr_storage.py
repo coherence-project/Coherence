@@ -79,7 +79,7 @@ class FlickrAuthenticate(object):
                 if form['frob'] == frob:
                     browser.form = form
                     browser.submit()
-                    break; 
+                    break
             except:
                 pass
         else:
@@ -121,7 +121,7 @@ class FlickrItem(log.Loggable):
                 self.mimetype = 'directory'
         elif mimetype == 'directory':
             title = obj.find('title')
-            self.name = title.text; 
+            self.name = title.text
             if len(self.name) == 0:
                 self.name = obj.get('id')
             self.mimetype = 'directory'

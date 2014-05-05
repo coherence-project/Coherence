@@ -50,7 +50,7 @@ class DimmableLightClient(log.Loggable):
             self.switch_power.remove()
 
     def service_notified(self, service):
-        self.info("Service %r sent notification", service); 
+        self.info("Service %r sent notification", service)
         if self.detection_completed == True:
             return
         if self.switch_power != None:

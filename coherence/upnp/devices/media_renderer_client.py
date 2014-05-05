@@ -84,7 +84,7 @@ class MediaRendererClient(log.Loggable):
         #del self
 
     def service_notified(self, service):
-        self.info("Service %r sent notification", service); 
+        self.info("Service %r sent notification", service)
         if self.detection_completed == True:
             return
         if self.rendering_control != None:
