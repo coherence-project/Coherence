@@ -106,7 +106,7 @@ class ContentDirectoryClient:
             return r
 
         action = self.service.get_action('Browse')
-        d = action.call( ObjectID=object_id,
+        d = action.call(ObjectID=object_id,
                             BrowseFlag=browse_flag,
                             Filter=filter,SortCriteria=sort_criteria,
                             StartingIndex=str(starting_index),
@@ -125,7 +125,7 @@ class ContentDirectoryClient:
         action = self.service.get_action('Search')
         if action == None:
             return None
-        d = action.call( ContainerID=container_id,
+        d = action.call(ContainerID=container_id,
                             SearchCriteria=criteria,
                             Filter="*",
                             StartingIndex=starting_index,
@@ -172,20 +172,20 @@ class ContentDirectoryClient:
             elements = ''
         action = self.service.get_action('CreateObject')
         if action:  # optional
-            return action.call( ContainerID=container_id,
+            return action.call(ContainerID=container_id,
                                 Elements=elements)
         return None
 
     def destroy_object(self, object_id):
         action = self.service.get_action('DestroyObject')
         if action:  # optional
-            return action.call( ObjectID=object_id)
+            return action.call(ObjectID=object_id)
         return None
 
     def update_object(self, object_id, current_tag_value, new_tag_value):
         action = self.service.get_action('UpdateObject')
         if action:  # optional
-            return action.call( ObjectID=object_id,
+            return action.call(ObjectID=object_id,
                                 CurrentTagValue=current_tag_value,
                                 NewTagValue=new_tag_value)
         return None
@@ -193,46 +193,46 @@ class ContentDirectoryClient:
     def move_object(self, object_id, new_parent_id):
         action = self.service.get_action('MoveObject')
         if action:  # optional
-            return action.call( ObjectID=object_id,
+            return action.call(ObjectID=object_id,
                                 NewParentID=new_parent_id)
         return None
 
     def import_resource(self, source_uri, destination_uri):
         action = self.service.get_action('ImportResource')
         if action:  # optional
-            return action.call( SourceURI=source_uri,
+            return action.call(SourceURI=source_uri,
                                 DestinationURI=destination_uri)
         return None
 
     def export_resource(self, source_uri, destination_uri):
         action = self.service.get_action('ExportResource')
         if action:  # optional
-            return action.call( SourceURI=source_uri,
+            return action.call(SourceURI=source_uri,
                                 DestinationURI=destination_uri)
         return None
 
     def delete_resource(self, resource_uri):
         action = self.service.get_action('DeleteResource')
         if action:  # optional
-            return action.call( ResourceURI=resource_uri)
+            return action.call(ResourceURI=resource_uri)
         return None
 
     def stop_transfer_resource(self, transfer_id):
         action = self.service.get_action('StopTransferResource')
         if action:  # optional
-            return action.call( TransferID=transfer_id)
+            return action.call(TransferID=transfer_id)
         return None
 
     def get_transfer_progress(self, transfer_id):
         action = self.service.get_action('GetTransferProgress')
         if action:  # optional
-            return action.call( TransferID=transfer_id)
+            return action.call(TransferID=transfer_id)
         return None
 
     def create_reference(self, container_id, object_id):
         action = self.service.get_action('CreateReference')
         if action:  # optional
-            return action.call( ContainerID=container_id,
+            return action.call(ContainerID=container_id,
                                 ObjectID=object_id)
         return None
 

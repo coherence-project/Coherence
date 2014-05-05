@@ -146,7 +146,7 @@ class FlickrItem(log.Loggable):
             if parent:
                 parent.add_child(self,update=update)
 
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
 
         if self.mimetype == 'directory':
@@ -433,7 +433,7 @@ class FlickrStore(BackendStore):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def append( self, obj, parent):
+    def append(self, obj, parent):
         if isinstance(obj, str):
             mimetype = 'directory'
         else:
@@ -445,7 +445,7 @@ class FlickrStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = FlickrItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, store=self,
                                         update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
@@ -473,7 +473,7 @@ class FlickrStore(BackendStore):
 
         return None
 
-    def appendDirectory( self, obj, parent):
+    def appendDirectory(self, obj, parent):
         mimetype = 'directory'
 
         UPnPClass = classChooser(mimetype)
@@ -482,7 +482,7 @@ class FlickrStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = FlickrItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
@@ -496,7 +496,7 @@ class FlickrStore(BackendStore):
 
         return self.store[id]
 
-    def appendPhoto( self, obj, parent):
+    def appendPhoto(self, obj, parent):
         mimetype = 'image/'
 
         UPnPClass = classChooser(mimetype)
@@ -505,7 +505,7 @@ class FlickrStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = FlickrItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
@@ -528,7 +528,7 @@ class FlickrStore(BackendStore):
 
         return None
 
-    def appendPhotoset( self, obj, parent):
+    def appendPhotoset(self, obj, parent):
         mimetype = 'directory'
 
         UPnPClass = classChooser(mimetype)
@@ -537,7 +537,7 @@ class FlickrStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FlickrItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = FlickrItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
@@ -551,7 +551,7 @@ class FlickrStore(BackendStore):
 
         return self.store[id]
 
-    def appendContact( self, obj, parent):
+    def appendContact(self, obj, parent):
         mimetype = 'directory'
 
         UPnPClass = classChooser(mimetype)
@@ -560,7 +560,7 @@ class FlickrStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FlickrItem( id, obj, parent, 'contact', self.urlbase,
+        self.store[id] = FlickrItem(id, obj, parent, 'contact', self.urlbase,
                                         UPnPClass,store=self,update=update, proxy=self.proxy)
         if hasattr(self, 'update_id'):
             self.update_id += 1
@@ -785,7 +785,7 @@ class FlickrStore(BackendStore):
 
     def flickr_interestingness(self, date=None, per_page=100):
         if date == None:
-            date = time.strftime( "%Y-%m-%d", time.localtime(time.time() - 86400))
+            date = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
         if per_page > 500:
             per_page = 500
         d = self.flickr_call('flickr.interestingness.getList',extras='date_taken',per_page=per_page)
@@ -793,7 +793,7 @@ class FlickrStore(BackendStore):
 
     def flickr_recent(self, date=None, per_page=100):
         if date == None:
-            date = time.strftime( "%Y-%m-%d", time.localtime(time.time() - 86400))
+            date = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
         if per_page > 500:
             per_page = 500
         d = self.flickr_call('flickr.photos.getRecent',extras='date_taken',per_page=per_page)
@@ -900,7 +900,7 @@ class FlickrStore(BackendStore):
                                             ("xmlns:xsi", "http://www.w3.org/1999/XMLSchema-instance"),
                                             ("xmlns:xsd", "http://www.w3.org/1999/XMLSchema")],
                             soapaction="FlickrRequest")
-        d = client.callRemote( "FlickrRequest",
+        d = client.callRemote("FlickrRequest",
                                 method='flickr.test.echo',
                                 name=value,
                                 api_key='837718c8a622c699edab0ea55fcec224')
@@ -922,7 +922,7 @@ class FlickrStore(BackendStore):
                                                                   'http-get:*:image/gif:*,'
                                                                   'http-get:*:image/png:*',
                                                                 default=True)
-        self.store[ROOT_CONTAINER_ID] = FlickrItem( ROOT_CONTAINER_ID, 'Flickr', None,
+        self.store[ROOT_CONTAINER_ID] = FlickrItem(ROOT_CONTAINER_ID, 'Flickr', None,
                                                     'directory', self.urlbase,
                                                     Container,store=self,update=True, proxy=self.proxy)
 
@@ -1055,7 +1055,7 @@ class FlickrStore(BackendStore):
             new_id = 'upload.' + str(new_id)
             title = item.title or 'unknown'
             mimetype = 'image/jpeg'
-            self.uploads[new_id] = FlickrItem( new_id, title, self.store[UNSORTED_CONTAINER_ID], mimetype, self.urlbase,
+            self.uploads[new_id] = FlickrItem(new_id, title, self.store[UNSORTED_CONTAINER_ID], mimetype, self.urlbase,
                                         ImageItem,store=self,update=False, proxy=self.proxy)
 
             new_item = self.uploads[new_id]

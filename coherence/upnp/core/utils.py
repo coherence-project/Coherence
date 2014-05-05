@@ -293,7 +293,7 @@ class ProxyClient(http.HTTPClient):
         if message:
             # Add a whitespace to message, this allows empty messages
             # transparently
-            message = " %s" % (message,)
+            message = " %s" % (message, )
 
         if version == 'ICY':
             version = 'HTTP/1.1'
@@ -604,7 +604,7 @@ class BufferFile(static.File):
         #print "BufferFile", request
 
         # FIXME detect when request is REALLY finished
-        if request is None or request.finished :
+        if request is None or request.finished:
             print "No request to render!"
             return ''
 

@@ -60,16 +60,16 @@ class LastFMUser(log.Loggable):
 
     def __init__(self, user, passwd):
         if user is None:
-            self.warn("No User",)
+            self.warn("No User", )
         if passwd is None:
-            self.warn("No Passwd",)
+            self.warn("No Passwd", )
         self.user = user
         self.passwd = passwd
 
     def login(self):
 
         if self.sessionid != None:
-            self.warning("Session seems to be valid",)
+            self.warning("Session seems to be valid", )
             return
 
         def got_page(result):
@@ -79,11 +79,11 @@ class LastFMUser(log.Loggable):
                 if len(tuple) == 2:
                     if tuple[0] == "session":
                         self.sessionid = tuple[1]
-                        self.info("Got new sessionid: %r",self.sessionid )
+                        self.info("Got new sessionid: %r",self.sessionid)
                     if tuple[0] == "base_url":
                         if(self.host != tuple[1]):
                             self.host = tuple[1]
-                            self.info("Got new host: %s",self.host )
+                            self.info("Got new host: %s",self.host)
                     if tuple[0] == "base_path":
                         if(self.basepath != tuple[1]):
                             self.basepath = tuple[1]
@@ -210,13 +210,13 @@ class LastFMItem(log.Loggable):
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(id, parent_id, self.title,False ,self.creator)
+        self.item = UPnPClass(id, parent_id, self.title,False,self.creator)
         if isinstance(self.item, Container):
             self.item.childCount = 0
         self.child_count = 0
         self.children = []
 
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
 
         if self.mimetype == 'directory':
@@ -326,7 +326,7 @@ class LastFMStore(log.Loggable,Plugin):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def append( self, obj, parent):
+    def append(self, obj, parent):
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
@@ -338,7 +338,7 @@ class LastFMStore(log.Loggable,Plugin):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = LastFMItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = LastFMItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
         self.store[id].store = self
 

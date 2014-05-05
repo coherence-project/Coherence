@@ -625,7 +625,7 @@ class TrackerStore(BackendStore):
                 self.videos += 1
                 videos.append(video_item)
 
-            videos.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
+            videos.sort(cmp=lambda x,y: cmp(x.get_name().lower(),y.get_name().lower()))
             for video_item in videos:
                 self.containers[VIDEO_ALL_CONTAINER_ID].add_child(video_item)
 
@@ -634,7 +634,7 @@ class TrackerStore(BackendStore):
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[VIDEO_CONTAINER_ID])
 
         self.containers[VIDEO_ALL_CONTAINER_ID] = \
-                Container( VIDEO_ALL_CONTAINER_ID,VIDEO_CONTAINER_ID,'All Videos',
+                Container(VIDEO_ALL_CONTAINER_ID,VIDEO_CONTAINER_ID,'All Videos',
                           store=self,
                           children_callback=None)
         self.containers[VIDEO_CONTAINER_ID].add_child(self.containers[VIDEO_ALL_CONTAINER_ID])
@@ -672,7 +672,7 @@ class TrackerStore(BackendStore):
                 self.images += 1
                 images.append(image_item)
 
-            images.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
+            images.sort(cmp=lambda x,y: cmp(x.get_name().lower(),y.get_name().lower()))
             for image_item in images:
                 self.containers[IMAGE_ALL_CONTAINER_ID].add_child(image_item)
 
@@ -723,7 +723,7 @@ class TrackerStore(BackendStore):
                 self.songs += 1
                 tracks.append(track_item)
 
-            tracks.sort(cmp=lambda x,y : cmp(x.get_name(),y.get_name()))
+            tracks.sort(cmp=lambda x,y: cmp(x.get_name(),y.get_name()))
             for track_item in tracks:
                 self.containers[AUDIO_ALL_CONTAINER_ID].add_child(track_item)
 
@@ -760,42 +760,42 @@ class TrackerStore(BackendStore):
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_CONTAINER_ID])
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,AUDIO_CONTAINER_ID,'All Tracks',
+                Container(AUDIO_ALL_CONTAINER_ID,AUDIO_CONTAINER_ID,'All Tracks',
                           store=self,
                           children_callback=None)
         self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
 
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,AUDIO_CONTAINER_ID,'Albums',
+                Container(AUDIO_ALBUM_CONTAINER_ID,AUDIO_CONTAINER_ID,'Albums',
                           store=self,
                           children_callback=None)
         self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Artists',
+                Container(AUDIO_ARTIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Artists',
                           store=self,
                           children_callback=None)
         self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
-                Container( AUDIO_PLAYLIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Playlists',
+                Container(AUDIO_PLAYLIST_CONTAINER_ID,AUDIO_CONTAINER_ID,'Playlists',
                           store=self,
                           children_callback=None,
                           container_class=DIDLLite.PlaylistContainer)
         self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
         self.containers[AUDIO_GENRE_CONTAINER_ID] = \
-                Container( AUDIO_GENRE_CONTAINER_ID,AUDIO_CONTAINER_ID,'Genres',
+                Container(AUDIO_GENRE_CONTAINER_ID,AUDIO_CONTAINER_ID,'Genres',
                           store=self,
                           children_callback=None)
         self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
 
 
-        self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
-                                 '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
-                                 '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
-                                 '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
-                                 '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
+        self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
+                                 '5': lambda: self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
+                                 '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+                                 '7': lambda: self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
+                                 '13': lambda: self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
                                 })
 
         fields = [u'Audio:Title',u'Audio:Artist',
@@ -839,4 +839,4 @@ class TrackerStore(BackendStore):
                              'http-get:*:image/png:*',
                              'internal:%s:image/png:*' % self.server.coherence.hostname,
                              'http-get:*:image/gif:*',
-                             'internal:%s:image/gif:*' % self.server.coherence.hostname,])
+                             'internal:%s:image/gif:*' % self.server.coherence.hostname, ])

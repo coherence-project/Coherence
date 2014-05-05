@@ -57,7 +57,7 @@ NUMS = re.compile('([0-9]+)')
 def _natural_key(s):
     # strip the spaces
     s = s.get_name().strip()
-    return [ part.isdigit() and int(part) or part.lower() for part in NUMS.split(s) ]
+    return [part.isdigit() and int(part) or part.lower() for part in NUMS.split(s)]
 
 
 class NoThumbnailFound(Exception):
@@ -121,8 +121,8 @@ class FSItem(BackendItem):
 
         if mimetype in ['directory','root']:
             self.update_id = 0
-            self.get_url = lambda : self.url
-            self.get_path = lambda : None
+            self.get_url = lambda: self.url
+            self.get_path = lambda: None
             #self.item.searchable = True
             #self.item.searchClass = 'object'
             if(isinstance(self.location,FilePath) and
@@ -134,7 +134,7 @@ class FSItem(BackendItem):
                         the mimetype """
                     self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
         else:
-            self.get_url = lambda : self.url
+            self.get_url = lambda: self.url
 
             if self.mimetype.startswith('audio/'):
                 if hasattr(parent, 'cover'):
@@ -390,13 +390,13 @@ class FSItem(BackendItem):
             return None
 
     def get_path(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location,FilePath):
             return self.location.path
         else:
             self.location
 
     def get_realpath(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location,FilePath):
             return self.location.path
         else:
             self.location
@@ -407,7 +407,7 @@ class FSItem(BackendItem):
         if extension is not None:
             path,old_ext = os.path.splitext(path)
             path = ''.join((path,extension))
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location,FilePath):
             self.location = FilePath(path)
         else:
             self.location = path
@@ -475,7 +475,7 @@ class FSStore(BackendStore):
             self.content = [x[0] for x in self.content]
         if self.content == None:
             self.content = 'tests/content'
-        if not isinstance( self.content, list):
+        if not isinstance(self.content, list):
             self.content = [self.content]
         self.content = Set([os.path.abspath(x) for x in self.content])
         ignore_patterns = kwargs.get('ignore_patterns',[])
@@ -512,11 +512,11 @@ class FSStore(BackendStore):
            self.import_folder != None):
             UPnPClass = classChooser('root')
             id = str(self.getnextID())
-            parent = self.store[id] = FSItem( id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True,store=self)
+            parent = self.store[id] = FSItem(id, parent, 'media', 'root', self.urlbase, UPnPClass, update=True,store=self)
 
         if self.import_folder != None:
             id = str(self.getnextID())
-            self.store[id] = FSItem( id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True,store=self)
+            self.store[id] = FSItem(id, parent, self.import_folder, 'directory', self.urlbase, UPnPClass, update=True,store=self)
             self.import_folder_id = id
 
         for path in self.content:
@@ -660,7 +660,7 @@ class FSStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = FSItem( id, parent, path, mimetype, self.urlbase, UPnPClass, update=True,store=self)
+        self.store[id] = FSItem(id, parent, path, mimetype, self.urlbase, UPnPClass, update=True,store=self)
         if hasattr(self, 'update_id'):
             self.update_id += 1
             #print self.update_id

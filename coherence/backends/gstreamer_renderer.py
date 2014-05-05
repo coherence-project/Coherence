@@ -267,7 +267,7 @@ class Player(log.Loggable):
                 #print "player (%s) state_change:" %(message.src.get_path_string()), old, new, pending
                 if new == gst.STATE_PLAYING:
                     self.playing = True
-                    self.update_LC.start( 1, False)
+                    self.update_LC.start(1, False)
                     self.update()
                 elif old == gst.STATE_PLAYING:
                     self.playing = False
@@ -284,7 +284,7 @@ class Player(log.Loggable):
             self.seek('-0')
             self.update(message=gst.MESSAGE_EOS)
 
-    def query_position( self):
+    def query_position(self):
         #print "query_position"
         try:
             position, format = self.player.query_position(gst.FORMAT_TIME)
@@ -312,9 +312,9 @@ class Player(log.Loggable):
             return r
         r[u'raw'] = {u'position':unicode(str(position)), u'remaining':unicode(str(self.duration - position)), u'duration':unicode(str(self.duration))}
 
-        position_human = u'%d:%02d' % (divmod( position / 1000000000, 60))
-        duration_human = u'%d:%02d' % (divmod( self.duration / 1000000000, 60))
-        remaining_human = u'%d:%02d' % (divmod( (self.duration - position) / 1000000000, 60))
+        position_human = u'%d:%02d' % (divmod(position / 1000000000, 60))
+        duration_human = u'%d:%02d' % (divmod(self.duration / 1000000000, 60))
+        remaining_human = u'%d:%02d' % (divmod((self.duration - position) / 1000000000, 60))
 
         r[u'human'] = {u'position':position_human, u'remaining':remaining_human, u'duration':duration_human}
         r[u'percent'] = {u'position':position * 100 / self.duration, u'remaining':100 - (position * 100 / self.duration)}
@@ -322,10 +322,10 @@ class Player(log.Loggable):
         self.debug(r)
         return r
 
-    def load( self, uri, mimetype):
+    def load(self, uri, mimetype):
         self.debug("load --> %r %r", uri, mimetype)
         _,state,_ = self.player.get_state()
-        if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
+        if(state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
             self.stop()
 
         #print "player -->", self.player.get_name()
@@ -344,7 +344,7 @@ class Player(log.Loggable):
         self.debug("load <--")
         self.play()
 
-    def play( self):
+    def play(self):
         uri = self.get_uri()
         mimetype = self.mimetype
         self.debug("play --> %r %r", uri, mimetype)
@@ -392,13 +392,13 @@ class Player(log.Loggable):
 
         if location[0] == '+':
             l = long(p[u'raw'][u'position']) + (long(location[1:]) * 1000000000)
-            l = min( l, long(p[u'raw'][u'duration']))
+            l = min(l, long(p[u'raw'][u'duration']))
         elif location[0] == '-':
             if location == '-0':
                 l = 0L
             else:
                 l = long(p[u'raw'][u'position']) - (long(location[1:]) * 1000000000)
-                l = max( l, 0L)
+                l = max(l, 0L)
 
 
         self.debug("seeking to %r", l)
@@ -629,7 +629,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         formatted = fmt % (h, m, s)
         return formatted
 
-    def load( self, uri,metadata, mimetype=None):
+    def load(self, uri,metadata, mimetype=None):
         self.info("loading: %r %r ", uri, mimetype)
         _,state,_ = self.player.get_state()
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
@@ -643,7 +643,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 mimetype = 'application/flac'
             else:
                 mimetype = 'audio/mpeg'
-        self.player.load( uri, mimetype)
+        self.player.load(uri, mimetype)
 
         self.metadata = metadata
         self.mimetype = mimetype
@@ -686,7 +686,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.update()
 
 
-    def status( self, position):
+    def status(self, position):
         uri = self.player.get_uri()
         if uri == None:
             return {u'state':u'idle',u'uri':u''}
@@ -716,8 +716,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
             return r
 
-    def start( self, uri):
-        self.load( uri)
+    def start(self, uri):
+        self.load(uri)
         self.play()
 
     def stop(self,silent=False):
@@ -729,7 +729,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             if silent is True:
                 self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
 
-    def play( self):
+    def play(self):
         self.info("Playing: %r", self.player.get_uri())
         if self.player.get_uri() == None:
             return
@@ -737,7 +737,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
 
 
-    def pause( self):
+    def pause(self):
         self.info('Pausing: %r', self.player.get_uri())
         self.player.pause()
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
@@ -1081,6 +1081,6 @@ if __name__ == '__main__':
 
     p = Player(None)
     if len(sys.argv) > 1:
-        reactor.callWhenRunning( p.start, sys.argv[1])
+        reactor.callWhenRunning(p.start, sys.argv[1])
 
     reactor.run()

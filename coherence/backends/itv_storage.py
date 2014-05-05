@@ -216,13 +216,13 @@ class ITVStore(BackendStore):
         self.store[id] = item
         parent.add_child(item)
 
-    def appendGenre( self, genre, parent):
+    def appendGenre(self, genre, parent):
         id = self.getnextID()
         item = Container(id, self, -1, genre)
         self.storeItem(parent, item, id)
         return item
 
-    def appendFeed( self, obj, parent):
+    def appendFeed(self, obj, parent):
         id = self.getnextID()
         item = ITVItem(self, id, obj, parent)
         self.storeItem(parent, item, id)
@@ -294,7 +294,7 @@ class ITVStore(BackendStore):
                                'url':url,
                                'bitrate':bitrate,
                                'rating':rating,
-                               'genre':genre }
+                               'genre':genre}
                     stations[name] = station
 
 

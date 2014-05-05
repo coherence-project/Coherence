@@ -158,7 +158,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                         if variable.last_time_touched + 300 >= now:
                             rcs_active = True
                             break
-            if( avt_active == False and rcs_active == False):
+            if(avt_active == False and rcs_active == False):
                 self.remove_connection(id)
 
     def lookup_connection(self,id):
@@ -225,10 +225,10 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
             then there is something strange going on
         """
         Direction = kwargs['Direction']
-        if( self.device.device_type == 'MediaRenderer' and
+        if(self.device.device_type == 'MediaRenderer' and
             Direction == 'Output'):
             return failure.Failure(errorCode(702))
-        if( self.device.device_type == 'MediaServer' and
+        if(self.device.device_type == 'MediaServer' and
             Direction != 'Input'):
             return failure.Failure(errorCode(702))
         """ the InstanceID of the MS ? """

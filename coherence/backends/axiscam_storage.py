@@ -39,7 +39,7 @@ class AxisCamItem(BackendItem):
             self.item.childCount = 0
         self.children = []
 
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
 
         if self.mimetype == 'directory':
@@ -142,7 +142,7 @@ class AxisCamStore(BackendStore):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def append( self, obj, parent):
+    def append(self, obj, parent):
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
@@ -155,7 +155,7 @@ class AxisCamStore(BackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = AxisCamItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = AxisCamItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
         if hasattr(self, 'update_id'):
             self.update_id += 1

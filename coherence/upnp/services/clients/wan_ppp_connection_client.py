@@ -52,7 +52,7 @@ class WANPPPConnectionClient:
         def request_cb(r,last_updated_timestamp,v):
             if last_updated_timestamp == v.last_time_touched:
                 mappings = [m[1] for m in r if m[0] == True]
-                mappings.sort(cmp=lambda x,y : cmp(x['NewPortMappingIndex'],y['NewPortMappingIndex']))
+                mappings.sort(cmp=lambda x,y: cmp(x['NewPortMappingIndex'],y['NewPortMappingIndex']))
                 return mappings
             else:
                 #FIXME - we should raise something here, as the mappings have changed during our query

@@ -36,7 +36,7 @@ UPNPERRORS = {401:'Invalid Action',
               609:'Not Encrypted',
               610:'Invalid Sequence',
               611:'Invalid Control URL',
-              612:'No Such Session',}
+              612:'No Such Session', }
 
 def build_soap_error(status,description='without words'):
     """ builds an UPnP SOAP error msg
@@ -63,10 +63,10 @@ def build_soap_call(method, arguments, is_response=False,
     envelope = ET.Element("s:Envelope")
     if envelope_attrib:
         for n in envelope_attrib:
-            envelope.attrib.update({n[0] : n[1]})
+            envelope.attrib.update({n[0]: n[1]})
     else:
-        envelope.attrib.update({'s:encodingStyle' : "http://schemas.xmlsoap.org/soap/encoding/"})
-        envelope.attrib.update({'xmlns:s' :"http://schemas.xmlsoap.org/soap/envelope/"})
+        envelope.attrib.update({'s:encodingStyle': "http://schemas.xmlsoap.org/soap/encoding/"})
+        envelope.attrib.update({'xmlns:s':"http://schemas.xmlsoap.org/soap/envelope/"})
 
     body = ET.SubElement(envelope, "s:Body")
 
@@ -81,7 +81,7 @@ def build_soap_call(method, arguments, is_response=False,
         re = body
 
     # append the arguments
-    if isinstance(arguments,(dict,OrderedDict)) :
+    if isinstance(arguments,(dict,OrderedDict)):
         type_map = {str: 'xsd:string',
                     unicode: 'xsd:string',
                     int: 'xsd:int',

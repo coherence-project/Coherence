@@ -50,7 +50,7 @@ from twisted.web import client
 
 from et import parse_xml
 
-aws_server = { 'de': 'de',
+aws_server = {'de': 'de',
                'jp': 'jp',
                'ca': 'ca',
                'uk': 'co.uk',
@@ -66,7 +66,7 @@ aws_response_group = '&ResponseGroup=Images'
 
 aws_ns = 'http://webservices.amazon.com/AWSECommerceService/2005-10-05'
 
-aws_image_size = { 'large': 'LargeImage',
+aws_image_size = {'large': 'LargeImage',
                    'medium': 'MediumImage',
                    'small': 'SmallImage'}
 
@@ -219,8 +219,8 @@ class CoverGetter(object):
                 if len(self.callback) == 3:
                     c,a,kw = self.callback
                     if not isinstance(a,tuple):
-                        a = (a,)
-                    a = (data,) + a
+                        a = (a, )
+                    a = (data, ) + a
                     c(*a,**kw)
                 if len(self.callback) == 2:
                     c,a = self.callback
@@ -228,8 +228,8 @@ class CoverGetter(object):
                         c(data,**a)
                     else:
                         if not isinstance(a,tuple):
-                            a = (a,)
-                        a = (data,) + a
+                            a = (a, )
+                        a = (data, ) + a
                         c(*a)
                 if len(self.callback) == 1:
                     c = self.callback
@@ -269,7 +269,7 @@ class CoverGetter(object):
                     if len(self._errcall) == 3:
                         c,a,kw = self._errcall
                         if not isinstance(a,tuple):
-                            a = (a,)
+                            a = (a, )
                         c(*a,**kw)
                     if len(self._errcall) == 2:
                         c,a = self._errcall
@@ -277,7 +277,7 @@ class CoverGetter(object):
                             c(**a)
                         else:
                             if not isinstance(a,tuple):
-                                a = (a,)
+                                a = (a, )
                             c(*a)
                     if len(self._errcall) == 1:
                         c = self._errcall

@@ -231,13 +231,13 @@ class Item(BackendItem):
         return self.name
 
     def get_path(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location,FilePath):
             return self.location.path
         else:
             return self.location
 
     def get_size(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location,FilePath):
             try:
                 return self.location.getsize()
             except OSError:
@@ -330,7 +330,7 @@ class TestStore(BackendStore):
                         Container(ROOT_CONTAINER_ID,self,-1, self.name)
 
         items = kwargs.get('item', [])
-        if not isinstance( items, list):
+        if not isinstance(items, list):
             items = [items]
 
         for item in items:

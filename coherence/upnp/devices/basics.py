@@ -31,7 +31,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
     def getChildWithDefault(self, path, request):
         self.info('DeviceHttpRoot %s getChildWithDefault %s %s %s',
                   self.server.device_type, path, request.uri, request.client)
-        self.info( request.getAllHeaders())
+        self.info(request.getAllHeaders())
         if self.children.has_key(path):
             return self.children[path]
         if request.uri == '/':
@@ -84,8 +84,8 @@ class RootDeviceXML(static.Data):
         root.attrib['xmlns'] = xmlns
         device_type_uri = ':'.join((device_uri_base,device_type, str(version)))
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement( e, 'major').text = '1'
-        ET.SubElement( e, 'minor').text = '0'
+        ET.SubElement(e, 'major').text = '1'
+        ET.SubElement(e, 'minor').text = '0'
 
         #ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
 
@@ -114,18 +114,18 @@ class RootDeviceXML(static.Data):
                 x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
                 x.text = cap
 
-        ET.SubElement( d, 'deviceType').text = device_type_uri
-        ET.SubElement( d, 'friendlyName').text = friendly_name
-        ET.SubElement( d, 'manufacturer').text = manufacturer
-        ET.SubElement( d, 'manufacturerURL').text = manufacturer_url
-        ET.SubElement( d, 'modelDescription').text = model_description
-        ET.SubElement( d, 'modelName').text = model_name
+        ET.SubElement(d, 'deviceType').text = device_type_uri
+        ET.SubElement(d, 'friendlyName').text = friendly_name
+        ET.SubElement(d, 'manufacturer').text = manufacturer
+        ET.SubElement(d, 'manufacturerURL').text = manufacturer_url
+        ET.SubElement(d, 'modelDescription').text = model_description
+        ET.SubElement(d, 'modelName').text = model_name
         ET.SubElement(d, 'modelNumber').text = model_number
-        ET.SubElement( d, 'modelURL').text = model_url
-        ET.SubElement( d, 'serialNumber').text = serial_number
-        ET.SubElement( d, 'UDN').text = uuid
-        ET.SubElement( d, 'UPC').text = ''
-        ET.SubElement( d, 'presentationURL').text = presentation_url
+        ET.SubElement(d, 'modelURL').text = model_url
+        ET.SubElement(d, 'serialNumber').text = serial_number
+        ET.SubElement(d, 'UDN').text = uuid
+        ET.SubElement(d, 'UPC').text = ''
+        ET.SubElement(d, 'presentationURL').text = presentation_url
 
         if len(services):
             e = ET.SubElement(d, 'serviceList')
@@ -136,7 +136,7 @@ class RootDeviceXML(static.Data):
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                if( hasattr(service,'version') and
+                if(hasattr(service,'version') and
                     service.version < version):
                     v = service.version
                 else:
@@ -152,7 +152,7 @@ class RootDeviceXML(static.Data):
                 ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
 
         if len(devices):
-            e = ET.SubElement( d, 'deviceList')
+            e = ET.SubElement(d, 'deviceList')
 
         if len(icons):
             e = ET.SubElement(d, 'iconList')
@@ -186,7 +186,7 @@ class RootDeviceXML(static.Data):
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
 
-        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 
@@ -220,8 +220,8 @@ class BasicDeviceMixin(object):
                 else:
                     self.icons = kwargs['icon']
 
-        louie.connect( self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
-        louie.connect( self.init_failed, 'Coherence.UPnP.Backend.init_failed', louie.Any)
+        louie.connect(self.init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+        louie.connect(self.init_failed, 'Coherence.UPnP.Backend.init_failed', louie.Any)
         reactor.callLater(0.2, self.fire, backend, **kwargs)
 
     def init_failed(self, backend, msg):

@@ -121,7 +121,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
                 for instance, vdict in self.service._variables.items():
                     v = {}
                     for variable in vdict.values():
-                        if( variable.name != 'LastChange' and
+                        if(variable.name != 'LastChange' and
                             variable.name[0:11] != 'A_ARG_TYPE_' and
                             variable.never_evented == False):
                                 if hasattr(variable, 'dbus_updated') == False:
@@ -564,7 +564,7 @@ class DBusService(dbus.service.Object,log.Loggable):
         return ''
 
     @dbus.service.method(SERVICE_IFACE,in_signature='sa{ss}',out_signature='v',
-                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb',),
+                         async_callbacks=('dbus_async_cb', 'dbus_async_err_cb', ),
                          sender_keyword='sender',connection_keyword='connection')
     def call_action(self,name,arguments,dbus_async_cb,dbus_async_err_cb,sender=None,connection=None):
 
@@ -638,7 +638,7 @@ class DBusService(dbus.service.Object,log.Loggable):
                 for instance, vdict in self.service._variables.items():
                     v = {}
                     for variable in vdict.values():
-                        if( variable.name != 'LastChange' and
+                        if(variable.name != 'LastChange' and
                             variable.name[0:11] != 'A_ARG_TYPE_' and
                             variable.never_evented == False):
                                 if hasattr(variable, 'dbus_updated') == False:
@@ -1047,8 +1047,8 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                  signature='v', variant_level=2)
 
     def _get_devices_of_type(self, typ):
-        return [ device.get_info() for device in self.devices.itervalues()
-                if device.get_friendly_device_type() == typ ]
+        return [device.get_info() for device in self.devices.itervalues()
+                if device.get_friendly_device_type() == typ]
 
     @dbus.service.method(DLNA_BUS_NAME + '.DMC', in_signature='',
             out_signature='av')

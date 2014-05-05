@@ -67,6 +67,6 @@ class DimmableLightClient(log.Loggable):
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
                                client=self,udn=self.device.udn)
 
-    def state_variable_change( self, variable):
+    def state_variable_change(self, variable):
         self.info('%(name)r changed from %(old_value)r to %(value)r',
                   vars(variable))

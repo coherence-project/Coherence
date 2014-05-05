@@ -316,7 +316,7 @@ class DVBDStore(BackendStore):
                 self.containers[RECORDINGS_CONTAINER_ID].update_id)
             self.containers[RECORDINGS_CONTAINER_ID].update_id += 1
 
-            if( self.server and
+            if(self.server and
                 hasattr(self.server,'content_directory_server')):
                 if hasattr(self, 'update_id'):
                     self.update_id += 1
@@ -398,7 +398,7 @@ class DVBDStore(BackendStore):
         return d
 
     def get_channel_details(self, channelList_interface, id):
-        self.debug("GET CHANNEL DETAILS %s" , id)
+        self.debug("GET CHANNEL DETAILS %s", id)
         def get_name(id):
             d = defer.Deferred()
             channelList_interface.GetChannelName(id,
@@ -589,8 +589,8 @@ class DVBDStore(BackendStore):
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                             ['http-get:*:video/mpegts:*',
-                             'internal:%s:video/mpegts:*' % self.server.coherence.hostname,],
-                             'rtsp-rtp-udp:*:video/mpegts:*',)
+                             'internal:%s:video/mpegts:*' % self.server.coherence.hostname, ],
+                             'rtsp-rtp-udp:*:video/mpegts:*', )
 
     def hidden_upnp_DestroyObject(self, *args, **kwargs):
         ObjectID = kwargs['ObjectID']

@@ -30,13 +30,13 @@ class MediaRendererClient(log.Loggable):
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:RenderingControl:1",
                                       "urn:schemas-upnp-org:service:RenderingControl:2"]:
-                self.rendering_control = RenderingControlClient( service)
+                self.rendering_control = RenderingControlClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:ConnectionManager:1",
                                       "urn:schemas-upnp-org:service:ConnectionManager:2"]:
-                self.connection_manager = ConnectionManagerClient( service)
+                self.connection_manager = ConnectionManagerClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:AVTransport:1",
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
-                self.av_transport = AVTransportClient( service)
+                self.av_transport = AVTransportClient(service)
         self.info("MediaRenderer %s", self.device.get_friendly_name())
         if self.rendering_control:
             self.info("RenderingControl available")
@@ -106,6 +106,6 @@ class MediaRendererClient(log.Loggable):
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
                                client=self,udn=self.device.udn)
 
-    def state_variable_change( self, variable):
+    def state_variable_change(self, variable):
         self.info('%(name)r changed from %(old_value)r to %(value)r',
                   vars(variable))

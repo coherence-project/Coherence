@@ -71,7 +71,7 @@ class ControlPoint(log.Loggable):
         self.queries = []
 
         for device in self.get_devices():
-            self.check_device( device)
+            self.check_device(device)
 
         louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
@@ -88,13 +88,13 @@ class ControlPoint(log.Loggable):
             return
         self.auto_client.append(device_type)
         for device in self.get_devices():
-            self.check_device( device)
+            self.check_device(device)
 
     def browse(self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
             return
-        self.check_device( device)
+        self.check_device(device)
 
     def process_queries(self, device):
         for query in self.queries:
@@ -127,7 +127,7 @@ class ControlPoint(log.Loggable):
     def get_device_by_host(self, host):
         return self.coherence.get_device_by_host(host)
 
-    def check_device( self, device):
+    def check_device(self, device):
         if device.client == None:
             self.info("found device %s of type %s - %r", device.get_friendly_name(),
                                                 device.get_device_type(), device.client)
@@ -148,7 +148,7 @@ class ControlPoint(log.Loggable):
                     client = InternetGatewayDeviceClient(device)
 
                 client.coherence = self.coherence
-                device.set_client( client)
+                device.set_client(client)
 
         self.process_queries(device)
 
@@ -196,7 +196,7 @@ class ControlPoint(log.Loggable):
             pass
 
 
-class XMLRPC( xmlrpc.XMLRPC):
+class XMLRPC(xmlrpc.XMLRPC):
 
     def __init__(self, control_point):
         self.control_point = control_point
@@ -324,9 +324,9 @@ class XMLRPC( xmlrpc.XMLRPC):
         return "Ok"
 
 
-def startXMLRPC( control_point, port):
+def startXMLRPC(control_point, port):
     from twisted.web import server
-    r = XMLRPC( control_point)
+    r = XMLRPC(control_point)
     print "XMLRPC-API on port %d ready" % port
     reactor.listenTCP(port, server.Site(r))
 

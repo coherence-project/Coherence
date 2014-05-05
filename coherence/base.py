@@ -107,27 +107,27 @@ class WebServer(log.Loggable):
 
             from nevow import __version_info__, __version__
             if __version_info__ < (0,9,17):
-                self.warning( "Nevow version %s too old, disabling WebUI", __version__)
+                self.warning("Nevow version %s too old, disabling WebUI", __version__)
                 raise ImportError
 
             from nevow import appserver, inevow
             from coherence.web.ui import Web, IWeb, WebUI
             from twisted.python.components import registerAdapter
 
-            def ResourceFactory( original):
-                return WebUI( IWeb, original)
+            def ResourceFactory(original):
+                return WebUI(IWeb, original)
 
             registerAdapter(ResourceFactory, Web, inevow.IResource)
 
             self.web_root_resource = Web(coherence)
-            self.site = appserver.NevowSite( self.web_root_resource)
+            self.site = appserver.NevowSite(self.web_root_resource)
         except ImportError:
             self.site = Site(SimpleRoot(coherence))
 
-        self.port = reactor.listenTCP( port, self.site)
+        self.port = reactor.listenTCP(port, self.site)
         coherence.web_server_port = self.port._realPortNumber
         # XXX: is this the right way to do it?
-        self.warning( "WebServer on port %d ready", coherence.web_server_port)
+        self.warning("WebServer on port %d ready", coherence.web_server_port)
 
 
 class Plugins(log.Loggable):
@@ -188,7 +188,7 @@ class Plugins(log.Loggable):
 
     def _collect(self, ids=_valids):
         if not isinstance(ids, (list,tuple)):
-            ids = (ids,)
+            ids = (ids, )
         if pkg_resources:
             for group in ids:
                 for entrypoint in pkg_resources.iter_entry_points(group):
@@ -270,7 +270,7 @@ class Coherence(log.Loggable):
                         continue
                 except (KeyError,TypeError):
                     pass
-                self.info( "setting log-level for subsystem %s to %s", subsystem['name'],subsystem['level'])
+                self.info("setting log-level for subsystem %s to %s", subsystem['name'],subsystem['level'])
                 logging.getLogger(subsystem['name'].lower()).setLevel(subsystem['level'].upper())
 
         except (KeyError,TypeError):
@@ -320,9 +320,9 @@ class Coherence(log.Loggable):
             unittest = True
 
         self.ssdp_server = SSDPServer(test=unittest,interface=self.hostname)
-        louie.connect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
-        louie.connect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
-        louie.connect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
+        louie.connect(self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
+        louie.connect(self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
+        louie.connect(self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
         #louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', louie.Any)
 
         self.ssdp_server.subscribe("new_device", self.add_device)
@@ -330,10 +330,10 @@ class Coherence(log.Loggable):
 
         self.msearch = MSearch(self.ssdp_server,test=unittest)
 
-        reactor.addSystemEventTrigger( 'before', 'shutdown', self.shutdown, force=True)
+        reactor.addSystemEventTrigger('before', 'shutdown', self.shutdown, force=True)
 
         try:
-            self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
+            self.web_server = WebServer(self.config.get('web-ui',None), self.web_server_port, self)
         except CannotListenError:
             self.warning('port %r already in use, aborting!', self.web_server_port)
             reactor.stop()
@@ -512,12 +512,12 @@ class Coherence(log.Loggable):
         else:
             self.info("storing plugin config option for %s failed, plugin not found", uuid)
 
-    def receiver( self, signal, *args, **kwargs):
+    def receiver(self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal
         #print kwargs
         pass
 
-    def shutdown( self,force=False):
+    def shutdown(self,force=False):
         if force == True:
             self._incarnations_ = 1
         if self._incarnations_ > 1:
@@ -561,9 +561,9 @@ class Coherence(log.Loggable):
 
             def homecleanup(result):
                 """anything left over"""
-                louie.disconnect( self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
-                louie.disconnect( self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
-                louie.disconnect( self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
+                louie.disconnect(self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
+                louie.disconnect(self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
+                louie.disconnect(self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
                 self.ssdp_server.shutdown()
                 if self.ctrl:
                     self.ctrl.shutdown()

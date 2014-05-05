@@ -70,11 +70,11 @@ class ElisaMediaStore(Plugin):
         except:
             return None
 
-    def set_root_id( self, id):
+    def set_root_id(self, id):
         self.root_id = id
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
-    def get_root_id( self, media_type='audio'):
+    def get_root_id(self, media_type='audio'):
         """ ask Elisa to tell us the id of the top item
             representing the media_type == 'something' collection """
         store = self.get_store()
@@ -110,7 +110,7 @@ class ElisaMediaStore(Plugin):
                     upnp_item.childCount = len(elisa_item.get('children',[]))
                     if len(Filter) > 0:
                         upnp_item.searchable = True
-                        upnp_item.searchClass = ('object',)
+                        upnp_item.searchClass = ('object', )
                 else:
                     internal_url = elisa_item['location'].get('internal')
                     external_url = elisa_item['location'].get('external')
@@ -156,7 +156,7 @@ class ElisaMediaStore(Plugin):
                     didl.addItem(item)
                 total = 1
 
-            r = { 'Result': didl.toString(), 'TotalMatches': total,
+            r = {'Result': didl.toString(), 'TotalMatches': total,
                   'NumberReturned': didl.numItems()}
 
             if hasattr(elisa_item, 'update_id'):

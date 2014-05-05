@@ -160,7 +160,7 @@ class SWR3Store(BackendStore,BackendRssMixin):
 
     def upnp_init(self):
         if self.server:
-            self.server.connection_manager_server.set_variable( \
+            self.server.connection_manager_server.set_variable(\
                 0, 'SourceProtocolInfo', ['http-get:*:audio/mpeg:*'])
 
     def parse_data(self,xml_data,container):

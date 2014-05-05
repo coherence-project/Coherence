@@ -88,17 +88,17 @@ class Gallery:
             request['g2_authToken'] = self.auth_token
 
         url = self.url
-        if (len(request) > 0) :
+        if (len(request) > 0):
             url += '?'
             for key,value in request.iteritems():
                 url += '%s=%s&' % (key,value)
         headers = None
         if self.cookie != '':
-             headers = {'Cookie' : self.cookie}
+             headers = {'Cookie': self.cookie}
 
         def gotPage(result):
             data,headers = result
-            response = self._parse_response( data )
+            response = self._parse_response(data)
             if response['status'] != '0':
                 raise Exception(response['status_text'])
             try:
@@ -132,11 +132,11 @@ class Gallery:
         myStr = StringIO.StringIO(response)
 
         for line in myStr:
-            if string.find( line, '#__GR2PROTO__' ) != -1:
+            if string.find(line, '#__GR2PROTO__') != -1:
                 break
 
         # make sure the 1st line is #__GR2PROTO__
-        if string.find( line, '#__GR2PROTO__' ) == -1:
+        if string.find(line, '#__GR2PROTO__') == -1:
             raise Exception("Bad response: %r" % response)
 
         resDict = {}
@@ -177,9 +177,9 @@ class Gallery:
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'login',
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'login',
                 'g2_form[uname]': username,
                 'g2_form[password]': password
             }
@@ -204,14 +204,14 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'fetch-albums'
+                'protocol_version': self.protocol_version,
+                'cmd': 'fetch-albums'
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'fetch-albums'
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'fetch-albums'
             }
 
         d = self._do_request(request)
@@ -256,14 +256,14 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'fetch-albums-prune'
+                'protocol_version': self.protocol_version,
+                'cmd': 'fetch-albums-prune'
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'fetch-albums-prune'
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'fetch-albums-prune'
             }
 
         response = self._do_request(request)
@@ -304,23 +304,23 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'add-item',
-                'set_albumName' : album,
-                'userfile' : file,
-                'userfile_name' : filename,
-                'caption' : caption,
-                'extrafield.Description' : description
+                'protocol_version': self.protocol_version,
+                'cmd': 'add-item',
+                'set_albumName': album,
+                'userfile': file,
+                'userfile_name': filename,
+                'caption': caption,
+                'extrafield.Description': description
             }
         else:
             request = {
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'add-item',
-                'g2_form[set_albumName]' : album,
-                'g2_form[userfile]' : file,
-                'g2_form[userfile_name]' : filename,
-                'g2_form[caption]' : caption,
-                'g2_form[extrafield.Description]' : description
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'add-item',
+                'g2_form[set_albumName]': album,
+                'g2_form[userfile]': file,
+                'g2_form[userfile_name]': filename,
+                'g2_form[caption]': caption,
+                'g2_form[extrafield.Description]': description
             }
 
         file = open(filename)
@@ -336,16 +336,16 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'album-properties',
-                'set_albumName' : album
+                'protocol_version': self.protocol_version,
+                'cmd': 'album-properties',
+                'set_albumName': album
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'album-properties',
-                'g2_form[set_albumName]' : album
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'album-properties',
+                'g2_form[set_albumName]': album
             }
 
         d = self._do_request(request)
@@ -374,10 +374,10 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'new-album',
-                'set_albumName' : parent
+                'g2_controller': 'remote:GalleryRemote',
+                'protocol_version': self.protocol_version,
+                'cmd': 'new-album',
+                'set_albumName': parent
             }
             if name != None:
                 request['newAlbumName'] = name
@@ -387,10 +387,10 @@ class Gallery:
                 request['newAlbumDesc'] = description
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'new-album',
-                'g2_form[set_albumName]' : parent
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'new-album',
+                'g2_form[set_albumName]': parent
             }
             if name != None:
                 request['g2_form[newAlbumName]'] = name
@@ -415,20 +415,20 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'fetch-album-images',
-                'set_albumName' : album,
-                'albums_too' : 'no',
-                'extrafields' : 'yes'
+                'protocol_version': self.protocol_version,
+                'cmd': 'fetch-album-images',
+                'set_albumName': album,
+                'albums_too': 'no',
+                'extrafields': 'yes'
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'fetch-album-images',
-                'g2_form[set_albumName]' : album,
-                'g2_form[albums_too]' : 'no',
-                'g2_form[extrafields]' : 'yes'
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'fetch-album-images',
+                'g2_form[set_albumName]': album,
+                'g2_form[albums_too]': 'no',
+                'g2_form[extrafields]': 'yes'
             }
 
         d = self._do_request(request)

@@ -98,7 +98,7 @@ class BzConnection(log.Loggable):
             obj = super(BzConnection, cls).__new__(cls, *args, **kwargs)
             cls._instance_ = obj
             obj.connection = BzFactory(kwargs['backend'])
-            reactor.connectTCP( kwargs['host'], kwargs['port'], obj.connection)
+            reactor.connectTCP(kwargs['host'], kwargs['port'], obj.connection)
             return obj
 
     def __init__(self,backend=None,host='localhost',port=7654):
@@ -126,7 +126,7 @@ class BuzztardItem(log.Loggable):
         self.child_count = 0
         self.children = []
 
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
 
         #self.url = urlbase + str(self.id)
@@ -226,7 +226,7 @@ class BuzztardStore(log.Loggable,Plugin):
         self.name = kwargs.get('name','Buzztard')
 
         self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase) > 0 and
+        if(len(self.urlbase) > 0 and
             self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
 
@@ -238,8 +238,8 @@ class BuzztardStore(log.Loggable,Plugin):
         self.store = {}
         self.parent = None
 
-        louie.connect( self.add_content, 'Buzztard.Response.browse', louie.Any)
-        louie.connect( self.clear, 'Buzztard.Response.flush', louie.Any)
+        louie.connect(self.add_content, 'Buzztard.Response.browse', louie.Any)
+        louie.connect(self.clear, 'Buzztard.Response.flush', louie.Any)
 
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
 
@@ -255,14 +255,14 @@ class BuzztardStore(log.Loggable,Plugin):
             self.append(':'.join((label,str(i))), 'audio/mpeg', parent)
             i += 1
 
-    def append( self, name, mimetype, parent):
+    def append(self, name, mimetype, parent):
 
         id = self.getnextID()
         update = False
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = BuzztardItem( id, name, parent, mimetype,
+        self.store[id] = BuzztardItem(id, name, parent, mimetype,
                                         self.urlbase,self.host,update=update)
         if hasattr(self, 'update_id'):
             self.update_id += 1
@@ -350,12 +350,12 @@ class BuzztardPlayer(log.Loggable):
         self.tags = {}
         self.server = device
 
-        self.poll_LC = LoopingCall( self.poll_player)
+        self.poll_LC = LoopingCall(self.poll_player)
 
-        louie.connect( self.event, 'Buzztard.Response.event', louie.Any)
-        louie.connect( self.get_volume, 'Buzztard.Response.volume', louie.Any)
-        louie.connect( self.get_mute, 'Buzztard.Response.mute', louie.Any)
-        louie.connect( self.get_repeat, 'Buzztard.Response.repeat', louie.Any)
+        louie.connect(self.event, 'Buzztard.Response.event', louie.Any)
+        louie.connect(self.get_volume, 'Buzztard.Response.volume', louie.Any)
+        louie.connect(self.get_mute, 'Buzztard.Response.mute', louie.Any)
+        louie.connect(self.get_repeat, 'Buzztard.Response.repeat', louie.Any)
         self.buzztard = BzConnection(backend=self,host=self.host,port=self.port)
 
     def event(self,line):
@@ -410,10 +410,10 @@ class BuzztardPlayer(log.Loggable):
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def poll_player( self):
+    def poll_player(self):
         self.buzztard.connection.sendMessage('status')
 
-    def load( self, uri, metadata):
+    def load(self, uri, metadata):
         self.debug("load %s %s", uri, metadata)
         self.duration = None
         self.metadata = metadata
@@ -426,14 +426,14 @@ class BuzztardPlayer(log.Loggable):
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
 
-    def start( self, uri):
-        self.load( uri)
+    def start(self, uri):
+        self.load(uri)
         self.play()
 
     def stop(self):
         self.buzztard.connection.sendMessage('stop')
 
-    def play( self):
+    def play(self):
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
         label_id = self.server.av_transport_server.get_variable('CurrentTrackURI',connection_id).value
         id = '0'
@@ -441,7 +441,7 @@ class BuzztardPlayer(log.Loggable):
             label,id = label_id.split(':')
         self.buzztard.connection.sendMessage('play|%s' % id)
 
-    def pause( self):
+    def pause(self):
         self.buzztard.connection.sendMessage('pause')
 
     def seek(self, location):
@@ -503,7 +503,7 @@ class BuzztardPlayer(log.Loggable):
         self.buzztard.connection.sendMessage('get|mute')
         self.buzztard.connection.sendMessage('get|repeat')
 
-        self.poll_LC.start( 1.0, True)
+        self.poll_LC.start(1.0, True)
 
     def upnp_Play(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
@@ -565,7 +565,7 @@ def test_init_complete(backend):
 
 def main():
 
-    louie.connect( test_init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
+    louie.connect(test_init_complete, 'Coherence.UPnP.Backend.init_completed', louie.Any)
 
     f = BuzztardStore(None)
 

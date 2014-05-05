@@ -194,7 +194,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if(headers['st'] == 'ssdp:all' and
                i['SILENT'] == True):
                 continue
-            if( i['ST'] == headers['st'] or
+            if(i['ST'] == headers['st'] or
                 headers['st'] == 'ssdp:all'):
                 response = []
                 response.append('HTTP/1.1 200 OK')
@@ -219,7 +219,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             return
         self.info('Sending alive notification for %s', usn)
 
-        resp = [ 'NOTIFY * HTTP/1.1',
+        resp = ['NOTIFY * HTTP/1.1',
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
             'NTS: ssdp:alive',
             ]
@@ -245,7 +245,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('Sending byebye notification for %s', usn)
 
-        resp = [ 'NOTIFY * HTTP/1.1',
+        resp = ['NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
                 'NTS: ssdp:byebye',
                 ]
@@ -268,7 +268,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         except KeyError, msg:
             self.debug("error building byebye notification: %r", msg)
 
-    def resendNotify( self):
+    def resendNotify(self):
         for usn in self.known:
             if self.known[usn]['MANIFESTATION'] == 'local':
                 self.doNotify(usn)

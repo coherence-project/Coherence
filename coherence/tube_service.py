@@ -127,7 +127,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         for arg_name, arg in kwargs.iteritems():
             if arg_name.find('X_') == 0:
                 continue
-            l = [ a for a in in_arguments if arg_name == a.get_name()]
+            l = [a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
@@ -135,7 +135,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
             self.critical('argument %s missing for action %s',
-                                [ a.get_name() for a in in_arguments],action.name)
+                                [a.get_name() for a in in_arguments],action.name)
             return failure.Failure(errorCode(402))
 
 
@@ -149,8 +149,8 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         #print 'callit action', action
         #print 'callit dbus action', self.service.service.action
         d = defer.Deferred()
-        self.service.service.call_action( action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler=d.callback, error_handler=d.errback,utf8_strings=True)
-        d.addCallback( self.get_action_results, action, instance)
+        self.service.service.call_action(action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler=d.callback, error_handler=d.errback,utf8_strings=True)
+        d.addCallback(self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d
 
@@ -241,7 +241,7 @@ class TubeDeviceProxy(log.Loggable):
         """ create the http entrypoint """
 
         self.web_resource = DeviceHttpRoot(self)
-        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
 
         """ create the Service proxy(s) """
@@ -255,8 +255,8 @@ class TubeDeviceProxy(log.Loggable):
 
         version = self.version
         while version > 0:
-            self.web_resource.putChild( 'description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     device_type=self.device_type, version=version,

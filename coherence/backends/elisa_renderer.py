@@ -70,7 +70,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         self.view = []
         self.tags = {}
         self.server = device
-        self.poll_LC = LoopingCall( self.poll_player)
+        self.poll_LC = LoopingCall(self.poll_player)
 
     def call_player(self, method, callback, *args):
         self.debug('call player.%s%s', method, args)
@@ -112,7 +112,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         self.call_player("get_readable_state", got_result)
 
 
-    def query_position( self):
+    def query_position(self):
         def got_result(result):
             self.info("query_position %s", result)
             position, duration = result
@@ -121,14 +121,14 @@ class ElisaPlayer(log.Loggable, Plugin):
                 self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
 
             if position is not None:
-                m,s = divmod( position / 1000000000, 60)
+                m,s = divmod(position / 1000000000, 60)
                 h,m = divmod(m,60)
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
                     self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
 
             if duration is not None:
-                m,s = divmod( duration / 1000000000, 60)
+                m,s = divmod(duration / 1000000000, 60)
                 h,m = divmod(m,60)
 
                 if self.server != None:
@@ -153,7 +153,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
 
 
-    def load( self, uri, metadata):
+    def load(self, uri, metadata):
 
         def got_result(result):
             self.duration = None
@@ -177,7 +177,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def stop(self):
         def got_result(result):
-            self.server.av_transport_server.set_variable( \
+            self.server.av_transport_server.set_variable(\
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), \
                                  'TransportState', 'STOPPED')
 
@@ -185,7 +185,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def play(self):
         def got_result(result):
-            self.server.av_transport_server.set_variable( \
+            self.server.av_transport_server.set_variable(\
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), \
                                  'TransportState', 'PLAYING')
 
@@ -193,7 +193,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def pause(self):
         def got_result(result):
-            self.server.av_transport_server.set_variable( \
+            self.server.av_transport_server.set_variable(\
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), \
                                  'TransportState', 'PAUSED_PLAYBACK')
         self.call_player("pause", got_result)
@@ -266,7 +266,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         self.server.av_transport_server.set_variable(0, 'CurrentTransportActions', '', default=True)
         self.server.rendering_control_server.set_variable(0, 'Volume', self.get_volume())
         self.server.rendering_control_server.set_variable(0, 'Mute', self.get_mute())
-        self.poll_LC.start( 1.0, True)
+        self.poll_LC.start(1.0, True)
 
     def upnp_Play(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])

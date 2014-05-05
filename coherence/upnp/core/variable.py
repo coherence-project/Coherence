@@ -47,7 +47,7 @@ class StateVariable(log.Loggable):
         self.last_time_touched = None
 
         self._callbacks = []
-        if isinstance( self.service, service.ServiceServer):
+        if isinstance(self.service, service.ServiceServer):
             self.moderated = self.service.is_variable_moderated(name)
             self.updated = False
 
@@ -85,11 +85,11 @@ class StateVariable(log.Loggable):
 
     def update(self, value):
         self.info("variable check for update %s %s %s", self.name, value, self.service)
-        if not isinstance( self.service, service.Service):
+        if not isinstance(self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
                 old_value = self.value
                 if self.updated == True:
-                    if isinstance( value, tuple):
+                    if isinstance(value, tuple):
                         v = old_value.split(',')
                         i = 0
                         while i < len(v):
@@ -108,7 +108,7 @@ class StateVariable(log.Loggable):
                         else:
                             new_value = str(value)
                 else:
-                    if isinstance( value, tuple):
+                    if isinstance(value, tuple):
                         new_value = str(value[0]) + ',' + str(value[1])
                     else:
                         new_value = value
@@ -183,7 +183,7 @@ class StateVariable(log.Loggable):
         #print "UPDATED %s %r %r %r %r %r" % (self.name,self.service,isinstance( self.service, service.Service),self.instance,self.value,self._callbacks)
         self.notify()
 
-        if isinstance( self.service, service.Service):
+        if isinstance(self.service, service.Service):
             #self.notify()
             pass
         else:
@@ -194,7 +194,7 @@ class StateVariable(log.Loggable):
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
-        callback( self)
+        callback(self)
 
     def notify(self):
         if self.name.startswith('A_ARG_TYPE_'):

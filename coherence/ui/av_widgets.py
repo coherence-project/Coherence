@@ -370,10 +370,10 @@ class DeviceImportWidget(object):
                         self.store.set_value(item, 2, self.device_icon)
 
                         d = self.bus.get_object(BUS_NAME + '.device',device['path'])
-                        d.get_device_icons(reply_handler=lambda x : got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
+                        d.get_device_icons(reply_handler=lambda x: got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
 
                 s = self.bus.get_object(BUS_NAME + '.service',service)
-                s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
+                s.get_available_actions(reply_handler=lambda x: reply(x,str(device['udn'])),error_handler=self.handle_error)
 
     def media_server_removed(self,udn):
         row_count = 0
@@ -552,7 +552,7 @@ class TreeWidget(object):
         except:
             return False
 
-    def state_variable_change( self, udn, service, variable, value):
+    def state_variable_change(self, udn, service, variable, value):
         #print "state_variable_change", udn, service, variable, 'changed to', value
         if variable == 'ContainerUpdateIDs':
             changes = value.split(',')
@@ -638,11 +638,11 @@ class TreeWidget(object):
 
                 s = self.bus.get_object(BUS_NAME + '.service',service)
                 s.connect_to_signal('StateVariableChanged', self.state_variable_change, dbus_interface=BUS_NAME + '.service')
-                s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
+                s.get_available_actions(reply_handler=lambda x: reply(x,str(device['udn'])),error_handler=self.handle_error)
                 s.subscribe(reply_handler=reply_subscribe,error_handler=self.handle_error)
 
                 d = self.bus.get_object(BUS_NAME + '.device',device['path'])
-                d.get_device_icons(reply_handler=lambda x : got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
+                d.get_device_icons(reply_handler=lambda x: got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
 
 
     def media_server_removed(self,udn):

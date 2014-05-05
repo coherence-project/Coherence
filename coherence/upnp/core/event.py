@@ -102,7 +102,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             self.backend_name = self.service.backend
 
     def render_SUBSCRIBE(self, request):
-        self.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d",
+        self.info("EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d",
                             self.service.id,
                             self.backend_name,
                             request.client, request.code)
@@ -132,9 +132,9 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             except:
                 from .uuid import UUID
                 sid = UUID()
-                s = { 'sid' : str(sid),
-                      'callback' : headers['callback'][1:len(headers['callback']) - 1],
-                      'seq' : 0}
+                s = {'sid': str(sid),
+                      'callback': headers['callback'][1:len(headers['callback']) - 1],
+                      'seq': 0}
                 s['timeout'] = headers['timeout']
                 s['created'] = time.time()
                 self.service.new_subscriber(s)
@@ -147,7 +147,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         return ""
 
     def render_UNSUBSCRIBE(self, request):
-        self.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d",
+        self.info("EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d",
                             self.service.id,
                             self.backend_name,
                             request.client, request.code)
@@ -248,12 +248,12 @@ class EventProtocol(Protocol, log.Loggable):
                 pass
         self.teardown()
 
-    def connectionLost( self, reason):
+    def connectionLost(self, reason):
         try:
             self.timeout_checker.cancel()
         except:
             pass
-        self.debug( "connection closed %r from the Service Events HTTP server", reason)
+        self.debug("connection closed %r from the Service Events HTTP server", reason)
 
 
 def unsubscribe(service, action='unsubscribe'):
@@ -306,9 +306,9 @@ def subscribe(service, action='subscribe'):
             request.append("NT: upnp:event")
 
         request.append('Date: %s' % datetimeToString())
-        request.append( "Content-Length: 0")
-        request.append( "")
-        request.append( "")
+        request.append("Content-Length: 0")
+        request.append("")
+        request.append("")
         request = '\r\n'.join(request)
         logger.debug("event.subscribe.send_request %r %r", request, p)
         try:
@@ -327,7 +327,7 @@ def subscribe(service, action='subscribe'):
         del d
         del c
 
-    def prepare_connection( service, action):
+    def prepare_connection(service, action):
         logger.info("event.subscribe.prepare_connection action: %r %r",
                  action, service.event_connection)
         if service.event_connection == None:
@@ -360,7 +360,7 @@ class NotificationProtocol(Protocol, log.Loggable):
     logCategory = "notification_protocol"
 
     def connectionMade(self):
-        self.timeout_checker = reactor.callLater(30, lambda : self.transport.loseConnection())
+        self.timeout_checker = reactor.callLater(30, lambda: self.transport.loseConnection())
 
     def dataReceived(self, data):
         try:
@@ -368,7 +368,7 @@ class NotificationProtocol(Protocol, log.Loggable):
         except:
             pass
         cmd, headers = utils.parse_http_response(data)
-        self.debug( "notification response received %r %r", cmd, headers)
+        self.debug("notification response received %r %r", cmd, headers)
         try:
             if int(cmd[1]) != 200:
                 self.warning("response with error code %r received upon our notification", cmd[1])
@@ -376,7 +376,7 @@ class NotificationProtocol(Protocol, log.Loggable):
             self.debug("response without error code received upon our notification")
         self.transport.loseConnection()
 
-    def connectionLost( self, reason):
+    def connectionLost(self, reason):
         try:
             self.timeout_checker.cancel()
         except:

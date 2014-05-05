@@ -61,7 +61,7 @@ class Service(log.Loggable):
         self.scpd_url = scpd_url
         self.device = device
         self._actions = {}
-        self._variables = { 0: {}}
+        self._variables = {0: {}}
         self._var_subscribers = {}
         self.subscription_id = None
         self.timeout = 0
@@ -143,7 +143,7 @@ class Service(log.Loggable):
         url = self.get_control_url()
         namespace = self.get_type()
         action = "%s#%s" % (namespace, name)
-        client = SOAPProxy( url, namespace=("u",namespace), soapaction=action)
+        client = SOAPProxy(url, namespace=("u",namespace), soapaction=action)
         return client
 
     def remove(self):
@@ -208,7 +208,7 @@ class Service(log.Loggable):
     def get_scpdXML(self):
         return self.scpdXML
 
-    def get_action( self, name):
+    def get_action(self, name):
         try:
             return self._actions[name]
         except KeyError:
@@ -278,7 +278,7 @@ class Service(log.Loggable):
                 self.info("we have a LastChange event")
                 self.get_state_variable(var_name, 0).update(var_value)
                 tree = utils.parse_xml(var_value, 'utf-8').getroot()
-                namespace_uri, tag = tree.tag[1:].split( "}", 1)
+                namespace_uri, tag = tree.tag[1:].split("}", 1)
                 for instance in tree.findall('{%s}InstanceID' % namespace_uri):
                     instance_id = instance.attrib['val']
                     self.info("instance_id %r %r", instance,instance_id)
@@ -488,21 +488,21 @@ class ServiceServer(log.Loggable):
         root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
         evented_variables = 0
         for n in notify:
-            e = ET.SubElement( root, 'e:property')
+            e = ET.SubElement(root, 'e:property')
             if n.name == 'LastChange':
                 if subscriber['seq'] == 0:
                     text = self.build_last_change_event(n.instance, force=True)
                 else:
                     text = self.build_last_change_event(n.instance)
                 if text is not None:
-                    ET.SubElement( e, n.name).text = text
+                    ET.SubElement(e, n.name).text = text
                     evented_variables += 1
             else:
-                ET.SubElement( e, n.name).text = str(n.value)
+                ET.SubElement(e, n.name).text = str(n.value)
                 evented_variables += 1
 
         if evented_variables > 0:
-            xml = ET.tostring( root, encoding='utf-8')
+            xml = ET.tostring(root, encoding='utf-8')
             d,p = event.send_notification(subscriber, xml)
             self._pending_notifications[d] = p
             d.addBoth(self.rm_notification,d)
@@ -517,7 +517,7 @@ class ServiceServer(log.Loggable):
     def create_new_instance(self, instance):
         self._variables[instance] = {}
         for v in self._variables[0].values():
-            self._variables[instance][v.name] = variable.StateVariable( v.service,
+            self._variables[instance][v.name] = variable.StateVariable(v.service,
                                                                         v.name,
                                                                         v.implementation,
                                                                         instance,
@@ -552,7 +552,7 @@ class ServiceServer(log.Loggable):
                     d.addBoth(self.rm_notification,d)
         try:
             variable = self._variables[int(instance)][variable_name]
-            if isinstance( value, defer.Deferred):
+            if isinstance(value, defer.Deferred):
                 value.addCallback(process_value)
             else:
                 process_value(value)
@@ -568,23 +568,23 @@ class ServiceServer(log.Loggable):
     def build_single_notification(self, instance, variable_name, value):
         root = ET.Element('e:propertyset')
         root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
-        e = ET.SubElement( root, 'e:property')
-        s = ET.SubElement( e, variable_name).text = str(value)
-        return ET.tostring( root, encoding='utf-8')
+        e = ET.SubElement(root, 'e:property')
+        s = ET.SubElement(e, variable_name).text = str(value)
+        return ET.tostring(root, encoding='utf-8')
 
     def build_last_change_event(self, instance=0, force=False):
         got_one = False
         root = ET.Element('Event')
         root.attrib['xmlns'] = self.event_metadata
         for instance, vdict in self._variables.items():
-            e = ET.SubElement( root, 'InstanceID')
+            e = ET.SubElement(root, 'InstanceID')
             e.attrib['val'] = str(instance)
             for variable in vdict.values():
-                if( variable.name != 'LastChange' and
+                if(variable.name != 'LastChange' and
                     variable.name[0:11] != 'A_ARG_TYPE_' and
                     variable.never_evented == False and
                     (variable.updated == True or force == True)):
-                    s = ET.SubElement( e, variable.name)
+                    s = ET.SubElement(e, variable.name)
                     s.attrib['val'] = str(variable.value)
                     variable.updated = False
                     got_one = True
@@ -593,7 +593,7 @@ class ServiceServer(log.Loggable):
                         if dependants != None and len(dependants) > 0:
                             s.attrib['channel'] = dependants[0]
         if got_one == True:
-            return ET.tostring( root, encoding='utf-8')
+            return ET.tostring(root, encoding='utf-8')
         else:
             return None
 
@@ -607,19 +607,19 @@ class ServiceServer(log.Loggable):
         root = ET.Element('e:propertyset')
         root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
 
-        if isinstance( notify, variable.StateVariable):
-            notify = [notify,]
+        if isinstance(notify, variable.StateVariable):
+            notify = [notify, ]
 
         evented_variables = 0
         for n in notify:
-            e = ET.SubElement( root, 'e:property')
+            e = ET.SubElement(root, 'e:property')
             if n.name == 'LastChange':
                 text = self.build_last_change_event(instance=n.instance)
                 if text is not None:
-                    ET.SubElement( e, n.name).text = text
+                    ET.SubElement(e, n.name).text = text
                     evented_variables += 1
             else:
-                s = ET.SubElement( e, n.name).text = str(n.value)
+                s = ET.SubElement(e, n.name).text = str(n.value)
                 evented_variables += 1
                 if n.dependant_variable != None:
                     dependants = n.dependant_variable.get_allowed_values()
@@ -628,7 +628,7 @@ class ServiceServer(log.Loggable):
 
         if evented_variables == 0:
             return
-        xml = ET.tostring( root, encoding='utf-8')
+        xml = ET.tostring(root, encoding='utf-8')
         #print "propagate_notification", xml
         for s in self._subscribers.values():
             d,p = event.send_notification(s,xml)
@@ -748,7 +748,7 @@ class ServiceServer(log.Loggable):
             """ check for action in ServiceServer """
             callback = getattr(self, "upnp_%s" % name, None)
 
-        if( needs_callback == True and
+        if(needs_callback == True and
             callback == None):
             """ we have one or more 'A_ARG_TYPE_' variables
                 issue a warning for now
@@ -800,7 +800,7 @@ class ServiceServer(log.Loggable):
                 arg_state_var = argument.findtext('relatedStateVariable')
                 arguments.append(action.Argument(arg_name, arg_direction,
                                                  arg_state_var))
-                if( arg_state_var[0:11] == 'A_ARG_TYPE_' and
+                if(arg_state_var[0:11] == 'A_ARG_TYPE_' and
                     arg_direction == 'out'):
                     needs_callback = True
                 #print arg_name, arg_direction, needs_callback
@@ -812,7 +812,7 @@ class ServiceServer(log.Loggable):
                 """ check for action in ServiceServer """
                 callback = getattr(self, "upnp_%s" % name, None)
 
-            if( needs_callback == True and
+            if(needs_callback == True and
                 callback == None):
                 """ we have one or more 'A_ARG_TYPE_' variables
                     issue a warning for now
@@ -903,10 +903,10 @@ class ServiceServer(log.Loggable):
                 range = {}
                 for e in list(allowed_value_range):
                     range[e.tag] = e.text
-                    if( vendor_values != None):
+                    if(vendor_values != None):
                         if service_range_defaults:
                             variable_range_defaults = service_range_defaults.get(name)
-                            if( variable_range_defaults != None and
+                            if(variable_range_defaults != None and
                                 variable_range_defaults.get(e.tag) != None):
                                 self.info("overwriting %s attribute %s with %s", name,
                                                                e.tag, str(variable_range_defaults[e.tag]))
@@ -923,7 +923,7 @@ class ServiceServer(log.Loggable):
                     self._variables.get(instance)[name].has_vendor_values = True
 
         for v in self._variables.get(0).values():
-            if isinstance( v.dependant_variable, str):
+            if isinstance(v.dependant_variable, str):
                 v.dependant_variable = self._variables.get(instance).get(v.dependant_variable)
 
 class scpdXML(static.Data):
@@ -942,48 +942,48 @@ class scpdXML(static.Data):
         root = ET.Element('scpd')
         root.attrib['xmlns'] = 'urn:schemas-upnp-org:service-1-0'
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement( e, 'major').text = '1'
-        ET.SubElement( e, 'minor').text = '0'
+        ET.SubElement(e, 'major').text = '1'
+        ET.SubElement(e, 'minor').text = '0'
 
-        e = ET.SubElement( root, 'actionList')
+        e = ET.SubElement(root, 'actionList')
         for action in self.service_server._actions.values():
-            s = ET.SubElement( e, 'action')
-            ET.SubElement( s, 'name').text = action.get_name()
-            al = ET.SubElement( s, 'argumentList')
+            s = ET.SubElement(e, 'action')
+            ET.SubElement(s, 'name').text = action.get_name()
+            al = ET.SubElement(s, 'argumentList')
             for argument in action.get_arguments_list():
-                a = ET.SubElement( al, 'argument')
-                ET.SubElement( a, 'name').text = argument.get_name()
-                ET.SubElement( a, 'direction').text = argument.get_direction()
-                ET.SubElement( a, 'relatedStateVariable').text = argument.get_state_variable()
+                a = ET.SubElement(al, 'argument')
+                ET.SubElement(a, 'name').text = argument.get_name()
+                ET.SubElement(a, 'direction').text = argument.get_direction()
+                ET.SubElement(a, 'relatedStateVariable').text = argument.get_state_variable()
 
-        e = ET.SubElement( root, 'serviceStateTable')
+        e = ET.SubElement(root, 'serviceStateTable')
         for var in self.service_server._variables[0].values():
-            s = ET.SubElement( e, 'stateVariable')
+            s = ET.SubElement(e, 'stateVariable')
             if var.send_events == True:
                 s.attrib['sendEvents'] = 'yes'
             else:
                 s.attrib['sendEvents'] = 'no'
-            ET.SubElement( s, 'name').text = var.name
-            ET.SubElement( s, 'dataType').text = var.data_type
+            ET.SubElement(s, 'name').text = var.name
+            ET.SubElement(s, 'dataType').text = var.data_type
             if(not var.has_vendor_values and len(var.allowed_values)):
             #if len(var.allowed_values):
-                v = ET.SubElement( s, 'allowedValueList')
+                v = ET.SubElement(s, 'allowedValueList')
                 for value in var.allowed_values:
-                    ET.SubElement( v, 'allowedValue').text = value
+                    ET.SubElement(v, 'allowedValue').text = value
 
-            if( var.allowed_value_range != None and
+            if(var.allowed_value_range != None and
                 len(var.allowed_value_range) > 0):
                 complete = True
                 for name,value in var.allowed_value_range.items():
                     if value == None:
                         complete = False
                 if complete == True:
-                    avl = ET.SubElement( s, 'allowedValueRange')
+                    avl = ET.SubElement(s, 'allowedValueRange')
                     for name,value in var.allowed_value_range.items():
                          if value != None:
-                            ET.SubElement( avl, name).text = str(value)
+                            ET.SubElement(avl, name).text = str(value)
 
-        return """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
+        return """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
 
 from twisted.python.util import OrderedDict
 
@@ -1044,7 +1044,7 @@ class ServiceControl(log.Loggable):
 
         self.info("soap__generic %s %s %s", action, __name__, kwargs)
         del kwargs['soap_methodName']
-        if( kwargs.has_key('X_UPnPClient') and
+        if(kwargs.has_key('X_UPnPClient') and
                 kwargs['X_UPnPClient'] == 'XBox'):
             if(action.name == 'Browse' and
                     kwargs.has_key('ContainerID')):
@@ -1056,7 +1056,7 @@ class ServiceControl(log.Loggable):
         for arg_name, arg in kwargs.iteritems():
             if arg_name.find('X_') == 0:
                 continue
-            l = [ a for a in in_arguments if arg_name == a.get_name()]
+            l = [a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
@@ -1064,16 +1064,16 @@ class ServiceControl(log.Loggable):
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
             self.critical('argument %s missing for action %s',
-                                [ a.get_name() for a in in_arguments],action.name)
+                                [a.get_name() for a in in_arguments],action.name)
             return failure.Failure(errorCode(402))
 
-        def callit( *args, **kwargs):
+        def callit(*args, **kwargs):
             #print 'callit args', args
             #print 'callit kwargs', kwargs
             result = {}
             callback = action.get_callback()
             if callback != None:
-                return callback( **kwargs)
+                return callback(**kwargs)
             return result
 
         def got_error(x):
@@ -1082,7 +1082,7 @@ class ServiceControl(log.Loggable):
             return x
 
         # call plugin method for this action
-        d = defer.maybeDeferred( callit, *args, **kwargs)
-        d.addCallback( self.get_action_results, action, instance)
+        d = defer.maybeDeferred(callit, *args, **kwargs)
+        d.addCallback(self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d

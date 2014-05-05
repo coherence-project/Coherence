@@ -150,7 +150,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             # send stream url to client for redirection
             request.redirect(self.stream_url)
             request.finish()
-        elif self.proxy_mode in ('proxy',):
+        elif self.proxy_mode in ('proxy', ):
             res = ReverseProxyResource.render(self,request)
             if isinstance(res,int):
                 return res
@@ -462,7 +462,7 @@ class YouTubeStore(AbstractBackendStore):
     def __repr__(self):
         return self.__class__.__name__
 
-    def appendFeed( self, name, feed_uri, parent):
+    def appendFeed(self, name, feed_uri, parent):
         item = LazyContainer(parent, name, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
         parent.add_child(item, external_id=feed_uri)
 

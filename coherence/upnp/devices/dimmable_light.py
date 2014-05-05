@@ -81,13 +81,13 @@ class DimmableLight(log.Loggable,BasicDeviceMixin):
 
 
         self.web_resource = HttpRoot(self)
-        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
 
         version = self.version
         while version > 0:
-            self.web_resource.putChild( 'description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     device_type=self.device_type, version=version,

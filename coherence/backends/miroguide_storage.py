@@ -150,11 +150,11 @@ class MiroGuideStore(AbstractBackendStore):
     def __repr__(self):
         return self.__class__.__name__
 
-    def appendCategory( self, name, category_id, parent):
+    def appendCategory(self, name, category_id, parent):
         item = LazyContainer(parent, name, category_id, self.refresh, self.retrieveChannels, filter="category", filter_value=category_id, per_page=100)
         parent.add_child(item, external_id=category_id)
 
-    def appendLanguage( self, name, language_id, parent, sort='name', count=0):
+    def appendLanguage(self, name, language_id, parent, sort='name', count=0):
         item = LazyContainer(parent, name, language_id, self.refresh, self.retrieveChannels, filter="language", filter_value=language_id, per_page=100, sort=sort, count=count)
         parent.add_child(item, external_id=language_id)
 

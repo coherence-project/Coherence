@@ -36,7 +36,7 @@ class ConnectionManagerClient:
     def prepare_for_connection(self, remote_protocol_info, peer_connection_manager, peer_connection_id, direction):
         action = self.service.get_action('PrepareForConnection')
         if action:  # optional
-            return action.call( RemoteProtocolInfo=remote_protocol_info,
+            return action.call(RemoteProtocolInfo=remote_protocol_info,
                             PeerConnectionManager=peer_connection_manager,
                             PeerConnectionID=peer_connection_id,
                             Direction=direction)

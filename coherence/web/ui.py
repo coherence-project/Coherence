@@ -50,8 +50,8 @@ class MenuFragment(athena.LiveElement, log.Loggable):
     def going_live(self):
         self.info("add a view to the MenuFragment")
         d = self.page.notifyOnDisconnect()
-        d.addCallback( self.remove_me)
-        d.addErrback( self.remove_me)
+        d.addCallback(self.remove_me)
+        d.addErrback(self.remove_me)
         if len(self.tabs):
             return self.tabs
         else:
@@ -133,12 +133,12 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         for child in self.coherence.children:
             device = self.coherence.get_device_with_id(child)
             if device is not None:
-                cl.append( tags.li[tags.a(href='/' + child)[
+                cl.append(tags.li[tags.a(href='/' + child)[
                     device.get_friendly_device_type, ':',
                     device.get_device_type_version, ' ',
                     device.get_friendly_name()]])
             else:
-                cl.append( tags.li[child])
+                cl.append(tags.li[child])
         return ctx.tag[tags.ul[cl]]
 
 class LoggingFragment(athena.LiveElement, log.Loggable):
@@ -163,8 +163,8 @@ class LoggingFragment(athena.LiveElement, log.Loggable):
         self.info("add a view to the LoggingFragment %s",self._athenaID)
         self.page.menu.add_tab('Logging',self.active,self._athenaID)
         d = self.page.notifyOnDisconnect()
-        d.addCallback( self.remove_me)
-        d.addErrback( self.remove_me)
+        d.addCallback(self.remove_me)
+        d.addErrback(self.remove_me)
         return {}
     athena.expose(going_live)
 
@@ -195,7 +195,7 @@ class WebUI(athena.LivePage, log.Loggable):
 """)
 
     def __init__(self, *a, **kw):
-        super(WebUI, self).__init__( *a, **kw)
+        super(WebUI, self).__init__(*a, **kw)
         self.coherence = self.rootObject.coherence
 
         self.jsModules.mapping.update({

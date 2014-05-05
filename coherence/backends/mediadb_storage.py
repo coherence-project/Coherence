@@ -66,7 +66,7 @@ KNOWN_AUDIO_TYPES = {'.mp3':'audio/mpeg',
                      '.mpc':'audio/x-musepack',
                      '.flac':'audio/x-wavpack',
                      '.wv':'audio/x-wavpack',
-                     '.m4a':'audio/mp4',}
+                     '.m4a':'audio/mp4', }
 
 
 def _dict_from_tags(tag):
@@ -218,7 +218,7 @@ class Artist(item.Item,BackendItem):
     def get_children(self,start=0,request_count=0):
         all_id = 'artist_all_tracks_%d' % (self.storeID + 1000)
         self.store.containers[all_id] = \
-                Container( all_id, self.storeID + 1000, 'All tracks of %s' % self.name,
+                Container(all_id, self.storeID + 1000, 'All tracks of %s' % self.name,
                           children_callback=self.get_artist_all_tracks,
                           store=self.store,play_container=True)
 
@@ -459,11 +459,11 @@ class MediaStore(BackendStore):
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
-                Container( ROOT_CONTAINER_ID,-1, self.name)
+                Container(ROOT_CONTAINER_ID,-1, self.name)
 
-        self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
-                                 '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
-                                 '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+        self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
+                                 '7': lambda: self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
+                                 '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
                                 })
 
 
@@ -531,7 +531,7 @@ class MediaStore(BackendStore):
                 dirname = unicode(os.path.dirname(file),'utf-8')
                 album_ds.cover = check_for_cover_art(dirname)
                 if len(album_ds.cover) > 0:
-                    filename = u"%s - %s" % ( album_ds.artist.name, album_ds.title)
+                    filename = u"%s - %s" % (album_ds.artist.name, album_ds.title)
                     filename = sanitize(filename + os.path.splitext(album_ds.cover)[1])
                     filename = os.path.join(dirname,filename)
                     shutil.move(os.path.join(dirname,album_ds.cover),filename)
@@ -586,7 +586,7 @@ class MediaStore(BackendStore):
         for track in list(self.db.query(Track, Track.title.like(u'%',title_or_part,u'%'),sort=Track.title.ascending)):
             print track.title, track.album.artist.name, track.track_nr
             _,ext = os.path.splitext(track.path)
-            f = "%02d - %s - %s%s" % ( track.track_nr, track.album.artist.name,
+            f = "%02d - %s - %s%s" % (track.track_nr, track.album.artist.name,
                                        track.title, ext)
             f = sanitize(f)
             print f
@@ -594,7 +594,7 @@ class MediaStore(BackendStore):
     def get_album_covers(self):
         for album in list(self.db.query(Album, Album.cover == u'')):
             print "missing cover for:", album.artist.name, album.title
-            filename = "%s - %s" % ( album.artist.name, album.title)
+            filename = "%s - %s" % (album.artist.name, album.title)
             filename = sanitize(filename)
 
             if self.coverlocation is not None:
@@ -645,17 +645,17 @@ class MediaStore(BackendStore):
         self.db = store.Store(self.mediadb)
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
-                          children_callback=lambda :list(self.db.query(Track,sort=Track.title.ascending)),
+                Container(AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                          children_callback=lambda:list(self.db.query(Track,sort=Track.title.ascending)),
                           store=self,play_container=True)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
-                          children_callback=lambda :list(self.db.query(Album,sort=Album.title.ascending)))
+                Container(AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                          children_callback=lambda:list(self.db.query(Album,sort=Album.title.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
-                          children_callback=lambda :list(self.db.query(Artist,sort=Artist.name.ascending)))
+                Container(AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                          children_callback=lambda:list(self.db.query(Artist,sort=Artist.name.ascending)))
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.db.server = self.server

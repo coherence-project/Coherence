@@ -27,9 +27,9 @@ from coherence import log
 
 from twisted.internet import defer
 
-TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING : 'local pending',
-              TUBE_CHANNEL_STATE_REMOTE_PENDING : 'remote pending',
-              TUBE_CHANNEL_STATE_OPEN : 'open',
+TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING: 'local pending',
+              TUBE_CHANNEL_STATE_REMOTE_PENDING: 'remote pending',
+              TUBE_CHANNEL_STATE_OPEN: 'open',
               TUBE_CHANNEL_STATE_NOT_OFFERED: 'not offered'}
 
 DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
@@ -151,9 +151,9 @@ class Client(log.Loggable):
 
         for name in ('subscribe', 'publish'):
             conn[CONNECTION_INTERFACE_REQUESTS].EnsureChannel({
-                CHANNEL + '.ChannelType'     : CHANNEL_TYPE_CONTACT_LIST,
+                CHANNEL + '.ChannelType': CHANNEL_TYPE_CONTACT_LIST,
                 CHANNEL + '.TargetHandleType': HANDLE_TYPE_LIST,
-                CHANNEL + '.TargetID'        : name,
+                CHANNEL + '.TargetID': name,
                 },
                 reply_handler=ensure_channel_cb(self, name),
                 error_handler=no_channel_available)

@@ -14,18 +14,18 @@ from coherence.upnp.core import service
 class FakeMediaReceiverRegistrarBackend:
 
     def upnp_IsAuthorized(self, *args, **kwargs):
-        r = { 'Result': 1}
+        r = {'Result': 1}
         return r
 
     def upnp_IsValidated(self, *args, **kwargs):
-        r = { 'Result': 1}
+        r = {'Result': 1}
         return r
 
     def upnp_RegisterDevice(self, *args, **kwargs):
         """ in parameter RegistrationReqMsg """
         RegistrationReqMsg = kwargs['RegistrationReqMsg']
         """ FIXME: check with WMC and WMP """
-        r = { 'RegistrationRespMsg': 'WTF should be in here?'}
+        r = {'RegistrationRespMsg': 'WTF should be in here?'}
         return r
 
 class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):

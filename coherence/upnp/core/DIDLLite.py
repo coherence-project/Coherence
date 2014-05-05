@@ -18,7 +18,7 @@ from datetime import datetime
 DC_NS = 'http://purl.org/dc/elements/1.1/'
 UPNP_NS = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
 
-my_namespaces = { DC_NS: 'dc',
+my_namespaces = {DC_NS: 'dc',
                  UPNP_NS: 'upnp'
                  }
 from coherence.extern.et import ET, namespace_map_update, ElementInterface
@@ -91,7 +91,7 @@ class Resources(list):
 
         x_protocol = x_protocol.lower()
         y_protocol = y_protocol.lower()
-        if( x_protocol == y_protocol):
+        if(x_protocol == y_protocol):
             return 0
         if(x_protocol == 'http-get'):
             return -1
@@ -230,12 +230,12 @@ class Resource(object):
 
     def get_additional_info(self,upnp_client=''):
         protocol,network,content_format,additional_info = self.protocolInfo.split(':')
-        if upnp_client  in ('XBox','Philips-TV',):
+        if upnp_client  in ('XBox','Philips-TV', ):
             """ we don't need the DLNA tags there,
                 and maybe they irritate these poor things anyway
             """
             additional_info = '*'
-        elif upnp_client  in ('PLAYSTATION3',):
+        elif upnp_client  in ('PLAYSTATION3', ):
             if content_format.startswith('video/'):
                 additional_info = '*'
 
@@ -249,7 +249,7 @@ class Resource(object):
 
     def toElement(self,**kwargs):
         root = ET.Element('res')
-        if kwargs.get('upnp_client','') in ('XBox',):
+        if kwargs.get('upnp_client','') in ('XBox', ):
             protocol,network,content_format,additional_info = self.protocolInfo.split(':')
             if content_format in ['video/divx','video/x-msvideo']:
                 content_format = 'video/avi'
@@ -559,7 +559,7 @@ class Object(log.Loggable):
             elif child.tag.endswith('genre'):
                 if self.genre != None:
                     if self.genres == None:
-                        self.genres = [self.genre,]
+                        self.genres = [self.genre, ]
                     self.genres.append(child.text)
                 self.genre = child.text
 

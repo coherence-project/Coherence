@@ -39,7 +39,7 @@ class Trailer(BackendItem):
         self.id = id
         self.name = name
         self.cover = cover
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
         self.url = urlbase + str(self.id)
         self.location = AppleTrailerProxy(url)
@@ -216,11 +216,11 @@ class AppleTrailersStore(BackendStore):
 
     def upnp_init(self):
         if self.server:
-            self.server.connection_manager_server.set_variable( \
+            self.server.connection_manager_server.set_variable(\
                 0, 'SourceProtocolInfo', ['http-get:*:video/quicktime:*','http-get:*:video/mp4:*'])
         self.container = Container(ROOT_ID, -1, self.name)
         trailers = self.trailers.values()
-        trailers.sort(cmp=lambda x,y : cmp(x.get_name().lower(),y.get_name().lower()))
+        trailers.sort(cmp=lambda x,y: cmp(x.get_name().lower(),y.get_name().lower()))
         self.container.children = trailers
 
     def __repr__(self):

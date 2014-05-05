@@ -34,8 +34,8 @@ class Device(log.Loggable):
         self.icons = []
         self.devices = []
 
-        louie.connect( self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
-        louie.connect( self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
+        louie.connect(self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
+        louie.connect(self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
     def __repr__(self):
         return "embedded device %r %r, parent %r" % (self.friendly_name,self.device_type,self.parent)
@@ -88,7 +88,7 @@ class Device(log.Loggable):
         else:
             louie.send('Coherence.UPnP.Device.detection_completed', self, device=self)
 
-    def service_detection_failed( self, device):
+    def service_detection_failed(self, device):
         self.remove()
 
     def get_id(self):
@@ -112,7 +112,7 @@ class Device(log.Loggable):
 
     def get_service_by_type(self,type):
         if not isinstance(type,(tuple,list)):
-            type = [type,]
+            type = [type, ]
         for service in self.services:
             _,_,_,service_class,version = service.service_type.split(':')
             if service_class in type:
@@ -172,7 +172,7 @@ class Device(log.Loggable):
                                "maybe we need to rethink the loop time and "
                                "timeout calculation?",
                                self.friendly_name, service.get_id())
-                if service.get_timeout() < now + 30 :
+                if service.get_timeout() < now + 30:
                     service.renew_subscription()
 
         for device in self.devices:
@@ -457,7 +457,7 @@ class RootDevice(Device):
         self.host = infos['HOST']
         self.root_detection_completed = False
         Device.__init__(self, None)
-        louie.connect( self.device_detect, 'Coherence.UPnP.Device.detection_completed', self)
+        louie.connect(self.device_detect, 'Coherence.UPnP.Device.detection_completed', self)
         # we need to handle root device completion
         # these events could be ourself or our children.
         self.parse_description()
@@ -498,7 +498,7 @@ class RootDevice(Device):
             return True
         return False
 
-    def device_detect( self, *args, **kwargs):
+    def device_detect(self, *args, **kwargs):
         self.debug("device_detect %r", kwargs)
         self.debug("root_detection_completed %r", self.root_detection_completed)
         if self.root_detection_completed == True:

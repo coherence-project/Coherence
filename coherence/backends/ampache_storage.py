@@ -628,8 +628,8 @@ class AmpacheStore(BackendStore):
                 return None
         return item
 
-    def got_auth_response( self,response,renegotiate=False):
-        self.info( "got_auth_response %r", response)
+    def got_auth_response(self,response,renegotiate=False):
+        self.info("got_auth_response %r", response)
         try:
             response = utils.parse_xml(response, encoding='utf-8')
         except SyntaxError, msg:
@@ -668,14 +668,14 @@ class AmpacheStore(BackendStore):
                 if renegotiate == False:
                     self.containers = {}
                     self.containers[ROOT_CONTAINER_ID] = \
-                                Container( ROOT_CONTAINER_ID,-1, self.name, store=self)
+                                Container(ROOT_CONTAINER_ID,-1, self.name, store=self)
 
-                    self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
-                                             '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
-                                             '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
-                                             '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
-                                             '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
-                                             '8': lambda : self.get_by_id(VIDEO_CONTAINER_ID),          # all videos
+                    self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
+                                             '5': lambda: self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
+                                             '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
+                                             '7': lambda: self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
+                                             '13': lambda: self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
+                                             '8': lambda: self.get_by_id(VIDEO_CONTAINER_ID),          # all videos
                                             })
 
                     louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -760,22 +760,22 @@ class AmpacheStore(BackendStore):
                     query_item = query_item[:-1]
                 if query_item in ('playlist_songs','album_songs','genre_songs','tag_songs'):
                     query_item = 'song'
-                if query_item in ('artist_albums',):
+                if query_item in ('artist_albums', ):
                     query_item = 'album'
                 for q in response.findall(query_item):
-                    if query_item in ('song',):
+                    if query_item in ('song', ):
                         items.append(Track(self,q))
-                    if query_item in ('artist',):
+                    if query_item in ('artist', ):
                         items.append(Artist(self,q))
-                    if query_item in ('album',):
+                    if query_item in ('album', ):
                         items.append(Album(self,q))
-                    if query_item in ('playlist',):
+                    if query_item in ('playlist', ):
                         items.append(Playlist(self,q))
-                    if query_item in ('genre',):
+                    if query_item in ('genre', ):
                         items.append(Genre(self,q))
-                    if query_item in ('tag',):
+                    if query_item in ('tag', ):
                         items.append(Tag(self,q))
-                    if query_item in ('video',):
+                    if query_item in ('video', ):
                         items.append(Video(self,q))
         return items
 
@@ -821,7 +821,7 @@ class AmpacheStore(BackendStore):
                              'http-get:*:video/mp4:*',
                              'http-get:*:video/x-msvideo:*',
                              'http-get:*:video/avi:*',
-                             'http-get:*:video/quicktime:*',])
+                             'http-get:*:video/quicktime:*', ])
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
                 Container(AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
@@ -839,7 +839,7 @@ class AmpacheStore(BackendStore):
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                Container(AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
                           store=self,
                           children_callback=self.ampache_query_artists)
         self.containers[AUDIO_ARTIST_CONTAINER_ID].childCount = self.artists
@@ -942,8 +942,8 @@ class AmpacheStore(BackendStore):
                         else:
                             items = item[StartingIndex:StartingIndex + RequestedCount]
                     else:
-                        d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
-                        d.addCallback( process_result)
+                        d = defer.maybeDeferred(item.get_children, StartingIndex, StartingIndex + RequestedCount)
+                        d.addCallback(process_result)
                         d.addErrback(got_error)
                         return d
 
@@ -997,11 +997,11 @@ class AmpacheStore(BackendStore):
 
         def proceed(result):
             if BrowseFlag == 'BrowseDirectChildren':
-                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+                d = defer.maybeDeferred(result.get_children, StartingIndex, StartingIndex + RequestedCount)
             else:
-                d = defer.maybeDeferred( result.get_item)
+                d = defer.maybeDeferred(result.get_item)
 
-            d.addCallback( process_result, result)
+            d.addCallback(process_result, result)
             d.addErrback(got_error)
             return d
 

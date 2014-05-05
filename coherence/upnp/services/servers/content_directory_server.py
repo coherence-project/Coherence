@@ -107,7 +107,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                 return build_response(tm)
 
             for i in result:
-                d = defer.maybeDeferred( i.get_item)
+                d = defer.maybeDeferred(i.get_item)
                 l.append(d)
 
             if found_item != None:
@@ -130,9 +130,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         def proceed(result):
             if(kwargs.get('X_UPnPClient', '') == 'XBox' and
                hasattr(result, 'get_artist_all_tracks')):
-                d = defer.maybeDeferred( result.get_artist_all_tracks, StartingIndex, StartingIndex + RequestedCount)
+                d = defer.maybeDeferred(result.get_artist_all_tracks, StartingIndex, StartingIndex + RequestedCount)
             else:
-                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+                d = defer.maybeDeferred(result.get_children, StartingIndex, StartingIndex + RequestedCount)
             d.addCallback(process_result,found_item=result)
             d.addErrback(got_error)
             return d
@@ -240,7 +240,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                     return build_response(tm)
 
                 for i in result:
-                    d = defer.maybeDeferred( i.get_item)
+                    d = defer.maybeDeferred(i.get_item)
                     l.append(d)
 
                 if found_item != None:
@@ -280,9 +280,9 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
         def proceed(result):
             if BrowseFlag == 'BrowseDirectChildren':
-                d = defer.maybeDeferred( result.get_children, StartingIndex, StartingIndex + RequestedCount)
+                d = defer.maybeDeferred(result.get_children, StartingIndex, StartingIndex + RequestedCount)
             else:
-                d = defer.maybeDeferred( result.get_item)
+                d = defer.maybeDeferred(result.get_item)
 
             d.addCallback(process_result,found_item=result)
             d.addErrback(got_error)

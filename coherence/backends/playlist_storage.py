@@ -97,7 +97,7 @@ class PlaylistStore(AbstractBackendStore):
     def __repr__(self):
         return self.__class__.__name__
 
-    def append( self, obj, parent):
+    def append(self, obj, parent):
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
@@ -109,7 +109,7 @@ class PlaylistStore(AbstractBackendStore):
         if hasattr(self, 'update_id'):
             update = True
 
-        item = PlaylistItem( id, obj, parent, mimetype, self.urlbase,
+        item = PlaylistItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
 
         self.store[id] = item
@@ -148,16 +148,16 @@ class PlaylistStore(AbstractBackendStore):
         def gotPlaylist(playlist):
             self.info("got playlist")
             items = {}
-            if playlist :
+            if playlist:
                 content,header = playlist
                 lines = content.splitlines().__iter__()
                 line = lines.next()
                 while line is not None:
-                    if re.search( '#EXTINF', line):
+                    if re.search('#EXTINF', line):
                         channel = re.match('#EXTINF:.*,(.*)',line).group(1)
                         mimetype = 'video/mpeg'
                         line = lines.next()
-                        while re.search( '#EXTVLCOPT', line):
+                        while re.search('#EXTVLCOPT', line):
                             option = re.match('#EXTVLCOPT:(.*)',line).group(1)
                             if option == 'no-video':
                                 mimetype = 'audio/mpeg'

@@ -70,7 +70,7 @@ class MSRoot(resource.Resource, log.Loggable):
         self.info('%s getChildWithDefault, %s, %s, %s %s', self.server.device_type,
                                 request.method, path, request.uri, request.client)
         headers = request.getAllHeaders()
-        self.msg( request.getAllHeaders())
+        self.msg(request.getAllHeaders())
 
         try:
             if headers['getcontentfeatures.dlna.org'] != '1':
@@ -196,7 +196,7 @@ class MSRoot(resource.Resource, log.Loggable):
            path in ['description-1.xml','description-2.xml']):
             self.info('XBox/WMP alert, we need to simulate a Windows Media Connect server')
             if self.children.has_key('xbox-description-1.xml'):
-                self.msg( 'returning xbox-description-1.xml')
+                self.msg('returning xbox-description-1.xml')
                 return self.children['xbox-description-1.xml']
 
         # resource http://XXXX/<deviceID>/config
@@ -247,7 +247,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     new_config = convert_elementtree_to_dict(element_tree.getroot())
                     self.server.coherence.remove_plugin(self.server)
                     self.warning("%s %s (%s) with id %s desactivated", backend.name, self.server.device_type, backend, str(self.server.uuid)[5:])
-                    if new_config is None :
+                    if new_config is None:
                         msg = "<plugin active=\"no\"/>"
                     else:
                         new_backend = self.server.coherence.add_plugin(backend_type, **new_config)
@@ -382,7 +382,7 @@ class MSRoot(resource.Resource, log.Loggable):
                                             (item.get_name().encode('ascii','xmlcharrefreplace'),
                                              item.get_name().encode('ascii','xmlcharrefreplace'))
 
-        if( hasattr(item,'mimetype') and item.mimetype in ['directory','root']):
+        if(hasattr(item,'mimetype') and item.mimetype in ['directory','root']):
             uri = request.uri
             if uri[-1] != '/':
                 uri += '/'
@@ -432,7 +432,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
             return build_page(children,page)
 
-        elif( hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
+        elif(hasattr(item,'mimetype') and item.mimetype.find('image/') == 0):
             #path = item.get_path().encode('utf-8').encode('string_escape')
             path = urllib.quote(item.get_path().encode('utf-8'))
             title = item.get_name().decode('utf-8').encode('ascii','xmlcharrefreplace')
@@ -544,7 +544,7 @@ class RootDeviceXML(static.Data):
                     namespace = service.namespace
                 except:
                     namespace = 'schemas-upnp-org'
-                if( hasattr(service,'version') and
+                if(hasattr(service,'version') and
                     service.version < version):
                     v = service.version
                 else:
@@ -582,7 +582,7 @@ class RootDeviceXML(static.Data):
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
-        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring( root, encoding='utf-8')
+        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
 
 class MediaServer(log.Loggable,BasicDeviceMixin):
@@ -656,13 +656,13 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
         if upnp_init:
             upnp_init()
 
-        self.web_resource = MSRoot( self, backend)
-        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
+        self.web_resource = MSRoot(self, backend)
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
         version = int(self.version)
         while version > 0:
-            self.web_resource.putChild( 'description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,
@@ -671,8 +671,8 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                     devices=self._devices,
                                     icons=self.icons,
                                     presentationURL=self.presentationURL))
-            self.web_resource.putChild( 'xbox-description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('xbox-description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     self.device_type, version,

@@ -29,44 +29,44 @@ SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newxml.phtml'
 
 genre_families = {
     # genre hierarchy created from http://forums.winamp.com/showthread.php?s=&threadid=303231
-    "Alternative" : ["Adult Alternative", "Britpop", "Classic Alternative", "College", "Dancepunk", "Dream Pop", "Emo", "Goth", "Grunge", "Indie Pop", "Indie Rock", "Industrial", "Lo-Fi", "Modern Rock", "New Wave", "Noise Pop", "Post-Punk", "Power Pop", "Punk", "Ska", "Xtreme"],
-    "Blues" : ["Acoustic Blues", "Chicago Blues", "Contemporary Blues", "Country Blues", "Delta Blues", "Electric Blues", "Cajun/Zydeco" ],
-    "Classical" : [ "Baroque", "Chamber", "Choral", "Classical Period", "Early Classical", "Impressionist", "Modern", "Opera", "Piano", "Romantic", "Symphony" ],
-    "Country" : ["Alt-Country", "Americana", "Bluegrass", "Classic Country", "Contemporary Bluegrass", "Contemporary Country", "Honky Tonk", "Hot Country Hits", "Western" ],
-    "Easy Listening" : ["Exotica", "Light Rock", "Lounge", "Orchestral Pop", "Polka", "Space Age Pop" ],
-    "Electronic" : ["Acid House", "Ambient", "Big Beat", "Breakbeat", "Dance", "Demo", "Disco", "Downtempo", "Drum and Bass", "Electro", "Garage", "Hard House", "House", "IDM", "Remixes", "Jungle", "Progressive", "Techno", "Trance", "Tribal", "Trip Hop" ],
-    "Folk" : ["Alternative Folk", "Contemporary Folk", "Folk Rock", "New Acoustic", "Traditional Folk", "World Folk" ],
-    "Themes" : ["Adult", "Best Of", "Chill", "Experimental", "Female", "Heartache", "LGBT", "Love/Romance", "Party Mix", "Patriotic", "Rainy Day Mix", "Reality", "Sexy", "Shuffle", "Travel Mix", "Tribute", "Trippy", "Work Mix" ],
-    "Rap" : ["Alternative Rap", "Dirty South", "East Coast Rap", "Freestyle", "Hip Hop", "Gangsta Rap", "Mixtapes", "Old School", "Turntablism", "Underground Hip-Hop", "West Coast Rap"],
-    "Inspirational" : ["Christian", "Christian Metal", "Christian Rap", "Christian Rock", "Classic Christian", "Contemporary Gospel", "Gospel", "Praise/Worship", "Sermons/Services", "Southern Gospel", "Traditional Gospel"  ],
-    "International" : ["African", "Afrikaans", "Arabic", "Asian", "Brazilian", "Caribbean", "Celtic", "European", "Filipino", "Greek", "Hawaiian/Pacific", "Hindi", "Indian", "Japanese", "Jewish",  "Klezmer", "Mediterranean", "Middle Eastern", "North American", "Polskie", "Polska", "Soca", "South American", "Tamil", "Worldbeat", "Zouk" ],
-    "Jazz" : ["Acid Jazz", "Avant Garde", "Big Band", "Bop", "Classic Jazz", "Cool Jazz", "Fusion", "Hard Bop", "Latin Jazz", "Smooth Jazz", "Swing", "Vocal Jazz", "World Fusion" ],
-    "Latin" : ["Bachata", "Banda", "Bossa Nova", "Cumbia", "Latin Dance", "Latin Pop", "Latin Rap/Hip-Hop", "Latin Rock", "Mariachi", "Merengue", "Ranchera", "Reggaeton", "Regional Mexican", "Salsa", "Tango", "Tejano", "Tropicalia"],
-    "Metal" : ["Black Metal", "Classic Metal", "Extreme Metal", "Grindcore", "Hair Metal", "Heavy Metal", "Metalcore", "Power Metal", "Progressive Metal", "Rap Metal" ],
-    "New Age" : ["Environmental", "Ethnic Fusion", "Healing", "Meditation", "Spiritual" ],
-    "Decades" : ["30s", "40s", "50s", "60s", "70s", "80s", "90s"],
-    "Pop" : ["Adult Contemporary", "Barbershop", "Bubblegum Pop", "Dance Pop", "Idols", "Oldies", "JPOP", "Soft Rock", "Teen Pop", "Top 40", "World Pop" ],
-    "R&B/Urban" : ["Classic R&B", "Contemporary R&B", "Doo Wop", "Funk", "Motown", "Neo-Soul", "Quiet Storm", "Soul", "Urban Contemporary", "Reggae", "Contemporary Reggae", "Dancehall", "Dub", "Pop-Reggae", "Ragga", "Rock Steady", "Reggae Roots"],
-    "Rock" : ["Adult Album Alternative", "British Invasion", "Classic Rock", "Garage Rock", "Glam", "Hard Rock", "Jam Bands", "Piano Rock", "Prog Rock", "Psychedelic", "Rock & Roll", "Rockabilly", "Singer/Songwriter", "Surf"],
-    "Seasonal/Holiday" : ["Anniversary", "Birthday", "Christmas", "Halloween", "Hanukkah", "Honeymoon", "Valentine", "Wedding", "Winter"],
-    "Soundtracks" : ["Anime", "Bollywood", "Kids", "Original Score", "Showtunes", "Video Game Music"],
-    "Talk" : ["Comedy", "Community", "Educational", "Government", "News", "Old Time Radio", "Other Talk", "Political", "Public Radio", "Scanner", "Spoken Word", "Sports", "Technology", "Hardcore", "Eclectic", "Instrumental" ],
-    "Misc" : [],
+    "Alternative": ["Adult Alternative", "Britpop", "Classic Alternative", "College", "Dancepunk", "Dream Pop", "Emo", "Goth", "Grunge", "Indie Pop", "Indie Rock", "Industrial", "Lo-Fi", "Modern Rock", "New Wave", "Noise Pop", "Post-Punk", "Power Pop", "Punk", "Ska", "Xtreme"],
+    "Blues": ["Acoustic Blues", "Chicago Blues", "Contemporary Blues", "Country Blues", "Delta Blues", "Electric Blues", "Cajun/Zydeco"],
+    "Classical": ["Baroque", "Chamber", "Choral", "Classical Period", "Early Classical", "Impressionist", "Modern", "Opera", "Piano", "Romantic", "Symphony"],
+    "Country": ["Alt-Country", "Americana", "Bluegrass", "Classic Country", "Contemporary Bluegrass", "Contemporary Country", "Honky Tonk", "Hot Country Hits", "Western"],
+    "Easy Listening": ["Exotica", "Light Rock", "Lounge", "Orchestral Pop", "Polka", "Space Age Pop"],
+    "Electronic": ["Acid House", "Ambient", "Big Beat", "Breakbeat", "Dance", "Demo", "Disco", "Downtempo", "Drum and Bass", "Electro", "Garage", "Hard House", "House", "IDM", "Remixes", "Jungle", "Progressive", "Techno", "Trance", "Tribal", "Trip Hop"],
+    "Folk": ["Alternative Folk", "Contemporary Folk", "Folk Rock", "New Acoustic", "Traditional Folk", "World Folk"],
+    "Themes": ["Adult", "Best Of", "Chill", "Experimental", "Female", "Heartache", "LGBT", "Love/Romance", "Party Mix", "Patriotic", "Rainy Day Mix", "Reality", "Sexy", "Shuffle", "Travel Mix", "Tribute", "Trippy", "Work Mix"],
+    "Rap": ["Alternative Rap", "Dirty South", "East Coast Rap", "Freestyle", "Hip Hop", "Gangsta Rap", "Mixtapes", "Old School", "Turntablism", "Underground Hip-Hop", "West Coast Rap"],
+    "Inspirational": ["Christian", "Christian Metal", "Christian Rap", "Christian Rock", "Classic Christian", "Contemporary Gospel", "Gospel", "Praise/Worship", "Sermons/Services", "Southern Gospel", "Traditional Gospel"],
+    "International": ["African", "Afrikaans", "Arabic", "Asian", "Brazilian", "Caribbean", "Celtic", "European", "Filipino", "Greek", "Hawaiian/Pacific", "Hindi", "Indian", "Japanese", "Jewish",  "Klezmer", "Mediterranean", "Middle Eastern", "North American", "Polskie", "Polska", "Soca", "South American", "Tamil", "Worldbeat", "Zouk"],
+    "Jazz": ["Acid Jazz", "Avant Garde", "Big Band", "Bop", "Classic Jazz", "Cool Jazz", "Fusion", "Hard Bop", "Latin Jazz", "Smooth Jazz", "Swing", "Vocal Jazz", "World Fusion"],
+    "Latin": ["Bachata", "Banda", "Bossa Nova", "Cumbia", "Latin Dance", "Latin Pop", "Latin Rap/Hip-Hop", "Latin Rock", "Mariachi", "Merengue", "Ranchera", "Reggaeton", "Regional Mexican", "Salsa", "Tango", "Tejano", "Tropicalia"],
+    "Metal": ["Black Metal", "Classic Metal", "Extreme Metal", "Grindcore", "Hair Metal", "Heavy Metal", "Metalcore", "Power Metal", "Progressive Metal", "Rap Metal"],
+    "New Age": ["Environmental", "Ethnic Fusion", "Healing", "Meditation", "Spiritual"],
+    "Decades": ["30s", "40s", "50s", "60s", "70s", "80s", "90s"],
+    "Pop": ["Adult Contemporary", "Barbershop", "Bubblegum Pop", "Dance Pop", "Idols", "Oldies", "JPOP", "Soft Rock", "Teen Pop", "Top 40", "World Pop"],
+    "R&B/Urban": ["Classic R&B", "Contemporary R&B", "Doo Wop", "Funk", "Motown", "Neo-Soul", "Quiet Storm", "Soul", "Urban Contemporary", "Reggae", "Contemporary Reggae", "Dancehall", "Dub", "Pop-Reggae", "Ragga", "Rock Steady", "Reggae Roots"],
+    "Rock": ["Adult Album Alternative", "British Invasion", "Classic Rock", "Garage Rock", "Glam", "Hard Rock", "Jam Bands", "Piano Rock", "Prog Rock", "Psychedelic", "Rock & Roll", "Rockabilly", "Singer/Songwriter", "Surf"],
+    "Seasonal/Holiday": ["Anniversary", "Birthday", "Christmas", "Halloween", "Hanukkah", "Honeymoon", "Valentine", "Wedding", "Winter"],
+    "Soundtracks": ["Anime", "Bollywood", "Kids", "Original Score", "Showtunes", "Video Game Music"],
+    "Talk": ["Comedy", "Community", "Educational", "Government", "News", "Old Time Radio", "Other Talk", "Political", "Public Radio", "Scanner", "Spoken Word", "Sports", "Technology", "Hardcore", "Eclectic", "Instrumental"],
+    "Misc": [],
 }
 
 synonym_genres = {
   # TODO: extend list with entries from "Misc" which are clearly the same
-  "24h" : ["24h", "24hs"],
-  "80s" : ["80s", "80er"],
-  "Acid Jazz" : ["Acid", "Acid Jazz"],
-  "Adult" : ["Adult", "Adulto"],
-  "Alternative" : ["Alt", "Alternativa", "Alternative", "Alternativo"],
-  "Francais" : ["Francais", "French"],
-  "Heavy Metal" : ["Heavy Metal", "Heavy", "Metal"],
-  "Hip Hop" : ["Hip", "Hop", "Hippop", "Hip Hop"],
-  "Islam" : [ "Islam", "Islamic"],
-  "Italy" : ["Italia", "Italian", "Italiana", "Italo", "Italy"],
-  "Latina" : ["Latin", "Latina", "Latino" ],
+  "24h": ["24h", "24hs"],
+  "80s": ["80s", "80er"],
+  "Acid Jazz": ["Acid", "Acid Jazz"],
+  "Adult": ["Adult", "Adulto"],
+  "Alternative": ["Alt", "Alternativa", "Alternative", "Alternativo"],
+  "Francais": ["Francais", "French"],
+  "Heavy Metal": ["Heavy Metal", "Heavy", "Metal"],
+  "Hip Hop": ["Hip", "Hop", "Hippop", "Hip Hop"],
+  "Islam": ["Islam", "Islamic"],
+  "Italy": ["Italia", "Italian", "Italiana", "Italo", "Italy"],
+  "Latina": ["Latin", "Latina", "Latino"],
 }
 useless_title_content = [
     # TODO: extend list with title expressions which are clearly useless
@@ -300,7 +300,7 @@ class IRadioStore(AbstractBackendStore):
                                'mimetype':mimetype,
                                'id':station_id,
                                'url':url,
-                               'bitrate':bitrate }
+                               'bitrate':bitrate}
                     stations[lower_name] = station
 
             for station in stations.values():

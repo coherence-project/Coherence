@@ -19,7 +19,7 @@ except:
         This backend depends on the feedparser module.
         You can get it at http://www.feedparser.org/.""")
 
-MIME_TYPES_EXTENTION_MAPPING = {'mp3': 'audio/mpeg',}
+MIME_TYPES_EXTENTION_MAPPING = {'mp3': 'audio/mpeg', }
 
 ROOT_CONTAINER_ID = 0
 AUDIO_ALL_CONTAINER_ID = 51
@@ -104,7 +104,7 @@ class FeedStore(BackendStore):
         BackendStore.__init__(self,server,**kwargs)
         self.name = kwargs.get('name', 'Feed Store')
         self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase) > 0 and
+        if(len(self.urlbase) > 0 and
             self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
         self.feed_urls = kwargs.get('feed_urls')
