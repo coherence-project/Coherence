@@ -21,6 +21,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class StateVariable(log.Loggable):
     logCategory = 'variable'
 
@@ -47,22 +48,22 @@ class StateVariable(log.Loggable):
         self.last_time_touched = None
 
         self._callbacks = []
-        if isinstance( self.service, service.ServiceServer):
+        if isinstance(self.service, service.ServiceServer):
             self.moderated = self.service.is_variable_moderated(name)
             self.updated = False
 
     def as_tuples(self):
         r = []
-        r.append(('Name',self.name))
+        r.append(('Name', self.name))
         if self.send_events:
-            r.append(('Evented','yes'))
+            r.append(('Evented', 'yes'))
         else:
-            r.append(('Evented','no'))
-        r.append(('Data Type',self.data_type))
-        r.append(('Default Value',self.default_value))
-        r.append(('Current Value',unicode(self.value)))
+            r.append(('Evented', 'no'))
+        r.append(('Data Type', self.data_type))
+        r.append(('Default Value', self.default_value))
+        r.append(('Current Value', unicode(self.value)))
         if(self.allowed_values != None and len(self.allowed_values) > 0):
-            r.append(('Allowed Values',','.join(self.allowed_values)))
+            r.append(('Allowed Values', ','.join(self.allowed_values)))
         return r
 
     def set_default_value(self, value):
@@ -70,7 +71,7 @@ class StateVariable(log.Loggable):
         self.default_value = self.value
 
     def set_allowed_values(self, values):
-        if not isinstance(values,(list,tuple)):
+        if not isinstance(values, (list, tuple)):
             values = [values]
         self.allowed_values = values
 
@@ -85,18 +86,18 @@ class StateVariable(log.Loggable):
 
     def update(self, value):
         self.info("variable check for update %s %s %s", self.name, value, self.service)
-        if not isinstance( self.service, service.Service):
+        if not isinstance(self.service, service.Service):
             if self.name == 'ContainerUpdateIDs':
                 old_value = self.value
                 if self.updated == True:
-                    if isinstance( value, tuple):
+                    if isinstance(value, tuple):
                         v = old_value.split(',')
                         i = 0
                         while i < len(v):
                             if v[i] == str(value[0]):
-                                del v[i:i+2]
+                                del v[i:i + 2]
                                 old_value = ','.join(v)
-                                break;
+                                break
                             i += 2
                         if len(old_value):
                             new_value = old_value + ',' + str(value[0]) + ',' + str(value[1])
@@ -108,18 +109,18 @@ class StateVariable(log.Loggable):
                         else:
                             new_value = str(value)
                 else:
-                    if isinstance( value, tuple):
+                    if isinstance(value, tuple):
                         new_value = str(value[0]) + ',' + str(value[1])
                     else:
                         new_value = value
             else:
                 if self.data_type == 'string':
-                    if isinstance(value,basestring):
+                    if isinstance(value, basestring):
                         value = value.split(',')
-                    if(isinstance(value,tuple) or
-                       isinstance(value,Set)):
+                    if(isinstance(value, tuple) or
+                       isinstance(value, Set)):
                         value = list(value)
-                    if not isinstance(value,list):
+                    if not isinstance(value, list):
                         value = [value]
                     new_value = []
                     for v in value:
@@ -161,7 +162,7 @@ class StateVariable(log.Loggable):
                 else:
                     new_value = value
             elif self.data_type == 'boolean':
-                    new_value = utils.generalise_boolean(value)
+                new_value = utils.generalise_boolean(value)
             elif self.data_type == 'bin.base64':
                 new_value = value
             else:
@@ -183,7 +184,7 @@ class StateVariable(log.Loggable):
         #print "UPDATED %s %r %r %r %r %r" % (self.name,self.service,isinstance( self.service, service.Service),self.instance,self.value,self._callbacks)
         self.notify()
 
-        if isinstance( self.service, service.Service):
+        if isinstance(self.service, service.Service):
             #self.notify()
             pass
         else:
@@ -194,7 +195,7 @@ class StateVariable(log.Loggable):
 
     def subscribe(self, callback):
         self._callbacks.append(callback)
-        callback( self)
+        callback(self)
 
     def notify(self):
         if self.name.startswith('A_ARG_TYPE_'):
@@ -203,7 +204,7 @@ class StateVariable(log.Loggable):
         #if self.old_value == '':
         #    return
         louie.send(signal='Coherence.UPnP.StateVariable.%s.changed' % self.name, sender=self.service, variable=self)
-        louie.send(signal='Coherence.UPnP.StateVariable.changed',sender=self.service, variable=self)
+        louie.send(signal='Coherence.UPnP.StateVariable.changed', sender=self.service, variable=self)
         #print "CALLBACKS %s %r %r" % (self.name,self.instance,self._callbacks)
         for callback in self._callbacks:
             callback(self)

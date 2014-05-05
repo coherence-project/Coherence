@@ -16,6 +16,7 @@ import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 
+
 class ElisaMediaStore(Plugin):
 
     """ this is a backend to the Elisa Media DB
@@ -43,12 +44,12 @@ class ElisaMediaStore(Plugin):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        self.name = kwargs.get('name','Elisa')
-        self.host = kwargs.get('host','127.0.0.1')
-        self.urlbase = kwargs.get('urlbase','')
-        ignore_patterns = kwargs.get('ignore_patterns',[])
+        self.name = kwargs.get('name', 'Elisa')
+        self.host = kwargs.get('host', '127.0.0.1')
+        self.urlbase = kwargs.get('urlbase', '')
+        ignore_patterns = kwargs.get('ignore_patterns', [])
 
-        if self.urlbase[len(self.urlbase)-1] != '/':
+        if self.urlbase[len(self.urlbase) - 1] != '/':
             self.urlbase += '/'
         self.server = server
         self.update_id = 0
@@ -64,17 +65,17 @@ class ElisaMediaStore(Plugin):
         reactor.connectTCP(self.host, 8789, factory)
         return factory.getRootObject()
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         try:
             return self.store[int(id)]
         except:
             return None
 
-    def set_root_id( self, id):
+    def set_root_id(self, id):
         self.root_id = id
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
-    def get_root_id( self, media_type='audio'):
+    def get_root_id(self, media_type='audio'):
         """ ask Elisa to tell us the id of the top item
             representing the media_type == 'something' collection """
         store = self.get_store()
@@ -83,7 +84,6 @@ class ElisaMediaStore(Plugin):
         dfr.addCallback(lambda cache_mgr:
                         cache_mgr.callRemote("get_media_root_id", media_type))
         dfr.addCallback(self.set_root_id)
-
 
     def upnp_init(self):
         if self.server:
@@ -107,10 +107,10 @@ class ElisaMediaStore(Plugin):
                                       elisa_item['parent_id'],
                                       elisa_item['name'])
                 if isinstance(upnp_item, Container):
-                    upnp_item.childCount = len(elisa_item.get('children',[]))
+                    upnp_item.childCount = len(elisa_item.get('children', []))
                     if len(Filter) > 0:
                         upnp_item.searchable = True
-                        upnp_item.searchClass = ('object',)
+                        upnp_item.searchClass = ('object', )
                 else:
                     internal_url = elisa_item['location'].get('internal')
                     external_url = elisa_item['location'].get('external')
@@ -126,7 +126,7 @@ class ElisaMediaStore(Plugin):
                         pass
 
                     res = Resource(internal_url,
-                                   'internal:%s:*:*' %self.host)
+                                   'internal:%s:*:*' % self.host)
                     res.size = size
                     upnp_item.res.append(res)
                     res = Resource(external_url,
@@ -138,12 +138,12 @@ class ElisaMediaStore(Plugin):
 
         def got_result(elisa_item):
             didl = DIDLElement()
-            children = elisa_item.get('children',[])
+            children = elisa_item.get('children', [])
             if BrowseFlag == 'BrowseDirectChildren':
                 if RequestedCount == 0:
                     childs = children[StartingIndex:]
                 else:
-                    childs = children[StartingIndex:StartingIndex+RequestedCount]
+                    childs = children[StartingIndex:StartingIndex + RequestedCount]
                 for child in childs:
                     if child is not None:
                         item = build_upnp_item(child)
@@ -156,7 +156,7 @@ class ElisaMediaStore(Plugin):
                     didl.addItem(item)
                 total = 1
 
-            r = { 'Result': didl.toString(), 'TotalMatches': total,
+            r = {'Result': didl.toString(), 'TotalMatches': total,
                   'NumberReturned': didl.numItems()}
 
             if hasattr(elisa_item, 'update_id'):
@@ -192,7 +192,7 @@ if __name__ == '__main__':
         def got_result(result):
             print result
 
-        f = MediaStore(None,'my media',p, 'http://localhost/',())
+        f = MediaStore(None, 'my media', p, 'http://localhost/', ())
 
         dfr = f.upnp_Browse(BrowseFlag='BrowseDirectChildren',
                             RequestedCount=0,

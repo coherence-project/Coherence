@@ -21,6 +21,7 @@ from coherence import dbus_service
 
 from twisted.internet import task
 
+
 class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
     def __init__(self, tubes_to_offer, application, allowed_devices):
         tube.TubePublisherMixin.__init__(self, tubes_to_offer)
@@ -49,10 +50,9 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                 device.get_markup_name(), self.device_tube)
 
         for service in device.services:
-            if getattr(service,'NOT_FOR_THE_TUBES', False):
+            if getattr(service, 'NOT_FOR_THE_TUBES', False):
                 continue
             service.add_to_connection(self.service_tube, service.path)
-
 
     def _media_server_removed(self, udn):
         for device in self.coherence.dbus.devices.values():
@@ -65,7 +65,7 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
                 device.remove_from_connection(self.device_tube, device.path())
                 self.info("remove_from_connection: %s" % device.get_friendly_name())
                 for service in device.services:
-                    if getattr(service,'NOT_FOR_THE_TUBES', False):
+                    if getattr(service, 'NOT_FOR_THE_TUBES', False):
                         continue
                     service.remove_from_connection(self.service_tube, service.path)
                 return
@@ -105,6 +105,7 @@ class MirabeauTubePublisherMixin(tube.TubePublisherMixin):
             self._ms_removed_match.remove()
             self._ms_removed_match = None
         return tube.TubePublisherMixin.close_tubes(self)
+
 
 class MirabeauTubePublisherConsumer(MirabeauTubePublisherMixin,
                                     mirabeau_tube_consumer.MirabeauTubeConsumerMixin,

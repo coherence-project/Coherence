@@ -23,6 +23,7 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+
 class DeviceQuery(object):
 
     def __init__(self, type, pattern, callback, timeout=0, oneshot=True):
@@ -38,7 +39,7 @@ class DeviceQuery(object):
     def fire(self, device):
         if callable(self.callback):
             self.callback(device)
-        elif isinstance(self.callback,basestring):
+        elif isinstance(self.callback, basestring):
             louie.send(self.callback, None, device=device)
         self.fired = True
 
@@ -55,10 +56,11 @@ class DeviceQuery(object):
            device.get_uuid() == self.pattern):
             self.fire(device)
 
+
 class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
 
-    def __init__(self,coherence,auto_client=['MediaServer','MediaRenderer','BinaryLight','DimmableLight']):
+    def __init__(self, coherence, auto_client=['MediaServer', 'MediaRenderer', 'BinaryLight', 'DimmableLight']):
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -68,10 +70,10 @@ class ControlPoint(log.Loggable):
                                         XMLRPC(self))
 
         self.auto_client = auto_client
-        self.queries=[]
+        self.queries = []
 
         for device in self.get_devices():
-            self.check_device( device)
+            self.check_device(device)
 
         louie.connect(self.check_device, 'Coherence.UPnP.Device.detection_completed', louie.Any)
         louie.connect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
@@ -83,18 +85,18 @@ class ControlPoint(log.Loggable):
         louie.disconnect(self.remove_client, 'Coherence.UPnP.Device.remove_client', louie.Any)
         louie.disconnect(self.completed, 'Coherence.UPnP.DeviceClient.detection_completed', louie.Any)
 
-    def auto_client_append(self,device_type):
+    def auto_client_append(self, device_type):
         if device_type in self.auto_client:
             return
         self.auto_client.append(device_type)
         for device in self.get_devices():
-            self.check_device( device)
+            self.check_device(device)
 
     def browse(self, device):
         device = self.coherence.get_device_with_usn(infos['USN'])
         if not device:
             return
-        self.check_device( device)
+        self.check_device(device)
 
     def process_queries(self, device):
         for query in self.queries:
@@ -108,15 +110,15 @@ class ControlPoint(log.Loggable):
         else:
             self.queries.append(query)
 
-    def connect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+    def connect(self, receiver, signal=louie.signal.All, sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.connect
         """
-        louie.connect(receiver,signal=signal,sender=sender,weak=weak)
+        louie.connect(receiver, signal=signal, sender=sender, weak=weak)
 
-    def disconnect(self,receiver,signal=louie.signal.All,sender=louie.sender.Any, weak=True):
+    def disconnect(self, receiver, signal=louie.signal.All, sender=louie.sender.Any, weak=True):
         """ wrapper method around louie.disconnect
         """
-        louie.disconnect(receiver,signal=signal,sender=sender,weak=weak)
+        louie.disconnect(receiver, signal=signal, sender=sender, weak=weak)
 
     def get_devices(self):
         return self.coherence.get_devices()
@@ -127,13 +129,13 @@ class ControlPoint(log.Loggable):
     def get_device_by_host(self, host):
         return self.coherence.get_device_by_host(host)
 
-    def check_device( self, device):
+    def check_device(self, device):
         if device.client == None:
             self.info("found device %s of type %s - %r", device.get_friendly_name(),
                                                 device.get_device_type(), device.client)
             short_type = device.get_friendly_device_type()
             if short_type in self.auto_client and short_type is not None:
-                self.info("identified %s %r", 
+                self.info("identified %s %r",
                         short_type, device.get_friendly_name())
 
                 if short_type == 'MediaServer':
@@ -148,18 +150,18 @@ class ControlPoint(log.Loggable):
                     client = InternetGatewayDeviceClient(device)
 
                 client.coherence = self.coherence
-                device.set_client( client)
+                device.set_client(client)
 
         self.process_queries(device)
 
     def completed(self, client, udn):
         self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected %r', client.device_type, udn)
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
-                               client=client,udn=udn)
+                               client=client, udn=udn)
 
     def remove_client(self, udn, client):
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, udn=udn)
-        self.info("removed %s %s", client.device_type,client.device.get_friendly_name())
+        self.info("removed %s %s", client.device_type, client.device.get_friendly_name())
         client.remove()
 
     def propagate(self, event):
@@ -183,7 +185,7 @@ class ControlPoint(log.Loggable):
             f = open(path)
             data = f.read()
             f.close()
-            headers= {
+            headers = {
                 "Content-Type": "application/octet-stream",
                 "Content-Length": str(len(data))
             }
@@ -196,7 +198,7 @@ class ControlPoint(log.Loggable):
             pass
 
 
-class XMLRPC( xmlrpc.XMLRPC):
+class XMLRPC(xmlrpc.XMLRPC):
 
     def __init__(self, control_point):
         self.control_point = control_point
@@ -208,10 +210,10 @@ class XMLRPC( xmlrpc.XMLRPC):
         for device in self.control_point.get_devices():
             #print device.get_friendly_name(), device.get_service_type(), device.get_location(), device.get_id()
             d = {}
-            d[u'friendly_name']=device.get_friendly_name()
-            d[u'device_type']=device.get_device_type()
-            d[u'location']=unicode(device.get_location())
-            d[u'id']=unicode(device.get_id())
+            d[u'friendly_name'] = device.get_friendly_name()
+            d[u'device_type'] = device.get_device_type()
+            d[u'location'] = unicode(device.get_location())
+            d[u'id'] = unicode(device.get_id())
             r.append(d)
         return r
 
@@ -324,9 +326,9 @@ class XMLRPC( xmlrpc.XMLRPC):
         return "Ok"
 
 
-def startXMLRPC( control_point, port):
+def startXMLRPC(control_point, port):
     from twisted.web import server
-    r = XMLRPC( control_point)
+    r = XMLRPC(control_point)
     print "XMLRPC-API on port %d ready" % port
     reactor.listenTCP(port, server.Site(r))
 
@@ -349,22 +351,22 @@ if __name__ == '__main__':
         for d in ctrl.get_devices():
             print d, d.get_id()
 
+
     def the_result(r):
         print "result", r, r.get_id()
+
 
     def query_devices():
         print "query_devices"
         ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result))
 
+
     def query_devices2():
         print "query_devices with timeout"
         ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result, timeout=10, oneshot=False))
-
     #reactor.callLater(2, show_devices)
     #reactor.callLater(3, query_devices)
     #reactor.callLater(4, query_devices2)
     #reactor.callLater(5, ctrl.add_query, DeviceQuery('friendly_name', 'Coherence Test Content', the_result, timeout=10, oneshot=False))
-
-
 
     reactor.run()

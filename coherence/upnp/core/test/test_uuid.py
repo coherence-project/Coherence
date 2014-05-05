@@ -13,6 +13,7 @@ from twisted.trial import unittest
 
 from coherence.upnp.core import uuid
 
+
 class TestUUID(unittest.TestCase):
 
     def setUp(self):

@@ -10,6 +10,7 @@ from telepathy.constants import CONNECTION_HANDLE_TYPE_ROOM, \
 
 from coherence.extern.telepathy.client import Client
 
+
 class TubePublisherMixin(object):
 
     def __init__(self, tubes_to_offer):
@@ -50,12 +51,14 @@ class TubePublisherMixin(object):
         for object_path, channel in self._tubes.iteritems():
             channel.Close()
 
+
 class TubePublisher(TubePublisherMixin, Client):
     logCategory = "tube_publisher"
 
     def __init__(self, manager, protocol, account, muc_id, conference_server, tubes_to_offer):
         TubePublisherMixin.__init__(self, tubes_to_offer)
         Client.__init__(self, manager, protocol, account, muc_id, conference_server)
+
 
 class TubeConsumerMixin(object):
     logCategory = "tube_consumer"
@@ -82,6 +85,7 @@ class TubeConsumerMixin(object):
     def tube_closed(self, tube):
         self.disapeared_peer_callback(tube)
         super(TubeConsumerMixin, self).tube_closed(tube)
+
 
 class TubeConsumer(TubeConsumerMixin, Client):
     logCategory = "tube_consumer"

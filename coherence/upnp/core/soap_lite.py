@@ -21,35 +21,37 @@ NS_XSD = "{http://www.w3.org/1999/XMLSchema}"
 
 SOAP_ENCODING = "http://schemas.xmlsoap.org/soap/encoding/"
 
-UPNPERRORS = {401:'Invalid Action',
-              402:'Invalid Args',
-              501:'Action Failed',
-              600:'Argument Value Invalid',
-              601:'Argument Value Out of Range',
-              602:'Optional Action Not Implemented',
-              603:'Out Of Memory',
-              604:'Human Intervention Required',
-              605:'String Argument Too Long',
-              606:'Action Not Authorized',
-              607:'Signature Failure',
-              608:'Signature Missing',
-              609:'Not Encrypted',
-              610:'Invalid Sequence',
-              611:'Invalid Control URL',
-              612:'No Such Session',}
+UPNPERRORS = {401: 'Invalid Action',
+              402: 'Invalid Args',
+              501: 'Action Failed',
+              600: 'Argument Value Invalid',
+              601: 'Argument Value Out of Range',
+              602: 'Optional Action Not Implemented',
+              603: 'Out Of Memory',
+              604: 'Human Intervention Required',
+              605: 'String Argument Too Long',
+              606: 'Action Not Authorized',
+              607: 'Signature Failure',
+              608: 'Signature Missing',
+              609: 'Not Encrypted',
+              610: 'Invalid Sequence',
+              611: 'Invalid Control URL',
+              612: 'No Such Session', }
 
-def build_soap_error(status,description='without words'):
+
+def build_soap_error(status, description='without words'):
     """ builds an UPnP SOAP error msg
     """
     root = ET.Element('s:Fault')
-    ET.SubElement(root,'faultcode').text='s:Client'
-    ET.SubElement(root,'faultstring').text='UPnPError'
-    e = ET.SubElement(root,'detail')
+    ET.SubElement(root, 'faultcode').text = 's:Client'
+    ET.SubElement(root, 'faultstring').text = 'UPnPError'
+    e = ET.SubElement(root, 'detail')
     e = ET.SubElement(e, 'UPnPError')
-    e.attrib['xmlns']='urn:schemas-upnp-org:control-1-0'
-    ET.SubElement(e,'errorCode').text=str(status)
-    ET.SubElement(e,'errorDescription').text=UPNPERRORS.get(status,description)
+    e.attrib['xmlns'] = 'urn:schemas-upnp-org:control-1-0'
+    ET.SubElement(e, 'errorCode').text = str(status)
+    ET.SubElement(e, 'errorDescription').text = UPNPERRORS.get(status, description)
     return build_soap_call(None, root, encoding=None)
+
 
 def build_soap_call(method, arguments, is_response=False,
                                        encoding=SOAP_ENCODING,
@@ -63,10 +65,10 @@ def build_soap_call(method, arguments, is_response=False,
     envelope = ET.Element("s:Envelope")
     if envelope_attrib:
         for n in envelope_attrib:
-            envelope.attrib.update({n[0] : n[1]})
+            envelope.attrib.update({n[0]: n[1]})
     else:
-        envelope.attrib.update({'s:encodingStyle' : "http://schemas.xmlsoap.org/soap/encoding/"})
-        envelope.attrib.update({'xmlns:s' :"http://schemas.xmlsoap.org/soap/envelope/"})
+        envelope.attrib.update({'s:encodingStyle': "http://schemas.xmlsoap.org/soap/encoding/"})
+        envelope.attrib.update({'xmlns:s': "http://schemas.xmlsoap.org/soap/envelope/"})
 
     body = ET.SubElement(envelope, "s:Body")
 
@@ -74,14 +76,14 @@ def build_soap_call(method, arguments, is_response=False,
         # append the method call
         if is_response is True:
             method += "Response"
-        re = ET.SubElement(body,method)
+        re = ET.SubElement(body, method)
         if encoding:
             re.set(NS_SOAP_ENV + "encodingStyle", encoding)
     else:
         re = body
 
     # append the arguments
-    if isinstance(arguments,(dict,OrderedDict)) :
+    if isinstance(arguments, (dict, OrderedDict)):
         type_map = {str: 'xsd:string',
                     unicode: 'xsd:string',
                     int: 'xsd:int',
@@ -111,7 +113,5 @@ def build_soap_call(method, arguments, is_response=False,
             arguments = {}
         re.append(arguments)
 
-
-
     preamble = """<?xml version="1.0" encoding="utf-8"?>"""
-    return preamble + ET.tostring(envelope,'utf-8')
+    return preamble + ET.tostring(envelope, 'utf-8')

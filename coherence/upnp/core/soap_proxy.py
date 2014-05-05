@@ -13,6 +13,7 @@ from coherence.upnp.core.utils import getPage, parse_xml
 
 from coherence.upnp.core import soap_lite
 
+
 class SOAPProxy(log.Loggable):
     """ A Proxy for making remote SOAP calls.
 
@@ -39,13 +40,13 @@ class SOAPProxy(log.Loggable):
     def callRemote(self, soapmethod, arguments):
         soapaction = soapmethod or self.soapaction
         if '#' not in soapaction:
-            soapaction = '#'.join((self.namespace[1],soapaction))
+            soapaction = '#'.join((self.namespace[1], soapaction))
         self.action = soapaction.split('#')[1]
 
         self.info("callRemote %r %r %r %r", self.soapaction, soapmethod, self.namespace, self.action)
 
-        headers = { 'content-type': 'text/xml ;charset="utf-8"',
-                    'SOAPACTION': '"%s"' % soapaction,}
+        headers = {'content-type': 'text/xml ;charset="utf-8"',
+                    'SOAPACTION': '"%s"' % soapaction, }
         if arguments.has_key('headers'):
             headers.update(arguments['headers'])
             del arguments['headers']
@@ -53,7 +54,7 @@ class SOAPProxy(log.Loggable):
         payload = soap_lite.build_soap_call("{%s}%s" % (self.namespace[1], self.action), arguments,
                                             encoding=None)
 
-        self.info("callRemote soapaction:  %s %s", self.action,self.url)
+        self.info("callRemote soapaction:  %s %s", self.action, self.url)
         self.debug("callRemote payload:  %s", payload)
 
         def gotError(error, url):

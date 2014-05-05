@@ -17,7 +17,6 @@ rest /user/e0362c757ef49169e9a0f0970cc2d367.mp3
 headers {'icy-metadata': '1', 'host': 'kingpin5.last.fm', 'te': 'trailers', 'connection': 'TE', 'user-agent': 'gnome-vfs/2.12.0.19 neon/0.24.7'}
 ProxyClient handleStatus HTTP/1.1 403 Invalid ticket
 """
-
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2007, Moritz Struebe <morty@gmx.net>
 
@@ -60,16 +59,16 @@ class LastFMUser(log.Loggable):
 
     def __init__(self, user, passwd):
         if user is None:
-            self.warn("No User",)
+            self.warn("No User", )
         if passwd is None:
-            self.warn("No Passwd",)
+            self.warn("No Passwd", )
         self.user = user
         self.passwd = passwd
 
     def login(self):
 
         if self.sessionid != None:
-            self.warning("Session seems to be valid",)
+            self.warning("Session seems to be valid", )
             return
 
         def got_page(result):
@@ -79,23 +78,22 @@ class LastFMUser(log.Loggable):
                 if len(tuple) == 2:
                     if tuple[0] == "session":
                         self.sessionid = tuple[1]
-                        self.info("Got new sessionid: %r",self.sessionid )
+                        self.info("Got new sessionid: %r", self.sessionid)
                     if tuple[0] == "base_url":
                         if(self.host != tuple[1]):
                             self.host = tuple[1]
-                            self.info("Got new host: %s",self.host )
+                            self.info("Got new host: %s", self.host)
                     if tuple[0] == "base_path":
                         if(self.basepath != tuple[1]):
                             self.basepath = tuple[1]
-                            self.info("Got new path: %s",self.basepath)
+                            self.info("Got new path: %s", self.basepath)
             self.get_tracks()
-
 
         def got_error(error):
             self.warning("Login to LastFM Failed! %r", error)
             self.debug("%r", error.getTraceback())
 
-        def hexify(s): # This function might be GPL! Found this code in some other Projects, too.
+        def hexify(s):  # This function might be GPL! Found this code in some other Projects, too.
             result = ""
             for c in s:
                 result = result + ("%02x" % ord(c))
@@ -115,24 +113,24 @@ class LastFMUser(log.Loggable):
             print "got Tracks"
             for track in result.findall('trackList/track'):
                 data = {}
+
                 def get_data(name):
                     #print track.find(name).text.encode('utf-8')
                     return track.find(name).text.encode('utf-8')
                 #Fixme: This section needs some work
                 print "adding Track"
                 data['mimetype'] = 'audio/mpeg'
-                data['name'] =get_data('creator') + " - " + get_data('title')
+                data['name'] = get_data('creator') + " - " + get_data('title')
                 data['title'] = get_data('title')
                 data['artist'] = get_data('creator')
                 data['creator'] = get_data('creator')
                 data['album'] = get_data('album')
                 data['duration'] = get_data('duration')
                 #FIXME: Image is the wrong tag.
-                data['image'] =get_data('image')
+                data['image'] = get_data('image')
                 data['url'] = track.find('location').text.encode('utf-8')
                 item = self.parent.store.append(data, self.parent)
                 self.tracks.append(item)
-
 
         def got_error(error):
             self.warning("Problem getting Tracks! %r", error)
@@ -159,15 +157,15 @@ class LastFMUser(log.Loggable):
         self.get_tracks()
 
 
-class LFMProxyStream(utils.ReverseProxyResource,log.Loggable):
+class LFMProxyStream(utils.ReverseProxyResource, log.Loggable):
     logCategory = 'lastFM_stream'
 
     def __init__(self, uri, parent):
         self.uri = uri
         self.parent = parent
-        _,host_port,path,_,_ = urlsplit(uri)
+        _, host_port, path, _, _ = urlsplit(uri)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
             port = int(port)
         else:
             host = host_port
@@ -186,11 +184,10 @@ class LFMProxyStream(utils.ReverseProxyResource,log.Loggable):
         return utils.ReverseProxyResource.render(self, request)
 
 
-
 class LastFMItem(log.Loggable):
     logCategory = 'LastFM_item'
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass, update=False):
         self.id = id
 
         self.name = obj.get('name')
@@ -198,25 +195,25 @@ class LastFMItem(log.Loggable):
         self.artist = obj.get('artist')
         self.creator = obj.get('creator')
         self.album = obj.get('album')
-        self.duration  = obj.get('duration')
+        self.duration = obj.get('duration')
         self.mimetype = mimetype
 
         self.parent = parent
         if parent:
-            parent.add_child(self,update=update)
+            parent.add_child(self, update=update)
 
         if parent == None:
             parent_id = -1
         else:
             parent_id = parent.get_id()
 
-        self.item = UPnPClass(id, parent_id, self.title,False ,self.creator)
+        self.item = UPnPClass(id, parent_id, self.title, False, self.creator)
         if isinstance(self.item, Container):
             self.item.childCount = 0
         self.child_count = 0
         self.children = []
 
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
 
         if self.mimetype == 'directory':
@@ -234,9 +231,8 @@ class LastFMItem(log.Loggable):
                                                                                'DLNA.ORG_CI=0',
                                                                                'DLNA.ORG_OP=01',
                                                                                'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
-            res.size = -1 #None
+            res.size = -1  # None
             self.item.res.append(res)
-
 
     def remove(self):
         if self.parent:
@@ -253,7 +249,6 @@ class LastFMItem(log.Loggable):
         if update == True:
             self.update_id += 1
 
-
     def remove_child(self, child):
         self.info("remove_from %d (%s) child %d (%s)", self.id, self.get_name(), child.id, child.get_name())
         if child in self.children:
@@ -263,7 +258,7 @@ class LastFMItem(log.Loggable):
             self.children.remove(child)
             self.update_id += 1
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         if request_count == 0:
             return self.children[start:]
         else:
@@ -271,7 +266,7 @@ class LastFMItem(log.Loggable):
 
     def get_child_count(self):
         if self.mimetype == 'directory':
-            return 100 #Some Testing, with strange Numbers: 0/lots
+            return 100  # Some Testing, with strange Numbers: 0/lots
         return self.child_count
 
     def get_id(self):
@@ -301,32 +296,31 @@ class LastFMItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url + ' ' + self.name
 
-class LastFMStore(log.Loggable,Plugin):
+
+class LastFMStore(log.Loggable, Plugin):
 
     logCategory = 'lastFM_store'
 
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name','LastFMStore')
+        self.name = kwargs.get('name', 'LastFMStore')
 
         self.update_id = 0
         self.store = {}
 
         self.wmc_mapping = {'4': 1000}
 
-
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
 
-    def append( self, obj, parent):
+    def append(self, obj, parent):
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
@@ -338,7 +332,7 @@ class LastFMStore(log.Loggable,Plugin):
         if hasattr(self, 'update_id'):
             update = True
 
-        self.store[id] = LastFMItem( id, obj, parent, mimetype, self.urlbase,
+        self.store[id] = LastFMItem(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
         self.store[id].store = self
 
@@ -349,7 +343,7 @@ class LastFMStore(log.Loggable,Plugin):
                 self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             if parent:
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
 
@@ -365,7 +359,7 @@ class LastFMStore(log.Loggable,Plugin):
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
                 #value = '%d,%d' % (parent.get_id(),parent_get_update_id())
-                value = (parent.get_id(),parent.get_update_id())
+                value = (parent.get_id(), parent.get_update_id())
                 if self.server:
                     self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
         except:
@@ -374,9 +368,9 @@ class LastFMStore(log.Loggable,Plugin):
     def len(self):
         return len(self.store)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         id = int(id)
         if id == 0:
@@ -394,9 +388,7 @@ class LastFMStore(log.Loggable,Plugin):
     def upnp_init(self):
         self.current_connection_id = None
 
-
-        parent = self.append({'name':'LastFM','mimetype':'directory'}, None)
-
+        parent = self.append({'name': 'LastFM', 'mimetype': 'directory'}, None)
 
         self.LFM = LastFMUser(self.config.get("login"), self.config.get("password"))
         self.LFM.parent = parent
@@ -406,6 +398,7 @@ class LastFMStore(log.Loggable,Plugin):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:audio/mpeg:*'],
                                                                     default=True)
+
 
 def main():
 

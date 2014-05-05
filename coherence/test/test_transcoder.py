@@ -11,6 +11,7 @@ from coherence.transcoder import (PCMTranscoder, WAVTranscoder, MP3Transcoder,
 known_transcoders = [PCMTranscoder, WAVTranscoder, MP3Transcoder, MP4Transcoder,
         MP2TSTranscoder, ThumbTranscoder]
 
+
 class TranscoderTestMixin(object):
     def setUp(self):
         self.manager = TranscoderManager()
@@ -21,6 +22,7 @@ class TranscoderTestMixin(object):
         TranscoderManager._instance = None
         del self.manager
 
+
 class TestTranscoderManagerSingletony(TranscoderTestMixin, TestCase):
 
     def test_is_really_singleton(self):
@@ -28,6 +30,7 @@ class TestTranscoderManagerSingletony(TranscoderTestMixin, TestCase):
         old_id = id(self.manager)
         new_manager = TranscoderManager()
         self.assertEquals(old_id, id(new_manager))
+
 
 class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
 
@@ -40,7 +43,6 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
 
     gst_config = {'name': 'supertest', 'pipeline': 'pp%spppl',
                      'type': 'gstreamer', 'target': 'yay'}
-
 
     process_config = {'name': 'megaprocess', 'pipeline': 'uiui%suiui',
                      'type': 'process', 'target': 'yay'}
@@ -73,7 +75,6 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertTrue(isinstance(my_pipe, GStreamerTranscoder))
         self._check_transcoder_attrs(my_pipe,
                 pipeline='pp%spppl', uri="http://my_uri")
-
 
     def _check_transcoder_attrs(self, transcoder, pipeline=None, uri=None):
         # bahh... relying on implementation details of the basetranscoder here
@@ -110,8 +111,6 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self.assertRaises(KeyError, self.manager.select, u'so bäd',
                 'http://another/uri')
 
-
-
     def test_is_loading_multiple_from_config(self):
         coherence = self.CoherenceStump(transcoder=[self.gst_config,
                 self.process_config])
@@ -146,9 +145,5 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
         self._check_transcoder_attrs(transcoder_b,
                 pipeline='pp%spppl', uri="http://another/uri")
 
-
         self.assertNotEquals(transcoder_a, transcoder_b)
         self.assertNotEquals(id(transcoder_a), id(transcoder_b))
-
-
-

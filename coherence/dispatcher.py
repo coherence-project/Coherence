@@ -1,6 +1,7 @@
 
 from twisted.internet import defer
 
+
 class Receiver(object):
     def __init__(self, signal, callback, args, kwargs):
         self.signal = signal
@@ -28,7 +29,9 @@ class Receiver(object):
                         )
                 )
 
+
 class UnknownSignal(Exception): pass
+
 
 class Dispatcher(object):
 
@@ -134,18 +137,21 @@ class SignalingProperty(object):
         setattr(obj, self.var_name, value)
         obj.emit(self.signal, value)
 
+
 class ChangedSignalingProperty(SignalingProperty):
     """
     Does send the signal with two values when changed:
         1. the new value
         2. the value it has been before
     """
+
     def __set__(self, obj, value):
         before = self.__get__(obj)
         if before == value:
             return
         setattr(obj, self.var_name, value)
         obj.emit(self.signal, value, before)
+
 
 class CustomSignalingProperty(object):
     """

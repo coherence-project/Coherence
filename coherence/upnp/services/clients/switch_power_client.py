@@ -1,3 +1,4 @@
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -20,10 +21,10 @@ class SwitchPowerClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
-    def set_target(self,new_target_value=0):
+    def set_target(self, new_target_value=0):
         action = self.service.get_action('SetTarget')
         return action.call(NewTargetValue=new_target_value)
 

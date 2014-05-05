@@ -41,6 +41,7 @@ test_didl_fragment = """
     </item>
 </DIDL-Lite>"""
 
+
 class TestDIDLLite(unittest.TestCase):
 
     def test_DIDLElement_class_detect(self):
@@ -49,8 +50,8 @@ class TestDIDLLite(unittest.TestCase):
         """
         didl_element = DIDLLite.DIDLElement.fromString(didl_fragment)
         items = didl_element.getItems()
-        self.assertEqual(len(items),1)
-        self.assertTrue(isinstance(items[0],DIDLLite.MusicAlbum))
+        self.assertEqual(len(items), 1)
+        self.assertTrue(isinstance(items[0], DIDLLite.MusicAlbum))
 
     def test_DIDLElement_class_2_detect(self):
         """ tests class creation from an XML DIDLLite fragment,
@@ -58,8 +59,8 @@ class TestDIDLLite(unittest.TestCase):
         """
         didl_element = DIDLLite.DIDLElement.fromString(test_didl_fragment)
         items = didl_element.getItems()
-        self.assertEqual(len(items),1)
-        self.assertTrue(isinstance(items[0],DIDLLite.MusicTrack))
+        self.assertEqual(len(items), 1)
+        self.assertTrue(isinstance(items[0], DIDLLite.MusicTrack))
 
     def test_DIDLElement_class_fallback_1(self):
         """ tests class fallback creation from an XML DIDLLite fragment with
@@ -70,8 +71,8 @@ class TestDIDLLite(unittest.TestCase):
         wrong_didl_fragment = wrong_didl_fragment.replace('object.container.album.musicAlbum', 'object.container.album.videoAlbum')
         didl_element = DIDLLite.DIDLElement.fromString(wrong_didl_fragment)
         items = didl_element.getItems()
-        self.assertEqual(len(items),1)
-        self.assertTrue(isinstance(items[0],DIDLLite.Album))
+        self.assertEqual(len(items), 1)
+        self.assertTrue(isinstance(items[0], DIDLLite.Album))
 
     def test_DIDLElement_class_fallback_2(self):
         """ tests class fallback creation from an XML DIDLLite fragment with
@@ -85,4 +86,4 @@ class TestDIDLLite(unittest.TestCase):
             didl_element = DIDLLite.DIDLElement.fromString(wrong_didl_fragment)
         except AttributeError:
             return
-        self.assert_(False,"DIDLElement didn't return None from a totally wrong UPnP class identifier")
+        self.assert_(False, "DIDLElement didn't return None from a totally wrong UPnP class identifier")

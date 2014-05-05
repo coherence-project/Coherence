@@ -5,7 +5,6 @@
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
-
 """ A MediaServer backend to test Items
 
     Item information can be passed on the commandline
@@ -72,10 +71,10 @@ In the config file the definition of this backend could look like this:
 import os
 
 from twisted.python.filepath import FilePath
-from twisted.internet import protocol,reactor
-from twisted.web import resource,server
+from twisted.internet import protocol, reactor
+from twisted.web import resource, server
 
-from coherence.backend import BackendStore,BackendRssMixin
+from coherence.backend import BackendStore, BackendRssMixin
 from coherence.backend import BackendItem
 
 try:
@@ -88,12 +87,12 @@ from coherence.upnp.core.utils import parse_xml
 
 from coherence import log
 
-
 ROOT_CONTAINER_ID = 0
+
 
 class ExternalProcessProtocol(protocol.ProcessProtocol):
 
-    def __init__(self,caller):
+    def __init__(self, caller):
         self.caller = caller
 
     def connectionMade(self):
@@ -130,7 +129,7 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
     logCategory = 'externalprocess'
     addSlash = True
 
-    def __init__(self,pipeline,mimetype):
+    def __init__(self, pipeline, mimetype):
         self.uri = pipeline
         self.mimetype = mimetype
 
@@ -139,7 +138,7 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         if self.mimetype:
             request.setHeader('content-type', self.mimetype)
 
-        ExternalProcessProducer(self.uri,request)
+        ExternalProcessProducer(self.uri, request)
         return server.NOT_DONE_YET
 
 
@@ -147,7 +146,7 @@ class ExternalProcessProducer(object):
     logCategory = 'externalprocess'
     addSlash = True
 
-    def __init__(self, pipeline,request):
+    def __init__(self, pipeline, request):
         self.pipeline = pipeline
         self.request = request
         self.process = None
@@ -156,7 +155,7 @@ class ExternalProcessProducer(object):
         self.ended = False
         request.registerProducer(self, 0)
 
-    def write_data(self,data):
+    def write_data(self, data):
         if data:
             print "write %d bytes of data" % len(data)
             self.written += len(data)
@@ -183,7 +182,7 @@ class ExternalProcessProducer(object):
         pass
 
     def stopProducing(self):
-        print "stopProducing",self.request
+        print "stopProducing", self.request
         self.request.unregisterProducer()
         self.process.loseConnection()
         self.request.finish()
@@ -192,7 +191,7 @@ class ExternalProcessProducer(object):
 
 class Item(BackendItem):
 
-    def __init__(self,parent,id,title,location,url):
+    def __init__(self, parent, id, title, location, url):
         self.parent = parent
         self.id = id
         self.location = location
@@ -216,7 +215,7 @@ class Item(BackendItem):
             self.item.description = self.description
             self.item.date = self.date
 
-            res = DIDLLite.Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype,self.fourth_field))
+            res = DIDLLite.Resource(self.url, 'http-get:*:%s:%s' % (self.mimetype, self.fourth_field))
             res.duration = self.duration
             res.size = self.get_size()
             self.item.res.append(res)
@@ -224,20 +223,20 @@ class Item(BackendItem):
 
     def get_name(self):
         if self.name == None:
-            if isinstance(self.location,FilePath):
+            if isinstance(self.location, FilePath):
                 self.name = self.location.basename().decode("utf-8", "replace")
             else:
                 self.name = 'item'
         return self.name
 
     def get_path(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location, FilePath):
             return self.location.path
         else:
             return self.location
 
     def get_size(self):
-        if isinstance( self.location,FilePath):
+        if isinstance(self.location, FilePath):
             try:
                 return self.location.getsize()
             except OSError:
@@ -246,7 +245,7 @@ class Item(BackendItem):
             return self.size
 
 
-class ResourceItem(Item,BackendItem):
+class ResourceItem(Item, BackendItem):
 
     def get_name(self):
         if self.name == None:
@@ -263,7 +262,7 @@ class ResourceItem(Item,BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
-        self.url = store.urlbase+str(id)
+        self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id
         self.name = title
@@ -288,8 +287,8 @@ class Container(BackendItem):
     def get_children(self, start=0, end=0):
         print "GET CHILDREN"
         if self.sorted == False:
-            def childs_sort(x,y):
-                r = cmp(x.name,y.name)
+            def childs_sort(x, y):
+                r = cmp(x.name, y.name)
                 return r
 
             self.children.sort(cmp=childs_sort)
@@ -320,29 +319,29 @@ class TestStore(BackendStore):
 
     def __init__(self, server, *args, **kwargs):
         print "TestStore kwargs", kwargs
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.name = kwargs.get('name', 'TestServer')
         self.next_id = 1000
         self.update_id = 0
         self.store = {}
 
         self.store[ROOT_CONTAINER_ID] = \
-                        Container(ROOT_CONTAINER_ID,self,-1, self.name)
+                        Container(ROOT_CONTAINER_ID, self, -1, self.name)
 
         items = kwargs.get('item', [])
-        if not isinstance( items, list):
+        if not isinstance(items, list):
             items = [items]
 
         for item in items:
-            if isinstance(item,basestring):
+            if isinstance(item, basestring):
                 xml = parse_xml(item)
                 print xml.getroot()
                 item = {}
                 for child in xml.getroot():
                     item[child.tag] = child.text
-            type = item.get('type','file')
+            type = item.get('type', 'file')
             try:
-                name = item.get('title',None)
+                name = item.get('title', None)
                 if type == 'file':
                     location = FilePath(item.get('location'))
                 if type == 'url':
@@ -358,33 +357,33 @@ class TestStore(BackendStore):
                     extension = '.' + extension
 
                 if extension != None:
-                    item_id = str(item_id)+extension
+                    item_id = str(item_id) + extension
 
-                if type in ('file','url'):
-                    new_item = Item(self.store[ROOT_CONTAINER_ID], item_id, name, location,self.urlbase + str(item_id))
+                if type in ('file', 'url'):
+                    new_item = Item(self.store[ROOT_CONTAINER_ID], item_id, name, location, self.urlbase + str(item_id))
                 elif type == 'gstreamer':
                     pipeline = item.get('pipeline')
                     try:
-                        pipeline = GStreamerPipeline(pipeline,mimetype)
-                        new_item = ResourceItem(self.store[ROOT_CONTAINER_ID], item_id, name, pipeline,self.urlbase + str(item_id))
+                        pipeline = GStreamerPipeline(pipeline, mimetype)
+                        new_item = ResourceItem(self.store[ROOT_CONTAINER_ID], item_id, name, pipeline, self.urlbase + str(item_id))
                     except NameError:
                         self.warning("Can't enable GStreamerPipeline, probably pygst not installed")
                         continue
 
                 elif type == 'process':
                     pipeline = item.get('command')
-                    pipeline = ExternalProcessPipeline(pipeline,mimetype)
-                    new_item = ResourceItem(self.store[ROOT_CONTAINER_ID], item_id, name, pipeline,self.urlbase + str(item_id))
+                    pipeline = ExternalProcessPipeline(pipeline, mimetype)
+                    new_item = ResourceItem(self.store[ROOT_CONTAINER_ID], item_id, name, pipeline, self.urlbase + str(item_id))
 
                 try:
-                    new_item.upnp_class = self.get_upnp_class(item.get('upnp_class','object.item'))
+                    new_item.upnp_class = self.get_upnp_class(item.get('upnp_class', 'object.item'))
                 except:
                     pass
                 #item.description = u'some text what's the file about'
                 #item.date = something
                 #item.size = something
                 new_item.mimetype = mimetype
-                new_item.fourth_field = item.get('fourth_field','*')
+                new_item.fourth_field = item.get('fourth_field', '*')
 
                 self.store[ROOT_CONTAINER_ID].add_child(new_item)
                 self.store[item_id] = new_item
@@ -392,12 +391,11 @@ class TestStore(BackendStore):
             except:
                 import traceback
                 self.warning(traceback.format_exc())
-
         #print self.store
 
         self.init_completed()
 
-    def get_upnp_class(self,name):
+    def get_upnp_class(self, name):
         try:
             return DIDLLite.upnp_classes[name]
         except KeyError:
@@ -419,10 +417,10 @@ class TestStore(BackendStore):
 
     def get_by_id(self, id):
         print "GET_BY_ID %r" % id
-        item = self.store.get(id,None)
+        item = self.store.get(id, None)
         if item == None:
             if int(id) == 0:
                 item = self.store[ROOT_CONTAINER_ID]
             else:
-                item = self.store.get(int(id),None)
+                item = self.store.get(int(id), None)
         return item

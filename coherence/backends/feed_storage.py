@@ -19,13 +19,14 @@ except:
         This backend depends on the feedparser module.
         You can get it at http://www.feedparser.org/.""")
 
-MIME_TYPES_EXTENTION_MAPPING = {'mp3': 'audio/mpeg',}
+MIME_TYPES_EXTENTION_MAPPING = {'mp3': 'audio/mpeg', }
 
 ROOT_CONTAINER_ID = 0
 AUDIO_ALL_CONTAINER_ID = 51
 AUDIO_ARTIST_CONTAINER_ID = 52
 AUDIO_ALBUM_CONTAINER_ID = 53
 VIDEO_FOLDER_CONTAINER_ID = 54
+
 
 class RedirectingReverseProxyUriResource(ReverseProxyUriResource):
     def render(self, request):
@@ -46,6 +47,7 @@ class RedirectingReverseProxyUriResource(ReverseProxyUriResource):
 
 class FeedStorageConfigurationException(Exception):
     pass
+
 
 class FeedContainer(BackendItem):
     def __init__(self, parent_id, id, title):
@@ -94,18 +96,19 @@ class FeedEnclosure(BackendItem):
 
         self.item.res.append(res)
 
+
 class FeedStore(BackendStore):
     """a general feed store"""
 
     logCategory = 'feed_store'
     implements = ['MediaServer']
 
-    def __init__(self,server,**kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+    def __init__(self, server, **kwargs):
+        BackendStore.__init__(self, server, **kwargs)
         self.name = kwargs.get('name', 'Feed Store')
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
+        self.urlbase = kwargs.get('urlbase', '')
+        if(len(self.urlbase) > 0 and
+            self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
         self.feed_urls = kwargs.get('feed_urls')
         self.opml_url = kwargs.get('opml_url')
@@ -115,12 +118,12 @@ class FeedStore(BackendStore):
             raise FeedStorageConfigurationException("only feed_urls OR opml_url can be set")
 
         self.server = server
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60) # TODO: not used yet
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)  # TODO: not used yet
         self.store = {}
-        self.wmc_mapping = {'4': str(AUDIO_ALL_CONTAINER_ID),    # all tracks
-                            '7': str(AUDIO_ALBUM_CONTAINER_ID),    # all albums
-                            '6': str(AUDIO_ARTIST_CONTAINER_ID),    # all artists
-                            '15': str(VIDEO_FOLDER_CONTAINER_ID),    # all videos
+        self.wmc_mapping = {'4': str(AUDIO_ALL_CONTAINER_ID),  # all tracks
+                            '7': str(AUDIO_ALBUM_CONTAINER_ID),  # all albums
+                            '6': str(AUDIO_ARTIST_CONTAINER_ID),  # all artists
+                            '15': str(VIDEO_FOLDER_CONTAINER_ID),  # all videos
                             }
 
         self.store[ROOT_CONTAINER_ID] = FeedContainer(-1, ROOT_CONTAINER_ID, self.name)
@@ -134,14 +137,14 @@ class FeedStore(BackendStore):
             self.error('error while updateing the feed contant for %s: %s', self.name, str(e))
         self.init_completed()
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         """returns the item according to the DIDLite id"""
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         try:
             return self.store[int(id)]
-        except (ValueError,KeyError):
+        except (ValueError, KeyError):
             self.info("can't get item %d from %s feed storage", int(id), self.name)
         return None
 

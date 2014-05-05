@@ -32,10 +32,10 @@ class ProxyGallery2Image(ReverseProxyUriResource):
 class Gallery2Item(BackendItem):
     logCategory = 'gallery2_item'
 
-    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
+    def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass, update=False):
         self.id = id
 
-        self.name = obj.get('title')#.encode('utf-8')
+        self.name = obj.get('title')  # .encode('utf-8')
         if self.name == None:
             self.name = obj.get('name')
         if self.name == None:
@@ -47,7 +47,7 @@ class Gallery2Item(BackendItem):
 
         self.parent = parent
         if parent:
-            parent.add_child(self,update=update)
+            parent.add_child(self, update=update)
 
         if parent == None:
             parent_id = -1
@@ -60,7 +60,7 @@ class Gallery2Item(BackendItem):
         self.child_count = 0
         self.children = None
 
-        if( len(urlbase) and urlbase[-1] != '/'):
+        if(len(urlbase) and urlbase[-1] != '/'):
             urlbase += '/'
 
         if parent == None:
@@ -81,7 +81,6 @@ class Gallery2Item(BackendItem):
             res.size = None
             self.item.res.append(res)
 
-
     def remove(self):
         if self.parent:
             self.parent.remove_child(self)
@@ -97,7 +96,6 @@ class Gallery2Item(BackendItem):
         if update == True:
             self.update_id += 1
 
-
     def remove_child(self, child):
         #self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
@@ -107,9 +105,8 @@ class Gallery2Item(BackendItem):
             self.children.remove(child)
             self.update_id += 1
 
-
-    def get_children(self,start=0,request_count=0):
-        def process_items(result = None):
+    def get_children(self, start=0, request_count=0):
+        def process_items(result=None):
             if self.children == None:
                 return  []
             if request_count == 0:
@@ -123,7 +120,6 @@ class Gallery2Item(BackendItem):
             return d
         else:
             return process_items()
-
 
     def get_child_count(self):
         return self.child_count
@@ -164,20 +160,20 @@ class Gallery2Store(BackendStore):
 
     description = ('Gallery2', 'exposes the photos from a Gallery2 photo repository.', None)
 
-    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
-       {'option':'server_url','text':'Server URL:','type':'string'},
-       {'option':'username','text':'User ID:','type':'string','group':'User Account'},
-       {'option':'password','text':'Password:','type':'string','group':'User Account'},
+    options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'server_url', 'text': 'Server URL:', 'type': 'string'},
+       {'option': 'username', 'text': 'User ID:', 'type': 'string', 'group': 'User Account'},
+       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'},
     ]
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name','gallery2Store')
+        self.name = kwargs.get('name', 'gallery2Store')
 
         self.wmc_mapping = {'16': 1000}
 
@@ -185,26 +181,26 @@ class Gallery2Store(BackendStore):
         self.store = {}
 
         self.gallery2_server_url = self.config.get('server_url', 'http://localhost/gallery2')
-        self.gallery2_username = self.config.get('username',None)
-        self.gallery2_password = self.config.get('password',None)
+        self.gallery2_username = self.config.get('username', None)
+        self.gallery2_password = self.config.get('password', None)
 
-        self.store[1000] = Gallery2Item( 1000, {'title':'Gallery2','gallery2_id':'0','mimetype':'directory'}, None,
-                                                        'directory', self.urlbase,Container,update=True)
+        self.store[1000] = Gallery2Item(1000, {'title': 'Gallery2', 'gallery2_id': '0', 'mimetype': 'directory'}, None,
+                                                        'directory', self.urlbase, Container, update=True)
         self.store[1000].store = self
 
         self.gallery2_remote = Gallery(self.gallery2_server_url, 2)
         if not None in [self.gallery2_username, self.gallery2_password]:
             d = self.gallery2_remote.login(self.gallery2_username, self.gallery2_password)
-            d.addCallback(lambda x : self.retrieveAlbums('0', self.store[1000]))
+            d.addCallback(lambda x: self.retrieveAlbums('0', self.store[1000]))
             d.addCallback(self.init_completed)
         else:
             d = self.retrieveAlbums('0', self.store[1000])
             d.addCallback(self.init_completed)
 
     def __repr__(self):
-        return self.__class__.__name__ 
+        return self.__class__.__name__
 
-    def append( self, obj, parent):
+    def append(self, obj, parent):
         if isinstance(obj, basestring):
             mimetype = 'directory'
         else:
@@ -216,7 +212,7 @@ class Gallery2Store(BackendStore):
         #if hasattr(self, 'update_id'):
         #    update = True
 
-        item = Gallery2Item( id, obj, parent, mimetype, self.urlbase,
+        item = Gallery2Item(id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
         self.store[id] = item
         self.store[id].store = self
@@ -237,9 +233,9 @@ class Gallery2Store(BackendStore):
     def len(self):
         return len(self.store)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         try:
             id = int(id)
@@ -274,12 +270,11 @@ class Gallery2Store(BackendStore):
                                                                   'http-get:*:image/png:*',
                                                                 default=True)
 
-
     def retrieveAlbums(self, album_gallery2_id, parent):
         d = self.gallery2_remote.fetch_albums()
 
         def gotAlbums (albums):
-            if albums :
+            if albums:
                 albums = [album for album in albums.values() if album.get('parent') == album_gallery2_id]
                 if album_gallery2_id == '0' and len(albums) == 1:
                     album = albums[0]
@@ -293,12 +288,12 @@ class Gallery2Store(BackendStore):
                         title = album.get('title')
                         description = album.get('summary')
                         store_item = {
-                                  'name':id,
-                                  'gallery2_id':gallery2_id,
-                                  'parent_id':parent_gallery2_id,
-                                  'title':title,
-                                  'description':description,
-                                  'mimetype':'directory',
+                                  'name': id,
+                                  'gallery2_id': gallery2_id,
+                                  'parent_id': parent_gallery2_id,
+                                  'title': title,
+                                  'description': description,
+                                  'mimetype': 'directory',
                                     }
                         self.append(store_item, parent)
 
@@ -313,7 +308,7 @@ class Gallery2Store(BackendStore):
         d2 = self.gallery2_remote.fetch_album_images(album_id)
 
         def gotImages(images):
-            if images :
+            if images:
                 for image in images:
                     image_gallery2_id = image.get('name')
                     parent_gallery2_id = image.get('parent')
@@ -322,25 +317,24 @@ class Gallery2Store(BackendStore):
                     title = image.get('title')
                     description = image.get('description')
 
-                    gallery2_id =  resized_gallery2_id
+                    gallery2_id = resized_gallery2_id
                     if gallery2_id == '':
                         gallery2_id = image_gallery2_id
 
                     store_item = {
-                                  'name':id,
-                                  'gallery2_id':gallery2_id,
-                                  'parent_id':parent_gallery2_id,
-                                  'thumbnail_gallery2_id':thumbnail_gallery2_id,
-                                  'title':title,
-                                  'description':description,
-                                  'mimetype':'image/jpeg',
+                                  'name': id,
+                                  'gallery2_id': gallery2_id,
+                                  'parent_id': parent_gallery2_id,
+                                  'thumbnail_gallery2_id': thumbnail_gallery2_id,
+                                  'title': title,
+                                  'description': description,
+                                  'mimetype': 'image/jpeg',
                                 }
                     self.append(store_item, parent)
 
         d2.addCallback(gotImages)
-        dl = defer.DeferredList([d1,d2])
+        dl = defer.DeferredList([d1, d2])
         return dl
-
 
 
 def main():

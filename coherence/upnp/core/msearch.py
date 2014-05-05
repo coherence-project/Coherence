@@ -20,6 +20,7 @@ SSDP_ADDR = '239.255.255.250'
 
 from coherence import log
 
+
 class MSearch(DatagramProtocol, log.Loggable):
     logCategory = 'msearch'
 
@@ -59,12 +60,12 @@ class MSearch(DatagramProtocol, log.Loggable):
         self.discover()
 
     def discover(self):
-        req = [ 'M-SEARCH * HTTP/1.1',
+        req = ['M-SEARCH * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
                 'MAN: "ssdp:discover"',
                 'MX: 5',
                 'ST: ssdp:all',
-                '','']
+                '', '']
         req = '\r\n'.join(req)
 
         try:

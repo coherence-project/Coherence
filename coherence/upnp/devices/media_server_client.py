@@ -11,6 +11,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class MediaServerClient(log.Loggable):
     logCategory = 'ms_client'
 
@@ -31,13 +32,13 @@ class MediaServerClient(log.Loggable):
         for service in self.device.get_services():
             if service.get_type() in ["urn:schemas-upnp-org:service:ContentDirectory:1",
                                       "urn:schemas-upnp-org:service:ContentDirectory:2"]:
-                self.content_directory = ContentDirectoryClient( service)
+                self.content_directory = ContentDirectoryClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:ConnectionManager:1",
                                       "urn:schemas-upnp-org:service:ConnectionManager:2"]:
-                self.connection_manager = ConnectionManagerClient( service)
+                self.connection_manager = ConnectionManagerClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:AVTransport:1",
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
-                self.av_transport = AVTransportClient( service)
+                self.av_transport = AVTransportClient(service)
             #if service.get_type()  in ["urn:schemas-upnp-org:service:ScheduledRecording:1",
             #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:
             #    self.scheduled_recording = ScheduledRecordingClient( service)
@@ -56,7 +57,6 @@ class MediaServerClient(log.Loggable):
             self.info("AVTransport (optional) available")
         if self.scheduled_recording:
             self.info("ScheduledRecording (optional) available")
-
         #d = self.content_directory.browse(0) # browse top level
         #d.addCallback( self.process_meta)
 
@@ -102,17 +102,17 @@ class MediaServerClient(log.Loggable):
                 return
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
-                               client=self,udn=self.device.udn)
+                               client=self, udn=self.device.udn)
         self.info('detection_completed for %r', self)
 
-    def state_variable_change( self, variable, usn):
+    def state_variable_change(self, variable, usn):
         self.info('%(name)r changed from %(old_value)r to %(value)r',
                   vars(variable))
 
     def print_results(self, results):
         self.info("results= %s", results)
 
-    def process_meta( self, results):
-        for k,v in results.iteritems():
+    def process_meta(self, results):
+        for k, v in results.iteritems():
             dfr = self.content_directory.browse(k, "BrowseMetadata")
-            dfr.addCallback( self.print_results)
+            dfr.addCallback(self.print_results)

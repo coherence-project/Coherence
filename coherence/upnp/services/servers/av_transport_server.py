@@ -11,7 +11,8 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 
 from coherence.upnp.core import service
 
-class AVTransportControl(service.ServiceControl,UPnPPublisher):
+
+class AVTransportControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
         self.service = server
@@ -35,8 +36,8 @@ class AVTransportServer(service.ServiceServer, resource.Resource):
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
-                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+            cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
         return cl
 
-    def render(self,request):
-        return '<html><p>root of the AVTransport</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
+    def render(self, request):
+        return '<html><p>root of the AVTransport</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)

@@ -11,7 +11,8 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 
 from coherence.upnp.core import service
 
-class RenderingControlControl(service.ServiceControl,UPnPPublisher):
+
+class RenderingControlControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
         self.service = server
@@ -31,13 +32,12 @@ class RenderingControlServer(service.ServiceServer, resource.Resource):
         self.control = RenderingControlControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
-                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+            cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
         return cl
-        
-    def render(self,request):
-        return '<html><p>root of the RenderingControl</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
 
+    def render(self, request):
+        return '<html><p>root of the RenderingControl</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)

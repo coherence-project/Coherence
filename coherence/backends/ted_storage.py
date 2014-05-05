@@ -17,6 +17,7 @@ from coherence.backends.appletrailers_storage import Container
 from coherence.backend import BackendItem
 from coherence.upnp.core import DIDLLite
 
+
 class TedTalk(BackendItem):
 
     def __init__(self, parent_id, id, title=None, url=None,
@@ -29,10 +30,11 @@ class TedTalk(BackendItem):
 
         self.item = DIDLLite.VideoItem(id, parent_id, self.name)
 
-        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*') # FIXME should be video/x-m4a
+        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*')  # FIXME should be video/x-m4a
         res.size = size
         res.duration = duration
         self.item.res.append(res)
+
 
 class TEDStore(LolcatsStore):
 
@@ -43,10 +45,10 @@ class TEDStore(LolcatsStore):
     ROOT_ID = 0
 
     def __init__(self, server, *args, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         self.name = kwargs.get('name', 'TEDtalks')
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1001
         self.last_updated = None
@@ -117,5 +119,5 @@ class TEDStore(LolcatsStore):
 
         if self.server:
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
-            value = (self.ROOT_ID,self.container.update_id)
+            value = (self.ROOT_ID, self.container.update_id)
             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)

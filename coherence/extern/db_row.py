@@ -1,3 +1,4 @@
+
 # Wraps DB-API 2.0 query results to provide a nice list and dictionary interface.
 # Copyright (C) 2002  Dr. Conan C. Albrecht <conan_albrecht@byu.edu>
 #
@@ -88,7 +89,7 @@ class DBRow(object):
 
     def __getitem__(self, key):
         """Return the value of the named column"""
-        if type(key) == type(1): # if a number
+        if type(key) == type(1):  # if a number
             return self.row[key]
         else:  # a field name
             return self.row[self.fields[key]]

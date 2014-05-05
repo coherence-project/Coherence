@@ -54,6 +54,7 @@ class INotify(inotify.INotify):
 
     DO NOT USE THIS anymore, directly use twisted.internet.inotify instead.
     """
+
     def __init__(self, reactor=None):
         super(INotify, self).__init__(reactor)
         self.startReading()
@@ -69,11 +70,12 @@ class INotify(inotify.INotify):
     def release(self):
         return self.connectionLost(None)
 
-    def flag_to_human(self,mask):
+    def flag_to_human(self, mask):
         return flag_to_human(mask)
 
 if __name__ == '__main__':
     from twisted.internet import reactor
+
 
     def notify(self, filepath, mask, data=None):
         print "event %s on %s" % (

@@ -1,3 +1,4 @@
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -20,6 +21,5 @@ class WANCommonInterfaceConfigClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
-
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)

@@ -11,24 +11,26 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 
 from coherence.upnp.core import service
 
+
 class FakeMediaReceiverRegistrarBackend:
 
     def upnp_IsAuthorized(self, *args, **kwargs):
-        r = { 'Result': 1}
+        r = {'Result': 1}
         return r
 
     def upnp_IsValidated(self, *args, **kwargs):
-        r = { 'Result': 1}
+        r = {'Result': 1}
         return r
 
     def upnp_RegisterDevice(self, *args, **kwargs):
         """ in parameter RegistrationReqMsg """
         RegistrationReqMsg = kwargs['RegistrationReqMsg']
         """ FIXME: check with WMC and WMP """
-        r = { 'RegistrationRespMsg': 'WTF should be in here?'}
+        r = {'RegistrationRespMsg': 'WTF should be in here?'}
         return r
 
-class MediaReceiverRegistrarControl(service.ServiceControl,UPnPPublisher):
+
+class MediaReceiverRegistrarControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
         self.service = server
@@ -55,12 +57,11 @@ class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
         self.putChild('control', self.control)
 
-
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
-                cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
+            cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
         return cl
 
-    def render(self,request):
-        return '<html><p>root of the MediaReceiverRegistrar</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
+    def render(self, request):
+        return '<html><p>root of the MediaReceiverRegistrar</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)

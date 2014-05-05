@@ -1,3 +1,4 @@
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -19,10 +20,10 @@ class DimmingClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
-    def set_load_level_target(self,new_load_level_target=0):
+    def set_load_level_target(self, new_load_level_target=0):
         action = self.service.get_action('SetLoadLevelTarget')
         return action.call(NewLoadLevelTarget=new_load_level_target)
 

@@ -119,6 +119,7 @@ testChunkedDataResult = ['<?xml version="1.0" ?> ',
 ''
 ]
 
+
 class TestUpnpUtils(unittest.TestCase):
 
     def test_chunked_data(self):
@@ -128,7 +129,7 @@ class TestUpnpUtils(unittest.TestCase):
         testData = '\r\n'.join(testChunkedData)
         newData = utils.de_chunk_payload(testData)
         # see whether we can parse the result
-        self.assertEqual(newData, '\r\n'.join( testChunkedDataResult))
+        self.assertEqual(newData, '\r\n'.join(testChunkedDataResult))
 
 
 class TestClient(unittest.TestCase):

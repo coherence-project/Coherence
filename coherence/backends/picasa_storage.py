@@ -26,8 +26,6 @@ import gdata.media
 import gdata.geo
 
 
-
-
 class PicasaProxy(ReverseProxyUriResource):
 
     def __init__(self, uri):
@@ -38,6 +36,7 @@ class PicasaProxy(ReverseProxyUriResource):
             del request.received_headers['referer']
         return ReverseProxyUriResource.render(self, request)
 
+
 class PicasaPhotoItem(BackendItem):
     def __init__(self, photo):
         #print photo
@@ -46,7 +45,7 @@ class PicasaPhotoItem(BackendItem):
         self.name = photo.summary.text
         if self.name is None:
             self.name = photo.title.text
-            
+
         self.duration = None
         self.size = None
         self.mimetype = photo.content.type
@@ -74,12 +73,11 @@ class PicasaPhotoItem(BackendItem):
         self.location = PicasaProxy(self.photo_url)
         return True
 
-
     def get_item(self):
         if self.item == None:
             upnp_id = self.get_id()
             upnp_parent_id = self.parent.get_id()
-            self.item = DIDLLite.Photo(upnp_id,upnp_parent_id,self.name)
+            self.item = DIDLLite.Photo(upnp_id, upnp_parent_id, self.name)
             res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             self.item.res.append(res)
         self.item.childCount = 0
@@ -100,24 +98,23 @@ class PicasaStore(AbstractBackendStore):
 
     description = ('Picasa Web Albums', 'connects to the Picasa Web Albums service and exposes the featured photos and albums for a given user.', None)
 
-    options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
-       {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
-       {'option':'refresh','text':'Refresh period','type':'string'},
-       {'option':'login','text':'User ID:','type':'string','group':'User Account'},
-       {'option':'password','text':'Password:','type':'string','group':'User Account'},
+    options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
+       {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
+       {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
+       {'option': 'refresh', 'text': 'Refresh period', 'type': 'string'},
+       {'option': 'login', 'text': 'User ID:', 'type': 'string', 'group': 'User Account'},
+       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'},
     ]
-
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name','Picasa Web Albums')
+        self.name = kwargs.get('name', 'Picasa Web Albums')
 
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh', 60)) * 60
 
-        self.login = kwargs.get('userid',kwargs.get('login',''))
-        self.password = kwargs.get('password','')
+        self.login = kwargs.get('userid', kwargs.get('login', ''))
+        self.password = kwargs.get('password', '')
 
         rootContainer = Container(None, self.name)
         self.set_root_item(rootContainer)
@@ -130,10 +127,8 @@ class PicasaStore(AbstractBackendStore):
 
         self.init_completed()
 
-
     def __repr__(self):
         return self.__class__.__name__
-
 
     def upnp_init(self):
         self.current_connection_id = None
@@ -158,19 +153,18 @@ class PicasaStore(AbstractBackendStore):
         if len(self.login) > 0:
             d = threads.deferToThread(self.gd_client.ProgrammaticLogin)
 
-
     def retrieveAlbums(self, parent=None):
         albums = threads.deferToThread(self.gd_client.GetUserFeed)
 
         def gotAlbums(albums):
-           if albums is None:
-               print "Unable to retrieve albums"
-               return
-           for album in albums.entry:
-               title = album.title.text
-               album_id = album.gphoto_id.text
-               item = LazyContainer(parent, title, album_id, self.refresh, self.retrieveAlbumPhotos, album_id=album_id)
-               parent.add_child(item, external_id=album_id)
+            if albums is None:
+                print "Unable to retrieve albums"
+                return
+            for album in albums.entry:
+                title = album.title.text
+                album_id = album.gphoto_id.text
+                item = LazyContainer(parent, title, album_id, self.refresh, self.retrieveAlbumPhotos, album_id=album_id)
+                parent.add_child(item, external_id=album_id)
 
         def gotError(error):
             print "ERROR: %s" % error
@@ -183,14 +177,14 @@ class PicasaStore(AbstractBackendStore):
         photos = threads.deferToThread(self.gd_client.GetFeed, feed_uri)
 
         def gotPhotos(photos):
-           if photos is None:
-               print "Unable to retrieve photos for feed %s" % feed_uri
-               return
-           for photo in photos.entry:
-               photo_id = photo.gphoto_id.text
-               item = PicasaPhotoItem(photo)
-               item.parent = parent
-               parent.add_child(item, external_id=photo_id)
+            if photos is None:
+                print "Unable to retrieve photos for feed %s" % feed_uri
+                return
+            for photo in photos.entry:
+                photo_id = photo.gphoto_id.text
+                item = PicasaPhotoItem(photo)
+                item.parent = parent
+                parent.add_child(item, external_id=photo_id)
 
         def gotError(error):
             print "ERROR: %s" % error

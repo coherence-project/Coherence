@@ -7,11 +7,17 @@ from coherence.dispatcher import Dispatcher
 
 warnings.warn("extern.louie will soon be deprecated in favor of coherence.dispatcher.")
 
+
 class Any(object): pass
+
+
 class All(object): pass
+
+
 class Anonymous(object): pass
 
-# fake the API 
+
+# fake the API
 class Dummy(object): pass
 signal = Dummy()
 sender = Dummy()
@@ -22,6 +28,7 @@ sender.Any = Any
 
 #signals
 signal.All = All
+
 
 # a slightly less raise-y-ish implementation as louie was not so picky, too
 class GlobalDispatcher(Dispatcher):
@@ -51,6 +58,7 @@ def connect(receiver, signal=All, sender=Any, weak=True):
     _global_receivers_pool[(callback, signal)] = receiver
     return receiver
 
+
 def disconnect(receiver, signal=All, sender=Any, weak=True):
     callback = receiver
     if signal in (Any, All):
@@ -58,19 +66,21 @@ def disconnect(receiver, signal=All, sender=Any, weak=True):
     receiver = _global_receivers_pool.pop((callback, signal))
     return _global_dispatcher.disconnect(receiver)
 
+
 def send(signal=All, sender=Anonymous, *arguments, **named):
     if signal in (Any, All):
         raise NotImplemented("This is not allowed. Signal HAS to be something")
     # the first value of the callback shall always be the signal:
     return _global_dispatcher.save_emit(signal, *arguments, **named)
 
+
 def send_minimal(signal=All, sender=Anonymous, *arguments, **named):
     return send(signal, sender, *arguments, **named)
+
 
 def send_exact(signal=All, sender=Anonymous, *arguments, **named):
     return send(signal, sender, *arguments, **named)
 
+
 def send_robust(signal=All, sender=Anonymous, *arguments, **named):
     return send(signal, sender, *arguments, **named)
-
-

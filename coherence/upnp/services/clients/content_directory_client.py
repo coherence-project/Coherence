@@ -4,7 +4,8 @@
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import sys, threading
+import sys
+import threading
 
 from twisted.internet import reactor, defer
 from twisted.python import log
@@ -38,8 +39,8 @@ class ContentDirectoryClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
     def get_search_capabilities(self):
         action = self.service.get_action('GetSearchCapabilities')
@@ -82,36 +83,36 @@ class ContentDirectoryClient:
                 #print "process_result", item
                 i = {}
                 i['upnp_class'] = item.upnp_class
-                i['id'] =  item.id
-                i['title'] =  item.title
-                i['parent_id'] =  item.parentID
-                if hasattr(item,'childCount'):
-                    i['child_count'] =  str(item.childCount)
-                if hasattr(item,'date') and item.date:
-                    i['date'] =  item.date
-                if hasattr(item,'album') and item.album:
-                    i['album'] =  item.album
-                if hasattr(item,'artist') and item.artist:
-                    i['artist'] =  item.artist
-                if hasattr(item,'albumArtURI') and item.albumArtURI:
+                i['id'] = item.id
+                i['title'] = item.title
+                i['parent_id'] = item.parentID
+                if hasattr(item, 'childCount'):
+                    i['child_count'] = str(item.childCount)
+                if hasattr(item, 'date') and item.date:
+                    i['date'] = item.date
+                if hasattr(item, 'album') and item.album:
+                    i['album'] = item.album
+                if hasattr(item, 'artist') and item.artist:
+                    i['artist'] = item.artist
+                if hasattr(item, 'albumArtURI') and item.albumArtURI:
                     i['album_art_uri'] = item.albumArtURI
-                if hasattr(item,'res'):
+                if hasattr(item, 'res'):
                     resources = {}
                     for res in item.res:
                         url = res.data
                         resources[url] = res.protocolInfo
                     if len(resources):
-                        i['resources']= resources
+                        i['resources'] = resources
                 r['items'][item.id] = i
             return r
 
         action = self.service.get_action('Browse')
-        d = action.call( ObjectID=object_id,
+        d = action.call(ObjectID=object_id,
                             BrowseFlag=browse_flag,
-                            Filter=filter,SortCriteria=sort_criteria,
+                            Filter=filter, SortCriteria=sort_criteria,
                             StartingIndex=str(starting_index),
                             RequestedCount=str(requested_count))
-        if process_result in [True,1,'1','true','True','yes','Yes']:
+        if process_result in [True, 1, '1', 'true', 'True', 'yes', 'Yes']:
             d.addCallback(got_process_result)
         #else:
         #    d.addCallback(got_result)
@@ -125,7 +126,7 @@ class ContentDirectoryClient:
         action = self.service.get_action('Search')
         if action == None:
             return None
-        d = action.call( ContainerID=container_id,
+        d = action.call(ContainerID=container_id,
                             SearchCriteria=criteria,
                             Filter="*",
                             StartingIndex=starting_index,
@@ -144,15 +145,15 @@ class ContentDirectoryClient:
         return d
 
     def dict2item(self, elements):
-        upnp_class = DIDLLite.upnp_classes.get(elements.get('upnp_class',None),None)
+        upnp_class = DIDLLite.upnp_classes.get(elements.get('upnp_class', None), None)
         if upnp_class is None:
             return None
 
         del elements['upnp_class']
         item = upnp_class(id='',
-                          parentID=elements.get('parentID',None),
-                          title=elements.get('title',None),
-                          restricted=elements.get('restricted',None))
+                          parentID=elements.get('parentID', None),
+                          title=elements.get('title', None),
+                          restricted=elements.get('restricted', None))
         for k, v in elements.items():
             attribute = getattr(item, k, None)
             if attribute is None:
@@ -164,28 +165,28 @@ class ContentDirectoryClient:
     def create_object(self, container_id, elements):
         if isinstance(elements, dict):
             elements = self.dict2item(elements)
-        if isinstance(elements,DIDLLite.Object):
+        if isinstance(elements, DIDLLite.Object):
             didl = DIDLLite.DIDLElement()
             didl.addItem(elements)
-            elements=didl.toString()
+            elements = didl.toString()
         if elements is None:
             elements = ''
         action = self.service.get_action('CreateObject')
         if action:  # optional
-            return action.call( ContainerID=container_id,
+            return action.call(ContainerID=container_id,
                                 Elements=elements)
         return None
 
     def destroy_object(self, object_id):
         action = self.service.get_action('DestroyObject')
         if action:  # optional
-            return action.call( ObjectID=object_id)
+            return action.call(ObjectID=object_id)
         return None
 
     def update_object(self, object_id, current_tag_value, new_tag_value):
         action = self.service.get_action('UpdateObject')
         if action:  # optional
-            return action.call( ObjectID=object_id,
+            return action.call(ObjectID=object_id,
                                 CurrentTagValue=current_tag_value,
                                 NewTagValue=new_tag_value)
         return None
@@ -193,49 +194,48 @@ class ContentDirectoryClient:
     def move_object(self, object_id, new_parent_id):
         action = self.service.get_action('MoveObject')
         if action:  # optional
-            return action.call( ObjectID=object_id,
+            return action.call(ObjectID=object_id,
                                 NewParentID=new_parent_id)
         return None
 
     def import_resource(self, source_uri, destination_uri):
         action = self.service.get_action('ImportResource')
         if action:  # optional
-            return action.call( SourceURI=source_uri,
+            return action.call(SourceURI=source_uri,
                                 DestinationURI=destination_uri)
         return None
 
     def export_resource(self, source_uri, destination_uri):
         action = self.service.get_action('ExportResource')
         if action:  # optional
-            return action.call( SourceURI=source_uri,
+            return action.call(SourceURI=source_uri,
                                 DestinationURI=destination_uri)
         return None
 
     def delete_resource(self, resource_uri):
         action = self.service.get_action('DeleteResource')
         if action:  # optional
-            return action.call( ResourceURI=resource_uri)
+            return action.call(ResourceURI=resource_uri)
         return None
 
     def stop_transfer_resource(self, transfer_id):
         action = self.service.get_action('StopTransferResource')
         if action:  # optional
-            return action.call( TransferID=transfer_id)
+            return action.call(TransferID=transfer_id)
         return None
 
     def get_transfer_progress(self, transfer_id):
         action = self.service.get_action('GetTransferProgress')
         if action:  # optional
-            return action.call( TransferID=transfer_id)
+            return action.call(TransferID=transfer_id)
         return None
 
     def create_reference(self, container_id, object_id):
         action = self.service.get_action('CreateReference')
         if action:  # optional
-            return action.call( ContainerID=container_id,
+            return action.call(ContainerID=container_id,
                                 ObjectID=object_id)
         return None
-
 
     def _failure(self, error):
         log.msg(error.getTraceback(), debug=True)

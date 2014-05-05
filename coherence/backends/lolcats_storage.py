@@ -59,7 +59,6 @@ from twisted.internet import reactor
 # And to parse the RSS-Data (which is XML), we use the coherence helper
 from coherence.extern.et import parse_xml
 
-
 ########## The models
 # After the download and parsing of the data is done, we want to save it. In
 # this case, we want to fetch the images and store their URL and the title of
@@ -92,7 +91,7 @@ class LolcatsImage(BackendItem):
         # these hold detailed information about the media data
         # and can represent variants of it (different sizes, transcoded formats)
         res = DIDLLite.Resource(self.location, 'http-get:*:image/jpeg:*')
-        res.size = None #FIXME: we should have a size here
+        res.size = None  # FIXME: we should have a size here
                         #       and a resolution entry would be nice too
         self.item.res.append(res)
 
@@ -127,7 +126,7 @@ class LolcatsContainer(BackendItem):
         # understood as 'Container'.
         self.item = DIDLLite.Container(id, parent_id, self.name)
 
-        self.item.childCount = None # will be set as soon as we have images
+        self.item.childCount = None  # will be set as soon as we have images
 
     def get_children(self, start=0, end=0):
         # This is the only important implementation thing: we have to return our
@@ -172,7 +171,7 @@ class LolcatsStore(BackendStore):
 
     def __init__(self, server, *args, **kwargs):
         # first we inizialize our heritage
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
 
         # When a Backend is initialized, the configuration is given as keyword
         # arguments to the initialization. We receive it here as a dicitonary
@@ -182,7 +181,7 @@ class LolcatsStore(BackendStore):
         self.name = kwargs.get('name', 'Lolcats')
 
         # timeout between updates in hours:
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         # the UPnP device that's hosting that backend, that's already done
         # in the BackendStore.__init__, just left here the sake of completeness
@@ -221,7 +220,7 @@ class LolcatsStore(BackendStore):
         print "asked for", id, type(id)
         # what ever we are asked for, we want to return the container only
         if isinstance(id, basestring):
-            id = id.split('@',1)
+            id = id.split('@', 1)
             id = id[0]
         if int(id) == self.ROOT_ID:
             return self.container
@@ -256,7 +255,7 @@ class LolcatsStore(BackendStore):
         if self.server:
             self.server.content_directory_server.set_variable(0,
                     'SystemUpdateID', self.update_id)
-            value = (self.ROOT_ID,self.container.update_id)
+            value = (self.ROOT_ID, self.container.update_id)
             self.server.content_directory_server.set_variable(0,
                     'ContainerUpdateIDs', value)
         return result

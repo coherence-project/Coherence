@@ -35,11 +35,11 @@
 #             Fixed cut paste error in newAlbum.
 #             (both patches from Yuti Takhteyev
 
-
 from coherence.upnp.core.utils import getPage
 
 import StringIO
 import string
+
 
 class Gallery:
     """
@@ -68,7 +68,7 @@ class Gallery:
         version - version of the gallery being connected to (default 2),
                   either 1 for Gallery1 or 2 for Gallery2
         """
-        self.version = version # Gallery1 or Gallery2
+        self.version = version  # Gallery1 or Gallery2
         if version == 1:
             self.url = url + '/gallery_remote2.php'
         else:
@@ -88,17 +88,17 @@ class Gallery:
             request['g2_authToken'] = self.auth_token
 
         url = self.url
-        if (len(request) > 0) :
+        if (len(request) > 0):
             url += '?'
-            for key,value in request.iteritems():
-                url += '%s=%s&' % (key,value)
+            for key, value in request.iteritems():
+                url += '%s=%s&' % (key, value)
         headers = None
         if self.cookie != '':
-             headers = {'Cookie' : self.cookie}
+            headers = {'Cookie': self.cookie}
 
         def gotPage(result):
-            data,headers = result
-            response = self._parse_response( data )
+            data, headers = result
+            response = self._parse_response(data)
             if response['status'] != '0':
                 raise Exception(response['status_text'])
             try:
@@ -122,7 +122,6 @@ class Gallery:
         d.addErrback(gotError)
         return d
 
-
     def _parse_response(self, response):
         """
         Decode the response from a request, returning a request dict
@@ -132,11 +131,11 @@ class Gallery:
         myStr = StringIO.StringIO(response)
 
         for line in myStr:
-            if string.find( line, '#__GR2PROTO__' ) != -1:
+            if string.find(line, '#__GR2PROTO__') != -1:
                 break
 
         # make sure the 1st line is #__GR2PROTO__
-        if string.find( line, '#__GR2PROTO__' ) == -1:
+        if string.find(line, '#__GR2PROTO__') == -1:
             raise Exception("Bad response: %r" % response)
 
         resDict = {}
@@ -177,9 +176,9 @@ class Gallery:
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'login',
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'login',
                 'g2_form[uname]': username,
                 'g2_form[password]': password
             }
@@ -189,7 +188,6 @@ class Gallery:
                 print "Unable to login as %s to gallery2  server (%s)" % (username, self.url)
                 return
             self.logged_in = 1
-
 
         d = self._do_request(request)
         d.addCallbacks(gotPage)
@@ -204,14 +202,14 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'fetch-albums'
+                'protocol_version': self.protocol_version,
+                'cmd': 'fetch-albums'
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'fetch-albums'
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'fetch-albums'
             }
 
         d = self._do_request(request)
@@ -224,17 +222,17 @@ class Gallery:
             albums = {}
             for x in range(1, int(response['album_count']) + 1):
                 album = {}
-                album['name']                   = self._get(response,'album.name.' + str(x))
-                album['title']                  = self._get(response,'album.title.' + str(x))
-                album['summary']                = self._get(response,'album.summary.' + str(x))
-                album['parent']                 = self._get(response,'album.parent.' + str(x))
-                album['resize_size']            = self._get(response,'album.resize_size.' + str(x))
-                album['perms.add']              = self._get(response,'album.perms.add.' + str(x))
-                album['perms.write']            = self._get(response,'album.perms.write.' + str(x))
-                album['perms.del_item']         = self._get(response,'album.perms.del_item.' + str(x))
-                album['perms.del_alb']          = self._get(response,'album.perms.del_alb.' + str(x))
-                album['perms.create_sub']       = self._get(response,'album.perms.create_sub.' + str(x))
-                album['perms.info.extrafields'] = self._get(response,'album.info.extrafields' + str(x))
+                album['name']                   = self._get(response, 'album.name.' + str(x))
+                album['title']                  = self._get(response, 'album.title.' + str(x))
+                album['summary']                = self._get(response, 'album.summary.' + str(x))
+                album['parent']                 = self._get(response, 'album.parent.' + str(x))
+                album['resize_size']            = self._get(response, 'album.resize_size.' + str(x))
+                album['perms.add']              = self._get(response, 'album.perms.add.' + str(x))
+                album['perms.write']            = self._get(response, 'album.perms.write.' + str(x))
+                album['perms.del_item']         = self._get(response, 'album.perms.del_item.' + str(x))
+                album['perms.del_alb']          = self._get(response, 'album.perms.del_alb.' + str(x))
+                album['perms.create_sub']       = self._get(response, 'album.perms.create_sub.' + str(x))
+                album['perms.info.extrafields'] = self._get(response, 'album.info.extrafields' + str(x))
 
                 albums[album['name']] = album
             return albums
@@ -256,14 +254,14 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'fetch-albums-prune'
+                'protocol_version': self.protocol_version,
+                'cmd': 'fetch-albums-prune'
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'fetch-albums-prune'
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'fetch-albums-prune'
             }
 
         response = self._do_request(request)
@@ -274,17 +272,17 @@ class Gallery:
 
             for x in range(1, int(response['album_count']) + 1):
                 album = {}
-                album['name']                   = self._get(response,'album.name.' + str(x))
-                album['title']                  = self._get(response,'album.title.' + str(x))
-                album['summary']                = self._get(response,'album.summary.' + str(x))
-                album['parent']                 = self._get(response,'album.parent.' + str(x))
-                album['resize_size']            = self._get(response,'album.resize_size.' + str(x))
-                album['perms.add']              = self._get(response,'album.perms.add.' + str(x))
-                album['perms.write']            = self._get(response,'album.perms.write.' + str(x))
-                album['perms.del_item']         = self._get(response,'album.perms.del_item.' + str(x))
-                album['perms.del_alb']          = self._get(response,'album.perms.del_alb.' + str(x))
-                album['perms.create_sub']       = self._get(response,'album.perms.create_sub.' + str(x))
-                album['perms.info.extrafields'] = self._get(response,'album.info.extrafields' + str(x))
+                album['name']                   = self._get(response, 'album.name.' + str(x))
+                album['title']                  = self._get(response, 'album.title.' + str(x))
+                album['summary']                = self._get(response, 'album.summary.' + str(x))
+                album['parent']                 = self._get(response, 'album.parent.' + str(x))
+                album['resize_size']            = self._get(response, 'album.resize_size.' + str(x))
+                album['perms.add']              = self._get(response, 'album.perms.add.' + str(x))
+                album['perms.write']            = self._get(response, 'album.perms.write.' + str(x))
+                album['perms.del_item']         = self._get(response, 'album.perms.del_item.' + str(x))
+                album['perms.del_alb']          = self._get(response, 'album.perms.del_alb.' + str(x))
+                album['perms.create_sub']       = self._get(response, 'album.perms.create_sub.' + str(x))
+                album['perms.info.extrafields'] = self._get(response, 'album.info.extrafields' + str(x))
 
                 albums[album['name']] = album
 
@@ -292,7 +290,6 @@ class Gallery:
 
         d.addCallback(gotResponse)
         return d
-
 
     def add_item(self, album, filename, caption, description):
         """
@@ -304,23 +301,23 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'add-item',
-                'set_albumName' : album,
-                'userfile' : file,
-                'userfile_name' : filename,
-                'caption' : caption,
-                'extrafield.Description' : description
+                'protocol_version': self.protocol_version,
+                'cmd': 'add-item',
+                'set_albumName': album,
+                'userfile': file,
+                'userfile_name': filename,
+                'caption': caption,
+                'extrafield.Description': description
             }
         else:
             request = {
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'add-item',
-                'g2_form[set_albumName]' : album,
-                'g2_form[userfile]' : file,
-                'g2_form[userfile_name]' : filename,
-                'g2_form[caption]' : caption,
-                'g2_form[extrafield.Description]' : description
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'add-item',
+                'g2_form[set_albumName]': album,
+                'g2_form[userfile]': file,
+                'g2_form[userfile_name]': filename,
+                'g2_form[caption]': caption,
+                'g2_form[extrafield.Description]': description
             }
 
         file = open(filename)
@@ -336,16 +333,16 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'album-properties',
-                'set_albumName' : album
+                'protocol_version': self.protocol_version,
+                'cmd': 'album-properties',
+                'set_albumName': album
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'album-properties',
-                'g2_form[set_albumName]' : album
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'album-properties',
+                'g2_form[set_albumName]': album
             }
 
         d = self._do_request(request)
@@ -363,7 +360,6 @@ class Gallery:
         d.addCallback(gotResponse)
         return d
 
-
     def new_album(self, parent, name=None, title=None, description=None):
         """
         Add an album to the specified parent album.
@@ -374,10 +370,10 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'new-album',
-                'set_albumName' : parent
+                'g2_controller': 'remote:GalleryRemote',
+                'protocol_version': self.protocol_version,
+                'cmd': 'new-album',
+                'set_albumName': parent
             }
             if name != None:
                 request['newAlbumName'] = name
@@ -387,10 +383,10 @@ class Gallery:
                 request['newAlbumDesc'] = description
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'new-album',
-                'g2_form[set_albumName]' : parent
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'new-album',
+                'g2_form[set_albumName]': parent
             }
             if name != None:
                 request['g2_form[newAlbumName]'] = name
@@ -407,7 +403,6 @@ class Gallery:
         d.addCallback(d)
         return d
 
-
     def fetch_album_images(self, album):
         """
         Get the image information for all images in the specified album.
@@ -415,20 +410,20 @@ class Gallery:
         """
         if self.version == 1:
             request = {
-                'protocol_version' : self.protocol_version,
-                'cmd' : 'fetch-album-images',
-                'set_albumName' : album,
-                'albums_too' : 'no',
-                'extrafields' : 'yes'
+                'protocol_version': self.protocol_version,
+                'cmd': 'fetch-album-images',
+                'set_albumName': album,
+                'albums_too': 'no',
+                'extrafields': 'yes'
             }
         else:
             request = {
-                'g2_controller' : 'remote:GalleryRemote',
-                'g2_form[protocol_version]' : self.protocol_version,
-                'g2_form[cmd]' : 'fetch-album-images',
-                'g2_form[set_albumName]' : album,
-                'g2_form[albums_too]' : 'no',
-                'g2_form[extrafields]' : 'yes'
+                'g2_controller': 'remote:GalleryRemote',
+                'g2_form[protocol_version]': self.protocol_version,
+                'g2_form[cmd]': 'fetch-album-images',
+                'g2_form[set_albumName]': album,
+                'g2_form[albums_too]': 'no',
+                'g2_form[extrafields]': 'yes'
             }
 
         d = self._do_request(request)
@@ -469,7 +464,6 @@ class Gallery:
 
         d.addCallback(gotResponse)
         return d
-
 
     def get_URL_for_image(self, gallery2_id):
         url = '%s/main.php?g2_view=core.DownloadItem&g2_itemId=%s' % (self.url, gallery2_id)

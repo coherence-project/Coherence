@@ -13,11 +13,13 @@
 import os
 import sys
 
+
 class Plugin(object):
     """ a new style class that
         betrays all its sub-classes
     """
     pass
+
 
 class Reception(object):
 
@@ -33,7 +35,7 @@ class Reception(object):
 
     def __new__(cls, *args, **kwargs):
         """ creates the singleton """
-        obj = getattr(cls,'_instance_',None)
+        obj = getattr(cls, '_instance_', None)
         if obj is not None:
             return obj
         else:
@@ -41,7 +43,7 @@ class Reception(object):
             cls._instance_ = obj
             return obj
 
-    def __init__(self,plugin_path=None,log=None):
+    def __init__(self, plugin_path=None, log=None):
         """ initializes the class and
             checks in if a path is provided
         """
@@ -49,7 +51,7 @@ class Reception(object):
         if plugin_path is not None:
             self.checkin(plugin_path)
 
-    def checkin(self,plugin_path):
+    def checkin(self, plugin_path):
         """ import all valid files from plugin_path """
         if not plugin_path in sys.path:
             sys.path.insert(0, plugin_path)
@@ -64,7 +66,6 @@ class Reception(object):
                     else:
                         self.log("can't import %r - %r" % (os.path.splitext(plugin)[0], msg))
 
-
     def guestlist(self, plugin_class=Plugin):
         """ returns a list of all Plugin subclasses """
         found = []
@@ -74,7 +75,7 @@ class Reception(object):
                 found.append(klass)
             else:
                 for k in subclasses:
-                    get_subclass(k,k.__subclasses__())
+                    get_subclass(k, k.__subclasses__())
 
         get_subclass(plugin_class, plugin_class.__subclasses__())
 

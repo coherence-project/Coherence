@@ -17,10 +17,12 @@ from coherence.upnp.core import soap_lite
 
 import coherence.extern.louie as louie
 
+
 class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
         self.status = status
+
 
 class UPnPPublisher(resource.Resource, log.Loggable):
     """ Based upon twisted.web.soap.SOAPPublisher and
@@ -138,7 +140,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             self._methodNotFound(request, methodName)
             return server.NOT_DONE_YET
         else:
-            keywords = {'soap_methodName':methodName}
+            keywords = {'soap_methodName': methodName}
             if(headers.has_key('user-agent') and
                     headers['user-agent'].find('Xbox/') == 0):
                 keywords['X_UPnPClient'] = 'XBox'

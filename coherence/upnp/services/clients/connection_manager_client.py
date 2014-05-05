@@ -1,3 +1,4 @@
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -11,7 +12,6 @@ class ConnectionManagerClient:
         self.url = service.get_control_url()
         self.service.client = self
         self.service.subscribe()
-
     #def __del__(self):
     #    #print "ConnectionManagerClient deleted"
     #    pass
@@ -26,8 +26,8 @@ class ConnectionManagerClient:
         self.url = None
         del self
 
-    def subscribe_for_variable(self, var_name, callback,signal=False):
-        self.service.subscribe_for_variable(var_name, instance=0, callback=callback,signal=signal)
+    def subscribe_for_variable(self, var_name, callback, signal=False):
+        self.service.subscribe_for_variable(var_name, instance=0, callback=callback, signal=signal)
 
     def get_protocol_info(self):
         action = self.service.get_action('GetProtocolInfo')
@@ -36,7 +36,7 @@ class ConnectionManagerClient:
     def prepare_for_connection(self, remote_protocol_info, peer_connection_manager, peer_connection_id, direction):
         action = self.service.get_action('PrepareForConnection')
         if action:  # optional
-            return action.call( RemoteProtocolInfo=remote_protocol_info,
+            return action.call(RemoteProtocolInfo=remote_protocol_info,
                             PeerConnectionManager=peer_connection_manager,
                             PeerConnectionID=peer_connection_id,
                             Direction=direction)
@@ -47,7 +47,6 @@ class ConnectionManagerClient:
         if action:  # optional
             return action.call(ConnectionID=connection_id)
         return None
-
 
     def get_current_connection_ids(self):
         action = self.service.get_action('GetCurrentConnectionIDs')

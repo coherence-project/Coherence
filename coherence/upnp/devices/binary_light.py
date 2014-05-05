@@ -21,17 +21,18 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+
 class HttpRoot(DeviceHttpRoot):
     logCategory = 'binarylight'
 
 
-class BinaryLight(log.Loggable,BasicDeviceMixin):
+class BinaryLight(log.Loggable, BasicDeviceMixin):
     logCategory = 'binarylight'
     device_type = 'BinaryLight'
     version = 1
 
-    def fire(self,backend,**kwargs):
-        if kwargs.get('no_thread_needed',False) == False:
+    def fire(self, backend, **kwargs):
+        if kwargs.get('no_thread_needed', False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
 
@@ -62,7 +63,7 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
         try:
             self.switch_power_server = SwitchPowerServer(self)
             self._services.append(self.switch_power_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('SwitchPowerServer %s', msg)
             raise LookupError(msg)
 
@@ -70,15 +71,13 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
         if upnp_init:
             upnp_init()
 
-
         self.web_resource = HttpRoot(self)
-        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
-
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
         version = self.version
         while version > 0:
-            self.web_resource.putChild( 'description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     device_type=self.device_type, version=version,
@@ -89,7 +88,6 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
                                     devices=self._devices,
                                     icons=self.icons))
             version -= 1
-
 
         self.web_resource.putChild('SwitchPower', self.switch_power_server)
 

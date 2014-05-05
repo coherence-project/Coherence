@@ -25,17 +25,18 @@ from coherence.upnp.devices.basics import RootDeviceXML, DeviceHttpRoot, BasicDe
 
 from coherence import log
 
+
 class HttpRoot(DeviceHttpRoot):
     logCategory = 'mediarenderer'
 
 
-class MediaRenderer(log.Loggable,BasicDeviceMixin):
+class MediaRenderer(log.Loggable, BasicDeviceMixin):
     logCategory = 'mediarenderer'
     device_type = 'MediaRenderer'
 
-    def fire(self,backend,**kwargs):
+    def fire(self, backend, **kwargs):
 
-        if kwargs.get('no_thread_needed',False) == False:
+        if kwargs.get('no_thread_needed', False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block
                 as we can't tell for sure that every backend is implemented properly """
 
@@ -66,21 +67,21 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         try:
             self.connection_manager_server = ConnectionManagerServer(self)
             self._services.append(self.connection_manager_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('ConnectionManagerServer %s', msg)
             raise LookupError(msg)
 
         try:
             self.rendering_control_server = RenderingControlServer(self)
             self._services.append(self.rendering_control_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('RenderingControlServer %s', msg)
             raise LookupError(msg)
 
         try:
             self.av_transport_server = AVTransportServer(self)
             self._services.append(self.av_transport_server)
-        except LookupError,msg:
+        except LookupError, msg:
             self.warning('AVTransportServer %s', msg)
             raise LookupError(msg)
 
@@ -88,20 +89,18 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
         if upnp_init:
             upnp_init()
 
-
         self.web_resource = HttpRoot(self)
-        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
         try:
             dlna_caps = self.backend.dlna_caps
         except AttributeError:
             dlna_caps = []
 
-
         version = self.version
         while version > 0:
-            self.web_resource.putChild( 'description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     device_type=self.device_type,
@@ -116,7 +115,6 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                                     dlna_caps=dlna_caps))
             version -= 1
 
-
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('RenderingControl', self.rendering_control_server)
         self.web_resource.putChild('AVTransport', self.av_transport_server)
@@ -126,17 +124,16 @@ class MediaRenderer(log.Loggable,BasicDeviceMixin):
                 if icon['url'].startswith('file://'):
                     if os.path.exists(icon['url'][7:]):
                         self.web_resource.putChild(os.path.basename(icon['url']),
-                                                   StaticFile(icon['url'][7:],defaultType=icon['mimetype']))
+                                                   StaticFile(icon['url'][7:], defaultType=icon['mimetype']))
                 elif icon['url'] == '.face':
                     face_path = os.path.abspath(os.path.join(os.path.expanduser('~'), ".face"))
                     if os.path.exists(face_path):
-                        self.web_resource.putChild('face-icon.png',StaticFile(face_path,defaultType=icon['mimetype']))
+                        self.web_resource.putChild('face-icon.png', StaticFile(face_path, defaultType=icon['mimetype']))
                 else:
                     from pkg_resources import resource_filename
-                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..','..','..','misc','device-icons',icon['url'])))
+                    icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..', '..', '..', 'misc', 'device-icons', icon['url'])))
                     if os.path.exists(icon_path):
-                        self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
-
+                        self.web_resource.putChild(icon['url'], StaticFile(icon_path, defaultType=icon['mimetype']))
 
         self.register()
         self.warning("%s %s (%s) activated with %s", self.backend.name, self.device_type, self.backend, str(self.uuid)[5:])

@@ -12,11 +12,10 @@ from coherence.extern.et import parse_xml as et_parse_xml
 
 from coherence import SERVER_ID
 
-
 from twisted.web import server, http, static
 from twisted.web import client, error
 from twisted.web import proxy, resource, server
-from twisted.internet import reactor,protocol,defer,abstract
+from twisted.internet import reactor, protocol, defer, abstract
 from twisted.python import failure
 
 from twisted.python.util import InsensitiveDict
@@ -35,9 +34,10 @@ except ImportError:
 
 
 def means_true(value):
-    if isinstance(value,basestring):
+    if isinstance(value, basestring):
         value = value.lower()
-    return value in [True,1,'1','true','yes','ok']
+    return value in [True, 1, '1', 'true', 'yes', 'ok']
+
 
 def generalise_boolean(value):
     """ standardize the different boolean incarnations
@@ -53,7 +53,8 @@ generalize_boolean = generalise_boolean
 
 
 def parse_xml(data, encoding="utf-8"):
-    return et_parse_xml(data,encoding)
+    return et_parse_xml(data, encoding)
+
 
 def parse_http_response(data):
 
@@ -98,7 +99,7 @@ def get_ip_address(ifname):
             # we now have a list of address dictionaries, there may be multiple addresses bound
             return ifaceadr[0]['addr']
     import sys
-    if sys.platform in ('win32','sunos5'):
+    if sys.platform in ('win32', 'sunos5'):
         return '127.0.0.1'
 
     from os import uname
@@ -141,12 +142,12 @@ def get_host_address():
             route_file = '/proc/net/route'
             route = open(route_file)
             if(route):
-                tmp = route.readline() #skip first line
+                tmp = route.readline()  # skip first line
                 while (tmp != ''):
                     tmp = route.readline()
                     l = tmp.split('\t')
                     if (len(l) > 2):
-                        if l[1] == '00000000': #default route...
+                        if l[1] == '00000000':  # default route...
                             route.close()
                             return get_ip_address(l[0])
         except IOError, msg:
@@ -155,13 +156,13 @@ def get_host_address():
 
             def result(r):
                 from os import uname
-                (osname,_, _, _,_) = uname()
+                (osname, _, _, _, _) = uname()
                 osname = osname.lower()
                 lines = r.split('\n')
                 for l in lines:
                     l = l.strip(' \r\n')
                     parts = [x.strip() for x in l.split(' ') if len(x) > 0]
-                    if parts[0] in ('0.0.0.0','default'):
+                    if parts[0] in ('0.0.0.0', 'default'):
                         if osname[:6] == 'darwin':
                             return get_ip_address(parts[5])
                         else:
@@ -182,6 +183,7 @@ def get_host_address():
     """ return localhost if we haven't found anything """
     return '127.0.0.1'
 
+
 def de_chunk_payload(response):
 
     try:
@@ -197,7 +199,7 @@ def de_chunk_payload(response):
     def read_chunk_length():
         line = response.readline()
         try:
-            len = int(line.strip(),16)
+            len = int(line.strip(), 16)
         except ValueError:
             len = 0
         return len
@@ -205,13 +207,13 @@ def de_chunk_payload(response):
     len = read_chunk_length()
     while (len > 0):
         newresponse.write(response.read(len))
-        line = response.readline() # after chunk and before next chunk length
+        line = response.readline()  # after chunk and before next chunk length
         len = read_chunk_length()
 
     return newresponse.getvalue()
 
-class Request(server.Request):
 
+class Request(server.Request):
 
     def process(self):
         "Process a request."
@@ -293,7 +295,7 @@ class ProxyClient(http.HTTPClient):
         if message:
             # Add a whitespace to message, this allows empty messages
             # transparently
-            message = " %s" % (message,)
+            message = " %s" % (message, )
 
         if version == 'ICY':
             version = 'HTTP/1.1'
@@ -333,7 +335,6 @@ class ProxyClientFactory(protocol.ClientFactory):
 
     protocol = proxy.ProxyClient
 
-
     def __init__(self, command, rest, version, headers, data, father):
         self.father = father
         self.command = command
@@ -342,11 +343,9 @@ class ProxyClientFactory(protocol.ClientFactory):
         self.data = data
         self.version = version
 
-
     def buildProtocol(self, addr):
         return self.protocol(self.command, self.rest, self.version,
                              self.headers, self.data, self.father)
-
 
     def clientConnectionFailed(self, connector, reason):
         self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
@@ -422,11 +421,12 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.reactor.connectTCP(self.host, self.port, clientFactory)
         return server.NOT_DONE_YET
 
-    def resetTarget(self,host,port,path,qs=''):
+    def resetTarget(self, host, port, path, qs=''):
         self.host = host
         self.port = port
         self.path = path
         self.qs = qs
+
 
 class ReverseProxyUriResource(ReverseProxyResource):
 
@@ -434,14 +434,14 @@ class ReverseProxyUriResource(ReverseProxyResource):
 
     def __init__(self, uri, reactor=reactor):
         self.uri = uri
-        _,host_port,path,params,_ = urlsplit(uri)
+        _, host_port, path, params, _ = urlsplit(uri)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
             port = int(port)
         else:
             host = host_port
             port = 80
-        if path =='':
+        if path == '':
             path = '/'
         if params == '':
             rest = path
@@ -451,9 +451,9 @@ class ReverseProxyUriResource(ReverseProxyResource):
 
     def resetUri (self, uri):
         self.uri = uri
-        _,host_port,path,params,_ =  urlsplit(uri)
+        _, host_port, path, params, _ = urlsplit(uri)
         if host_port.find(':') != -1:
-            host,port = tuple(host_port.split(':'))
+            host, port = tuple(host_port.split(':'))
             port = int(port)
         else:
             host = host_port
@@ -472,7 +472,7 @@ class myHTTPPageGetter(client.HTTPPageGetter):
         self.sendHeader('Host', self.factory.headers.get("host", self.factory.host))
         self.sendHeader('User-Agent', self.factory.agent)
         if self.factory.cookies:
-            l=[]
+            l = []
             for cookie, cookval in self.factory.cookies.items():
                 l.append('%s=%s' % (cookie, cookval))
             self.sendHeader('Cookie', '; '.join(l))
@@ -544,7 +544,6 @@ class HeaderAwareHTTPDownloader(client.HTTPDownloader):
                 self.requestedPartial = 0
 
 
-
 def getPage(url, contextFactory=None, *args, **kwargs):
     """
     Download a web page as a string.
@@ -581,7 +580,6 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
         reactor.connectTCP(host, port, factory)
     return factory.deferred
 
-
 # StaticFile used to be a patched version of static.File. The later
 # was fixed in TwistedWeb 8.2.0 and 9.0.0, while the patched variant
 # contained deprecated and removed code.
@@ -604,7 +602,7 @@ class BufferFile(static.File):
         #print "BufferFile", request
 
         # FIXME detect when request is REALLY finished
-        if request is None or request.finished :
+        if request is None or request.finished:
             print "No request to render!"
             return ''
 
@@ -632,7 +630,7 @@ class BufferFile(static.File):
         #print fsize
 
         if size == int(self.getFileSize()):
-            request.setHeader('accept-ranges','bytes')
+            request.setHeader('accept-ranges', 'bytes')
 
         if self.type:
             request.setHeader('content-type', self.type)
@@ -658,7 +656,7 @@ class BufferFile(static.File):
         if range is not None:
             # This is a request for partial data...
             bytesrange = range.split('=')
-            assert bytesrange[0] == 'bytes',\
+            assert bytesrange[0] == 'bytes', \
                    "Syntactically invalid http range header!"
             start, end = bytesrange[1].split('-', 1)
             if start:
@@ -696,7 +694,7 @@ class BufferFile(static.File):
                 trans = False
             else:
                 request.setResponseCode(http.PARTIAL_CONTENT)
-                request.setHeader('content-range',"bytes %s-%s/%s " % (
+                request.setHeader('content-range', "bytes %s-%s/%s " % (
                     str(start), str(end), str(tsize)))
                 #print "StaticFile", start, end, tsize
 
@@ -707,14 +705,13 @@ class BufferFile(static.File):
             # won't be overwritten.
             request.method = 'HEAD'
             return ''
-
         #print "StaticFile out", request.headers, request.code
 
         # return data
         # size is the byte position to stop sending, not how many bytes to send
 
         BufferFileTransfer(f, size - f.tell(), request)
-		# and make sure the connection doesn't get closed
+        # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
 
@@ -756,9 +753,9 @@ class BufferFileTransfer(object):
         self.request.finish()
         self.request = None
 
-
 from datetime import datetime, tzinfo, timedelta
 import random
+
 
 class _tz(tzinfo):
     def utcoffset(self, dt):
@@ -767,12 +764,14 @@ class _tz(tzinfo):
     def tzname(self, dt):
         return self._name
 
-    def dst(self,dt):
+    def dst(self, dt):
         return timedelta(0)
+
 
 class _CET(_tz):
     _offset = timedelta(minutes=60)
     _name = 'CET'
+
 
 class _CEST(_tz):
     _offset = timedelta(minutes=120)
@@ -784,6 +783,7 @@ _bdates = [datetime(1997,2,28,17,20,tzinfo=_CET()),  # Sebastian Oliver
            datetime(2003,7,23,1,18,tzinfo=_CEST()),  # Mara Sophie
                                                      # you are the best!
          ]
+
 
 def datefaker():
     return random.choice(bdates)

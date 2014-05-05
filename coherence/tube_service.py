@@ -7,10 +7,10 @@
 
 """
 
-import urllib, urlparse
+import urllib
+import urlparse
 
 import dbus
-
 
 from twisted.web import resource
 from twisted.internet import defer
@@ -29,6 +29,7 @@ from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.utils import ReverseProxyUriResource
 
 from coherence import log
+
 
 class MirabeauProxy(resource.Resource, log.Loggable):
     logCategory = 'mirabeau'
@@ -80,24 +81,24 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
             return result
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
-            if action.name  == 'XXXBrowse' and argument.name == 'Result':
+            if action.name == 'XXXBrowse' and argument.name == 'Result':
                 didl = DIDLLite.DIDLElement.fromString(result['Result'].decode('utf-8'))
                 changed = False
                 for item in didl.getItems():
                     new_res = DIDLLite.Resources()
                     for res in item.res:
-                        remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
+                        remote_protocol, remote_network, remote_content_format, _ = res.protocolInfo.split(':')
                         if remote_protocol == 'http-get' and remote_network == '*':
                             quoted_url = urllib.quote_plus(res.data)
                             print "modifying", res.data
-                            res.data = urlparse.urlunsplit(('http', self.service.device.external_address,'mirabeau',quoted_url,""))
+                            res.data = urlparse.urlunsplit(('http', self.service.device.external_address, 'mirabeau', quoted_url, ""))
                             print "--->", res.data
                             new_res.append(res)
                             changed = True
                     item.res = new_res
                 if changed == True:
                     didl.rebuild()
-                    ordered_result[argument.name] = didl.toString() #.replace('<ns0:','<')
+                    ordered_result[argument.name] = didl.toString()  # .replace('<ns0:','<')
                 else:
                     ordered_result[argument.name] = result[argument.name].decode('utf-8')
             else:
@@ -127,17 +128,16 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         for arg_name, arg in kwargs.iteritems():
             if arg_name.find('X_') == 0:
                 continue
-            l = [ a for a in in_arguments if arg_name == a.get_name()]
+            l = [a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.critical('argument %s not valid for action %s', arg_name,action.name)
+                self.critical('argument %s not valid for action %s', arg_name, action.name)
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
-            self.critical('argument %s missing for action %s', 
-                                [ a.get_name() for a in in_arguments],action.name)
+            self.critical('argument %s missing for action %s',
+                                [a.get_name() for a in in_arguments], action.name)
             return failure.Failure(errorCode(402))
-
 
         def got_error(x):
             self.info('dbus error during call processing')
@@ -149,10 +149,11 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         #print 'callit action', action
         #print 'callit dbus action', self.service.service.action
         d = defer.Deferred()
-        self.service.service.call_action( action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler = d.callback, error_handler = d.errback,utf8_strings=True)
-        d.addCallback( self.get_action_results, action, instance)
+        self.service.service.call_action(action.name, dbus.Dictionary(kwargs, signature='ss'), reply_handler=d.callback, error_handler=d.errback, utf8_strings=True)
+        d.addCallback(self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d
+
 
 class TubeServiceProxy(service.ServiceServer, resource.Resource,
                               log.Loggable):
@@ -169,7 +170,6 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
         self.device.web_resource.putChild(id, self)
-
 
     def init_var_and_actions(self):
         """ retrieve all actions and create the Action
@@ -194,7 +194,7 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
             self._actions[name] = action.Action(self, name, 'n/a', arguments)
 
         for var_node in tree.findall('.//{%s}stateVariable' % ns):
-            send_events = var_node.attrib.get('sendEvents','yes')
+            send_events = var_node.attrib.get('sendEvents', 'yes')
             name = var_node.findtext('{%s}name' % ns)
             data_type = var_node.findtext('{%s}dataType' % ns)
             values = []
@@ -219,7 +219,7 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
 class TubeDeviceProxy(log.Loggable):
     logCategory = 'dbus'
 
-    def __init__(self, coherence, tube_device,external_address):
+    def __init__(self, coherence, tube_device, external_address):
         log.Loggable.__init__(self)
         self.device = tube_device
         self.coherence = coherence
@@ -241,8 +241,7 @@ class TubeDeviceProxy(log.Loggable):
         """ create the http entrypoint """
 
         self.web_resource = DeviceHttpRoot(self)
-        self.coherence.add_web_resource( str(self.uuid)[5:], self.web_resource)
-
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
         """ create the Service proxy(s) """
 
@@ -255,8 +254,8 @@ class TubeDeviceProxy(log.Loggable):
 
         version = self.version
         while version > 0:
-            self.web_resource.putChild( 'description-%d.xml' % version,
-                                    RootDeviceXML( self.coherence.hostname,
+            self.web_resource.putChild('description-%d.xml' % version,
+                                    RootDeviceXML(self.coherence.hostname,
                                     str(self.uuid),
                                     self.coherence.urlbase,
                                     device_type=self.device_type, version=version,
@@ -267,7 +266,6 @@ class TubeDeviceProxy(log.Loggable):
                                     devices=self._devices,
                                     icons=self.icons))
             version -= 1
-
 
         """ and register with SSDP server """
         self.register()
@@ -308,7 +306,7 @@ class TubeDeviceProxy(log.Loggable):
         for service in self._services:
             device_version = self.version
             service_version = self.version
-            if hasattr(service,'version'):
+            if hasattr(service, 'version'):
                 service_version = service.version
             silent = False
 
@@ -318,13 +316,13 @@ class TubeDeviceProxy(log.Loggable):
                 except:
                     namespace = 'schemas-upnp-org'
 
-                device_description_tmpl = 'description-%d.xml'  % device_version
-                if hasattr(service,'device_description_tmpl'):
+                device_description_tmpl = 'description-%d.xml' % device_version
+                if hasattr(service, 'device_description_tmpl'):
                     device_description_tmpl = service.device_description_tmpl
 
                 s.register('local',
-                            '%s::urn:%s:service:%s:%d' % (uuid,namespace,service.id, service_version),
-                            'urn:%s:service:%s:%d' % (namespace,service.id, service_version),
+                            '%s::urn:%s:service:%s:%d' % (uuid, namespace, service.id, service_version),
+                            'urn:%s:service:%s:%d' % (namespace, service.id, service_version),
                             self.coherence.urlbase + uuid[5:] + '/' + device_description_tmpl,
                             silent=silent,
                             host=host)

@@ -9,6 +9,7 @@ from twisted.python.util import OrderedDict
 
 from coherence import log
 
+
 class Argument:
 
     def __init__(self, name, direction, state_variable):
@@ -31,13 +32,13 @@ class Argument:
 
     def as_tuples(self):
         r = []
-        r.append(('Name',self.name))
-        r.append(('Direction',self.direction))
-        r.append(('Related State Variable',self.state_variable))
+        r.append(('Name', self.name))
+        r.append(('Direction', self.direction))
+        r.append(('Related State Variable', self.state_variable))
         return r
 
     def as_dict(self):
-        return {'name':self.name,'direction':self.direction,'related_state_variable':self.state_variable}
+        return {'name': self.name, 'direction': self.direction, 'related_state_variable': self.state_variable}
 
 
 class Action(log.Loggable):
@@ -50,7 +51,7 @@ class Action(log.Loggable):
         self.arguments_list = arguments_list
 
     def _get_client(self):
-        client = self.service._get_client( self.name)
+        client = self.service._get_client(self.name)
         return client
 
     def get_name(self):
@@ -86,16 +87,16 @@ class Action(log.Loggable):
         self.info("in arguments %s", [a.get_name() for a in in_arguments])
         instance_id = 0
         for arg_name, arg in kwargs.iteritems():
-            l = [ a for a in in_arguments if arg_name == a.get_name()]
+            l = [a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.error("argument %s not valid for action %s", arg_name,self.name)
+                self.error("argument %s not valid for action %s", arg_name, self.name)
                 return
             if arg_name == 'InstanceID':
                 instance_id = int(arg)
         if len(in_arguments) > 0:
-            self.error("argument %s missing for action %s", [ a.get_name() for a in in_arguments],self.name)
+            self.error("argument %s missing for action %s", [a.get_name() for a in in_arguments], self.name)
             return
 
         action_name = self.name
@@ -107,7 +108,7 @@ class Action(log.Loggable):
             self.info("changing action to %r %r", action_name, kwargs)
 
         def got_error(failure):
-            self.warning("error on %s request with %s %s", self.name,self.
+            self.warning("error on %s request with %s %s", self.name, self.
                                                             service.service_type,
                                                             self.service.control_url)
             self.info(failure)
@@ -132,10 +133,10 @@ class Action(log.Loggable):
         d.addErrback(got_error)
         return d
 
-    def got_results( self, results, instance_id, name):
+    def got_results(self, results, instance_id, name):
         instance_id = int(instance_id)
         out_arguments = self.get_out_arguments()
-        self.info( "call %s (instance %d) returns %d arguments: %r", name,
+        self.info("call %s (instance %d) returns %d arguments: %r", name,
                                                                     instance_id,
                                                                     len(out_arguments),
                                                                     results)
@@ -158,10 +159,10 @@ class Action(log.Loggable):
 
     def as_tuples(self):
         r = []
-        r.append(('Name',self.get_name()))
-        r.append(("Number of 'in' arguments",len(self.get_in_arguments())))
-        r.append(("Number of 'out' arguments",len(self.get_out_arguments())))
+        r.append(('Name', self.get_name()))
+        r.append(("Number of 'in' arguments", len(self.get_in_arguments())))
+        r.append(("Number of 'out' arguments", len(self.get_out_arguments())))
         return r
 
     def as_dict(self):
-        return {'name': self.get_name(),'arguments':[a.as_dict() for a in self.arguments_list]}
+        return {'name': self.get_name(), 'arguments': [a.as_dict() for a in self.arguments_list]}
