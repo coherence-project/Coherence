@@ -180,4 +180,3 @@ class PlaylistStore(AbstractBackendStore):
         d.addCallback(gotPlaylist)
         d.addErrback(gotError)            
         return d
-    

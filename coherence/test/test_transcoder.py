@@ -149,6 +149,3 @@ class TestTranscoderAutoloading(TranscoderTestMixin, TestCase):
 
         self.assertNotEquals(transcoder_a, transcoder_b)
         self.assertNotEquals(id(transcoder_a), id(transcoder_b))
-
-
-

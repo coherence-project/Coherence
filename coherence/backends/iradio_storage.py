@@ -367,6 +367,3 @@ class IRadioStore(AbstractBackendStore):
         d.addCallback(got_page)
         d.addErrback(got_error)
         return d
-  
-    
-

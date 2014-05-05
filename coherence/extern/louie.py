@@ -72,5 +72,3 @@ def send_exact(signal=All, sender=Anonymous, *arguments, **named):
 
 def send_robust(signal=All, sender=Anonymous, *arguments, **named):
     return send(signal, sender, *arguments, **named)
-
-

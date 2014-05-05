@@ -109,4 +109,3 @@ class MediaRendererClient(log.Loggable):
     def state_variable_change( self, variable):
         self.info('%(name)r changed from %(old_value)r to %(value)r',
                   vars(variable))
-

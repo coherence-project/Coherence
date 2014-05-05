@@ -185,4 +185,3 @@ class RadiotimeStore(AbstractBackendStore):
         d.addCallback(got_page)
         d.addErrback(got_xml_error)
         return d
-    

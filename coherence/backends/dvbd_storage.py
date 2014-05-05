@@ -797,4 +797,3 @@ class DVBDScheduledRecording(BackendStore):
         rec_task_id = int(kwargs['RecordTaskID'])
         
         return self.get_timer_details(rec_task_id)
-
