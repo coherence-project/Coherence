@@ -40,12 +40,12 @@ class InternalTranscoder(object):
 class FakeTransformer(gst.Element, log.Loggable):
     logCategory = 'faker_datasink'
 
-    _sinkpadtemplate = gst.PadTemplate ("sinkpadtemplate",
+    _sinkpadtemplate = gst.PadTemplate("sinkpadtemplate",
                                         gst.PAD_SINK,
                                         gst.PAD_ALWAYS,
                                         gst.caps_new_any())
 
-    _srcpadtemplate = gst.PadTemplate ("srcpadtemplate",
+    _srcpadtemplate = gst.PadTemplate("srcpadtemplate",
                                         gst.PAD_SRC,
                                         gst.PAD_ALWAYS,
                                         gst.caps_new_any())
@@ -100,7 +100,7 @@ class DataSink(gst.Element, log.Loggable):
 
     logCategory = 'transcoder_datasink'
 
-    _sinkpadtemplate = gst.PadTemplate ("sinkpadtemplate",
+    _sinkpadtemplate = gst.PadTemplate("sinkpadtemplate",
                                         gst.PAD_SINK,
                                         gst.PAD_ALWAYS,
                                         gst.caps_new_any())

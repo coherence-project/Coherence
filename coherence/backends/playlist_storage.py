@@ -153,11 +153,11 @@ class PlaylistStore(AbstractBackendStore):
                 lines = content.splitlines().__iter__()
                 line = lines.next()
                 while line is not None:
-                    if re.search ( '#EXTINF', line):
+                    if re.search( '#EXTINF', line):
                         channel = re.match('#EXTINF:.*,(.*)',line).group(1)
                         mimetype = 'video/mpeg'
                         line = lines.next()
-                        while re.search ( '#EXTVLCOPT', line):
+                        while re.search( '#EXTVLCOPT', line):
                             option = re.match('#EXTVLCOPT:(.*)',line).group(1)
                             if option == 'no-video':
                                 mimetype = 'audio/mpeg'

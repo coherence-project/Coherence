@@ -141,13 +141,13 @@ def classChooser(mimetype, sub=None):
             return MusicAlbum
         return Container
     else:
-        if string.find (mimetype,'image/') == 0:
+        if string.find(mimetype,'image/') == 0:
             return Photo
-        if string.find (mimetype,'audio/') == 0:
+        if string.find(mimetype,'audio/') == 0:
             if sub == 'music':       # FIXME: this is stupid
                 return MusicTrack
             return AudioItem
-        if string.find (mimetype,'video/') == 0:
+        if string.find(mimetype,'video/') == 0:
             return VideoItem
         if mimetype == 'application/ogg':
             if sub == 'music':       # FIXME: this is stupid

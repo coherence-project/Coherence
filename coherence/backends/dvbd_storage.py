@@ -523,7 +523,7 @@ class DVBDStore(BackendStore):
         def process_getChannelList_result(result):
             self.debug("GetChannelList: %s", result)
             dvbd_channelList = self.bus.get_object(BUS_NAME,result)
-            channelList_interface = dbus.Interface (dvbd_channelList, 'org.gnome.DVB.ChannelList')
+            channelList_interface = dbus.Interface(dvbd_channelList, 'org.gnome.DVB.ChannelList')
 
             return self.get_tv_channels(channelList_interface)
 
@@ -663,7 +663,7 @@ class DVBDScheduledRecording(BackendStore):
         def process_details(results):
             tid, duration, active, channel_name, title = results[0][1]
             start = results[1][1]
-            start_datetime = datetime (*start)
+            start_datetime = datetime(*start)
             # TODO return what we actually need
             # FIXME we properly want the channel id here rather than the name
             return {'id': tid, 'duration': duration, 'channel': channel,

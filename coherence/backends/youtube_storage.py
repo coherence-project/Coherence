@@ -200,7 +200,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                                 request.write(res)
                                 return
 
-                res = self.renderBufferFile (request, filepath, self.buffer_size)
+                res = self.renderBufferFile(request, filepath, self.buffer_size)
                 if res == '' and request.method != 'HEAD':
                     return server.NOT_DONE_YET
                 if not isinstance(res,int):
@@ -474,7 +474,7 @@ class YouTubeStore(AbstractBackendStore):
         mimetype = MPEG4_MIMETYPE
 
         #mimetype = 'video/mpeg'
-        item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
+        item = YoutubeVideoItem(external_id, title, url, mimetype, entry, self)
         item.parent = parent
         parent.add_child(item, external_id=external_id)
 
