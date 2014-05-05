@@ -63,7 +63,6 @@ class WANPPPConnectionClient:
         dl.addErrback(handle_error)
         return dl
 
-
     def get_generic_port_mapping_entry(self, port_mapping_index):
         action = self.service.get_action('GetGenericPortMappingEntry')
         return action.call(NewPortMappingIndex=port_mapping_index)

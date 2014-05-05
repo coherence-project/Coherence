@@ -35,11 +35,11 @@
 #             Fixed cut paste error in newAlbum.
 #             (both patches from Yuti Takhteyev
 
-
 from coherence.upnp.core.utils import getPage
 
 import StringIO
 import string
+
 
 class Gallery:
     """
@@ -122,7 +122,6 @@ class Gallery:
         d.addErrback(gotError)
         return d
 
-
     def _parse_response(self, response):
         """
         Decode the response from a request, returning a request dict
@@ -189,7 +188,6 @@ class Gallery:
                 print "Unable to login as %s to gallery2  server (%s)" % (username, self.url)
                 return
             self.logged_in = 1
-
 
         d = self._do_request(request)
         d.addCallbacks(gotPage)
@@ -293,7 +291,6 @@ class Gallery:
         d.addCallback(gotResponse)
         return d
 
-
     def add_item(self, album, filename, caption, description):
         """
         Add a photo to the specified album.
@@ -363,7 +360,6 @@ class Gallery:
         d.addCallback(gotResponse)
         return d
 
-
     def new_album(self, parent, name=None, title=None, description=None):
         """
         Add an album to the specified parent album.
@@ -406,7 +402,6 @@ class Gallery:
 
         d.addCallback(d)
         return d
-
 
     def fetch_album_images(self, album):
         """
@@ -469,7 +464,6 @@ class Gallery:
 
         d.addCallback(gotResponse)
         return d
-
 
     def get_URL_for_image(self, gallery2_id):
         url = '%s/main.php?g2_view=core.DownloadItem&g2_itemId=%s' % (self.url, gallery2_id)

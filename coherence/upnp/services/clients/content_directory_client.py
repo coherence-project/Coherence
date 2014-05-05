@@ -237,7 +237,6 @@ class ContentDirectoryClient:
                                 ObjectID=object_id)
         return None
 
-
     def _failure(self, error):
         log.msg(error.getTraceback(), debug=True)
         error.trap(Exception)

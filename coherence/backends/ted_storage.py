@@ -17,6 +17,7 @@ from coherence.backends.appletrailers_storage import Container
 from coherence.backend import BackendItem
 from coherence.upnp.core import DIDLLite
 
+
 class TedTalk(BackendItem):
 
     def __init__(self, parent_id, id, title=None, url=None,
@@ -33,6 +34,7 @@ class TedTalk(BackendItem):
         res.size = size
         res.duration = duration
         self.item.res.append(res)
+
 
 class TEDStore(LolcatsStore):
 

@@ -20,6 +20,7 @@ SSDP_ADDR = '239.255.255.250'
 
 from coherence import log
 
+
 class MSearch(DatagramProtocol, log.Loggable):
     logCategory = 'msearch'
 

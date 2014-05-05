@@ -16,10 +16,12 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+
 class IWeb(Interface):
 
     def goingLive(self):
         pass
+
 
 class Web(object):
 
@@ -46,7 +48,6 @@ class MenuFragment(athena.LiveElement, log.Loggable):
         self.coherence = page.coherence
         self.tabs = []
 
-
     def going_live(self):
         self.info("add a view to the MenuFragment")
         d = self.page.notifyOnDisconnect()
@@ -71,6 +72,7 @@ class MenuFragment(athena.LiveElement, log.Loggable):
 
     def remove_me(self, result):
         self.info("remove view from MenuFragment")
+
 
 class DevicesFragment(athena.LiveElement, log.Loggable):
     logCategory = 'webui_device_fragment'
@@ -141,6 +143,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
                 cl.append(tags.li[child])
         return ctx.tag[tags.ul[cl]]
 
+
 class LoggingFragment(athena.LiveElement, log.Loggable):
     logCategory = 'webui_logging_fragment'
     jsClass = u'Coherence.Logging'
@@ -170,6 +173,7 @@ class LoggingFragment(athena.LiveElement, log.Loggable):
 
     def remove_me(self, result):
         self.info("remove view from the LoggingFragment")
+
 
 class WebUI(athena.LivePage, log.Loggable):
     """

@@ -4,8 +4,10 @@ from twisted.internet import defer
 from coherence.dispatcher import Dispatcher, UnknownSignal, Receiver, \
         SignalingProperty, ChangedSignalingProperty, CustomSignalingProperty
 
+
 class TestDispatcher(Dispatcher):
     __signals__ = {'test': 'Test signal'}
+
 
 class SimpleTarget(object):
 
@@ -29,6 +31,7 @@ class SimpleTarget(object):
     def fail_before(self, plus, variable=False):
         raise TypeError
         self.update(plus, variable=variable)
+
 
 class TestDispatching(unittest.TestCase):
 
@@ -70,7 +73,6 @@ class TestDispatching(unittest.TestCase):
 
         def test(res, val):
             self.assertEquals(self.target.called, val)
-
 
         receiver = self.dispatcher.connect('test', self.target.callback)
 
@@ -161,7 +163,6 @@ class TestDispatching(unittest.TestCase):
         self.dispatcher.disconnect(rc3)
 
     def test_emit_multiple_with_failing_in_between(self):
-
 
         rc1 = self.dispatcher.connect('test', self.target.plus,
                 1, variable='called_a')
@@ -282,7 +283,6 @@ class TestReceiver(unittest.TestCase):
         self.assertEquals(self.args, (1, 2, 7, 1, 2, 3))
         self.assertEquals(self.kw, {'test': 'True', 'o': 'p', 'p': 'a'})
 
-
     def test_repr(self):
         rec = Receiver('test', 'callback', (0, 1, 2), {})
         self.assertIn('%s' % id(rec), '%r' % rec)
@@ -300,6 +300,7 @@ class SimpleSignaler(object):
 
     def emit(self, signal, *values, **kw):
         self.emitted.append((signal, values, kw))
+
 
 class DummySignaler(SimpleSignaler):
 
@@ -334,6 +335,7 @@ class DummySignaler(SimpleSignaler):
 
     x = CustomSignalingProperty('x-changed', xget, xset)
     x_square = CustomSignalingProperty('x-square', xget, xsq)
+
 
 class TestSignalingDescriptors(unittest.TestCase):
 
@@ -452,6 +454,7 @@ class TestSignalingDescriptors(unittest.TestCase):
         self.assertEquals(self.signaler.x_set, x_set)
         self.assertEquals(self.signaler.x_get, x_get)
         self.assertEquals(self.signaler.emitted, values)
+
 
 class TestStayInObjectSignaling(unittest.TestCase):
 

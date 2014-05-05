@@ -10,6 +10,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class DimmableLightClient(log.Loggable):
     logCategory = 'dimminglight_client'
 

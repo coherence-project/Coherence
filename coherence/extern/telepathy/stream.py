@@ -23,6 +23,7 @@ class TrivialStream:
             pass
         return True
 
+
 class TrivialStreamServer(TrivialStream):
     def __init__(self):
         TrivialStream.__init__(self)
@@ -52,6 +53,7 @@ class TrivialStreamServer(TrivialStream):
 
     def handle_client(self, s):
         pass
+
 
 class TrivialStreamClient(TrivialStream):
 

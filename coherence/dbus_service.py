@@ -43,6 +43,7 @@ namespaces = {'{http://purl.org/dc/elements/1.1/}': 'dc:',
               '{urn:schemas-dlna-org:metadata-1-0}': 'dlna:',
               '{http://www.pv.com/pvns/}': 'pv:'}
 
+
 def un_namespace(text):
     for k, v in namespaces.items():
         if text.startswith(k):
@@ -94,7 +95,6 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
     def get_scpd_xml(self):
         return self.service.scpdXML
 
-
     @dbus.service.signal(CDS_SERVICE,
                          signature='sssv')
     def StateVariableChanged(self, udn, service, variable, value):
@@ -142,6 +142,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('GetSearchCapabilites', {})
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['SearchCaps']))
         r.addCallback(convert_reply)
@@ -154,6 +155,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('GetSortCapabilities', {})
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['SortCaps']))
         r.addCallback(convert_reply)
@@ -166,6 +168,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('GetSortExtensionCapabilities', {})
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['SortExtensionCaps']))
         r.addCallback(convert_reply)
@@ -178,6 +181,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('GetFeatureList', {})
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['FeatureList']))
         r.addCallback(convert_reply)
@@ -190,6 +194,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('GetSystemUpdateID', {})
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(int(data['Id']))
         r.addCallback(convert_reply)
@@ -209,6 +214,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('Browse', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             et = parse_xml(data['Result'], 'utf-8')
             et = et.getroot()
@@ -295,6 +301,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('CreateObject', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['ObjectID']), unicode(data['Result']))
         r.addCallback(convert_reply)
@@ -309,6 +316,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('DestroyObject', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb()
         r.addCallback(convert_reply)
@@ -325,6 +333,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('UpdateObject', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb()
         r.addCallback(convert_reply)
@@ -340,6 +349,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('MoveObject', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['NewObjectID']))
         r.addCallback(convert_reply)
@@ -355,6 +365,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('ImportResource', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['TransferID']))
         r.addCallback(convert_reply)
@@ -370,6 +381,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('ExportResource', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['TransferID']))
         r.addCallback(convert_reply)
@@ -384,6 +396,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('DeleteResource', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb()
         r.addCallback(convert_reply)
@@ -398,6 +411,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('StopTransferResource', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb()
         r.addCallback(convert_reply)
@@ -412,6 +426,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('GetTransferProgress', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['TransferStatus']), unicode(data['TransferLength']), unicode(data['TransferTotal']))
         r.addCallback(convert_reply)
@@ -427,6 +442,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
         r = self.callAction('CreateReference', arguments)
         if r == '':
             return r
+
         def convert_reply(data):
             dbus_async_cb(unicode(data['NewID']))
         r.addCallback(convert_reply)
@@ -476,7 +492,6 @@ class DBusService(dbus.service.Object, log.Loggable):
         louie.connect(self.variable_changed, 'Coherence.UPnP.StateVariable.changed', sender=self.service)
 
         self.subscribe()
-
         #interfaces = self._dbus_class_table[self.__class__.__module__ + '.' + self.__class__.__name__]
         #for (name, funcs) in interfaces.iteritems():
         #    print name, funcs
@@ -570,6 +585,7 @@ class DBusService(dbus.service.Object, log.Loggable):
     def call_action(self, name, arguments, dbus_async_cb, dbus_async_err_cb, sender=None, connection=None):
 
         print "call_action called by ", sender, connection, self.type, self.tube
+
         def reply(data, name, connection):
             if hasattr(connection, '_tube') == True:
                 if name == 'Browse':
@@ -756,6 +772,7 @@ class DBusDevice(dbus.service.Object, log.Loggable):
     def get_device_icons(self):
         return dbus.Array(self.device.icons, signature='av', variant_level=2)
 
+
 class DBusPontoon(dbus.service.Object, log.Loggable):
     logCategory = 'dbus'
     SUPPORTS_MULTIPLE_CONNECTIONS = True
@@ -774,7 +791,6 @@ class DBusPontoon(dbus.service.Object, log.Loggable):
         dbus.service.Object.__init__(self, self.bus, bus_name=self.bus_name,
                                      object_path=OBJECT_PATH)
 
-
         self.debug("D-Bus pontoon %r %r %r", self, self.bus, self.bus_name)
 
         self.devices = {}
@@ -787,7 +803,6 @@ class DBusPontoon(dbus.service.Object, log.Loggable):
 
         for device in self.controlpoint.get_devices():
             self.devices[device.get_id()] = DBusDevice(device, self.bus_name)
-
         #louie.connect(self.cp_ms_detected, 'Coherence.UPnP.ControlPoint.MediaServer.detected', louie.Any)
         #louie.connect(self.cp_ms_removed, 'Coherence.UPnP.ControlPoint.MediaServer.removed', louie.Any)
         #louie.connect(self.cp_mr_detected, 'Coherence.UPnP.ControlPoint.MediaRenderer.detected', louie.Any)
@@ -915,7 +930,6 @@ class DBusPontoon(dbus.service.Object, log.Loggable):
         function(**kwargs)
         return uuid
 
-
     @dbus.service.method(BUS_NAME, in_signature='ssa{ss}', out_signature='v',
                          async_callbacks=('dbus_async_cb', 'dbus_async_err_cb'))
     def create_object(self, device_id, container_id, arguments, dbus_async_cb, dbus_async_err_cb):
@@ -1042,6 +1056,7 @@ class DBusPontoon(dbus.service.Object, log.Loggable):
 
     """ org.DLNA related methods and signals
     """
+
     @dbus.service.method(DLNA_BUS_NAME + '.DMC', in_signature='', out_signature='av')
     def getDMSList(self):
         return dbus.Array(self._get_devices_of_type('MediaServer'),

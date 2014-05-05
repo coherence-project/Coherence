@@ -53,5 +53,4 @@ class TestCoherence(unittest.TestCase):
 
         reactor.callLater(3, d.callback, None)
 
-
         return d

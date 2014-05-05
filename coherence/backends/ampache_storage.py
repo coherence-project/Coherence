@@ -9,16 +9,22 @@ mimetypes.init()
 
 try:
     import hashlib
+
+
     def md5(s):
         m = hashlib.md5()
         m.update(s)
         return m.hexdigest()
+
+
     def sha256(s):
         m = hashlib.sha256()
         m.update(s)
         return m.hexdigest()
 except ImportError:
     import md5 as oldmd5
+
+
     def md5(s):
         m = oldmd5.new()
         m.update(s)
@@ -35,7 +41,6 @@ import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 
-
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER = 100
 AUDIO_ALL_CONTAINER_ID = 101
@@ -47,8 +52,8 @@ AUDIO_TAG_CONTAINER_ID = 106
 
 VIDEO_CONTAINER_ID = 200
 
-
 from urlparse import urlsplit
+
 
 class ProxySong(utils.ReverseProxyResource):
 
@@ -288,6 +293,7 @@ class Artist(BackendItem):
     def get_name(self):
         return self.name
 
+
 class Genre(BackendItem):
 
     logCategory = 'ampache_store'
@@ -337,6 +343,7 @@ class Genre(BackendItem):
 
     def get_name(self):
         return self.name
+
 
 class Tag(BackendItem):
 
@@ -507,7 +514,6 @@ class Video(BackendItem):
 
         self.cover = None
 
-
         self.title = element.find('title').text
 
         self.mimetype = None
@@ -603,7 +609,6 @@ class AmpacheStore(BackendStore):
 
     def __repr__(self):
         return "Ampache storage"
-
 
     def get_by_id(self, id):
         self.info("looking for id %r", id)
@@ -812,7 +817,6 @@ class AmpacheStore(BackendStore):
     def ampache_query_videos(self, start=0, request_count=0):
         return self.ampache_query('videos', start, request_count)
 
-
     def upnp_init(self):
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
@@ -957,6 +961,7 @@ class AmpacheStore(BackendStore):
         item = self.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
+
         def got_error(r):
             return r
 
@@ -1016,6 +1021,7 @@ if __name__ == '__main__':
 
     from coherence.base import Coherence
 
+
     def main():
         def got_result(result):
             print "got_result"
@@ -1035,7 +1041,6 @@ if __name__ == '__main__':
             r.addCallback(got_result)
             r.addErrback(got_result)
 
-
         config = {}
         config['logmode'] = 'warning'
         c = Coherence(config)
@@ -1044,7 +1049,6 @@ if __name__ == '__main__':
                         key='password',
                         user=None)
         reactor.callLater(3, call_browse, 0, 0, 0)
-
         #reactor.callLater(3, call_browse, AUDIO_ALL_CONTAINER_ID, 0, 0)
         #reactor.callLater(3, call_browse, AUDIO_ARTIST_CONTAINER_ID, 0, 10)
         #reactor.callLater(3, call_browse, AUDIO_ALBUM_CONTAINER_ID, 0, 10)

@@ -19,6 +19,7 @@ from coherence.extern.et import parse_xml
 
 ROOT_CONTAINER_ID = 0
 
+
 class Item(BackendItem):
 
     def __init__(self, parent, id, title, url):
@@ -48,6 +49,7 @@ class Item(BackendItem):
             res.size = self.size
             self.item.res.append(res)
         return self.item
+
 
 class Container(BackendItem):
 
@@ -191,7 +193,6 @@ class SWR3Store(BackendStore, BackendRssMixin):
             #item.date = datetime(*parsedate_tz(podcast.find("./pubDate").text)[0:6])
 
             #item.date = podcast.find("./pubDate")
-
 
         self.update_id += 1
         #if self.server:

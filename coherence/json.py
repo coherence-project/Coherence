@@ -9,6 +9,7 @@ from twisted.internet import defer
 
 from coherence import log
 
+
 class JsonInterface(resource.Resource, log.Loggable):
     logCategory = 'json'
     #isLeaf = False
@@ -60,11 +61,8 @@ class JsonInterface(resource.Resource, log.Loggable):
                     else:
                         msg = "device with id %r not found" % path[0]
 
-
         request.setResponseCode(404, message=msg)
         return static.Data("<html><p>%s</p></html>" % msg, 'text/html')
-
-
 
     def list_devices(self, request):
         devices = []

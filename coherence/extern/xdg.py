@@ -12,6 +12,7 @@ hot_dirs = {'XDG_MUSIC_DIR': ('audio', 'audio'),
             'XDG_PICTURES_DIR': ('image', 'images'),
             'XDG_VIDEOS_DIR': ('video', 'videos')}
 
+
 def xdg_content():
 
     content = []

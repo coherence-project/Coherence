@@ -12,7 +12,6 @@ from coherence.extern.et import parse_xml as et_parse_xml
 
 from coherence import SERVER_ID
 
-
 from twisted.web import server, http, static
 from twisted.web import client, error
 from twisted.web import proxy, resource, server
@@ -39,6 +38,7 @@ def means_true(value):
         value = value.lower()
     return value in [True, 1, '1', 'true', 'yes', 'ok']
 
+
 def generalise_boolean(value):
     """ standardize the different boolean incarnations
 
@@ -54,6 +54,7 @@ generalize_boolean = generalise_boolean
 
 def parse_xml(data, encoding="utf-8"):
     return et_parse_xml(data, encoding)
+
 
 def parse_http_response(data):
 
@@ -182,6 +183,7 @@ def get_host_address():
     """ return localhost if we haven't found anything """
     return '127.0.0.1'
 
+
 def de_chunk_payload(response):
 
     try:
@@ -210,8 +212,8 @@ def de_chunk_payload(response):
 
     return newresponse.getvalue()
 
-class Request(server.Request):
 
+class Request(server.Request):
 
     def process(self):
         "Process a request."
@@ -333,7 +335,6 @@ class ProxyClientFactory(protocol.ClientFactory):
 
     protocol = proxy.ProxyClient
 
-
     def __init__(self, command, rest, version, headers, data, father):
         self.father = father
         self.command = command
@@ -342,11 +343,9 @@ class ProxyClientFactory(protocol.ClientFactory):
         self.data = data
         self.version = version
 
-
     def buildProtocol(self, addr):
         return self.protocol(self.command, self.rest, self.version,
                              self.headers, self.data, self.father)
-
 
     def clientConnectionFailed(self, connector, reason):
         self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
@@ -427,6 +426,7 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         self.port = port
         self.path = path
         self.qs = qs
+
 
 class ReverseProxyUriResource(ReverseProxyResource):
 
@@ -544,7 +544,6 @@ class HeaderAwareHTTPDownloader(client.HTTPDownloader):
                 self.requestedPartial = 0
 
 
-
 def getPage(url, contextFactory=None, *args, **kwargs):
     """
     Download a web page as a string.
@@ -580,7 +579,6 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
     else:
         reactor.connectTCP(host, port, factory)
     return factory.deferred
-
 
 # StaticFile used to be a patched version of static.File. The later
 # was fixed in TwistedWeb 8.2.0 and 9.0.0, while the patched variant
@@ -707,7 +705,6 @@ class BufferFile(static.File):
             # won't be overwritten.
             request.method = 'HEAD'
             return ''
-
         #print "StaticFile out", request.headers, request.code
 
         # return data
@@ -756,9 +753,9 @@ class BufferFileTransfer(object):
         self.request.finish()
         self.request = None
 
-
 from datetime import datetime, tzinfo, timedelta
 import random
+
 
 class _tz(tzinfo):
     def utcoffset(self, dt):
@@ -770,9 +767,11 @@ class _tz(tzinfo):
     def dst(self, dt):
         return timedelta(0)
 
+
 class _CET(_tz):
     _offset = timedelta(minutes=60)
     _name = 'CET'
+
 
 class _CEST(_tz):
     _offset = timedelta(minutes=120)
@@ -784,6 +783,7 @@ _bdates = [datetime(1997,2,28,17,20,tzinfo=_CET()),  # Sebastian Oliver
            datetime(2003,7,23,1,18,tzinfo=_CEST()),  # Mara Sophie
                                                      # you are the best!
          ]
+
 
 def datefaker():
     return random.choice(bdates)

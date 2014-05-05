@@ -22,6 +22,7 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
+
 class BzClient(LineReceiver, log.Loggable):
     logCategory = 'buzztard_client'
 
@@ -44,6 +45,7 @@ class BzClient(LineReceiver, log.Loggable):
             louie.send('Buzztard.Response.repeat', None, line)
         elif line.find('playlist') == 0:
             louie.send('Buzztard.Response.browse', None, line)
+
 
 class BzFactory(protocol.ClientFactory, log.Loggable):
     logCategory = 'buzztard_factory'
@@ -104,6 +106,7 @@ class BzConnection(log.Loggable):
     def __init__(self, backend=None, host='localhost', port=7654):
         self.debug("BzConnection __init__")
 
+
 class BuzztardItem(log.Loggable):
     logCategory = 'buzztard_item'
 
@@ -139,7 +142,6 @@ class BuzztardItem(log.Loggable):
             res.size = None
             self.item.res.append(res)
             self.item.artist = self.parent.name
-
 
     def __del__(self):
         self.debug("BuzztardItem __del__ %s %s", self.id, self.name)
@@ -216,6 +218,7 @@ class BuzztardItem(log.Loggable):
             parent = str(self.parent.get_id())
         return 'id: ' + str(self.id) + '/' + self.name + '/' + parent + ' ' + str(self.child_count) + ' @ ' + self.url
 
+
 class BuzztardStore(log.Loggable, Plugin):
     logCategory = 'buzztard_store'
     implements = ['MediaServer']
@@ -242,7 +245,6 @@ class BuzztardStore(log.Loggable, Plugin):
         louie.connect(self.clear, 'Buzztard.Response.flush', louie.Any)
 
         self.buzztard = BzConnection(backend=self, host=self.host, port=self.port)
-
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -294,7 +296,6 @@ class BuzztardStore(log.Loggable, Plugin):
             value = (parent.get_id(), parent.get_update_id())
             if self.server:
                 self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
-
 
     def clear(self):
         for item in self.get_by_id(1000).get_children():
@@ -558,10 +559,12 @@ class BuzztardPlayer(log.Loggable):
         self.set_volume(DesiredVolume)
         return {}
 
+
 def test_init_complete(backend):
 
     print "Houston, we have a touchdown!"
     backend.buzztard.sendMessage('browse')
+
 
 def main():
 

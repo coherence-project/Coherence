@@ -81,7 +81,6 @@ class Gallery2Item(BackendItem):
             res.size = None
             self.item.res.append(res)
 
-
     def remove(self):
         if self.parent:
             self.parent.remove_child(self)
@@ -97,7 +96,6 @@ class Gallery2Item(BackendItem):
         if update == True:
             self.update_id += 1
 
-
     def remove_child(self, child):
         #self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
         if child in self.children:
@@ -106,7 +104,6 @@ class Gallery2Item(BackendItem):
                 self.item.childCount -= 1
             self.children.remove(child)
             self.update_id += 1
-
 
     def get_children(self, start=0, request_count=0):
         def process_items(result=None):
@@ -123,7 +120,6 @@ class Gallery2Item(BackendItem):
             return d
         else:
             return process_items()
-
 
     def get_child_count(self):
         return self.child_count
@@ -274,7 +270,6 @@ class Gallery2Store(BackendStore):
                                                                   'http-get:*:image/png:*',
                                                                 default=True)
 
-
     def retrieveAlbums(self, album_gallery2_id, parent):
         d = self.gallery2_remote.fetch_albums()
 
@@ -340,7 +335,6 @@ class Gallery2Store(BackendStore):
         d2.addCallback(gotImages)
         dl = defer.DeferredList([d1, d2])
         return dl
-
 
 
 def main():

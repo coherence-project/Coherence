@@ -59,7 +59,6 @@ from twisted.internet import reactor
 # And to parse the RSS-Data (which is XML), we use the coherence helper
 from coherence.extern.et import parse_xml
 
-
 ########## The models
 # After the download and parsing of the data is done, we want to save it. In
 # this case, we want to fetch the images and store their URL and the title of

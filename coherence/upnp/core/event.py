@@ -204,7 +204,6 @@ class Event(dict, log.Loggable):
             self.update({tag[idx:]: value})
 
 
-
 class EventProtocol(Protocol, log.Loggable):
 
     logCategory = 'event_protocol'
@@ -258,6 +257,7 @@ class EventProtocol(Protocol, log.Loggable):
 
 def unsubscribe(service, action='unsubscribe'):
     return subscribe(service, action)
+
 
 def subscribe(service, action='subscribe'):
     """
@@ -429,7 +429,6 @@ def send_notification(s, xml):
         logger.info("error sending notification to %r %r",
                  s['sid'], s['callback'])
         logger.debug(failure)
-
     #c = ClientCreator(reactor, NotificationProtocol)
     #d = c.connectTCP(host, port)
 

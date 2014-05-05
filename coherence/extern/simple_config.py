@@ -10,6 +10,7 @@
 
 from coherence.extern.et import ET as ElementTree, indent, parse_xml
 
+
 class ConfigItem(object):
     """ the base """
 
@@ -130,6 +131,7 @@ class XmlDictObject(dict, ConfigItem):
     def UnWrap(self):
         return XmlDictObject._UnWrap(self)
 
+
 def _ConvertDictToXmlRecurse(parent, dictitem, element2attr_mappings=None):
     assert type(dictitem) is not type([])
 
@@ -164,11 +166,13 @@ def _ConvertDictToXmlRecurse(parent, dictitem, element2attr_mappings=None):
         if not callable(dictitem):
             parent.text = str(dictitem)
 
+
 def ConvertDictToXml(xmldict, element2attr_mappings=None):
     roottag = xmldict.keys()[0]
     root = ElementTree.Element(roottag)
     _ConvertDictToXmlRecurse(root, xmldict[roottag], element2attr_mappings=element2attr_mappings)
     return root
+
 
 def _ConvertXmlToDictRecurse(node, dictclass):
     nodedict = dictclass()
@@ -210,6 +214,7 @@ def _ConvertXmlToDictRecurse(node, dictclass):
             nodedict = node.text.strip()
 
     return nodedict
+
 
 def ConvertXmlToDict(root, dictclass=XmlDictObject):
     return dictclass({root.tag: _ConvertXmlToDictRecurse(root, dictclass)})

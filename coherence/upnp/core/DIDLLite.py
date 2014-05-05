@@ -51,6 +51,7 @@ def is_audio(mimetype):
         return True
     return False
 
+
 def is_video(mimetype):
     """ checks for type video,
         expects a mimetype or an UPnP
@@ -62,6 +63,7 @@ def is_video(mimetype):
     if mimetype.startswith('video/'):
         return True
     return False
+
 
 class Resources(list):
 
@@ -130,6 +132,7 @@ class Resources(list):
                         result.append(res)
         return result
 
+
 def classChooser(mimetype, sub=None):
 
     if mimetype == 'root':
@@ -163,6 +166,7 @@ simple_dlna_tags = ['DLNA.ORG_OP=01',      # operations parameter
                     'DLNA.ORG_PS=1',       # play speed parameter
                     'DLNA.ORG_CI=0',       # transcoded parameter
                     'DLNA.ORG_FLAGS=01100000000000000000000000000000']
+
 
 def build_dlna_additional_info(content_format, does_playcontainer=False):
     additional_info = ['*']
@@ -283,7 +287,6 @@ class Resource(object):
 
         if self.importUri is not None:
             root.attrib['importUri'] = self.importUri
-
 
         return root
 
@@ -409,7 +412,6 @@ class Object(log.Loggable):
     def toElement(self, **kwargs):
 
         root = ET.Element(self.elementName)
-
         #if self.id == 1000:
         #    root.attrib['id'] = '0'
         #    ET.SubElement(root, 'dc:title').text = 'root'
@@ -419,7 +421,6 @@ class Object(log.Loggable):
 
         root.attrib['id'] = str(self.id)
         ET.SubElement(root, qname('title', DC_NS)).text = self.title
-
         #if self.title != None:
         #    ET.SubElement(root, 'dc:title').text = self.title
         #else:
@@ -680,6 +681,7 @@ class ImageItem(Item):
 
         return root
 
+
 class Photo(ImageItem):
     upnp_class = ImageItem.upnp_class + '.photo'
     album = None
@@ -689,6 +691,7 @@ class Photo(ImageItem):
         if self.album is not None:
             ET.SubElement(root, qname('album', UPNP_NS)).text = self.album
         return root
+
 
 class AudioItem(Item):
     """A piece of content that when rendered generates some audio."""
@@ -759,11 +762,14 @@ class MusicTrack(AudioItem):
 
         return root
 
+
 class AudioBroadcast(AudioItem):
     upnp_class = AudioItem.upnp_class + '.audioBroadcast'
 
+
 class AudioBook(AudioItem):
     upnp_class = AudioItem.upnp_class + '.audioBook'
+
 
 class VideoItem(Item):
     upnp_class = Item.upnp_class + '.videoItem'
@@ -791,6 +797,7 @@ class VideoItem(Item):
             if tag in self.valid_attrs.keys():
                 setattr(self, tag, val)
 
+
 class Movie(VideoItem):
     upnp_class = VideoItem.upnp_class + '.movie'
 
@@ -800,17 +807,22 @@ class Movie(VideoItem):
                                      channelName=UPNP_NS, scheduledStartTime=UPNP_NS,
                                      sccheduledEndTime=UPNP_NS))
 
+
 class VideoBroadcast(VideoItem):
     upnp_class = VideoItem.upnp_class + '.videoBroadcast'
+
 
 class MusicVideoClip(VideoItem):
     upnp_class = VideoItem.upnp_class + '.musicVideoClip'
 
+
 class PlaylistItem(Item):
     upnp_class = Item.upnp_class + '.playlistItem'
 
+
 class TextItem(Item):
     upnp_class = Item.upnp_class + '.textItem'
+
 
 class Container(Object):
     """An object that can contain other objects."""
@@ -936,7 +948,6 @@ class DIDLElement(ElementInterface, log.Loggable):
         self.requested_id = requested_id
         self.transcoding = transcoding
 
-
     def addContainer(self, id, parentID, title, restricted=False):
         e = Container(id, parentID, title, restricted, creator='')
         self.append(e.toElement())
@@ -1013,7 +1024,6 @@ def element_to_didl(item):
                          + item + \
                          """</DIDL-Lite>"""
     return didl
-
 
 upnp_classes = {'object': Object,
                 'object.item': Item,

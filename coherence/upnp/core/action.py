@@ -9,6 +9,7 @@ from twisted.python.util import OrderedDict
 
 from coherence import log
 
+
 class Argument:
 
     def __init__(self, name, direction, state_variable):

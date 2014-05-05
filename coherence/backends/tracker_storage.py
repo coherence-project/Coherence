@@ -286,7 +286,6 @@ class Track(BackendItem):
 
         self.url = self.store.urlbase + str(self.id)
 
-
     def get_children(self, start=0, end=0):
         return []
 
@@ -318,7 +317,6 @@ class Track(BackendItem):
         if self.bitrate > 0:
             res.bitrate = str(bitrate)
         item.res.append(res)
-
         #if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
         #    if self.mimetype in ('audio/mpeg',
         #                         'application/ogg','audio/ogg',
@@ -393,7 +391,6 @@ class Video(BackendItem):
 
         self.url = self.store.urlbase + str(self.id)
 
-
     def get_children(self, start=0, end=0):
         return []
 
@@ -457,7 +454,6 @@ class Image(BackendItem):
         self.size = int(size)
 
         self.url = self.store.urlbase + str(self.id)
-
 
     def get_children(self, start=0, end=0):
         return []
@@ -697,7 +693,6 @@ class TrackerStore(BackendStore):
                                     reply_handler=lambda x: d.callback(x), error_handler=lambda x: d.errback(x))
         return d
 
-
     def get_tracks(self):
 
         def handle_error(error):
@@ -754,7 +749,6 @@ class TrackerStore(BackendStore):
             for key in sorted_keys:
                 self.containers[AUDIO_ARTIST_CONTAINER_ID].add_child(artists[key])
 
-
         self.containers[AUDIO_CONTAINER_ID] = \
                     Container(AUDIO_CONTAINER_ID, ROOT_CONTAINER_ID, 'Audio', store=self)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_CONTAINER_ID])
@@ -790,7 +784,6 @@ class TrackerStore(BackendStore):
                           children_callback=None)
         self.containers[AUDIO_CONTAINER_ID].add_child(self.containers[AUDIO_GENRE_CONTAINER_ID])
 
-
         self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),       # all tracks
                                  '5': lambda: self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
                                  '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
@@ -810,8 +803,6 @@ class TrackerStore(BackendStore):
         self.search_interface.Query(self.query_id, 'Music', fields, '', '', tracks_query, False, 0, -1,
                                     reply_handler=lambda x: d.callback(x), error_handler=lambda x: d.errback(x))
         return d
-
-
 
     def upnp_init(self):
         if self.server:

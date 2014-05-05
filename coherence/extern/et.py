@@ -37,7 +37,9 @@ except ImportError:
 utf8_escape = re.compile(eval(r'u"[&<>\"]+"'))
 escape = re.compile(eval(r'u"[&<>\"\u0080-\uffff]+"'))
 
+
 def encode_entity(text, pattern=escape):
+
     # map reserved and non-ascii characters to numerical entities
     def escape_entities(m, map=elementtree.ElementTree._escape_map):
         out = []
@@ -53,7 +55,9 @@ def encode_entity(text, pattern=escape):
     except TypeError:
         elementtree.ElementTree._raise_serialization_error(text)
 
+
 def new_encode_entity(text, pattern=utf8_escape):
+
     # map reserved and non-ascii characters to numerical entities
     def escape_entities(m, map=elementtree.ElementTree._escape_map):
         out = []
@@ -90,6 +94,7 @@ if not hasattr(ET, 'XMLParser'):
 
     ET.XMLParser = XMLParser
 
+
 def namespace_map_update(namespaces):
     #try:
     #    from xml.etree import ElementTree
@@ -98,8 +103,10 @@ def namespace_map_update(namespaces):
 
     elementtree.ElementTree._namespace_map.update(namespaces)
 
+
 class ElementInterface(elementtree.ElementTree._ElementInterface):
     """ helper class """
+
 
 def indent(elem, level=0):
     """ generate pretty looking XML, based upon:
@@ -118,6 +125,7 @@ def indent(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
+
 
 def parse_xml(data, encoding="utf-8", dump_invalid_data=False):
     try:

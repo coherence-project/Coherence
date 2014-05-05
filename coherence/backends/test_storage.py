@@ -5,7 +5,6 @@
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
 
-
 """ A MediaServer backend to test Items
 
     Item information can be passed on the commandline
@@ -88,8 +87,8 @@ from coherence.upnp.core.utils import parse_xml
 
 from coherence import log
 
-
 ROOT_CONTAINER_ID = 0
+
 
 class ExternalProcessProtocol(protocol.ProcessProtocol):
 
@@ -392,7 +391,6 @@ class TestStore(BackendStore):
             except:
                 import traceback
                 self.warning(traceback.format_exc())
-
         #print self.store
 
         self.init_completed()

@@ -6,6 +6,7 @@
 
 from coherence.extern.et import ET, indent
 
+
 class ConfigMixin(object):
 
     def nodes_to_dict(self, node):
@@ -43,6 +44,7 @@ class ConfigList(list, ConfigMixin):
                         self.append(a)
                 else:
                     self.append(self.nodes_to_dict(n))
+
 
 class ConfigDict(dict, ConfigMixin):
 

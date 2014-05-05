@@ -9,6 +9,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class BinaryLightClient(log.Loggable):
     logCategory = 'binarylight_client'
 

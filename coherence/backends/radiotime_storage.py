@@ -27,6 +27,7 @@ OPML_BROWSE_URL = 'http://opml.radiotime.com/Browse.ashx'
 # we only handle mp3 audio streams for now
 DEFAULT_FORMAT = "mp3"
 DEFAULT_MIMETYPE = "audio/mpeg"
+
 # TODO : extend format handling using radiotime API
 
 class RadiotimeAudioItem(BackendItem):
@@ -38,12 +39,10 @@ class RadiotimeAudioItem(BackendItem):
         self.mimetype = DEFAULT_MIMETYPE
         self.stream_url = outline.get('URL')
         self.image = outline.get('image')
-
         #self.location = PlaylistStreamProxy(self.stream_url)
         #self.url = self.stream_url
 
         self.item = None
-
 
     def replace_by (self, item):
         # do nothing: we suppose the replacement item is the same
@@ -103,7 +102,6 @@ class RadiotimeStore(AbstractBackendStore):
 
         self.init_completed()
 
-
     def upnp_init(self):
         self.current_connection_id = None
 
@@ -114,7 +112,6 @@ class RadiotimeStore(AbstractBackendStore):
                                                                     ['http-get:*:audio/mpeg:*',
                                                                      'http-get:*:audio/x-scpls:*'],
                                                                      default=True)
-
 
     def retrieveItemsForOPML (self, parent, url):
 
@@ -164,7 +161,6 @@ class RadiotimeStore(AbstractBackendStore):
                 append_outline(parent, outline)
 
             return True
-
 
         def got_error(error):
             self.warning("connection to Radiotime service failed for url %s", url)

@@ -89,7 +89,6 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
         self.stream_url = None
         utils.ReverseProxyUriResource.__init__(self, uri)
 
-
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
         self.debug("ProxyStream requestFinished")
@@ -152,7 +151,6 @@ class IRadioItem(BackendItem):
         self.location = PlaylistStreamProxy(self.stream_url)
 
         self.item = None
-
 
     def replace_by (self, item):
         # do nothing: we suppose the replacement item is the same
@@ -224,6 +222,7 @@ class IRadioStore(AbstractBackendStore):
             same_genres = [genre]
         title = genre.encode('utf-8')
         family_item = LazyContainer(parent, title, genre, self.refresh, self.retrieveItemsForGenre, genres=same_genres, per_page=1)
+
         # we will use a specific child items sorter
         # in order to get the sub-genre containers first
         def childs_sort(x, y):
@@ -246,7 +245,6 @@ class IRadioStore(AbstractBackendStore):
     def __repr__(self):
         return self.__class__.__name__
 
-
     def upnp_init(self):
         self.current_connection_id = None
 
@@ -257,7 +255,6 @@ class IRadioStore(AbstractBackendStore):
                                                                     ['http-get:*:audio/mpeg:*',
                                                                      'http-get:*:audio/x-scpls:*'],
                                                                      default=True)
-
 
     # populate a genre container (parent) with the sub-genre containers
     # and corresponding IRadio (list retrieved from the shoutcast server)
@@ -313,7 +310,6 @@ class IRadioStore(AbstractBackendStore):
 
             return True
 
-
         def got_error(error):
             self.warning("connection to ShoutCast service failed: %s", url)
             self.debug("%r", error.getTraceback())
@@ -323,7 +319,6 @@ class IRadioStore(AbstractBackendStore):
         d = utils.getPage(url)
         d.addCallbacks(got_page, got_error)
         return d
-
 
     # retrieve the whole list of genres from the shoutcast server
     # to complete the population of the genre families classification

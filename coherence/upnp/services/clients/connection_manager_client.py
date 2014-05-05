@@ -1,3 +1,4 @@
+
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
@@ -11,7 +12,6 @@ class ConnectionManagerClient:
         self.url = service.get_control_url()
         self.service.client = self
         self.service.subscribe()
-
     #def __del__(self):
     #    #print "ConnectionManagerClient deleted"
     #    pass
@@ -47,7 +47,6 @@ class ConnectionManagerClient:
         if action:  # optional
             return action.call(ConnectionID=connection_id)
         return None
-
 
     def get_current_connection_ids(self):
         action = self.service.get_action('GetCurrentConnectionIDs')

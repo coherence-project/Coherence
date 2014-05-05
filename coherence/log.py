@@ -26,6 +26,7 @@ else:
 _srcfile = os.path.normcase(_srcfile)
 _srcfiles = (_srcfile, logging._srcfile)
 
+
 class Logger(logging.Logger):
 
     def findCaller(self):
@@ -115,7 +116,6 @@ class Loggable(object):
     fatal = critical
     warn = warning
     msg = info
-
 
 getLogger = logging.getLogger
 

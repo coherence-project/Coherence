@@ -28,7 +28,6 @@ from coherence.upnp.core import utils
 from coherence.upnp.core.utils import StaticFile
 from coherence.upnp.core.utils import ReverseProxyResource
 
-
 from coherence.upnp.services.servers.connection_manager_server import ConnectionManagerServer
 from coherence.upnp.services.servers.content_directory_server import ContentDirectoryServer
 from coherence.upnp.services.servers.scheduled_recording_server import ScheduledRecordingServer
@@ -45,6 +44,7 @@ ATTACHMENT_REQUEST_INDICATOR = re.compile(".*?attachment=.*$")
 
 TRANSCODED_REQUEST_INDICATOR = re.compile(".*/transcoded/.*$")
 
+
 class MSRoot(resource.Resource, log.Loggable):
     logCategory = 'mediaserver'
 
@@ -53,8 +53,6 @@ class MSRoot(resource.Resource, log.Loggable):
         log.Loggable.__init__(self)
         self.server = server
         self.store = store
-
-
     #def delayed_response(self, resrc, request):
     #    print "delayed_response", resrc, request
     #    body = resrc.render(request)
@@ -103,6 +101,7 @@ class MSRoot(resource.Resource, log.Loggable):
         if request.method in ('GET', 'HEAD'):
             if COVER_REQUEST_INDICATOR.match(request.uri):
                 self.info("request cover for id %s", path)
+
                 def got_item(ch):
                     if ch is not None:
                         request.setResponseCode(200)
@@ -120,6 +119,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
             if ATTACHMENT_REQUEST_INDICATOR.match(request.uri):
                 self.info("request attachment %r for id %s", request.args, path)
+
                 def got_attachment(ch):
                     try:
                         #FIXME same as below
@@ -207,6 +207,7 @@ class MSRoot(resource.Resource, log.Loggable):
         if path in ('config'):
             backend = self.server.backend
             backend_type = backend.__class__.__name__
+
             def constructConfigData(backend):
                 msg = "<plugin active=\"yes\">"
                 msg += "<backend>" + backend_type + "</backend>"
@@ -281,6 +282,7 @@ class MSRoot(resource.Resource, log.Loggable):
     def import_file(self, name, request):
         self.info("import file, id %s", name)
         print "import file, id %s" % name
+
         def got_file(ch):
             print "ch", ch
             if ch is not None:
@@ -481,7 +483,6 @@ class RootDeviceXML(static.Data):
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement(e, 'major').text = '1'
         ET.SubElement(e, 'minor').text = '0'
-
         #if version == 1:
         #    ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
 
@@ -584,6 +585,7 @@ class RootDeviceXML(static.Data):
         #    indent( root)
         self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
         static.Data.__init__(self, self.xml, 'text/xml')
+
 
 class MediaServer(log.Loggable, BasicDeviceMixin):
     logCategory = 'mediaserver'

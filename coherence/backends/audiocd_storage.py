@@ -39,6 +39,7 @@ PLAY_TRACK_GST_PIPELINE = "cdiocddasrc device=%s track=%d ! wavenc name=enc"
 TRACK_MIMETYPE = "audio/x-wav"
 TRACK_FOURTH_FIELD = "*"
 
+
 class TrackItem(BackendItem):
     logCategory = "audiocd"
 
@@ -102,9 +103,7 @@ class AudioCDStore(AbstractBackendStore):
         self.device_name = kwargs.get('device_name', "/dev/cdom")
 
         threads.deferToThread(self.extractAudioCdInfo)
-
         # self.init_completed() # will be fired when the audio CD info is extracted
-
 
     def upnp_init(self):
         self.current_connection_id = None
@@ -115,7 +114,6 @@ class AudioCDStore(AbstractBackendStore):
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             #self.server.content_directory_server.set_variable(0, 'SortCapabilities', '*')
 
-
     def extractAudioCdInfo (self):
         """ extract the CD info (album art + artist + tracks), and construct the UPnP items"""
         self.cdrom = DiscID.open(self.device_name)
@@ -125,7 +123,6 @@ class AudioCDStore(AbstractBackendStore):
         if query_status in (210, 211):
             query_info = query_info[0]
         (read_status, read_info) = CDDB.read(query_info['category'], query_info['disc_id'])
-
 #        print query_info['title']
 #        print disc_id[1]
 #        for i in range(disc_id[1]):
@@ -141,6 +138,7 @@ class AudioCDStore(AbstractBackendStore):
         self.name = self.disc_title
 
         root_item = Container(None, self.disc_title)
+
         # we will sort the item by "track_number"
         def childs_sort(x, y):
             return cmp(x.track_number, y.track_number)
@@ -158,7 +156,6 @@ class AudioCDStore(AbstractBackendStore):
         reactor.callLater(2, self.checkIfAudioCdStillPresent)
         self.init_completed()
 
-
     def  checkIfAudioCdStillPresent(self):
         try:
             disc_id = DiscID.disc_id(self.cdrom)
@@ -166,7 +163,6 @@ class AudioCDStore(AbstractBackendStore):
         except:
             self.warning('audio CD %s ejected: closing UPnP server!', self.disc_title)
             self.server.coherence.remove_plugin(self.server)
-
         
     def __repr__(self):
         return self.__class__.__name__

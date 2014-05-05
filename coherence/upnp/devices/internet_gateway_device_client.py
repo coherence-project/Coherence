@@ -11,6 +11,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class InternetGatewayDeviceClient(log.Loggable):
     logCategory = 'igd_client'
 

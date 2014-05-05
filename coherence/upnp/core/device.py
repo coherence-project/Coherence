@@ -17,6 +17,7 @@ import coherence.extern.louie as louie
 
 ns = "urn:schemas-upnp-org:device-1-0"
 
+
 class Device(log.Loggable):
     logCategory = 'device'
 
@@ -39,7 +40,6 @@ class Device(log.Loggable):
 
     def __repr__(self):
         return "embedded device %r %r, parent %r" % (self.friendly_name, self.device_type, self.parent)
-
     #def __del__(self):
     #    #print "Device removal completed"
     #    pass
@@ -297,7 +297,6 @@ class Device(log.Loggable):
                 self.add_service(Service(serviceType, serviceId, self.get_location(),
                                          controlUrl,
                                          eventSubUrl, presentationUrl, scpdUrl, self))
-
 
             # now look for all sub devices
             embedded_devices = d.find('./{%s}deviceList' % ns)

@@ -29,7 +29,6 @@ import time
 from urlparse import urlsplit
 import urllib2
 
-
 import mimetypes
 mimetypes.init()
 mimetypes.add_type('audio/x-m4a', '.m4a')
@@ -53,6 +52,7 @@ AUDIO_PLAYLIST_CONTAINER_ID = 204
 VIDEO_ALL_CONTAINER_ID = 301
 VIDEO_PLAYLIST_CONTAINER_ID = 302
 
+
 def get_cover_path(artist_name, album_title):
     def _escape_part(part):
         escaped = ""
@@ -65,6 +65,7 @@ def get_cover_path(artist_name, album_title):
     base_dir = os.path.expanduser("~/.cache/album-art")
     return os.path.join(base_dir, "%s-%s.jpg" % (_escape_part(artist_name),
                                                  _escape_part(album_title)))
+
 
 class SQLiteDB(Loggable):
     """
@@ -116,6 +117,7 @@ class SQLiteDB(Loggable):
         delta = time.time() - t0
         self.log("SQL request took %s seconds", delta)
         return result
+
 
 class Container(BackendItem):
 
@@ -180,7 +182,6 @@ class Container(BackendItem):
             item.res.append(res)
             return item
 
-
         dfr = defer.maybeDeferred(self.get_child_count)
         dfr.addCallback(got_count)
         return dfr
@@ -190,6 +191,7 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
+
 
 class Artist(BackendItem):
 
@@ -242,6 +244,7 @@ class Artist(BackendItem):
         return '<Artist %d name="%s" musicbrainz="%s">' % (self.itemID,
                                                            self.name,
                                                            self.musicbrainz_id)
+
 
 class Album(BackendItem):
     """ definition for an album """
@@ -393,6 +396,7 @@ class BasePlaylist(BackendItem):
     def get_name(self):
         return self.title
 
+
 class MusicPlaylist(BasePlaylist):
     id_type = "musicplaylist"
 
@@ -406,6 +410,7 @@ class MusicPlaylist(BasePlaylist):
         if request_count:
             q += " limit %d" % request_count
         return self._db.sql_execute(q, self.db_id)
+
 
 class MusicSmartPlaylist(BasePlaylist):
     id_type = "musicsmartplaylist"
@@ -421,17 +426,20 @@ class MusicSmartPlaylist(BasePlaylist):
             q += " limit %d" % request_count
         return self._db.sql_execute(q, self.db_id)
 
+
 class VideoPlaylist(MusicPlaylist):
     id_type = "videoplaylist"
 
     def db_to_didl(self, row):
         return Video(row, self._db)
 
+
 class VideoSmartPlaylist(MusicSmartPlaylist):
     id_type = "videosmartplaylist"
 
     def db_to_didl(self, row):
         return Video(row, self._db)
+
 
 class BaseTrack(BackendItem):
     """ definition for a track """
@@ -510,6 +518,7 @@ class BaseTrack(BackendItem):
                % (self.itemID, self.title, self.track_nr, self.album.title,
                   self.album.artist.name, self.location)
 
+
 class Track(BaseTrack):
 
     def __init__(self, *args, **kwargs):
@@ -542,6 +551,7 @@ class Track(BaseTrack):
 
         return item
 
+
 class Video(BaseTrack):
     def get_item(self):
         item = DIDLLite.VideoItem(self.get_id(), VIDEO_ALL_CONTAINER_ID,
@@ -558,6 +568,7 @@ class Video(BaseTrack):
             item.date = None
 
         return item
+
 
 class BansheeDB(Loggable):
     logCategory = "banshee_db"
@@ -751,6 +762,7 @@ class BansheeDB(Loggable):
         return self.get_playlists(self.get_local_video_library_id(),
                                   VideoPlaylist, VideoSmartPlaylist)
 
+
 class BansheeStore(BackendStore, BansheeDB):
     logCategory = 'banshee_store'
     implements = ['MediaServer']
@@ -814,7 +826,6 @@ class BansheeStore(BackendStore, BansheeDB):
                               children_callback=self.get_video_playlists)
         self.containers[VIDEO_PLAYLIST_CONTAINER_ID] = playlists
         self.containers[VIDEO_CONTAINER].add_child(playlists)
-
 
         self.db.server = self.server
         self.db.urlbase = self.urlbase

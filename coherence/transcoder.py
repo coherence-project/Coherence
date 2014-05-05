@@ -28,14 +28,17 @@ from coherence import log
 
 import struct
 
+
 def get_transcoder_name(transcoder):
     return transcoder.name
+
 
 class InternalTranscoder(object):
     """ just a class to inherit from and
         which we can look for upon creating our
         list of available transcoders
     """
+
 
 class FakeTransformer(gst.Element, log.Loggable):
     logCategory = 'faker_datasink'
@@ -96,6 +99,7 @@ class FakeTransformer(gst.Element, log.Loggable):
 
 gobject.type_register(FakeTransformer)
 
+
 class DataSink(gst.Element, log.Loggable):
 
     logCategory = 'transcoder_datasink'
@@ -153,8 +157,8 @@ class DataSink(gst.Element, log.Loggable):
                 self.request.finish()
         return True
 
-
 gobject.type_register(DataSink)
+
 
 class GStreamerPipeline(resource.Resource, log.Loggable):
     logCategory = 'gstreamer'
@@ -628,6 +632,7 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         ExternalProcessProducer(self.pipeline_description % self.uri, request)
         return server.NOT_DONE_YET
 
+
 def transcoder_class_wrapper(klass, content_type, pipeline):
     def create_object(uri):
         transcoder = klass(uri)
@@ -635,7 +640,6 @@ def transcoder_class_wrapper(klass, content_type, pipeline):
         transcoder.pipeline_description = pipeline
         return transcoder
     return create_object
-
 
 
 class TranscoderManager(log.Loggable):
@@ -719,7 +723,6 @@ class TranscoderManager(log.Loggable):
                             transcoder)
                     continue
 
-
                 transcoder_type = transcoder['type'].lower()
 
                 if transcoder_type == 'gstreamer':
@@ -736,7 +739,6 @@ class TranscoderManager(log.Loggable):
 
         #FIXME reduce that to info later
         self.warning("available transcoders %r", self.transcoders)
-
 
     def select(self, name, uri, backend=None):
         # FIXME:why do we specify the name when trying to get it?

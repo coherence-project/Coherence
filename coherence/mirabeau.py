@@ -14,6 +14,7 @@ from coherence.upnp.devices.control_point import ControlPoint
 
 from twisted.internet import defer
 
+
 class Mirabeau(log.Loggable):
     logCategory = "mirabeau"
 
@@ -102,10 +103,12 @@ class Mirabeau(log.Loggable):
                                            enabled=True,
                                            port_mapping_description=description,
                                            lease_duration=0)
+
             def mapping_ok(r, t):
                 self._portmapping_ready = t
                 self.warning("UPnP port-mapping succeeded")
                 return None
+
             def mapping_failed(r):
                 self.warning("UPnP port-mapping failed")
                 return None

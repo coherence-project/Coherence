@@ -11,6 +11,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class MediaServerClient(log.Loggable):
     logCategory = 'ms_client'
 
@@ -56,7 +57,6 @@ class MediaServerClient(log.Loggable):
             self.info("AVTransport (optional) available")
         if self.scheduled_recording:
             self.info("ScheduledRecording (optional) available")
-
         #d = self.content_directory.browse(0) # browse top level
         #d.addCallback( self.process_meta)
 

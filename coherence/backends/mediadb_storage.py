@@ -92,6 +92,7 @@ def _dict_from_tags(tag):
 try:
     import libmtag
 
+
     def get_tags(filename):
         audio_file = libmtag.File(filename)
         tags = {}
@@ -105,6 +106,7 @@ except ImportError:
     try:
         import pyid3lib
 
+
         def get_tags(filename):
             audio_file = pyid3lib.tag(filename)
             return _dict_from_tags(audio_file)
@@ -112,6 +114,7 @@ except ImportError:
     except ImportError:
         try:
             import tagpy
+
 
             def get_tags(filename):
                 audio_file = tagpy.FileRef(filename)
@@ -122,8 +125,6 @@ except ImportError:
 if not get_tags:
     raise ImportError("we need some installed id3 tag library for this backend: python-tagpy, pyid3lib or libmtag")
 
-
-
 MEDIA_DB = 'tests/media.db'
 
 ROOT_CONTAINER_ID = 0
@@ -131,6 +132,7 @@ AUDIO_CONTAINER = 100
 AUDIO_ALL_CONTAINER_ID = 101
 AUDIO_ARTIST_CONTAINER_ID = 102
 AUDIO_ALBUM_CONTAINER_ID = 103
+
 
 def sanitize(filename):
     badchars = ''.join(set(string.punctuation) - set('-_+.~'))
@@ -395,7 +397,6 @@ class Track(item.Item, BackendItem):
         except:
             item.date = None
 
-
         return item
 
     def get_path(self):
@@ -467,7 +468,6 @@ class MediaStore(BackendStore):
                                  '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),  # all artists
                                 })
 
-
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def walk(self, path):
@@ -521,7 +521,6 @@ class MediaStore(BackendStore):
             if len(title) == 0:
                 return
                 title = u'UNKNOWN_TITLE'
-
             #print "Tags:", file, album, artist, title, track
 
             artist_ds = self.db.findOrCreate(Artist, name=unicode(artist, 'utf8'))
@@ -547,7 +546,6 @@ class MediaStore(BackendStore):
         for file in self.filelist:
             d = defer.maybeDeferred(get_tags, file)
             d.addBoth(got_tags, file)
-
 
     def show_db(self):
         for album in list(self.db.query(Album, sort=Album.title.ascending)):
@@ -668,7 +666,6 @@ class MediaStore(BackendStore):
         if db_is_new is True:
             self.get_music_files(self.medialocation)
             self.get_album_covers()
-
         #self.show_db()
         #self.show_artists()
         #self.show_albums()
@@ -676,7 +673,6 @@ class MediaStore(BackendStore):
         #self.show_tracks_by_artist(u'Beyonce')
         #self.show_tracks_by_title(u'Bad')
         #self.show_tracks_to_filename(u'säen')
-
 
         self.current_connection_id = None
         if self.server:
@@ -691,6 +687,7 @@ class MediaStore(BackendStore):
 if __name__ == '__main__':
     from twisted.internet import reactor
     from twisted.internet import task
+
 
     def run():
         m = MediaStore(None, medialocation='/data/audio/music',

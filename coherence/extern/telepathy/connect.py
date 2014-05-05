@@ -11,6 +11,7 @@ from telepathy.constants import CONNECTION_PRESENCE_TYPE_AVAILABLE
 import dbus
 from twisted.internet import defer
 
+
 def to_dbus_account(account):
     for key, value in account.iteritems():
         if value.lower() in ("false", "true"):
@@ -22,6 +23,7 @@ def to_dbus_account(account):
                 pass
         account[key] = value
     return account
+
 
 def tp_connect(manager, protocol, account, ready_handler=None):
     if isinstance(account, dict):

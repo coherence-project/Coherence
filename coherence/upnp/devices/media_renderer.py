@@ -25,6 +25,7 @@ from coherence.upnp.devices.basics import RootDeviceXML, DeviceHttpRoot, BasicDe
 
 from coherence import log
 
+
 class HttpRoot(DeviceHttpRoot):
     logCategory = 'mediarenderer'
 
@@ -88,7 +89,6 @@ class MediaRenderer(log.Loggable, BasicDeviceMixin):
         if upnp_init:
             upnp_init()
 
-
         self.web_resource = HttpRoot(self)
         self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
@@ -96,7 +96,6 @@ class MediaRenderer(log.Loggable, BasicDeviceMixin):
             dlna_caps = self.backend.dlna_caps
         except AttributeError:
             dlna_caps = []
-
 
         version = self.version
         while version > 0:
@@ -115,7 +114,6 @@ class MediaRenderer(log.Loggable, BasicDeviceMixin):
                                     icons=self.icons,
                                     dlna_caps=dlna_caps))
             version -= 1
-
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
         self.web_resource.putChild('RenderingControl', self.rendering_control_server)
@@ -136,7 +134,6 @@ class MediaRenderer(log.Loggable, BasicDeviceMixin):
                     icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..', '..', '..', 'misc', 'device-icons', icon['url'])))
                     if os.path.exists(icon_path):
                         self.web_resource.putChild(icon['url'], StaticFile(icon_path, defaultType=icon['mimetype']))
-
 
         self.register()
         self.warning("%s %s (%s) activated with %s", self.backend.name, self.device_type, self.backend, str(self.uuid)[5:])

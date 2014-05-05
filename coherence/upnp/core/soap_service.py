@@ -17,10 +17,12 @@ from coherence.upnp.core import soap_lite
 
 import coherence.extern.louie as louie
 
+
 class errorCode(Exception):
     def __init__(self, status):
         Exception.__init__(self)
         self.status = status
+
 
 class UPnPPublisher(resource.Resource, log.Loggable):
     """ Based upon twisted.web.soap.SOAPPublisher and

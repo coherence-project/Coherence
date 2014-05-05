@@ -41,6 +41,7 @@ test_didl_fragment = """
     </item>
 </DIDL-Lite>"""
 
+
 class TestDIDLLite(unittest.TestCase):
 
     def test_DIDLElement_class_detect(self):

@@ -23,6 +23,7 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+
 class DeviceQuery(object):
 
     def __init__(self, type, pattern, callback, timeout=0, oneshot=True):
@@ -54,6 +55,7 @@ class DeviceQuery(object):
         elif(self.type == 'uuid' and
            device.get_uuid() == self.pattern):
             self.fire(device)
+
 
 class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
@@ -349,22 +351,22 @@ if __name__ == '__main__':
         for d in ctrl.get_devices():
             print d, d.get_id()
 
+
     def the_result(r):
         print "result", r, r.get_id()
+
 
     def query_devices():
         print "query_devices"
         ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result))
 
+
     def query_devices2():
         print "query_devices with timeout"
         ctrl.add_query(DeviceQuery('host', '192.168.1.163', the_result, timeout=10, oneshot=False))
-
     #reactor.callLater(2, show_devices)
     #reactor.callLater(3, query_devices)
     #reactor.callLater(4, query_devices2)
     #reactor.callLater(5, ctrl.add_query, DeviceQuery('friendly_name', 'Coherence Test Content', the_result, timeout=10, oneshot=False))
-
-
 
     reactor.run()

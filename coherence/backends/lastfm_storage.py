@@ -17,7 +17,6 @@ rest /user/e0362c757ef49169e9a0f0970cc2d367.mp3
 headers {'icy-metadata': '1', 'host': 'kingpin5.last.fm', 'te': 'trailers', 'connection': 'TE', 'user-agent': 'gnome-vfs/2.12.0.19 neon/0.24.7'}
 ProxyClient handleStatus HTTP/1.1 403 Invalid ticket
 """
-
 # Copyright 2007, Frank Scholz <coherence@beebits.net>
 # Copyright 2007, Moritz Struebe <morty@gmx.net>
 
@@ -90,7 +89,6 @@ class LastFMUser(log.Loggable):
                             self.info("Got new path: %s", self.basepath)
             self.get_tracks()
 
-
         def got_error(error):
             self.warning("Login to LastFM Failed! %r", error)
             self.debug("%r", error.getTraceback())
@@ -115,6 +113,7 @@ class LastFMUser(log.Loggable):
             print "got Tracks"
             for track in result.findall('trackList/track'):
                 data = {}
+
                 def get_data(name):
                     #print track.find(name).text.encode('utf-8')
                     return track.find(name).text.encode('utf-8')
@@ -132,7 +131,6 @@ class LastFMUser(log.Loggable):
                 data['url'] = track.find('location').text.encode('utf-8')
                 item = self.parent.store.append(data, self.parent)
                 self.tracks.append(item)
-
 
         def got_error(error):
             self.warning("Problem getting Tracks! %r", error)
@@ -186,7 +184,6 @@ class LFMProxyStream(utils.ReverseProxyResource, log.Loggable):
         return utils.ReverseProxyResource.render(self, request)
 
 
-
 class LastFMItem(log.Loggable):
     logCategory = 'LastFM_item'
 
@@ -237,7 +234,6 @@ class LastFMItem(log.Loggable):
             res.size = -1  # None
             self.item.res.append(res)
 
-
     def remove(self):
         if self.parent:
             self.parent.remove_child(self)
@@ -252,7 +248,6 @@ class LastFMItem(log.Loggable):
             self.item.childCount += 1
         if update == True:
             self.update_id += 1
-
 
     def remove_child(self, child):
         self.info("remove_from %d (%s) child %d (%s)", self.id, self.get_name(), child.id, child.get_name())
@@ -301,6 +296,7 @@ class LastFMItem(log.Loggable):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.url + ' ' + self.name
 
+
 class LastFMStore(log.Loggable, Plugin):
 
     logCategory = 'lastFM_store'
@@ -319,9 +315,7 @@ class LastFMStore(log.Loggable, Plugin):
 
         self.wmc_mapping = {'4': 1000}
 
-
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-
 
     def __repr__(self):
         return str(self.__class__).split('.')[-1]
@@ -394,9 +388,7 @@ class LastFMStore(log.Loggable, Plugin):
     def upnp_init(self):
         self.current_connection_id = None
 
-
         parent = self.append({'name': 'LastFM', 'mimetype': 'directory'}, None)
-
 
         self.LFM = LastFMUser(self.config.get("login"), self.config.get("password"))
         self.LFM.parent = parent
@@ -406,6 +398,7 @@ class LastFMStore(log.Loggable, Plugin):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:audio/mpeg:*'],
                                                                     default=True)
+
 
 def main():
 

@@ -27,6 +27,7 @@ AUDIO_ARTIST_CONTAINER_ID = 52
 AUDIO_ALBUM_CONTAINER_ID = 53
 VIDEO_FOLDER_CONTAINER_ID = 54
 
+
 class RedirectingReverseProxyUriResource(ReverseProxyUriResource):
     def render(self, request):
         self.uri = self.follow_redirect(self.uri)
@@ -46,6 +47,7 @@ class RedirectingReverseProxyUriResource(ReverseProxyUriResource):
 
 class FeedStorageConfigurationException(Exception):
     pass
+
 
 class FeedContainer(BackendItem):
     def __init__(self, parent_id, id, title):
@@ -93,6 +95,7 @@ class FeedEnclosure(BackendItem):
         res = DIDLLite.Resource("%s%d" % (store.urlbase, id), 'http-get:*:%s:*' % mime_type)
 
         self.item.res.append(res)
+
 
 class FeedStore(BackendStore):
     """a general feed store"""

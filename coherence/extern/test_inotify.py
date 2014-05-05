@@ -11,6 +11,7 @@ from twisted.trial import unittest
 
 from . import inotify
 
+
 class TestINotify(unittest.TestCase):
     def setUp(self):
         self.dirname = filepath.FilePath(self.mktemp())
@@ -62,7 +63,9 @@ class TestINotify(unittest.TestCase):
         Test that when a subdirectory is added to a watched directory
         it is also added to the watched list.
         """
+
         def _callback(wp, filename, mask):
+
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
@@ -89,7 +92,9 @@ class TestINotify(unittest.TestCase):
         also removed from the watchlist
         """
         calls = []
+
         def _callback(wp, filename, mask):
+
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
@@ -99,6 +104,7 @@ class TestINotify(unittest.TestCase):
                 except Exception, e:
                     print e
                     d.errback(e)
+
             def _eb():
                 # second call, we have just removed the subdir
                 try:
@@ -193,7 +199,9 @@ class TestINotify(unittest.TestCase):
         """
         Test that if autoAdd is off we don't add a new directory
         """
+
         def _callback(wp, filename, mask):
+
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():
@@ -223,7 +231,9 @@ class TestINotify(unittest.TestCase):
         This is basically the most critical testcase for inotify.
         """
         calls = set()
+
         def _callback(wp, filename, mask):
+
             # We are notified before we actually process new
             # directories, so we need to defer this check.
             def _():

@@ -13,6 +13,7 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 
 from coherence.backend import BackendStore, BackendItem
 
+
 class AxisCamItem(BackendItem):
     logCategory = 'axis_cam_item'
 
@@ -54,11 +55,9 @@ class AxisCamItem(BackendItem):
             res.size = None
             self.item.res.append(res)
 
-
     def __del__(self):
         #print "AxisCamItem __del__", self.id, self.name
         pass
-
 
     def remove(self):
         #print "AxisCamItem remove", self.id, self.name, self.parent
@@ -72,7 +71,6 @@ class AxisCamItem(BackendItem):
             self.item.childCount += 1
         if update == True:
             self.update_id += 1
-
 
     def remove_child(self, child):
         self.info("remove_from %d (%s) child %d (%s)", self.id, self.get_name(), child.id, child.get_name())
@@ -208,6 +206,7 @@ class AxisCamStore(BackendStore):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     source_protocols,
                                                                     default=True)
+
 
 def main():
 

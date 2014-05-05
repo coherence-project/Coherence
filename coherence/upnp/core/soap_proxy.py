@@ -13,6 +13,7 @@ from coherence.upnp.core.utils import getPage, parse_xml
 
 from coherence.upnp.core import soap_lite
 
+
 class SOAPProxy(log.Loggable):
     """ A Proxy for making remote SOAP calls.
 

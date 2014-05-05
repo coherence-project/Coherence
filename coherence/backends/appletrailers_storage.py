@@ -21,6 +21,7 @@ XML_URL = "http://www.apple.com/trailers/home/xml/current.xml"
 
 ROOT_ID = 0
 
+
 class AppleTrailerProxy(ReverseProxyUriResource):
 
     def __init__(self, uri):
@@ -86,6 +87,7 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
+
 
 class AppleTrailersStore(BackendStore):
 

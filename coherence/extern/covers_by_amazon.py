@@ -56,7 +56,6 @@ aws_server = {'de': 'de',
                'uk': 'co.uk',
                'fr': 'fr'}
 
-
 aws_artist_query = '&Operation=ItemSearch' \
                    '&SearchIndex=Music'
 
@@ -69,6 +68,7 @@ aws_ns = 'http://webservices.amazon.com/AWSECommerceService/2005-10-05'
 aws_image_size = {'large': 'LargeImage',
                    'medium': 'MediumImage',
                    'small': 'SmallImage'}
+
 
 class WorkQueue(object):
 
@@ -105,6 +105,7 @@ class WorkQueue(object):
     def remove_from_workers(self, result, d):
         self.workers.remove(d)
         reactor.callLater(1, self.queue_run)  # a very,very weak attempt
+
 
 class CoverGetter(object):
 
@@ -292,6 +293,7 @@ if __name__ == '__main__':
 
     from twisted.python import usage
 
+
     class Options(usage.Options):
         optParameters = [['artist', 'a', '', 'artist name'],
                          ['title', 't', '', 'title'],
@@ -307,6 +309,7 @@ if __name__ == '__main__':
         print '%s: %s' % (sys.argv[0], errortext)
         print '%s: Try --help for usage details.' % (sys.argv[0])
         sys.exit(1)
+
 
     def got_it(filename, *args, **kwargs):
         print "Mylady, it is an image and its name is", filename, args, kwargs

@@ -21,6 +21,7 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
+
 class ElisaPlayer(log.Loggable, Plugin):
 
     """ a backend to the Elisa player
@@ -62,7 +63,6 @@ class ElisaPlayer(log.Loggable, Plugin):
             d.addCallback(lambda object: object.callRemote("get_player"))
             d.addCallback(result)
             d.addErrback(got_error)
-
 
         self.playing = False
         self.state = None
@@ -111,7 +111,6 @@ class ElisaPlayer(log.Loggable, Plugin):
                                                                  transport_state)
         self.call_player("get_readable_state", got_result)
 
-
     def query_position(self):
         def got_result(result):
             self.info("query_position %s", result)
@@ -151,8 +150,6 @@ class ElisaPlayer(log.Loggable, Plugin):
 
         self.call_player("get_status", got_result)
 
-
-
     def load(self, uri, metadata):
 
         def got_result(result):
@@ -169,7 +166,6 @@ class ElisaPlayer(log.Loggable, Plugin):
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData', metadata)
 
         self.call_player("set_uri", got_result, uri)
-
 
     def start(self, uri):
         self.load(uri)
@@ -198,15 +194,12 @@ class ElisaPlayer(log.Loggable, Plugin):
                                  'TransportState', 'PAUSED_PLAYBACK')
         self.call_player("pause", got_result)
 
-
     def seek(self, location):
         """
         @param location:    simple number = time to seek to, in seconds
                             +nL = relative seek forward n seconds
                             -nL = relative seek backwards n seconds
         """
-
-
 
     def mute(self):
         def got_result(result):
@@ -234,6 +227,7 @@ class ElisaPlayer(log.Loggable, Plugin):
     def get_volume(self):
         """ playbin volume is a double from 0.0 - 10.0
         """
+
         def got_infos(result):
             self.info("got_volume: %r", result)
             return result
@@ -322,6 +316,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         DesiredVolume = int(kwargs['DesiredVolume'])
         self.set_volume(DesiredVolume)
         return {}
+
 
 def main():
 

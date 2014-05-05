@@ -56,6 +56,8 @@ from coherence.backend import BackendItem, BackendStore
 
 ## Sorting helpers
 NUMS = re.compile('([0-9]+)')
+
+
 def _natural_key(s):
     # strip the spaces
     s = s.get_name().strip()
@@ -64,6 +66,7 @@ def _natural_key(s):
 
 class NoThumbnailFound(Exception):
     """no thumbnail found"""
+
 
 def _find_thumbnail(filename, thumbnail_folder='.thumbs'):
     """ looks for a thumbnail file of the same basename
@@ -84,6 +87,7 @@ def _find_thumbnail(filename, thumbnail_folder='.thumbs'):
             return os.path.abspath(f), mimetype, dlna_pn
     else:
         raise NoThumbnailFound()
+
 
 class FSItem(BackendItem):
     logCategory = 'fs_item'
@@ -442,6 +446,7 @@ class FSItem(BackendItem):
     def __repr__(self):
         return 'id: ' + str(self.id) + ' @ ' + self.get_name().encode('ascii', 'xmlcharrefreplace')
 
+
 class FSStore(BackendStore):
     logCategory = 'fs_store'
 
@@ -458,7 +463,6 @@ class FSStore(BackendStore):
                {'option': 'enable_destroy', 'type': 'string', 'default': 'no', 'help': 'enable deleting a file via an UPnP method'},
                {'option': 'import_folder', 'type': 'string', 'help': 'The path to store files imported via an UPnP method, if empty the Import method is disabled'}
               ]
-
 
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
@@ -599,7 +603,6 @@ class FSStore(BackendStore):
             return ''
         return self.store[id].url
 
-
     def update_config(self, **kwargs):
         print "update_config", kwargs
         if 'content' in kwargs:
@@ -729,7 +732,6 @@ class FSStore(BackendStore):
         except:
             pass
 
-
     def notify(self, ignore, path, mask, parameter=None):
         self.info("Event %s on %s - parameter %r",
             ', '.join(self.inotify.flag_to_human(mask)), path.path, parameter)
@@ -812,7 +814,6 @@ class FSStore(BackendStore):
                         default=True)
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             #self.server.content_directory_server.set_variable(0, 'SortCapabilities', '*')
-
 
     def upnp_ImportResource(self, *args, **kwargs):
         SourceURI = kwargs['SourceURI']
@@ -919,7 +920,6 @@ class FSStore(BackendStore):
                 self.inotify.watch(
                     path, mask=mask, autoAdd=False,
                     callbacks=[partial(self.notify, parameter=id)])
-
 
             new_item = self.get_by_id(id)
             didl = DIDLElement()

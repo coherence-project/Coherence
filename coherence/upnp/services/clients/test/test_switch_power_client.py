@@ -53,6 +53,7 @@ class TestSwitchPowerClient(unittest.TestCase):
             self.assertEqual(str(self.uuid), r.udn)
 
             call = r.client.switch_power.get_status()
+
             def got_answer(r):
                 self.assertEqual(int(r['ResultStatus']), 0)
                 d.callback(None)

@@ -11,6 +11,7 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 
 from coherence.upnp.core import service
 
+
 class FakeMediaReceiverRegistrarBackend:
 
     def upnp_IsAuthorized(self, *args, **kwargs):
@@ -27,6 +28,7 @@ class FakeMediaReceiverRegistrarBackend:
         """ FIXME: check with WMC and WMP """
         r = {'RegistrationRespMsg': 'WTF should be in here?'}
         return r
+
 
 class MediaReceiverRegistrarControl(service.ServiceControl, UPnPPublisher):
 
@@ -54,7 +56,6 @@ class MediaReceiverRegistrarServer(service.ServiceServer, resource.Resource):
         self.control = MediaReceiverRegistrarControl(self)
         self.putChild('scpd.xml', service.scpdXML(self, self.control))
         self.putChild('control', self.control)
-
 
     def listchilds(self, uri):
         cl = ''

@@ -11,6 +11,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class MediaRendererClient(log.Loggable):
     logCategory = 'mr_client'
 

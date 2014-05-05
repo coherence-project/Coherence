@@ -12,6 +12,7 @@ from coherence.extern.telepathy import client, tube
 from coherence.dbus_constants import BUS_NAME, OBJECT_PATH, DEVICE_IFACE, SERVICE_IFACE
 from coherence import dbus_service
 
+
 class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
 
     def __init__(self, found_peer_callback=None, disapeared_peer_callback=None,
@@ -115,6 +116,7 @@ class MirabeauTubeConsumerMixin(tube.TubeConsumerMixin):
         pontoon = pontoon_tube.get_object(initiator_bus_name, OBJECT_PATH)
         pontoon.get_devices_async(1, reply_handler=got_devices,
                                   error_handler=got_error)
+
 
 class MirabeauTubeConsumer(MirabeauTubeConsumerMixin, client.Client):
     logCategory = "mirabeau_tube_consumer"

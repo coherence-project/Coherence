@@ -17,6 +17,7 @@ from coherence.extern.et import parse_xml
 from coherence.upnp.core import DIDLLite
 from twisted.internet import defer, reactor
 
+
 class Backend(log.Loggable, Plugin):
 
     """ the base class for all backends
@@ -131,7 +132,6 @@ class BackendStore(Backend):
         """
         pass
 
-
     def _get_all_items(self, id):
         """ a helper method to get all items as a response
             to some XBox 360 UPnP Search action
@@ -183,6 +183,7 @@ class BackendStore(Backend):
         """
 
         return None
+
 
 class BackendItem(log.Loggable):
 
@@ -287,6 +288,7 @@ class BackendItem(log.Loggable):
     def __repr__(self):
         return "%s[%s]" % (self.__class__.__name__, self.get_name())
 
+
 class BackendRssMixin:
 
     def update_data(self, rss_url, container=None, encoding="utf-8"):
@@ -316,6 +318,7 @@ class BackendRssMixin:
         from twisted.internet import reactor
         reactor.callLater(self.refresh, self.update_data, rss_url, container)
 
+
 class Container(BackendItem):
 
     def __init__(self, parent, title):
@@ -342,10 +345,10 @@ class Container(BackendItem):
         self.item = None
 
         self.sorted = False
+
         def childs_sort(x, y):
             return cmp(x.name, y.name)
         self.sorting_method = childs_sort
-
 
     def register_child(self, child, external_id=None):
         id = self.store.append_item(child)
@@ -438,7 +441,6 @@ class LazyContainer(Container, log.Loggable):
         else:
             Container.add_child(self, child, external_id=external_id, update=update)
 
-
     def update_children(self, new_children, old_children):
         children_to_be_removed = {}
         children_to_be_replaced = {}
@@ -506,7 +508,6 @@ class LazyContainer(Container, log.Loggable):
                 return self.retrieve_children(new_offset, page + 1)  # we try the next page
             return self.retrieved_children
 
-
         self.childrenRetrievingNeeded = False
         if self.has_pages is True:
             self.childrenRetriever_params['offset'] = start
@@ -514,7 +515,6 @@ class LazyContainer(Container, log.Loggable):
         d = self.childrenRetriever(**self.childrenRetriever_params)
         d.addCallback(items_retrieved, page, start)
         return d
-
 
     def retrieve_all_children(self, start=0, request_count=0):
 
@@ -527,7 +527,6 @@ class LazyContainer(Container, log.Loggable):
             #print "Error while retrieving all children!"
             self.end_children_retrieval_campaign(False)
             return Container.get_children(self, start, request_count)
-
         # if first retrieval and refresh required
         # we start a looping call to periodically update the children
         #if ((self.last_updated == 0) and (self.refresh > 0)):
@@ -542,7 +541,6 @@ class LazyContainer(Container, log.Loggable):
         else:
             self.end_children_retrieval_campaign()
             return self.children
-
 
     def get_children(self, start=0, request_count=0):
 
@@ -560,9 +558,9 @@ class LazyContainer(Container, log.Loggable):
         else:
             return Container.get_children(self, start, request_count)
 
-
 ROOT_CONTAINER_ID = 0
 SEED_ITEM_ID = 1000
+
 
 class AbstractBackendStore (BackendStore):
     def __init__(self, server, **kwargs):
@@ -594,7 +592,6 @@ class AbstractBackendStore (BackendStore):
         del self.store[item.storage_id]
         item.storage_id = -1
         item.store = None
-
 
     def get_by_id(self, id):
         if isinstance(id, basestring):

@@ -12,7 +12,6 @@ import urlparse
 
 import dbus
 
-
 from twisted.web import resource
 from twisted.internet import defer
 from twisted.python.util import OrderedDict
@@ -30,6 +29,7 @@ from coherence.upnp.core import DIDLLite
 from coherence.upnp.core.utils import ReverseProxyUriResource
 
 from coherence import log
+
 
 class MirabeauProxy(resource.Resource, log.Loggable):
     logCategory = 'mirabeau'
@@ -139,7 +139,6 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                                 [a.get_name() for a in in_arguments], action.name)
             return failure.Failure(errorCode(402))
 
-
         def got_error(x):
             self.info('dbus error during call processing')
             return x
@@ -154,6 +153,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         d.addCallback(self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d
+
 
 class TubeServiceProxy(service.ServiceServer, resource.Resource,
                               log.Loggable):
@@ -170,7 +170,6 @@ class TubeServiceProxy(service.ServiceServer, resource.Resource,
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
         self.device.web_resource.putChild(id, self)
-
 
     def init_var_and_actions(self):
         """ retrieve all actions and create the Action
@@ -244,7 +243,6 @@ class TubeDeviceProxy(log.Loggable):
         self.web_resource = DeviceHttpRoot(self)
         self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
-
         """ create the Service proxy(s) """
 
         for service in self.device.services:
@@ -268,7 +266,6 @@ class TubeDeviceProxy(log.Loggable):
                                     devices=self._devices,
                                     icons=self.icons))
             version -= 1
-
 
         """ and register with SSDP server """
         self.register()

@@ -31,12 +31,15 @@ from coherence import log
 global subscribers
 subscribers = {}
 
+
 def subscribe(service):
     subscribers[service.get_sid()] = service
+
 
 def unsubscribe(service):
     if subscribers.has_key(service.get_sid()):
         del subscribers[service.get_sid()]
+
 
 class Service(log.Loggable):
     logCategory = 'service_client'
@@ -134,7 +137,6 @@ class Service(log.Loggable):
 
     def __repr__(self):
         return "Service %s %s" % (self.service_type, self.id)
-
     #def __del__(self):
     #    print "Service deleted"
     #    pass
@@ -266,7 +268,6 @@ class Service(log.Loggable):
                 else:
                     variable.subscribe(callback)
 
-
     def renew_subscription(self):
         self.info("renew_subscription")
         event.subscribe(self)
@@ -363,7 +364,6 @@ class Service(log.Loggable):
                 """
                 self._variables.get(instance)[name].has_vendor_values = True
 
-
             #print 'service parse:', self, self.device
             self.detection_completed = True
             louie.send('Coherence.UPnP.Service.detection_completed', sender=self.device, device=self.device)
@@ -400,6 +400,7 @@ moderated_variables = \
          'urn:schemas-upnp-org:service:ScheduledRecording:1':
             ['LastChange'], 
         }
+
 
 class ServiceServer(log.Loggable):
     logCategory = 'service_server'
@@ -736,7 +737,6 @@ class ServiceServer(log.Loggable):
                          like (name,direction,relatedStateVariable)
         @ivar needs_callback: this Action needs a method in the backend or service class
         """
-
         # FIXME
         # we should raise an Exception when there as an Action with that name already
         # we should raise an Exception when there is no related StateVariable for an Argument
@@ -832,7 +832,6 @@ class ServiceServer(log.Loggable):
                 new_action.set_callback(callback)
                 self.info('Add callback %s for %s/%s', callback, self.id, name)
 
-
         backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
         service_value_defaults = None
         if backend_vendor_value_defaults:
@@ -849,7 +848,6 @@ class ServiceServer(log.Loggable):
             implementation = 'required'
             if action_node.find('Optional') != None:
                 implementation = 'optional'
-
             #if implementation == 'optional':
             #    for action_object in self._actions.values():
             #        if name in [a.get_state_variable() for a in action_object.arguments_list]:
@@ -926,6 +924,7 @@ class ServiceServer(log.Loggable):
             if isinstance(v.dependant_variable, str):
                 v.dependant_variable = self._variables.get(instance).get(v.dependant_variable)
 
+
 class scpdXML(static.Data):
 
     def __init__(self, server, control=None):
@@ -986,6 +985,7 @@ class scpdXML(static.Data):
         return """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
 
 from twisted.python.util import OrderedDict
+
 
 class ServiceControl(log.Loggable):
 

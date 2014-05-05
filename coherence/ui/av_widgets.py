@@ -14,7 +14,6 @@ import urllib
 
 import traceback
 
-
 import pygtk
 pygtk.require("2.0")
 import gtk
@@ -27,7 +26,6 @@ import dbus.service
 
 import mimetypes
 mimetypes.init()
-
 
 # dbus defines
 BUS_NAME = 'org.Coherence'
@@ -45,6 +43,7 @@ DIDL_COLUMN = 7
 TOOLTIP_ICON_COLUMN = 8
 
 from pkg_resources import resource_filename
+
 
 class ControlPoint(object):
 
@@ -221,7 +220,6 @@ class DeviceImportWidget(object):
 
         self.combobox.set_model(self.store)
 
-
         item = self.store.append(None)
         self.store.set_value(item, 0, 'Select a MediaServer...')
         self.store.set_value(item, 1, '')
@@ -319,7 +317,6 @@ class DeviceImportWidget(object):
 
         except IndexError:
             pass
-
 
     def handle_error(self, error):
         print error
@@ -631,7 +628,6 @@ class TreeWidget(object):
                         self.store.set_value(item, ICON_COLUMN, icon)
                         break
 
-
                 def reply_subscribe(udn, service, r):
                     for k, v in r.iteritems():
                         self.state_variable_change(udn, service, k, v)
@@ -643,7 +639,6 @@ class TreeWidget(object):
 
                 d = self.bus.get_object(BUS_NAME + '.device', device['path'])
                 d.get_device_icons(reply_handler=lambda x: got_icons(x, str(device['udn']), item), error_handler=self.handle_error)
-
 
     def media_server_removed(self, udn):
         #print "media_server_removed", udn
@@ -801,7 +796,6 @@ if __name__ == '__main__':
     window.add(ui.window)
 
     window.show_all()
-
 
     gtk.gdk.threads_init()
     gtk.main()

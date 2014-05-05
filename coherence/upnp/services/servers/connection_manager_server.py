@@ -65,12 +65,10 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
     def release(self):
         self.remove_lingering_connections_loop.stop()
 
-
     def add_connection(self, RemoteProtocolInfo,
                              Direction,
                              PeerConnectionID,
                              PeerConnectionManager):
-
 
         id = self.next_connection_id
         self.next_connection_id += 1

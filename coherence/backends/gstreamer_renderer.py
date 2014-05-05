@@ -28,6 +28,7 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
+
 class Player(log.Loggable):
     logCategory = 'gstreamer_player'
     max_playbin_volume = 1.
@@ -333,7 +334,6 @@ class Player(log.Loggable):
         if self.player.get_name() != 'player':
             self.create_pipeline(mimetype)
 
-
         self.player.set_state(gst.STATE_READY)
         self.set_uri(uri)
         self.player_clean = True
@@ -400,7 +400,6 @@ class Player(log.Loggable):
             else:
                 l = long(p[u'raw'][u'position']) - (long(location[1:]) * 1000000000)
                 l = max(l, 0L)
-
 
         self.debug("seeking to %r", l)
         """
@@ -598,7 +597,6 @@ class GStreamerPlayer(log.Loggable, Plugin):
                                                   'CurrentTrackMetaData',
                                                   self.metadata)
 
-
             self.info("%s %d/%d/%d - %d%%/%d%% - %s/%s/%s", state,
                       string.atol(position[u'raw'][u'position']) / 1000000000,
                       string.atol(position[u'raw'][u'remaining']) / 1000000000,
@@ -686,7 +684,6 @@ class GStreamerPlayer(log.Loggable, Plugin):
             self.play()
         self.update()
 
-
     def status(self, position):
         uri = self.player.get_uri()
         if uri == None:
@@ -736,7 +733,6 @@ class GStreamerPlayer(log.Loggable, Plugin):
             return
         self.player.play()
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PLAYING')
-
 
     def pause(self):
         self.info('Pausing: %r', self.player.get_uri())
@@ -874,7 +870,6 @@ class GStreamerPlayer(log.Loggable, Plugin):
             return d
         except:
             return failure.Failure(errorCode(714))
-
 
     def upnp_init(self):
         self.current_connection_id = None

@@ -18,6 +18,7 @@ from coherence.backend import BackendStore, BackendItem, Container, LazyContaine
 
 from coherence.backends.youtube_storage import TestVideoProxy
 
+
 class VideoItem(BackendItem):
 
     def __init__(self, name, description, url, thumbnail_url, store):
@@ -110,7 +111,6 @@ class MiroGuideStore(AbstractBackendStore):
         self.appendLanguage("Top Rated", self.language, rootItem, sort='rating', count=15)
         self.appendLanguage("Most Popular", self.language, rootItem, sort='-popular', count=15)
 
-
         def gotError(error):
             print "ERROR: %s" % error
 
@@ -146,7 +146,6 @@ class MiroGuideStore(AbstractBackendStore):
 
         self.init_completed()
 
-
     def __repr__(self):
         return self.__class__.__name__
 
@@ -162,7 +161,6 @@ class MiroGuideStore(AbstractBackendStore):
         item = LazyContainer(parent, name, channel_id, self.refresh, self.retrieveChannelItems, channel_id=channel_id)
         parent.add_child(item, external_id=channel_id)
 
-
     def upnp_init(self):
         self.current_connection_id = None
 
@@ -173,7 +171,6 @@ class MiroGuideStore(AbstractBackendStore):
                default=True)
 
         self.wmc_mapping = {'15': self.get_root_id()}
-
 
     def retrieveChannels (self, parent, filter, filter_value, per_page=100, page=0, offset=0, count=0, sort='name'):
         filter_value = urllib.quote(filter_value.encode("utf-8"))
@@ -211,7 +208,6 @@ class MiroGuideStore(AbstractBackendStore):
 
         d.addCallbacks(gotChannels, gotError)
         return d
-
 
     def retrieveChannelItems (self, parent, channel_id):
         uri = "https://www.miroguide.com/api/get_channel?id=%s" % channel_id

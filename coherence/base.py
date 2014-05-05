@@ -68,7 +68,6 @@ class SimpleRoot(resource.Resource, log.Loggable):
             request.setResponseCode(404)
             return static.Data('<html><p>No device for requested UUID: %s</p></html>' % name, 'text/html')
 
-
     def listchilds(self, uri):
         self.info('listchilds %s', uri)
         if uri[-1] != '/':
@@ -104,7 +103,6 @@ class WebServer(log.Loggable):
 
             self.warning("Web UI not supported atm, will return with version 0.7.0")
             raise ImportError
-
 
             from nevow import __version_info__, __version__
             if __version_info__ < (0, 9, 17):
@@ -300,6 +298,7 @@ class Coherence(log.Loggable):
 
         if self.hostname.startswith('127.'):
             """ use interface detection via routing table as last resort """
+
             def catch_result(hostname):
                 self.hostname = hostname
                 self.setup_part2()
@@ -341,7 +340,6 @@ class Coherence(log.Loggable):
             return
 
         self.urlbase = 'http://%s:%d/' % (self.hostname, self.web_server_port)
-
         #self.renew_service_subscription_loop = task.LoopingCall(self.check_devices)
         #self.renew_service_subscription_loop.start(20.0, now=False)
 
@@ -389,7 +387,6 @@ class Coherence(log.Loggable):
                         self.warning("Can't enable plugin, %s: %s!", plugin, msg)
                         self.info(traceback.format_exc())
 
-
         self.external_address = ':'.join((self.hostname, str(self.web_server_port)))
 
 
@@ -404,7 +401,6 @@ class Coherence(log.Loggable):
         if self.config.get('transcoding', 'no') == 'yes':
             from coherence.transcoder import TranscoderManager
             self.transcoder_manager = TranscoderManager(self)
-
 
         self.dbus = None
         if self.config.get('use_dbus', 'no') == 'yes':
@@ -666,7 +662,6 @@ class Coherence(log.Loggable):
             if infos['ST'] == 'upnp:rootdevice':
                 louie.send('Coherence.UPnP.RootDevice.removed', None, usn=infos['USN'])
                 self.callback("removed_device", infos['ST'], infos['USN'])
-
 
     def add_web_resource(self, name, sub):
         self.children[name] = sub

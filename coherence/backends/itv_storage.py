@@ -22,12 +22,12 @@ import zlib
 
 from coherence.backend import BackendStore, BackendItem
 
-
 ROOT_CONTAINER_ID = 0
 
 SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newtvlister.phtml?service=winamp2&no_compress=1'
 SHOUTCAST_TUNEIN_URL = 'http://www.shoutcast.com/sbin/tunein-tvstation.pls?id=%s'
 VIDEO_MIMETYPE = 'video/x-nsv'
+
 
 class ProxyStream(utils.ReverseProxyUriResource, log.Loggable):
     logCategory = 'itv'
@@ -176,8 +176,6 @@ class ITVItem(BackendItem):
         return self.url
 
 
-
-
 class ITVStore(BackendStore):
 
     logCategory = 'itv'
@@ -203,11 +201,9 @@ class ITVStore(BackendStore):
 
         self.wmc_mapping = {'4': 1000}
 
-
         self.shoutcast_ws_url = self.config.get('genrelist', SHOUTCAST_WS_URL)
 
         self.init_completed()
-
 
     def __repr__(self):
         return self.__class__.__name__
@@ -227,7 +223,6 @@ class ITVStore(BackendStore):
         item = ITVItem(self, id, obj, parent)
         self.storeItem(parent, item, id)
         return item
-
 
     def len(self):
         return len(self.store)
@@ -297,7 +292,6 @@ class ITVStore(BackendStore):
                                'genre': genre}
                     stations[name] = station
 
-
             genreItems = {}
             for genre in genres:
                 genreItem = self.appendGenre(genre, parent)
@@ -311,7 +305,6 @@ class ITVStore(BackendStore):
                                     'id': station.get('station_id'),
                                     'url': station.get('url')},
                             parentItem)
-
 
         def got_error(error):
             self.warning("Connection to ShoutCast service failed. Will retry in 5s!")

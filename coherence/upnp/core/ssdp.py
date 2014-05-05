@@ -27,6 +27,7 @@ import coherence.extern.louie as louie
 SSDP_PORT = 1900
 SSDP_ADDR = '239.255.255.250'
 
+
 class SSDPServer(DatagramProtocol, log.Loggable):
     """A class implementing a SSDP server.  The notifyReceived and
     searchReceived methods are called when the appropriate type of
@@ -169,7 +170,6 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             self.warning('Unknown subtype %s for notification type %s',
                     headers['nts'], headers['nt'])
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'Notify %s for %s' % (headers['nts'], headers['usn']))
-
 
     def send_it(self, response, destination, delay, usn):
         self.info('send discovery response delayed by %ds for %s to %r', delay, usn, destination)

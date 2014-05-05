@@ -13,11 +13,13 @@
 import os
 import sys
 
+
 class Plugin(object):
     """ a new style class that
         betrays all its sub-classes
     """
     pass
+
 
 class Reception(object):
 
@@ -63,7 +65,6 @@ class Reception(object):
                         print "can't import %r - %s" % (os.path.splitext(plugin)[0], msg)
                     else:
                         self.log("can't import %r - %r" % (os.path.splitext(plugin)[0], msg))
-
 
     def guestlist(self, plugin_class=Plugin):
         """ returns a list of all Plugin subclasses """

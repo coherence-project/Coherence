@@ -11,6 +11,7 @@ from coherence.upnp.core.soap_service import UPnPPublisher
 
 from coherence.upnp.core import service
 
+
 class RenderingControlControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):

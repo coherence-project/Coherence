@@ -1,9 +1,7 @@
-
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
-
 
 from datetime import datetime
 import urllib
@@ -32,6 +30,7 @@ BASE_CHANNEL_GROUP_ID = 1000
 BUS_NAME = 'org.gnome.DVB'
 RECORDINGSSTORE_OBJECT_PATH = '/org/gnome/DVB/RecordingsStore'
 MANAGER_OBJECT_PATH = '/org/gnome/DVB/Manager'
+
 
 class Container(BackendItem):
 
@@ -95,6 +94,7 @@ class Container(BackendItem):
 
     def get_id(self):
         return self.id
+
 
 class Channel(BackendItem):
 
@@ -285,7 +285,6 @@ class DVBDStore(BackendStore):
         d.addCallback(query_finished)
         d.addErrback(query_failed)
 
-
     def __repr__(self):
         return "DVBDStore"
 
@@ -335,6 +334,7 @@ class DVBDStore(BackendStore):
 
     def get_recording_details(self, id):
         self.debug("GET RECORDING DETAILS")
+
         def process_details(data):
             self.debug("GOT RECORDING DETAILS %s", data)
             rid, name, desc, length, start, channel, location = data
@@ -353,10 +353,10 @@ class DVBDStore(BackendStore):
             reply_handler=lambda x, success: d.callback(x),
             error_handler=lambda x, success: d.errback(x))
         return d
-
     
     def get_recordings(self):
         self.debug("GET RECORDINGS")
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
@@ -399,6 +399,7 @@ class DVBDStore(BackendStore):
 
     def get_channel_details(self, channelList_interface, id):
         self.debug("GET CHANNEL DETAILS %s", id)
+
         def get_name(id):
             d = defer.Deferred()
             channelList_interface.GetChannelName(id,
@@ -536,6 +537,7 @@ class DVBDStore(BackendStore):
 
     def get_device_groups(self, results):
         self.debug("GET DEVICE GROUPS")
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
@@ -616,6 +618,7 @@ class DVBDStore(BackendStore):
         d.addErrback(handle_error)
         return d
 
+
 class DVBDScheduledRecording(BackendStore):
 
     logCategory = 'dvbd_store'
@@ -642,6 +645,7 @@ class DVBDScheduledRecording(BackendStore):
 
     def get_timer_details(self, tid):
         self.debug("GET TIMER DETAILS %d", tid)
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
@@ -676,6 +680,7 @@ class DVBDScheduledRecording(BackendStore):
 
     def get_timers(self):
         self.debug("GET TIMERS")
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
@@ -696,6 +701,7 @@ class DVBDScheduledRecording(BackendStore):
 
     def add_timer(self, channel_id, start_datetime, duration):
         self.debug("ADD TIMER")
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error
@@ -717,6 +723,7 @@ class DVBDScheduledRecording(BackendStore):
 
     def delete_timer(self, tid):
         self.debug("DELETE TIMER %d", tid)
+
         def handle_error(error):
             self.error("ERROR: %s", error)
             return error

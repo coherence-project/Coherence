@@ -17,7 +17,6 @@ from coherence.extern.et import ET, indent
 
 import coherence.extern.louie as louie
 
-
 from coherence import log
 
 
@@ -59,6 +58,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
                                                                            self.server.device_type,
                                                                            self.listchilds(request.uri))
 
+
 class RootDeviceXML(static.Data):
 
     def __init__(self, hostname, uuid, urlbase,
@@ -86,7 +86,6 @@ class RootDeviceXML(static.Data):
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement(e, 'major').text = '1'
         ET.SubElement(e, 'minor').text = '0'
-
         #ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
 
         d = ET.SubElement(root, 'device')
@@ -182,7 +181,6 @@ class RootDeviceXML(static.Data):
                                 ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
                                 continue
                         ET.SubElement(i, k).text = str(v)
-
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
 

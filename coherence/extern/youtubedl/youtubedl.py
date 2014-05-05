@@ -26,8 +26,8 @@ std_headers = {
     'Accept-Language': 'en-us,en;q=0.5', 
 }
 
-
 simple_title_chars = string.ascii_letters.decode('ascii') + string.digits.decode('ascii')
+
 
 def preferredencoding():
     """Get preferred encoding.
@@ -55,6 +55,7 @@ class DownloadError(Exception):
     """
     pass
 
+
 class SameFileError(Exception):
     """Same File exception.
 
@@ -62,6 +63,7 @@ class SameFileError(Exception):
     multiple files would have to be downloaded to the same file on disk.
     """
     pass
+
 
 class PostProcessingError(Exception):
     """Post Processing exception.
@@ -71,6 +73,7 @@ class PostProcessingError(Exception):
     """
     pass
 
+
 class UnavailableFormatError(Exception):
     """Unavailable Format exception.
 
@@ -78,6 +81,7 @@ class UnavailableFormatError(Exception):
     in a format that is not available for that video.
     """
     pass
+
 
 class ContentTooShortError(Exception):
     """Content Too Short exception.
@@ -93,6 +97,7 @@ class ContentTooShortError(Exception):
     def __init__(self, downloaded, expected):
         self.downloaded = downloaded
         self.expected = expected
+
 
 class FileDownloader(object):
     """File Downloader class.
@@ -231,6 +236,7 @@ class FileDownloader(object):
         url = data.geturl()
         data.close()
         return url
+
     def add_info_extractor(self, ie):
         """Add an InfoExtractor object to the end of the list."""
         self._ies.append(ie)
@@ -244,7 +250,7 @@ class FileDownloader(object):
     def to_stdout(self, message, skip_eol=False):
         """Print message to stdout if not in quiet mode."""
         if not self.params.get('quiet', False):
-            print (u'%s%s' % (message, [u'\n', u''][skip_eol])).encode(preferredencoding()), 
+            print (u'%s%s' % (message, [u'\n', u''][skip_eol])).encode(preferredencoding()),
             sys.stdout.flush()
 
     def to_stderr(self, message):
@@ -495,7 +501,6 @@ class InfoExtractor(object):
         pass
 
 
-
 class YoutubeIE(InfoExtractor):
     """Information extractor for youtube.com."""
 
@@ -538,7 +543,6 @@ class YoutubeIE(InfoExtractor):
 
         # Unknown entity in name, return its literal representation
         return (u'&%s;' % entity)
-
 
     def report_lang(self):
         """Report attempt to set language."""
@@ -643,8 +647,6 @@ class YoutubeIE(InfoExtractor):
         d = getPage(self._LANG_URL, headers=std_headers)
         d.addCallbacks(gotLanguageSet, gotLanguageSetError)
 
-
-
     def _real_extract(self, url):
         # Extract video id from URL
         mobj = re.match(self._VALID_URL, url)
@@ -745,7 +747,6 @@ class YoutubeIE(InfoExtractor):
         return d
 
 
-
 class MetacafeIE(InfoExtractor):
     """Information Extractor for metacafe.com."""
 
@@ -835,7 +836,6 @@ class MetacafeIE(InfoExtractor):
             self._downloader.trouble(u'ERROR: unable to extract media URL')
             return
         mediaURL = urllib.unquote(mobj.group(1))
-
        #mobj = re.search(r'(?m)&gdaKey=(.*?)&', webpage)
         #if mobj is None:
         #    self._downloader.trouble(u'ERROR: unable to extract gdaKey')
@@ -1021,6 +1021,7 @@ class YoutubePlaylistIE(InfoExtractor):
         for id in video_ids:
             self._youtube_ie.extract('http://www.youtube.com/watch?v=%s' % id)
         return
+
 
 class PostProcessor(object):
     """Post Processor class.

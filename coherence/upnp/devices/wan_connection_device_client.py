@@ -8,10 +8,10 @@
 from coherence.upnp.services.clients.wan_ip_connection_client import WANIPConnectionClient
 from coherence.upnp.services.clients.wan_ppp_connection_client import WANPPPConnectionClient
 
-
 from coherence import log
 
 import coherence.extern.louie as louie
+
 
 class WANConnectionDeviceClient(log.Loggable):
     logCategory = 'igd_client'

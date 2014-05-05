@@ -15,12 +15,16 @@ from email.Utils import parsedate_tz
 
 try:
     import hashlib
+
+
     def md5(s):
         m = hashlib.md5()
         m.update(s)
         return m.hexdigest()
 except ImportError:
     import md5 as oldmd5
+
+
     def md5(s):
         m = oldmd5.new()
         m.update(s)
@@ -196,7 +200,6 @@ class FlickrItem(log.Loggable):
         if self.mimetype == 'directory':
             self.children = []
             self.update_id = 0
-
 
     def set_item_size_and_date(self):
 
@@ -389,7 +392,6 @@ class FlickrStore(BackendStore):
 
         self.limit = int(kwargs.get('limit', 100))
 
-
         self.flickr_userid = kwargs.get('userid', None)
         self.flickr_password = kwargs.get('password', None)
         self.flickr_permissions = kwargs.get('permissions', None)
@@ -413,7 +415,6 @@ class FlickrStore(BackendStore):
 
         self.refresh_store_loop = task.LoopingCall(self.refresh_store)
         self.refresh_store_loop.start(self.refresh, now=False)
-
         #self.server.coherence.store_plugin_config(self.server.uuid, {'test':'äöüß'})
 
         self.flickr_userid = kwargs.get('userid', None)
@@ -462,13 +463,11 @@ class FlickrStore(BackendStore):
         if mimetype == 'directory':
             return self.store[id]
 
-
         def update_photo_details(result, photo):
             dates = result.find('dates')
             self.debug("update_photo_details %s %s", dates.get('posted'), dates.get('taken'))
             photo.item.date = datetime(*time.strptime(dates.get('taken'),
                                                "%Y-%m-%d %H:%M:%S")[0:6])
-
         #d = self.flickr_photos_getInfo(obj.get('id'),obj.get('secret'))
         #d.addCallback(update_photo_details, self.store[id])
 
@@ -523,7 +522,6 @@ class FlickrStore(BackendStore):
             self.debug("update_photo_details %s %s", dates.get('posted'), dates.get('taken'))
             photo.item.date = datetime(*time.strptime(dates.get('taken'),
                                                "%Y-%m-%d %H:%M:%S")[0:6])
-
         #d = self.flickr_photos_getInfo(obj.get('id'),obj.get('secret'))
         #d.addCallback(update_photo_details, self.store[id])
 
@@ -905,6 +903,7 @@ class FlickrStore(BackendStore):
                                 method='flickr.test.echo',
                                 name=value,
                                 api_key='837718c8a622c699edab0ea55fcec224')
+
         def got_results(result):
             print result
 
@@ -1071,7 +1070,6 @@ class FlickrStore(BackendStore):
 
         return failure.Failure(errorCode(712))
 
-
     # encode_multipart_form code is inspired by http://www.voidspace.org.uk/python/cgi.shtml#upload
     def encode_multipart_form(self, fields):
         boundary = mimetools.choose_boundary()
@@ -1138,7 +1136,6 @@ class FlickrStore(BackendStore):
         d.addBoth(got_something)
         return d
 
-
     def backend_import(self, item, data):
         """ we expect a FlickrItem
             and the actual image data as a FilePath
@@ -1168,6 +1165,7 @@ class FlickrStore(BackendStore):
         d.addErrback(got_fail)
         #FIXME we should return the deferred here
         return d
+
 
 def main():
     f = FlickrStore(None, userid='x', password='xx',

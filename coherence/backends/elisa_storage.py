@@ -16,6 +16,7 @@ import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 
+
 class ElisaMediaStore(Plugin):
 
     """ this is a backend to the Elisa Media DB
@@ -83,7 +84,6 @@ class ElisaMediaStore(Plugin):
         dfr.addCallback(lambda cache_mgr:
                         cache_mgr.callRemote("get_media_root_id", media_type))
         dfr.addCallback(self.set_root_id)
-
 
     def upnp_init(self):
         if self.server:

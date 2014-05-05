@@ -34,6 +34,7 @@ TUBE_STATE = {TUBE_CHANNEL_STATE_LOCAL_PENDING: 'local pending',
 
 DBUS_PROPERTIES = 'org.freedesktop.DBus.Properties'
 
+
 class Client(log.Loggable):
     logCategory = "tp_client"
 
@@ -201,7 +202,6 @@ class Client(log.Loggable):
         if self.self_handle in room_iface.GetMembers():
             self.joined = True
             self.muc_joined()
-
 
     def new_channels_cb(self, channels):
         self.debug("new channels %r", channels)

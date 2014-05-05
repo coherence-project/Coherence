@@ -21,6 +21,7 @@ import coherence.extern.louie as louie
 
 from coherence import log
 
+
 class HttpRoot(DeviceHttpRoot):
     logCategory = 'binarylight'
 
@@ -70,10 +71,8 @@ class BinaryLight(log.Loggable, BasicDeviceMixin):
         if upnp_init:
             upnp_init()
 
-
         self.web_resource = HttpRoot(self)
         self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
-
 
         version = self.version
         while version > 0:
@@ -89,7 +88,6 @@ class BinaryLight(log.Loggable, BasicDeviceMixin):
                                     devices=self._devices,
                                     icons=self.icons))
             version -= 1
-
 
         self.web_resource.putChild('SwitchPower', self.switch_power_server)
 

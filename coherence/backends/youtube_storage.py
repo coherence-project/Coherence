@@ -25,6 +25,7 @@ from coherence.backends.picasa_storage import Container, LazyContainer, Abstract
 MPEG4_MIMETYPE = 'video/mp4'
 MPEG4_EXTENSION = 'mp4'
 
+
 class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
     logCategory = 'internetVideoProxy'
@@ -58,14 +59,11 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         self.url_extractor_fct = fct
         self.url_extractor_params = kwargs
 
-
-
     def requestFinished(self, result):
         """ self.connection is set in utils.ReverseProxyResource.render """
         self.info("ProxyStream requestFinished: %s", result)
         if hasattr(self, 'connection'):
             self.connection.transport.loseConnection()
-
 
     def render(self, request):
 
@@ -218,14 +216,12 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             type = self.mimetype
         return type
 
-
     def renderFile(self, request, filepath):
         self.info('Cache file available %r %r ', request, filepath)
         downloadedFile = utils.StaticFile(filepath, self.mimetype)
         downloadedFile.type = self.getMimetype()
         downloadedFile.encoding = None
         return downloadedFile.render(request)
-
 
     def renderBufferFile (self, request, filepath, buffer_size):
         # Try to render file(if we have enough data)
@@ -268,7 +264,6 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         if(callback is not None):
             self.downloader.addCallback(callback, request, filepath, *args)
         return self.downloader
-
 
     def checkCacheSize(self):
         cache_listdir = os.listdir(self.cache_directory)
@@ -344,7 +339,6 @@ class YoutubeVideoItem(BackendItem):
 
             deferred = fd.get_real_urls([url])
             return deferred
-
         #self.location = VideoProxy(url, self.external_id,
         #                           store.proxy_mode,
         #                           store.cache_directory, store.cache_maxsize, store.buffer_size,
@@ -354,7 +348,6 @@ class YoutubeVideoItem(BackendItem):
                                    store.proxy_mode,
                                    store.cache_directory, store.cache_maxsize, store.buffer_size,
                                    extractDataURL, quality=self.store.quality)
-
 
     def get_item(self):
         if self.item == None:
@@ -466,7 +459,6 @@ class YouTubeStore(AbstractBackendStore):
         item = LazyContainer(parent, name, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
         parent.add_child(item, external_id=feed_uri)
 
-
     def appendVideoEntry(self, entry, parent):
         external_id = entry.id.text.split('/')[-1]
         title = entry.media.title.text
@@ -478,7 +470,6 @@ class YouTubeStore(AbstractBackendStore):
         item.parent = parent
         parent.add_child(item, external_id=external_id)
 
-
     def upnp_init(self):
         self.current_connection_id = None
 
@@ -486,7 +477,6 @@ class YouTubeStore(AbstractBackendStore):
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
                                                                     ['http-get:*:%s:*' % MPEG4_MIMETYPE],
                                                                     default=True)
-
 
         self.wmc_mapping = {'15': self.get_root_id()}
 
@@ -498,7 +488,6 @@ class YouTubeStore(AbstractBackendStore):
         self.yt_service.source = 'Coherence UPnP backend'
         if len(self.login) > 0:
             d = threads.deferToThread(self.yt_service.ProgrammaticLogin)
-
 
     def retrieveFeedItems (self, parent=None, feed_uri=''):
         feed = threads.deferToThread(self.yt_service.GetYouTubeVideoFeed, feed_uri)
@@ -519,6 +508,7 @@ class YouTubeStore(AbstractBackendStore):
     def retrievePlaylistFeedItems (self, parent, playlist_id):
 
         feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistVideoFeed, playlist_id=playlist_id)
+
         def gotFeed(feed):
            if feed is None:
                self.warning("Unable to retrieve playlist items %s", feed_uri)
@@ -566,7 +556,6 @@ class YouTubeStore(AbstractBackendStore):
 
         playlists_feed.addCallbacks(gotPlaylists, gotError)
         return playlists_feed
-
 
     def retrieveSubscriptionFeeds(self, parent):
         playlists_feed = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionFeed, username=self.login)

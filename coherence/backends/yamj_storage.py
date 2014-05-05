@@ -75,14 +75,12 @@ class MovieItem(BackendItem):
         url_mimetype, _ = mimetypes.guess_type(self.movie_url, strict=False)
         if url_mimetype == None:
             url_mimetype = "video"
-
         
         self.name = self.title
         self.duration = None
         self.size = None
         self.mimetype = url_mimetype
         self.item = None
-
 
     def get_item(self):
         if self.item == None:
@@ -152,7 +150,6 @@ class YamjStore(AbstractBackendStore):
 
         d = self.retrieveCategories(rootItem)
 
-
     def upnp_init(self):
         self.current_connection_id = None
         if self.server:
@@ -173,7 +170,6 @@ class YamjStore(AbstractBackendStore):
                         default=True)
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             #self.server.content_directory_server.set_variable(0, 'SortCapabilities', '*')
-
 
     def retrieveCategories (self, parent):
         filepath = self.jukebox_url + "Categories.xml"
@@ -210,7 +206,6 @@ class YamjStore(AbstractBackendStore):
         dfr.addCallback(read_categories, parent_item=parent, jukebox_url=self.jukebox_url)
         dfr.addErrback(fail_categories_read)
         return dfr
-
 
     def retrieveIndexMovies (self, parent, name, root_name, per_page=10, page=0, offset=0):
         #print offset, per_page
@@ -287,7 +282,6 @@ class YamjStore(AbstractBackendStore):
                             fileItem = MovieItem(movie, self, title=title, url=episodeUrl)
                             file_external_id = "%s/%s" % (movie_id, episodeUrl)
                             container_item.add_child(fileItem, file_external_id)
-
 
         self.debug("Reading index file %s", fileUrl)
         d = getPage(fileUrl)

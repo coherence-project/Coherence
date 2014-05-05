@@ -11,7 +11,6 @@ from twisted.python import failure
 from twisted.web import resource
 from twisted.internet import defer
 
-
 from coherence.upnp.core.soap_service import UPnPPublisher
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core.DIDLLite import DIDLElement
@@ -19,6 +18,7 @@ from coherence.upnp.core.DIDLLite import DIDLElement
 from coherence.upnp.core import service
 
 from coherence import log
+
 
 class ContentDirectoryControl(service.ServiceControl, UPnPPublisher):
 
@@ -176,7 +176,6 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                 else:
                     return proceed(item)
 
-
         item = self.backend.get_by_id(root_id)
         if item == None:
             return failure.Failure(errorCode(701))
@@ -287,7 +286,6 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             d.addCallback(process_result, found_item=result)
             d.addErrback(got_error)
             return d
-
 
         root_id = ObjectID
 

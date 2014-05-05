@@ -24,6 +24,7 @@ import coherence.extern.louie as louie
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'
 
+
 class TestDBUS(unittest.TestCase):
 
     def setUp(self):

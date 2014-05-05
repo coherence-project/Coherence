@@ -9,6 +9,7 @@ from coherence.upnp.core.utils import generalise_boolean
 
 from coherence.backend import Backend
 
+
 class SimpleLight(Backend):
 
     """ this is a backend for a simple light
@@ -87,6 +88,7 @@ class BetterLight(Backend):
 if __name__ == '__main__':
 
     from coherence.base import Coherence
+
 
     def main():
         config = {}

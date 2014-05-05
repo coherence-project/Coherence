@@ -21,6 +21,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class StateVariable(log.Loggable):
     logCategory = 'variable'
 

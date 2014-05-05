@@ -26,6 +26,7 @@ from coherence.upnp.core.utils import getPage
 from coherence.backend import BackendStore, BackendItem, Container, LazyContainer, \
      AbstractBackendStore
 
+
 class PlaylistItem(BackendItem):
     logCategory = 'playlist_store'
 
@@ -66,7 +67,6 @@ class PlaylistItem(BackendItem):
         return self.url
 
 
-
 class PlaylistStore(AbstractBackendStore):
 
     logCategory = 'playlist_store'
@@ -92,7 +92,6 @@ class PlaylistStore(AbstractBackendStore):
         self.name = self.config.get('name', 'playlist')
 
         self.init_completed()
-
 
     def __repr__(self):
         return self.__class__.__name__
@@ -127,7 +126,6 @@ class PlaylistStore(AbstractBackendStore):
             return self.store[id]
 
         return None
-
      
     def upnp_init(self):
         self.current_connection_id = None

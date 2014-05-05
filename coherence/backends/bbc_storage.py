@@ -44,6 +44,7 @@ class BBCItem(BackendItem):
             self.item.res.append(res)
         return self.item
 
+
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
@@ -190,8 +191,6 @@ class BBCStore(BackendStore):
                             item.duration = duration
                             item.size = int(size.text) * 1024
                             item.description = episode.find('./{http://purl.org/dc/elements/1.1/}description').text
-
-
 
         self.update_id += 1
         #if self.server:

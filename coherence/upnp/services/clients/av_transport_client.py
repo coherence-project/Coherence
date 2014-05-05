@@ -5,6 +5,7 @@
 
 from coherence import log
 
+
 class AVTransportClient(log.Loggable):
     logCategory = 'avtransportclient'
 
@@ -14,7 +15,6 @@ class AVTransportClient(log.Loggable):
         self.url = service.get_control_url()
         self.service.subscribe()
         self.service.client = self
-
     #def __del__(self):
     #    #print "AVTransportClient deleted"
     #    pass

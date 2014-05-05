@@ -38,6 +38,7 @@ UPNPERRORS = {401: 'Invalid Action',
               611: 'Invalid Control URL',
               612: 'No Such Session', }
 
+
 def build_soap_error(status, description='without words'):
     """ builds an UPnP SOAP error msg
     """
@@ -50,6 +51,7 @@ def build_soap_error(status, description='without words'):
     ET.SubElement(e, 'errorCode').text = str(status)
     ET.SubElement(e, 'errorDescription').text = UPNPERRORS.get(status, description)
     return build_soap_call(None, root, encoding=None)
+
 
 def build_soap_call(method, arguments, is_response=False,
                                        encoding=SOAP_ENCODING,
@@ -110,8 +112,6 @@ def build_soap_call(method, arguments, is_response=False,
         if arguments == None:
             arguments = {}
         re.append(arguments)
-
-
 
     preamble = """<?xml version="1.0" encoding="utf-8"?>"""
     return preamble + ET.tostring(envelope, 'utf-8')

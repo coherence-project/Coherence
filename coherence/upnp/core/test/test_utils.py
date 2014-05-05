@@ -119,6 +119,7 @@ testChunkedDataResult = ['<?xml version="1.0" ?> ',
 ''
 ]
 
+
 class TestUpnpUtils(unittest.TestCase):
 
     def test_chunked_data(self):

@@ -13,6 +13,7 @@ from coherence import log
 
 import coherence.extern.louie as louie
 
+
 class WANDeviceClient(log.Loggable):
     logCategory = 'wan_device_client'
 

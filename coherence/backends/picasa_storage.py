@@ -26,8 +26,6 @@ import gdata.media
 import gdata.geo
 
 
-
-
 class PicasaProxy(ReverseProxyUriResource):
 
     def __init__(self, uri):
@@ -37,6 +35,7 @@ class PicasaProxy(ReverseProxyUriResource):
         if request.received_headers.has_key('referer'):
             del request.received_headers['referer']
         return ReverseProxyUriResource.render(self, request)
+
 
 class PicasaPhotoItem(BackendItem):
     def __init__(self, photo):
@@ -74,7 +73,6 @@ class PicasaPhotoItem(BackendItem):
         self.location = PicasaProxy(self.photo_url)
         return True
 
-
     def get_item(self):
         if self.item == None:
             upnp_id = self.get_id()
@@ -108,7 +106,6 @@ class PicasaStore(AbstractBackendStore):
        {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'}, 
     ]
 
-
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
@@ -130,10 +127,8 @@ class PicasaStore(AbstractBackendStore):
 
         self.init_completed()
 
-
     def __repr__(self):
         return self.__class__.__name__
-
 
     def upnp_init(self):
         self.current_connection_id = None
@@ -157,7 +152,6 @@ class PicasaStore(AbstractBackendStore):
         self.gd_client.source = 'Coherence UPnP backend'
         if len(self.login) > 0:
             d = threads.deferToThread(self.gd_client.ProgrammaticLogin)
-
 
     def retrieveAlbums(self, parent=None):
         albums = threads.deferToThread(self.gd_client.GetUserFeed)
