@@ -497,7 +497,7 @@ class DVBDStore(BackendStore):
                                          CHANNELS_CONTAINER_ID,
                                          name,
                                          channel['url'],
-                    			         channel['network'],
+                                         channel['network'],
                                          'video/mpegts')
                     self.containers[CHANNELS_CONTAINER_ID].add_child(video_item)
                     channels[int(channel['id'])] = video_item
