@@ -232,7 +232,7 @@ class IRadioStore(AbstractBackendStore):
                 # the IRadioItem is deemed the lowest item class,
                 # other classes are compared by name (as usual)
                 if isinstance(x, IRadioItem):
-                        return 1
+                    return 1
                 elif isinstance(y, IRadioItem):
                     return -1
                 else:

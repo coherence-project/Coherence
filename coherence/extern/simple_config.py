@@ -143,7 +143,7 @@ def _ConvertDictToXmlRecurse(parent, dictitem, element2attr_mappings=None):
 ##                 for key, value in child.iteritems():
 ##                     parent.set(key, value)
             elif element2attr_mappings != None and tag in element2attr_mappings:
-                    parent.set(element2attr_mappings[tag], child)
+                parent.set(element2attr_mappings[tag], child)
             elif type(child) is type([]):
                 for listchild in child:
                     elem = ElementTree.Element(tag)

@@ -128,8 +128,8 @@ class Resources(list):
                    (remote_content_format.startswith(local_content_format) or
                     remote_content_format == '*' or
                     local_content_format == '*')):
-                        #print result, res
-                        result.append(res)
+                    #print result, res
+                    result.append(res)
         return result
 
 

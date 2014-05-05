@@ -94,7 +94,7 @@ class Gallery:
                 url += '%s=%s&' % (key, value)
         headers = None
         if self.cookie != '':
-             headers = {'Cookie': self.cookie}
+            headers = {'Cookie': self.cookie}
 
         def gotPage(result):
             data, headers = result

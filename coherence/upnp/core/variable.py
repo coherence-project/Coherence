@@ -162,7 +162,7 @@ class StateVariable(log.Loggable):
                 else:
                     new_value = value
             elif self.data_type == 'boolean':
-                    new_value = utils.generalise_boolean(value)
+                new_value = utils.generalise_boolean(value)
             elif self.data_type == 'bin.base64':
                 new_value = value
             else:

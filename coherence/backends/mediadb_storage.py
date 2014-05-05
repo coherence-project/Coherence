@@ -578,8 +578,8 @@ class MediaStore(BackendStore):
             print track
 
     def show_tracks_by_title(self, title_or_part):
-            for track in list(self.db.query(Track, Track.title.like(u'%', title_or_part, u'%'), sort=Track.title.ascending)):
-                print track
+        for track in list(self.db.query(Track, Track.title.like(u'%', title_or_part, u'%'), sort=Track.title.ascending)):
+            print track
 
     def show_tracks_to_filename(self, title_or_part):
         for track in list(self.db.query(Track, Track.title.like(u'%', title_or_part, u'%'), sort=Track.title.ascending)):

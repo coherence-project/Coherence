@@ -456,7 +456,7 @@ class BuzztardPlayer(log.Loggable):
         self.buzztard.connection.sendMessage('set|mute|on')
 
     def unmute(self):
-         self.buzztard.connection.sendMessage('set|mute|off')
+        self.buzztard.connection.sendMessage('set|mute|off')
 
     def get_mute(self, line):
         infos = line.split('|')[1:]

@@ -39,7 +39,7 @@ class ScheduledRecordingServer(service.ServiceServer, resource.Resource):
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
-                cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
+            cl += '<li><a href=%s/%s>%s</a></li>' % (uri, c, c)
         return cl
 
     def render(self, request):

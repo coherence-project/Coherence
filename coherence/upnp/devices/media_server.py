@@ -452,7 +452,7 @@ class MSRoot(resource.Resource, log.Loggable):
         cl = '<p><a href=%s0>content</a></p>' % uri
         cl += '<li><a href=%sconfig>config</a></li>' % uri
         for c in self.children:
-                cl += '<li><a href=%s%s>%s</a></li>' % (uri, c, c)
+            cl += '<li><a href=%s%s>%s</a></li>' % (uri, c, c)
         return cl
 
     def import_response(self, result, id):

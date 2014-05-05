@@ -693,9 +693,9 @@ class YoutubeIE(InfoExtractor):
             	# Attempt to see if YouTube has issued an error message
                 mobj = re.search(r'(?m)&reason=([^&]+)(?:&|$)', video_info_webpage)
                 if mobj is None:
-                	self.to_stderr(u'ERROR: unable to extract "t" parameter')
-                	print video_info_webpage
-                	return [None]
+                    self.to_stderr(u'ERROR: unable to extract "t" parameter')
+                    print video_info_webpage
+                    return [None]
                 else:
                     reason = unquote_plus(mobj.group(1))
                     self.to_stderr(u'ERROR: YouTube said: %s' % reason.decode('utf-8'))
@@ -836,7 +836,7 @@ class MetacafeIE(InfoExtractor):
             self._downloader.trouble(u'ERROR: unable to extract media URL')
             return
         mediaURL = urllib.unquote(mobj.group(1))
-       #mobj = re.search(r'(?m)&gdaKey=(.*?)&', webpage)
+        #mobj = re.search(r'(?m)&gdaKey=(.*?)&', webpage)
         #if mobj is None:
         #    self._downloader.trouble(u'ERROR: unable to extract gdaKey')
         #    return

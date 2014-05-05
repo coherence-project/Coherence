@@ -82,12 +82,12 @@ class SimpleRoot(resource.Resource, log.Loggable):
                         device.get_friendly_name()))
 
         for child in self.children:
-                cl.append('<li><a href=%s%s>%s</a></li>' % (uri, child, child))
+            cl.append('<li><a href=%s%s>%s</a></li>' % (uri, child, child))
         return "".join(cl)
 
     def render(self, request):
         result = """<html><head><title>Coherence</title></head><body>
-<a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
+<a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>"""        % self.listchilds(request.uri)
         return result.encode('utf-8')
 
 

@@ -470,12 +470,12 @@ class FSStore(BackendStore):
         self.name = kwargs.get('name', 'my media')
         self.content = kwargs.get('content', None)
         if self.content != None:
-                if isinstance(self.content, basestring):
-                    self.content = [self.content]
-                l = []
-                for a in self.content:
-                    l += a.split(',')
-                self.content = l
+            if isinstance(self.content, basestring):
+                self.content = [self.content]
+            l = []
+            for a in self.content:
+                l += a.split(',')
+            self.content = l
         else:
             self.content = xdg_content()
             self.content = [x[0] for x in self.content]

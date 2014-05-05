@@ -157,14 +157,14 @@ class PicasaStore(AbstractBackendStore):
         albums = threads.deferToThread(self.gd_client.GetUserFeed)
 
         def gotAlbums(albums):
-           if albums is None:
-               print "Unable to retrieve albums"
-               return
-           for album in albums.entry:
-               title = album.title.text
-               album_id = album.gphoto_id.text
-               item = LazyContainer(parent, title, album_id, self.refresh, self.retrieveAlbumPhotos, album_id=album_id)
-               parent.add_child(item, external_id=album_id)
+            if albums is None:
+                print "Unable to retrieve albums"
+                return
+            for album in albums.entry:
+                title = album.title.text
+                album_id = album.gphoto_id.text
+                item = LazyContainer(parent, title, album_id, self.refresh, self.retrieveAlbumPhotos, album_id=album_id)
+                parent.add_child(item, external_id=album_id)
 
         def gotError(error):
             print "ERROR: %s" % error
@@ -177,14 +177,14 @@ class PicasaStore(AbstractBackendStore):
         photos = threads.deferToThread(self.gd_client.GetFeed, feed_uri)
 
         def gotPhotos(photos):
-           if photos is None:
-               print "Unable to retrieve photos for feed %s" % feed_uri
-               return
-           for photo in photos.entry:
-               photo_id = photo.gphoto_id.text
-               item = PicasaPhotoItem(photo)
-               item.parent = parent
-               parent.add_child(item, external_id=photo_id)
+            if photos is None:
+                print "Unable to retrieve photos for feed %s" % feed_uri
+                return
+            for photo in photos.entry:
+                photo_id = photo.gphoto_id.text
+                item = PicasaPhotoItem(photo)
+                item.parent = parent
+                parent.add_child(item, external_id=photo_id)
 
         def gotError(error):
             print "ERROR: %s" % error

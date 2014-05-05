@@ -711,7 +711,7 @@ class BufferFile(static.File):
         # size is the byte position to stop sending, not how many bytes to send
 
         BufferFileTransfer(f, size - f.tell(), request)
-		# and make sure the connection doesn't get closed
+        # and make sure the connection doesn't get closed
         return server.NOT_DONE_YET
 
 

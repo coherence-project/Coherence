@@ -125,8 +125,8 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
                         if(variable.name != 'LastChange' and
                             variable.name[0:11] != 'A_ARG_TYPE_' and
                             variable.never_evented == False):
-                                if hasattr(variable, 'dbus_updated') == False:
-                                    variable.dbus_updated = None
+                            if hasattr(variable, 'dbus_updated') == False:
+                                variable.dbus_updated = None
                     if len(v) > 0:
                         lc[str(instance)] = v
                 if len(lc) > 0:
@@ -233,7 +233,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
                             res_dict[un_namespace(k)] = v
                         res.append(res_dict)
                     else:
-                       i[un_namespace(child.tag)] = child.text
+                        i[un_namespace(child.tag)] = child.text
                 if len(res):
                     i['res'] = res
                 items.append(i)
@@ -278,7 +278,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
                             res_dict[un_namespace(k)] = v
                         res.append(res_dict)
                     else:
-                       i[un_namespace(child.tag)] = child.text
+                        i[un_namespace(child.tag)] = child.text
                 if len(res):
                     i['res'] = res
                 items.append(i)
@@ -658,12 +658,12 @@ class DBusService(dbus.service.Object, log.Loggable):
                         if(variable.name != 'LastChange' and
                             variable.name[0:11] != 'A_ARG_TYPE_' and
                             variable.never_evented == False):
-                                if hasattr(variable, 'dbus_updated') == False:
-                                    variable.dbus_updated = None
-                                #if variable.dbus_updated != variable.last_touched:
-                                #    v[unicode(variable.name)] = unicode(variable.value)
-                                #    variable.dbus_updated = time.time()
-                                #    #FIXME: we are missing variable dependencies here
+                            if hasattr(variable, 'dbus_updated') == False:
+                                variable.dbus_updated = None
+                            #if variable.dbus_updated != variable.last_touched:
+                            #    v[unicode(variable.name)] = unicode(variable.value)
+                            #    variable.dbus_updated = time.time()
+                            #    #FIXME: we are missing variable dependencies here
                     if len(v) > 0:
                         lc[str(instance)] = v
                 if len(lc) > 0:

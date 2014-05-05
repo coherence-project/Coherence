@@ -979,7 +979,7 @@ class scpdXML(static.Data):
                 if complete == True:
                     avl = ET.SubElement(s, 'allowedValueRange')
                     for name, value in var.allowed_value_range.items():
-                         if value != None:
+                        if value != None:
                             ET.SubElement(avl, name).text = str(value)
 
         return """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')

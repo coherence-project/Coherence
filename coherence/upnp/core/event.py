@@ -315,7 +315,7 @@ def subscribe(service, action='subscribe'):
             p.transport.writeSomeData(request)
         except AttributeError:
             logger.info("transport for event %r already gone", action)
-       # print "event.subscribe.send_request", d
+        #print "event.subscribe.send_request", d
         #return d
 
     def got_error(failure, action):

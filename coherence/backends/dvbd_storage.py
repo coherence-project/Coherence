@@ -154,7 +154,7 @@ class Recording(BackendItem):
         path = unicode(file)
         # make sure path is an absolute local path (and not an URL)
         if path.startswith("file://"):
-        		path = path[7:]
+            path = path[7:]
         self.location = FilePath(path)
 
         self.title = unicode(title)

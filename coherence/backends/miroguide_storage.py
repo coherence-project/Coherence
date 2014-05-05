@@ -183,25 +183,25 @@ class MiroGuideStore(AbstractBackendStore):
         d = utils.getPage(uri)
 
         def gotChannels(result):
-           if result is None:
-               print "Unable to retrieve channel for category %s" % category_id
-               return
-           data, header = result
-           channels = eval(data)
-           for channel in channels:
-               publisher = channel['publisher']
-               description = channel['description']
-               url = channel['url']
-               hi_def = channel['hi_def']
-               thumbnail_url = channel['thumbnail_url']
-               postal_code = channel['postal_code']
-               id = channel['id']
-               website_url = channel['website_url']
-               name = channel['name']
-               self.appendChannel(name, id, parent)
-           if ((count == 0) and (len(channels) >= per_page)):
-               #print "reached page limit (%d)" % len(channels)
-               parent.childrenRetrievingNeeded = True
+            if result is None:
+                print "Unable to retrieve channel for category %s" % category_id
+                return
+            data, header = result
+            channels = eval(data)
+            for channel in channels:
+                publisher = channel['publisher']
+                description = channel['description']
+                url = channel['url']
+                hi_def = channel['hi_def']
+                thumbnail_url = channel['thumbnail_url']
+                postal_code = channel['postal_code']
+                id = channel['id']
+                website_url = channel['website_url']
+                name = channel['name']
+                self.appendChannel(name, id, parent)
+            if ((count == 0) and (len(channels) >= per_page)):
+                #print "reached page limit (%d)" % len(channels)
+                parent.childrenRetrievingNeeded = True
 
         def gotError(error):
             print "ERROR: %s" % error
@@ -214,28 +214,28 @@ class MiroGuideStore(AbstractBackendStore):
         d = utils.getPage(uri)
 
         def gotItems(result):
-           if result is None:
-               print "Unable to retrieve items for channel %s" % channel_id
-               return
-           data, header = result
-           channel = eval(data)
-           items = []
-           if (channel.has_key('item')):
-               items = channel['item']
-           for item in items:
-               #print "item:",item
-               url = item['url']
-               description = item['description']
-               #print "description:", description
-               name = item['name']
-               thumbnail_url = None
-               if (channel.has_key('thumbnail_url')):
-                   #print "Thumbnail:", channel['thumbnail_url']
-                   thumbnail_url = channel['thumbnail_url']
-               #size = size['size']
-               item = VideoItem(name, description, url, thumbnail_url, self)
-               item.parent = parent
-               parent.add_child(item, external_id=url)
+            if result is None:
+                print "Unable to retrieve items for channel %s" % channel_id
+                return
+            data, header = result
+            channel = eval(data)
+            items = []
+            if (channel.has_key('item')):
+                items = channel['item']
+            for item in items:
+                #print "item:",item
+                url = item['url']
+                description = item['description']
+                #print "description:", description
+                name = item['name']
+                thumbnail_url = None
+                if (channel.has_key('thumbnail_url')):
+                    #print "Thumbnail:", channel['thumbnail_url']
+                    thumbnail_url = channel['thumbnail_url']
+                #size = size['size']
+                item = VideoItem(name, description, url, thumbnail_url, self)
+                item.parent = parent
+                parent.add_child(item, external_id=url)
 
         def gotError(error):
             print "ERROR: %s" % error

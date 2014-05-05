@@ -493,11 +493,11 @@ class YouTubeStore(AbstractBackendStore):
         feed = threads.deferToThread(self.yt_service.GetYouTubeVideoFeed, feed_uri)
 
         def gotFeed(feed):
-           if feed is None:
-               self.warning("Unable to retrieve feed %s", feed_uri)
-               return
-           for entry in feed.entry:
-               self.appendVideoEntry(entry, parent)
+            if feed is None:
+                self.warning("Unable to retrieve feed %s", feed_uri)
+                return
+            for entry in feed.entry:
+                self.appendVideoEntry(entry, parent)
 
         def gotError(error):
             self.warning("ERROR: %s", error)
@@ -510,11 +510,11 @@ class YouTubeStore(AbstractBackendStore):
         feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistVideoFeed, playlist_id=playlist_id)
 
         def gotFeed(feed):
-           if feed is None:
-               self.warning("Unable to retrieve playlist items %s", feed_uri)
-               return
-           for entry in feed.entry:
-               self.appendVideoEntry(entry, parent)
+            if feed is None:
+                self.warning("Unable to retrieve playlist items %s", feed_uri)
+                return
+            for entry in feed.entry:
+                self.appendVideoEntry(entry, parent)
 
         def gotError(error):
             self.warning("ERROR: %s", error)
@@ -526,11 +526,11 @@ class YouTubeStore(AbstractBackendStore):
         entry = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionEntry, uri)
 
         def gotEntry(entry):
-           if entry is None:
-               self.warning("Unable to retrieve subscription items %s", uri)
-               return
-           feed_uri = entry.feed_link[0].href
-           return self.retrieveFeedItems(parent, feed_uri)
+            if entry is None:
+                self.warning("Unable to retrieve subscription items %s", uri)
+                return
+            feed_uri = entry.feed_link[0].href
+            return self.retrieveFeedItems(parent, feed_uri)
 
         def gotError(error):
             self.warning("ERROR: %s", error)
@@ -541,15 +541,15 @@ class YouTubeStore(AbstractBackendStore):
         playlists_feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistFeed, username=self.login)
 
         def gotPlaylists(playlist_video_feed):
-           if playlist_video_feed is None:
-               self.warning("Unable to retrieve playlists feed")
-               return
-           for playlist_video_entry in playlist_video_feed.entry:
-               title = playlist_video_entry.title.text
-               playlist_id = playlist_video_entry.id.text.split("/")[-1]  # FIXME find better way to retrieve the playlist ID
+            if playlist_video_feed is None:
+                self.warning("Unable to retrieve playlists feed")
+                return
+            for playlist_video_entry in playlist_video_feed.entry:
+                title = playlist_video_entry.title.text
+                playlist_id = playlist_video_entry.id.text.split("/")[-1]  # FIXME find better way to retrieve the playlist ID
 
-               item = LazyContainer(parent, title, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
-               parent.add_child(item, external_id=playlist_id)
+                item = LazyContainer(parent, title, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
+                parent.add_child(item, external_id=playlist_id)
 
         def gotError(error):
             self.warning("ERROR: %s", error)
@@ -561,18 +561,18 @@ class YouTubeStore(AbstractBackendStore):
         playlists_feed = threads.deferToThread(self.yt_service.GetYouTubeSubscriptionFeed, username=self.login)
 
         def gotPlaylists(playlist_video_feed):
-           if playlist_video_feed is None:
-               self.warning("Unable to retrieve subscriptions feed")
-               return
-           for entry in playlist_video_feed.entry:
-               type = entry.GetSubscriptionType()
-               title = entry.title.text
-               uri = entry.id.text
-               name = "[%s] %s" % (type, title)
+            if playlist_video_feed is None:
+                self.warning("Unable to retrieve subscriptions feed")
+                return
+            for entry in playlist_video_feed.entry:
+                type = entry.GetSubscriptionType()
+                title = entry.title.text
+                uri = entry.id.text
+                name = "[%s] %s" % (type, title)
 
-               item = LazyContainer(parent, name, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
-               item.parent = parent
-               parent.add_child(item, external_id=uri)
+                item = LazyContainer(parent, name, uri, self.refresh, self.retrieveSubscriptionFeedItems, uri=uri)
+                item.parent = parent
+                parent.add_child(item, external_id=uri)
 
         def gotError(error):
             self.warning("ERROR: %s", error)
