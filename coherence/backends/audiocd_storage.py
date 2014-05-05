@@ -23,7 +23,8 @@
 
 # Copyright 2010, Jean-Michel Sizun
 
-import CDDB, DiscID
+import CDDB
+import DiscID
 
 from twisted.internet import reactor, threads
 

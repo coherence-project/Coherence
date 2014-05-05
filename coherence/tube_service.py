@@ -7,7 +7,8 @@
 
 """
 
-import urllib, urlparse
+import urllib
+import urlparse
 
 import dbus
 

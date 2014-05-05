@@ -5,7 +5,9 @@
 
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
 
-import os, stat, glob
+import os
+import stat
+import glob
 import tempfile
 import shutil
 import time

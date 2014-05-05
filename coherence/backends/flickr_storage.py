@@ -8,7 +8,8 @@
 import time
 import re
 import os.path
-import mimetools, mimetypes
+import mimetools
+import mimetypes
 from datetime import datetime
 from email.Utils import parsedate_tz
 

@@ -41,7 +41,8 @@ depends on:
             CoversByAmazon - https://coherence.beebits.net/browser/trunk/coherence/extern/covers_by_amazon.py
 """
 
-import os, shutil
+import os
+import shutil
 import string
 import urllib
 

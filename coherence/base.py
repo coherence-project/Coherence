@@ -5,7 +5,8 @@
 
 import string
 import socket
-import os, sys
+import os
+import sys
 import traceback
 import copy
 import logging

@@ -39,7 +39,8 @@ Subsequent port by therve
 __all__ = ['install']
 
 
-import sys, time
+import sys
+import time
 
 from zope.interface import implements
 

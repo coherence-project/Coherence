@@ -8,7 +8,8 @@
 """
 
 import time
-import urllib, urlparse
+import urllib
+import urlparse
 
 #import gtk
 import dbus

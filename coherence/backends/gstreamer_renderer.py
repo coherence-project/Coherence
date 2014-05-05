@@ -13,7 +13,8 @@ from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core import DIDLLite
 
 import string
-import os, platform
+import os
+import platform
 from StringIO import StringIO
 import tokenize
 
