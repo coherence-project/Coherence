@@ -28,7 +28,7 @@ from coherence.backend import BackendStore, BackendItem, Container, LazyContaine
 
 class PlaylistItem(BackendItem):
     logCategory = 'playlist_store'
-    
+
     def __init__(self, title, stream_url, mimetype):
 
         self.name = title
@@ -37,7 +37,7 @@ class PlaylistItem(BackendItem):
 
         self.url = stream_url
         self.item = None
-        
+
     def get_id(self):
         return self.storage_id
 
@@ -49,19 +49,19 @@ class PlaylistItem(BackendItem):
                 item = DIDLLite.VideoItem(upnp_id, upnp_parent_id, self.name)
             else:
                 item = DIDLLite.AudioItem(upnp_id, upnp_parent_id, self.name)
-                
+
             # what to do with MMS:// feeds?
             protocol = "http-get"
             if self.stream_url.startswith("rtsp://"):
                 protocol = "rtsp-rtp-udp"
-            
+
             res = Resource(self.stream_url, '%s:*:%s:*' % (protocol,self.mimetype))
             res.size = None
             item.res.append(res)
-        
+
             self.item = item
         return self.item
-    
+
     def get_url(self):
         return self.url
 
@@ -79,7 +79,7 @@ class PlaylistStore(AbstractBackendStore):
 
     options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
        {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
        {'option':'playlist_url','text':'Playlist file URL:','type':'string','help':'URL to the playlist file (M3U).'},
     ]
 
@@ -87,10 +87,10 @@ class PlaylistStore(AbstractBackendStore):
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
-        
+
         self.playlist_url = self.config.get('playlist_url', 'http://mafreebox.freebox.fr/freeboxtv/playlist.m3u')
         self.name = self.config.get('name', 'playlist')
-        
+
         self.init_completed()
 
 
@@ -111,7 +111,7 @@ class PlaylistStore(AbstractBackendStore):
 
         item = PlaylistItem( id, obj, parent, mimetype, self.urlbase,
                                         UPnPClass, update=update)
-        
+
         self.store[id] = item
         self.store[id].store = self
         if hasattr(self, 'update_id'):
@@ -138,13 +138,13 @@ class PlaylistStore(AbstractBackendStore):
                                                                   'rtsp-rtp-udp:*:audio/mpeg:*',
                                                                   'http-get:*:audio/mpeg:*'],
                                                                   default=True)
-        
+
         rootItem = Container(None, self.name)
         self.set_root_item(rootItem)
         self.retrievePlaylistItems(self.playlist_url, rootItem)
-  
+
     def retrievePlaylistItems (self, url, parent_item):
-        
+
         def gotPlaylist(playlist):
             self.info("got playlist")
             items = {}
@@ -166,17 +166,17 @@ class PlaylistStore(AbstractBackendStore):
                         item = PlaylistItem(channel, url, mimetype)
                         parent_item.add_child(item)
                     try:
-                        line = lines.next() 
+                        line = lines.next()
                     except StopIteration:
-                        line = None                      
+                        line = None
             return items
 
         def gotError(error):
             self.warning("Unable to retrieve playlist: %s", url)
             print "Error: %s" % error
             return None
-        
+
         d = getPage(url)
         d.addCallback(gotPlaylist)
-        d.addErrback(gotError)            
+        d.addErrback(gotError)
         return d

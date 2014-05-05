@@ -76,7 +76,7 @@ class TwistedSocketNotifier(QSocketNotifier):
 
     def read(self, sock):
         w = self.watcher
-        #self.setEnabled(False)    # ??? do I need this?            
+        #self.setEnabled(False)    # ??? do I need this?
         def _read():
             why = None
             try:
@@ -112,10 +112,10 @@ class TwistedSocketNotifier(QSocketNotifier):
 class fakeApplication(QEventLoop):
     def __init__(self):
         QEventLoop.__init__(self)
-        
+
     def exec_(self):
         QEventLoop.exec_(self)
-        
+
 class QTReactor(PosixReactorBase):
     """
     Qt based reactor.
@@ -137,10 +137,10 @@ class QTReactor(PosixReactorBase):
             self._ownApp=False
         self._blockApp = None
         self._readWriteQ=[]
-        
+
         """ some debugging instrumentation """
         self._doSomethingCount=0
-        
+
         PosixReactorBase.__init__(self)
 
     def addReader(self, reader):
@@ -178,15 +178,15 @@ class QTReactor(PosixReactorBase):
 
     def getWriters(self):
         return self._writes.keys()
-    
+
     def callLater(self,howlong, *args, **kargs):
         rval = super(QTReactor,self).callLater(howlong, *args, **kargs)
         self.reactorInvocation()
         return rval
-    
+
     def crash(self):
         super(QTReactor,self).crash()
-        
+
     def iterate(self,delay=0.0):
         t=self.running # not sure I entirely get the state of running
         self.running=True
@@ -201,20 +201,20 @@ class QTReactor(PosixReactorBase):
                 while True:
                     t = endTime - time.time()
                     if t <= 0.0: return
-                    self.qApp.processEvents(QEventLoop.AllEvents | 
+                    self.qApp.processEvents(QEventLoop.AllEvents |
                                       QEventLoop.WaitForMoreEvents,t*1010)
         finally:
             self.running=t
-            
+
     def addReadWrite(self,t):
         self._readWriteQ.append(t)
-        
+
     def runReturn(self, installSignalHandlers=True):
-        QObject.connect(self._timer, SIGNAL("timeout()"), 
+        QObject.connect(self._timer, SIGNAL("timeout()"),
                         self.reactorInvokePrivate)
         self.startRunning(installSignalHandlers=installSignalHandlers)
         self._timer.start(0)
-        
+
     def run(self, installSignalHandlers=True):
         try:
             if self._ownApp:
@@ -228,7 +228,7 @@ class QTReactor(PosixReactorBase):
 
     def reactorInvocation(self):
         self._timer.setInterval(0)
-        
+
     def reactorInvokePrivate(self):
         if not self.running:
             self._blockApp.quit()
@@ -240,10 +240,10 @@ class QTReactor(PosixReactorBase):
         self._timer.setInterval(t*1010)
         self.qApp.processEvents() # could change interval
         self._timer.start()
-                
+
     def doIteration(self):
         assert False, "doiteration is invalid call"
-            
+
 def install():
     """
     Configure the twisted mainloop to be run inside the qt mainloop.

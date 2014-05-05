@@ -31,12 +31,12 @@ class RenderingControlServer(service.ServiceServer, resource.Resource):
         self.control = RenderingControlControl(self)
         self.putChild(self.scpd_url, service.scpdXML(self, self.control))
         self.putChild(self.control_url, self.control)
-        
+
     def listchilds(self, uri):
         cl = ''
         for c in self.children:
                 cl += '<li><a href=%s/%s>%s</a></li>' % (uri,c,c)
         return cl
-        
+
     def render(self,request):
         return '<html><p>root of the RenderingControl</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)

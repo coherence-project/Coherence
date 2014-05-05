@@ -146,7 +146,7 @@ class Container(BackendItem):
 
 class ITVItem(BackendItem):
     logCategory = 'itv'
-    
+
     def __init__(self, store, id, obj, parent):
         self.parent = parent
         self.id = id
@@ -166,7 +166,7 @@ class ITVItem(BackendItem):
             self.item = DIDLLite.VideoItem(self.id, self.parent.id, self.name)
             self.item.description = self.description
             self.item.date = self.date
-            res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype) 
+            res = DIDLLite.Resource(self.url, 'http-get:*:%s:*' % self.mimetype)
             res.duration = self.duration
             #res.size = 0 #None
             self.item.res.append(res)
@@ -188,7 +188,7 @@ class ITVStore(BackendStore):
 
     options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
        {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
        {'option':'genrelist','text':'Server URL','type':'string', 'default':SHOUTCAST_WS_URL}
     ]
 
@@ -319,6 +319,6 @@ class ITVStore(BackendStore):
             # will retry later
             self.retrieveList_attemptCount += 1
             reactor.callLater(5, self.retrieveList, parent=parent)
-            
+
         d = utils.getPage(self.shoutcast_ws_url)
         d.addCallbacks(got_page, got_error)

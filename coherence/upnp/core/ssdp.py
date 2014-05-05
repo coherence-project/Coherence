@@ -166,7 +166,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if self.isKnown(headers['usn']):
                 self.unRegister(headers['usn'])
         else:
-            self.warning('Unknown subtype %s for notification type %s', 
+            self.warning('Unknown subtype %s for notification type %s',
                     headers['nts'], headers['nt'])
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'Notify %s for %s' % (headers['nts'], headers['usn']))
 

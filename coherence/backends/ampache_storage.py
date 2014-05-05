@@ -662,7 +662,7 @@ class AmpacheStore(BackendStore):
                 except:
                     self.videos = 0
                 self.info('ampache returned auth token %r', self.token)
-                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d, Videos %d', 
+                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d, Videos %d',
                           self.songs, self.artists,self.albums,self.playlists,self.genres,self.tags,self.videos)
 
                 if renegotiate == False:

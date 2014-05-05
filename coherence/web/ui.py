@@ -115,7 +115,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         self.info("remove view from the DevicesFragment")
 
     def add_device(self, device):
-        self.info("DevicesFragment found device %s %s of type %s", 
+        self.info("DevicesFragment found device %s %s of type %s",
                                                 device.get_usn(),
                                                 device.get_friendly_name(),
                                                 device.get_device_type())

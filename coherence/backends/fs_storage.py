@@ -729,7 +729,7 @@ class FSStore(BackendStore):
 
 
     def notify(self, ignore, path, mask, parameter=None):
-        self.info("Event %s on %s - parameter %r", 
+        self.info("Event %s on %s - parameter %r",
             ', '.join(self.inotify.flag_to_human(mask)), path.path, parameter)
 
         if mask & IN_CHANGED:

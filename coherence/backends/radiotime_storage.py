@@ -28,7 +28,7 @@ OPML_BROWSE_URL = 'http://opml.radiotime.com/Browse.ashx'
 DEFAULT_FORMAT = "mp3"
 DEFAULT_MIMETYPE = "audio/mpeg"
 # TODO : extend format handling using radiotime API
-      
+
 class RadiotimeAudioItem(BackendItem):
     logCategory = 'radiotime'
 
@@ -38,17 +38,17 @@ class RadiotimeAudioItem(BackendItem):
         self.mimetype = DEFAULT_MIMETYPE
         self.stream_url = outline.get('URL')
         self.image = outline.get('image')
-        
+
         #self.location = PlaylistStreamProxy(self.stream_url)
         #self.url = self.stream_url
-        
+
         self.item = None
 
 
     def replace_by (self, item):
         # do nothing: we suppose the replacement item is the same
         return
-    
+
     def get_item(self):
         if self.item == None:
             upnp_id = self.get_id()
@@ -69,7 +69,7 @@ class RadiotimeAudioItem(BackendItem):
 
     def get_id(self):
         return self.storage_id
-    
+
     
 class RadiotimeStore(AbstractBackendStore):
 
@@ -79,7 +79,7 @@ class RadiotimeStore(AbstractBackendStore):
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self,server,**kwargs)
- 
+
         self.name = kwargs.get('name','radiotimeStore')
         self.refresh = int(kwargs.get('refresh',60))*60
 
@@ -88,7 +88,7 @@ class RadiotimeStore(AbstractBackendStore):
         self.username = self.config.get('username', None)
         self.locale = self.config.get('locale', 'en')
         self.serial = server.uuid
-        
+
         # construct URL for root menu
         if self.username is not None:
             identification_param = "username=%s" % self.username
@@ -96,11 +96,11 @@ class RadiotimeStore(AbstractBackendStore):
             identification_param = "serial=%s" % self.serial
         formats_value = DEFAULT_FORMAT
         root_url =  "%s?partnerId=%s&%s&formats=%s&locale=%s" % (self.browse_url, self.partner_id, identification_param, formats_value, self.locale)
-        
+
         # set root item
         root_item = LazyContainer(None, "root", "root", self.refresh, self.retrieveItemsForOPML, url=root_url)
         self.set_root_item(root_item)
-   
+
         self.init_completed()
 
 
@@ -117,7 +117,7 @@ class RadiotimeStore(AbstractBackendStore):
 
 
     def retrieveItemsForOPML (self, parent, url):
-        
+
         def append_outline (parent, outline):
             type = outline.get('type')
             if type is None:
@@ -137,7 +137,7 @@ class RadiotimeStore(AbstractBackendStore):
                 sub_outlines = outline.findall('outline')
                 for sub_outline in sub_outlines:
                     append_outline(item, sub_outline)
-                    
+
             elif type in ('link'):
                 # the corresponding item will a self-populating Container
                 text = outline.get('text')
@@ -148,21 +148,21 @@ class RadiotimeStore(AbstractBackendStore):
                 if external_id is None and key is not None:
                     external_id = "%s_%s" % (parent.external_id, key)
                 if external_id is None:
-                    external_id = outline_url                 
+                    external_id = outline_url
                 item = LazyContainer(parent, text, external_id, self.refresh, self.retrieveItemsForOPML, url=outline_url)
                 parent.add_child(item, external_id=external_id)
 
             elif type in ('audio'):
                 item = RadiotimeAudioItem(outline)
                 parent.add_child(item, external_id=item.preset_id)
-        
+
         def got_page(result):
             self.info('connection to Radiotime service successful for url %s', url)
-            
+
             outlines = result.findall('body/outline')
             for outline in outlines:
                 append_outline(parent, outline)
-          
+
             return True
 
 
@@ -178,7 +178,7 @@ class RadiotimeStore(AbstractBackendStore):
             print error.getTraceback()
             parent.childrenRetrievingNeeded = True # we retry
             return Failure("Unable to retrieve items for url %s" % url)
-            
+
         d = utils.getPage(url, )
         d.addCallback(parse_xml)
         d.addErrback(got_error)

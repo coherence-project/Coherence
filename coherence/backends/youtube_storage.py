@@ -175,7 +175,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                     range = request.getHeader('range')
                     if range is not None:
                         bytesrange = range.split('=')
-                        assert bytesrange[0] == 'bytes',\
+                        assert bytesrange[0] == 'bytes', \
                                "Syntactically invalid http range header!"
                         start, end = bytesrange[1].split('-', 1)
                         #print "%r %r" %(start,end)
@@ -217,7 +217,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         if self.mimetype is not None:
             type = self.mimetype
         return type
-            
+
 
     def renderFile(self,request,filepath):
         self.info('Cache file available %r %r ', request, filepath)
@@ -396,7 +396,7 @@ class YouTubeStore(AbstractBackendStore):
 
     options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
        {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
        {'option':'refresh','text':'Refresh period','type':'string'},
        {'option':'login','text':'User ID:','type':'string','group':'User Account'},
        {'option':'password','text':'Password:','type':'string','group':'User Account'},
@@ -460,8 +460,8 @@ class YouTubeStore(AbstractBackendStore):
         self.init_completed()
 
     def __repr__(self):
-        return self.__class__.__name__        
-        
+        return self.__class__.__name__
+
     def appendFeed( self, name, feed_uri, parent):
         item = LazyContainer(parent, name, None, self.refresh, self.retrieveFeedItems, feed_uri=feed_uri)
         parent.add_child(item, external_id=feed_uri)
@@ -472,7 +472,7 @@ class YouTubeStore(AbstractBackendStore):
         title = entry.media.title.text
         url = entry.media.player.url
         mimetype = MPEG4_MIMETYPE
-        
+
         #mimetype = 'video/mpeg'
         item = YoutubeVideoItem (external_id, title, url, mimetype, entry, self)
         item.parent = parent

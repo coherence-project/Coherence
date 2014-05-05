@@ -658,7 +658,7 @@ class BufferFile(static.File):
         if range is not None:
             # This is a request for partial data...
             bytesrange = range.split('=')
-            assert bytesrange[0] == 'bytes',\
+            assert bytesrange[0] == 'bytes', \
                    "Syntactically invalid http range header!"
             start, end = bytesrange[1].split('-', 1)
             if start:

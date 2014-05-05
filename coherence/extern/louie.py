@@ -11,7 +11,7 @@ class Any(object): pass
 class All(object): pass
 class Anonymous(object): pass
 
-# fake the API 
+# fake the API
 class Dummy(object): pass
 signal = Dummy()
 sender = Dummy()

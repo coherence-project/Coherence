@@ -5,7 +5,7 @@
 
 # <EXPERIMENTAL>
 
-# a backend to expose to the local network the content of an audio CD 
+# a backend to expose to the local network the content of an audio CD
 # inserted in a local drive
 # the CD data is extracted from the CDDB/FreeDB database
 
@@ -32,7 +32,7 @@ from coherence import log
 
 from coherence.transcoder import GStreamerPipeline
 
-from coherence.backend import AbstractBackendStore, Container, BackendItem 
+from coherence.backend import AbstractBackendStore, Container, BackendItem
 
 PLAY_TRACK_GST_PIPELINE = "cdiocddasrc device=%s track=%d ! wavenc name=enc"
 TRACK_MIMETYPE = "audio/x-wav"
@@ -69,11 +69,11 @@ class TrackItem(BackendItem):
         return self.title
 
     def get_path(self):
-        return self.location  
+        return self.location
 
     def get_size(self):
         return self.size
-    
+
     def get_id (self):
         return self.storage_id
 
@@ -87,7 +87,7 @@ class AudioCDStore(AbstractBackendStore):
     description = ('audioCD', '', None)
 
     options = [{'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
        {'option':'device_name','text':'device name for audio CD:','type':'string', 'help':'device name containing the audio cd.'}
     ]
 
@@ -101,7 +101,7 @@ class AudioCDStore(AbstractBackendStore):
         self.device_name= kwargs.get('device_name',"/dev/cdom");
 
         threads.deferToThread(self.extractAudioCdInfo)
-        
+
         # self.init_completed() # will be fired when the audio CD info is extracted
 
 
@@ -129,7 +129,7 @@ class AudioCDStore(AbstractBackendStore):
 #        print disc_id[1]
 #        for i in range(disc_id[1]):
 #            print "Track %.02d: %s" % (i, read_info['TTITLE' + `i`])
-            
+
         track_count = disc_id[1]
         disc_id = query_info['disc_id']
         self.disc_title = query_info['title'].encode('utf-8')
@@ -144,7 +144,7 @@ class AudioCDStore(AbstractBackendStore):
         def childs_sort(x,y):
             return cmp(x.track_number, y.track_number)
         root_item.sorting_method = childs_sort
-        
+
         self.set_root_item(root_item)
 
         for number, title in tracks.items():
@@ -156,16 +156,16 @@ class AudioCDStore(AbstractBackendStore):
 
         reactor.callLater(2,self.checkIfAudioCdStillPresent)
         self.init_completed()
-        
+
 
     def  checkIfAudioCdStillPresent(self):
         try:
             disc_id = DiscID.disc_id(self.cdrom)
             reactor.callLater(2,self.checkIfAudioCdStillPresent)
         except:
-            self.warning('audio CD %s ejected: closing UPnP server!', self.disc_title)            
+            self.warning('audio CD %s ejected: closing UPnP server!', self.disc_title)
             self.server.coherence.remove_plugin(self.server)
 
         
     def __repr__(self):
-        return self.__class__.__name__        
+        return self.__class__.__name__

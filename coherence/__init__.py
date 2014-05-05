@@ -16,7 +16,7 @@ try:
     from twisted.python.versions import Version
 except ImportError, exc:
     # log error to stderr, might be useful for debugging purpose
-    sys.stderr.write("Twisted >= 2.5 and Twisted.Web >= 2.5 are required. "\
+    sys.stderr.write("Twisted >= 2.5 and Twisted.Web >= 2.5 are required. " \
                      "Please install them.\n")
     raise
 

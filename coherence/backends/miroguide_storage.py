@@ -70,7 +70,7 @@ class MiroGuideStore(AbstractBackendStore):
 
     options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
        {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
        {'option':'language','text':'Language:','type':'string', 'default':'English'},
        {'option':'refresh','text':'Refresh period','type':'string'},
        {'option':'proxy_mode','text':'Proxy mode:','type':'string', 'enum': ('redirect','proxy','cache','buffered')},
@@ -230,7 +230,7 @@ class MiroGuideStore(AbstractBackendStore):
                #print "item:",item
                url = item['url']
                description = item['description']
-               #print "description:", description              
+               #print "description:", description
                name = item['name']
                thumbnail_url = None
                if (channel.has_key('thumbnail_url')):

@@ -68,7 +68,7 @@ synonym_genres = {
   "Italy" : ["Italia", "Italian", "Italiana", "Italo", "Italy"],
   "Latina" : ["Latin", "Latina", "Latino" ],
 }
-useless_title_content =[ 
+useless_title_content =[
     # TODO: extend list with title expressions which are clearly useless
     " - [SHOUTcast.com]"
 ]
@@ -84,7 +84,7 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
     logCategory = 'PlaylistStreamProxy'
 
     stream_url = None
-    
+
     def __init__(self, uri):
         self.stream_url = None
         utils.ReverseProxyUriResource.__init__(self, uri)
@@ -114,17 +114,17 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
                 #self.resetUri(self.stream_url)
                 request.uri = self.stream_url
                 return self.render(request)
-            
+
             def got_error(error):
                 self.warning('Error to retrieve playlist - unable to retrieve data')
                 self.warning(error)
                 return None
-                
-            playlist_url = self.uri           
+
+            playlist_url = self.uri
             d = utils.getPage(playlist_url, timeout=20)
             d.addCallbacks(got_playlist, got_error)
             return server.NOT_DONE_YET
-             
+
         self.info("this is our render method %s %s %s %s",request.method, request.uri, request.client, request.clientproto)
         self.info("render %s", request.getAllHeaders())
         if request.clientproto == 'HTTP/1.1':
@@ -148,16 +148,16 @@ class IRadioItem(BackendItem):
         self.name = title
         self.mimetype = mimetype
         self.stream_url = stream_url
-        
+
         self.location = PlaylistStreamProxy(self.stream_url)
-        
+
         self.item = None
 
 
     def replace_by (self, item):
         # do nothing: we suppose the replacement item is the same
         return
-    
+
     def get_item(self):
         if self.item == None:
             upnp_id = self.get_id()
@@ -178,7 +178,7 @@ class IRadioItem(BackendItem):
 
     def get_id(self):
         return self.storage_id
-    
+
     
 class IRadioStore(AbstractBackendStore):
 
@@ -187,15 +187,15 @@ class IRadioStore(AbstractBackendStore):
     implements = ['MediaServer']
 
     genre_parent_items = {} # will list the parent genre for every given genre
-    
+
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self,server,**kwargs)
- 
+
         self.name = kwargs.get('name','iRadioStore')
         self.refresh = int(kwargs.get('refresh',60))*60
 
         self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
-        
+
         # set root item
         root_item = Container(None, self.name)
         self.set_root_item(root_item)
@@ -203,14 +203,14 @@ class IRadioStore(AbstractBackendStore):
         # set root-level genre family containers
         # and populate the genre_parent_items dict from the family hierarchy information
         for family, genres in genre_families.items():
-            family_item = self.append_genre(root_item, family)           
+            family_item = self.append_genre(root_item, family)
             if family_item is not None:
                 self.genre_parent_items[family] = root_item
                 for genre in genres:
                     self.genre_parent_items[genre] = family_item
-        
+
         # retrieve asynchronously the list of genres from the souhtcast server
-        # genres not already attached to a family will be attached to the "Misc" family           
+        # genres not already attached to a family will be attached to the "Misc" family
         self.retrieveGenreList_attemptCount = 0
         deferredRoot = self.retrieveGenreList()
         # self.init_completed() # will be fired when the genre list is retrieved
@@ -222,7 +222,7 @@ class IRadioStore(AbstractBackendStore):
             same_genres = synonym_genres[genre]
         else:
             same_genres = [genre]
-        title = genre.encode('utf-8')     
+        title = genre.encode('utf-8')
         family_item = LazyContainer(parent, title, genre, self.refresh, self.retrieveItemsForGenre, genres=same_genres, per_page=1)
         # we will use a specific child items sorter
         # in order to get the sub-genre containers first
@@ -239,7 +239,7 @@ class IRadioStore(AbstractBackendStore):
                 else:
                     return cmp(x.name,y.name)
         family_item.sorting_method = childs_sort
-        
+
         parent.add_child(family_item, external_id=genre)
         return family_item
 
@@ -271,7 +271,7 @@ class IRadioStore(AbstractBackendStore):
             family_genres = genre_families[genre]
             for family_genre in family_genres:
                 self.append_genre(parent, family_genre)
-        
+
         def got_page(result):
             self.info('connection to ShoutCast service successful for genre %s', genre)
             result = utils.parse_xml(result, encoding='utf-8')
@@ -292,17 +292,17 @@ class IRadioStore(AbstractBackendStore):
                     name = name.replace(substring, "")
                 lower_name = name.lower()
                 url = '%s?id=%s' % (tunein, stationResult.get('id'))
-                
+
                 sameStation = stations.get(lower_name)
                 if sameStation == None or bitrate>sameStation['bitrate']:
-                    station = {'name':name,                                               
+                    station = {'name':name,
                                'station_id':station_id,
                                'mimetype':mimetype,
                                'id':station_id,
                                'url':url,
                                'bitrate':bitrate }
                     stations[lower_name] = station
-            
+
             for station in stations.values():
                 station_id = station.get('station_id')
                 name = station.get('name')
@@ -310,7 +310,7 @@ class IRadioStore(AbstractBackendStore):
                 mimetype = station.get('mimetype')
                 item = IRadioItem(station_id, name, url, mimetype)
                 parent.add_child(item, external_id = station_id)
-            
+
             return True
 
 
@@ -319,32 +319,32 @@ class IRadioStore(AbstractBackendStore):
             self.debug("%r", error.getTraceback())
             parent.childrenRetrievingNeeded = True # we retry
             return Failure("Unable to retrieve stations for genre" % genre)
-            
+
         d = utils.getPage(url)
         d.addCallbacks(got_page, got_error)
         return d
-    
+
 
     # retrieve the whole list of genres from the shoutcast server
     # to complete the population of the genre families classification
     # (genres not previously classified are put into the "Misc" family)
     # ...and fire mediaserver init completion
     def retrieveGenreList(self):
- 
+
         def got_page(result):
             if self.retrieveGenreList_attemptCount == 0:
                 self.info("Connection to ShoutCast service successful for genre listing")
             else:
                 self.warning("Connection to ShoutCast service successful for genre listing after %d attempts.", self.retrieveGenreList_attemptCount)
             result = utils.parse_xml(result, encoding='utf-8')
-            
+
             genres = {}
             main_synonym_genre = {}
             for main_genre, sub_genres in synonym_genres.items():
                 genres[main_genre] = sub_genres
                 for genre in sub_genres:
                     main_synonym_genre[genre] = main_genre
-                    
+
             for genre in result.findall('genre'):
                 name = genre.get('name')
                 if name not in main_synonym_genre:
@@ -354,15 +354,15 @@ class IRadioStore(AbstractBackendStore):
             for main_genre, sub_genres in genres.items():
                 if not self.genre_parent_items.has_key(main_genre):
                     genre_families["Misc"].append(main_genre)
-            
-            self.init_completed()                
+
+            self.init_completed()
 
         def got_error(error):
             self.warning("connection to ShoutCast service for genre listing failed - Will retry! %r", error)
             self.debug("%r", error.getTraceback())
             self.retrieveGenreList_attemptCount += 1
             reactor.callLater(5, self.retrieveGenreList)
-        
+
         d = utils.getPage(self.shoutcast_ws_url)
         d.addCallback(got_page)
         d.addErrback(got_error)

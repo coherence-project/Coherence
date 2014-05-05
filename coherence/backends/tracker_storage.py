@@ -247,9 +247,9 @@ class Track(BackendItem):
     def __init__(self,store,
                  id,parent_id,
                  file,title,
-                 artist,album,genre,\
-                 duration,\
-                 track_number,\
+                 artist,album,genre, \
+                 duration, \
+                 track_number, \
                  size,mimetype):
 
         self.store = store
@@ -365,7 +365,7 @@ class Video(BackendItem):
     def __init__(self,store,
                  id,parent_id,
                  file,title,
-                 duration,\
+                 duration, \
                  size,mimetype):
 
         self.store = store
@@ -441,7 +441,7 @@ class Image(BackendItem):
     def __init__(self,store,
                  id,parent_id,
                  file,title,album,
-                 date,width,height,\
+                 date,width,height, \
                  size,mimetype):
 
         self.store = store
@@ -609,8 +609,8 @@ class TrackerStore(BackendStore):
         def parse_videos_query_result(resultlist):
             videos = []
             for video in resultlist:
-                file,_,title,\
-                duration,\
+                file,_,title, \
+                duration, \
                 size,mimetype = video
                 title = title.strip()
                 if len(title) == 0:
@@ -619,8 +619,8 @@ class TrackerStore(BackendStore):
                     mimetype = u'video/ogg'
                 video_item = Video(self,
                                    self.videos,VIDEO_ALL_CONTAINER_ID,
-                                   file,title,\
-                                   duration,\
+                                   file,title, \
+                                   duration, \
                                    size,mimetype)
                 self.videos += 1
                 videos.append(video_item)
@@ -658,7 +658,7 @@ class TrackerStore(BackendStore):
             print "images", resultlist
             images = []
             for image in resultlist:
-                file,_,title,album,\
+                file,_,title,album, \
                 date,width, height, \
                 size,mimetype = image
                 title = title.strip()
@@ -666,8 +666,8 @@ class TrackerStore(BackendStore):
                     title = os.path.basename(file)
                 image_item = Image(self,
                                    self.images,IMAGE_ALL_CONTAINER_ID,
-                                   file,title,album,\
-                                   date,width,height,\
+                                   file,title,album, \
+                                   date,width,height, \
                                    size,mimetype)
                 self.images += 1
                 images.append(image_item)
@@ -708,17 +708,17 @@ class TrackerStore(BackendStore):
             artists = {}
             tracks = []
             for track in resultlist:
-                file,service,title,artist,album,genre,\
-                duration,album_track_count,\
-                track_number,codec,\
+                file,service,title,artist,album,genre, \
+                duration,album_track_count, \
+                track_number,codec, \
                 size,mimetype = track
                 if mimetype == 'video/x-vorbis+ogg':
                     mimetype = 'audio/ogg'
                 track_item = Track(self,
                                    self.songs,AUDIO_ALL_CONTAINER_ID,
-                                   file,title,artist,album,genre,\
-                                   duration,\
-                                   track_number,\
+                                   file,title,artist,album,genre, \
+                                   duration, \
+                                   track_number, \
                                    size,mimetype)
                 self.songs += 1
                 tracks.append(track_item)

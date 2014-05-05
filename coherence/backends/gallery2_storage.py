@@ -166,7 +166,7 @@ class Gallery2Store(BackendStore):
 
     options = [{'option':'name', 'text':'Server Name:', 'type':'string','default':'my media','help': 'the name under this MediaServer shall show up with on other UPnP clients'},
        {'option':'version','text':'UPnP Version:','type':'int','default':2,'enum': (2,1),'help': 'the highest UPnP version this MediaServer shall support','level':'advance'},
-       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},    
+       {'option':'uuid','text':'UUID Identifier:','type':'string','help':'the unique (UPnP) identifier for this MediaServer, usually automatically set','level':'advance'},
        {'option':'server_url','text':'Server URL:','type':'string'},
        {'option':'username','text':'User ID:','type':'string','group':'User Account'},
        {'option':'password','text':'Password:','type':'string','group':'User Account'},
@@ -202,7 +202,7 @@ class Gallery2Store(BackendStore):
             d.addCallback(self.init_completed)
 
     def __repr__(self):
-        return self.__class__.__name__ 
+        return self.__class__.__name__
 
     def append( self, obj, parent):
         if isinstance(obj, basestring):

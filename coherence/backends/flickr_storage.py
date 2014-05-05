@@ -427,7 +427,7 @@ class FlickrStore(BackendStore):
                 d = self.flickr_authenticate_app()
                 d.addBoth(lambda x: self.init_completed())
                 return
-            
+
         self.init_completed()
 
     def __repr__(self):

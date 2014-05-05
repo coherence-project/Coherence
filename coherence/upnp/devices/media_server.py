@@ -214,17 +214,17 @@ class MSRoot(resource.Resource, log.Loggable):
                     msg += "<" + key + ">" + value + "</" + key + ">"
                 msg += "</plugin>"
                 return msg
-            
+
             if request.method in ('GET', 'HEAD'):
-                # the client wants to retrieve the configuration parameters for the backend             
+                # the client wants to retrieve the configuration parameters for the backend
                 msg = constructConfigData(backend)
                 request.setResponseCode(200)
                 return static.Data(msg,'text/xml')
             elif request.method in ('POST'):
                 # the client wants to update the configuration parameters for the backend
                 # we relaunch the backend with the new configuration (after content validation)
-                
-                def convert_elementtree_to_dict (root):                   
+
+                def convert_elementtree_to_dict (root):
                     active = False
                     for name, value in root.items():
                         if name == 'active':
@@ -240,9 +240,9 @@ class MSRoot(resource.Resource, log.Loggable):
                         if (key not in ('backend')):
                             dict[key] = text
                     return dict
-                
+
                 new_config = None
-                try:        
+                try:
                     element_tree = utils.parse_xml(request.content.getvalue(), encoding='utf-8')
                     new_config = convert_elementtree_to_dict(element_tree.getroot())
                     self.server.coherence.remove_plugin(self.server)
@@ -260,9 +260,9 @@ class MSRoot(resource.Resource, log.Loggable):
                     return static.Data(msg,'text/html')#'text/xml')
                 except SyntaxError, e:
                     request.setResponseCode(400)
-                    return static.Data("<html><p>Invalid data posted:<BR>%s</p></html>" % e,'text/html')                        
+                    return static.Data("<html><p>Invalid data posted:<BR>%s</p></html>" % e,'text/html')
             else:
-                # invalid method requested    
+                # invalid method requested
                 request.setResponseCode(405)
                 return static.Data("<html><p>This resource does not allow the requested HTTP method</p></html>",'text/html')
 
@@ -321,7 +321,7 @@ class MSRoot(resource.Resource, log.Loggable):
                request.method == 'HEAD'):
                 headers = request.getAllHeaders()
                 if headers.has_key('content-length'):
-                    self.warning('%s request with content-length %s header - sanitizing', 
+                    self.warning('%s request with content-length %s header - sanitizing',
                                     request.method,
                                     headers['content-length'])
                     del request.received_headers['content-length']
@@ -330,7 +330,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     """ shall we remove that?
                         can we remove that?
                     """
-                    self.warning('%s request with %d bytes of message-body - sanitizing', 
+                    self.warning('%s request with %d bytes of message-body - sanitizing',
                                     request.method,
                                     len(request.content.getvalue()))
                     request.content = StringIO()
@@ -589,7 +589,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
     logCategory = 'mediaserver'
 
     device_type = 'MediaServer'
-    
+
     presentationURL = None
 
     def fire(self,backend,**kwargs):

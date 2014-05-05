@@ -208,8 +208,8 @@ class Artist(BackendItem):
         albums = []
 
         def query_db():
-            q = "select * from CoreAlbums where ArtistID=? and AlbumID in "\
-                "(select distinct(AlbumID) from CoreTracks where "\
+            q = "select * from CoreAlbums where ArtistID=? and AlbumID in " \
+                "(select distinct(AlbumID) from CoreTracks where " \
                 "PrimarySourceID=?) order by Title"
             rows = self._db.sql_execute(q, self.itemID,
                                         self._local_music_library_id)
@@ -223,8 +223,8 @@ class Artist(BackendItem):
         return dfr
 
     def get_child_count(self):
-        q = "select count(AlbumID) as c from CoreAlbums where ArtistID=? and "\
-            "AlbumID in (select distinct(AlbumID) from CoreTracks where "\
+        q = "select count(AlbumID) as c from CoreAlbums where ArtistID=? and " \
+            "AlbumID in (select distinct(AlbumID) from CoreTracks where " \
             "PrimarySourceID=?) "
         return self._db.sql_execute(q, self.itemID,
                                     self._local_music_library_id)[0].c
@@ -401,7 +401,7 @@ class MusicPlaylist(BasePlaylist):
         return self._row.PlaylistID
 
     def get_tracks(self, request_count):
-        q = "select * from CoreTracks where TrackID in (select TrackID "\
+        q = "select * from CoreTracks where TrackID in (select TrackID " \
             "from CorePlaylistEntries where PlaylistID=?)"
         if request_count:
             q += " limit %d" % request_count
@@ -415,7 +415,7 @@ class MusicSmartPlaylist(BasePlaylist):
         return self._row.SmartPlaylistID
 
     def get_tracks(self, request_count):
-        q = "select * from CoreTracks where TrackID in (select TrackID "\
+        q = "select * from CoreTracks where TrackID in (select TrackID " \
             "from CoreSmartPlaylistEntries where SmartPlaylistID=?)"
         if request_count:
             q += " limit %d" % request_count
@@ -594,8 +594,8 @@ class BansheeDB(Loggable):
 
         def query_db():
             source_id = self.get_local_music_library_id()
-            q = "select * from CoreArtists where ArtistID in "\
-                "(select distinct(ArtistID) from CoreTracks where "\
+            q = "select * from CoreArtists where ArtistID in " \
+                "(select distinct(ArtistID) from CoreTracks where " \
                 "PrimarySourceID=?) order by Name"
             for row in self.db.sql_execute(q, source_id):
                 artist = Artist(row, self.db, source_id)
@@ -611,8 +611,8 @@ class BansheeDB(Loggable):
         artists = {}
 
         def query_db():
-            q = "select * from CoreAlbums where AlbumID in "\
-                "(select distinct(AlbumID) from CoreTracks where "\
+            q = "select * from CoreAlbums where AlbumID in " \
+                "(select distinct(AlbumID) from CoreTracks where " \
                 "PrimarySourceID=?) order by Title"
             for row in self.db.sql_execute(q, self.get_local_music_library_id()):
                 try:
@@ -708,8 +708,8 @@ class BansheeDB(Loggable):
         albums = {}
 
         def query_db():
-            q = "select * from CoreTracks where TrackID in "\
-                "(select distinct(TrackID) from CoreTracks where "\
+            q = "select * from CoreTracks where TrackID in " \
+                "(select distinct(TrackID) from CoreTracks where " \
                 "PrimarySourceID=?) order by AlbumID,TrackNumber"
             for row in self.db.sql_execute(q, self.get_local_music_library_id()):
                 if row.AlbumID not in albums:
@@ -735,8 +735,8 @@ class BansheeDB(Loggable):
 
         def query_db():
             source_id = self.get_local_video_library_id()
-            q = "select * from CoreTracks where TrackID in "\
-                "(select distinct(TrackID) from CoreTracks where "\
+            q = "select * from CoreTracks where TrackID in " \
+                "(select distinct(TrackID) from CoreTracks where " \
                 "PrimarySourceID=?)"
             for row in self.db.sql_execute(q, source_id):
                 video = Video(row, self.db, source_id)

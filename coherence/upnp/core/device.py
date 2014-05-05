@@ -540,7 +540,7 @@ class RootDevice(Device):
                 self.warning("Invalid device description received from %r", self.location)
                 import traceback
                 self.debug(traceback.format_exc())
-            
+
             if xml_data is not None:
                 tree = xml_data.getroot()
                 major = tree.findtext('./{%s}specVersion/{%s}major' % (ns,ns))
@@ -554,7 +554,7 @@ class RootDevice(Device):
                 except:
                     import traceback
                     self.debug(traceback.format_exc())
-    
+
                 d = tree.find('./{%s}device' % ns)
                 if d is not None:
                     self.parse_device(d) # root device

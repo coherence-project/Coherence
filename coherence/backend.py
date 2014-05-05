@@ -345,9 +345,9 @@ class Container(BackendItem):
         def childs_sort(x,y):
             return cmp(x.name,y.name)
         self.sorting_method = childs_sort
-        
 
-    def register_child(self, child, external_id = None): 
+
+    def register_child(self, child, external_id = None):
         id = self.store.append_item(child)
         child.url = self.store.urlbase + str(id)
         child.parent = self
@@ -501,7 +501,7 @@ class LazyContainer(Container, log.Loggable):
     def retrieve_children(self, start=0, page=0):
 
         def items_retrieved(result, page, start_offset):
-            if self.childrenRetrievingNeeded is True:               
+            if self.childrenRetrievingNeeded is True:
                 new_offset = len(self.retrieved_children)
                 return self.retrieve_children(new_offset, page+1) # we try the next page
             return self.retrieved_children

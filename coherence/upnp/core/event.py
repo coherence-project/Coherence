@@ -102,7 +102,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
             self.backend_name = self.service.backend
 
     def render_SUBSCRIBE(self, request):
-        self.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d", 
+        self.info( "EventSubscriptionServer %s (%s) received subscribe request from %s, code: %d",
                             self.service.id,
                             self.backend_name,
                             request.client, request.code)
@@ -147,7 +147,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
         return ""
 
     def render_UNSUBSCRIBE(self, request):
-        self.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d", 
+        self.info( "EventSubscriptionServer %s (%s) received unsubscribe request from %s, code: %d",
                             self.service.id,
                             self.backend_name,
                             request.client, request.code)

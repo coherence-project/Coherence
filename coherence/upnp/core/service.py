@@ -1063,7 +1063,7 @@ class ServiceControl(log.Loggable):
                 self.critical('argument %s not valid for action %s', arg_name,action.name)
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
-            self.critical('argument %s missing for action %s', 
+            self.critical('argument %s missing for action %s',
                                 [ a.get_name() for a in in_arguments],action.name)
             return failure.Failure(errorCode(402))
 
