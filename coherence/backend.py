@@ -43,7 +43,7 @@ class Backend(log.Loggable,Plugin):
             after that it calls the backends upnp_init method
         """
         self.config = kwargs
-        self.server = server # the UPnP device that's hosting that backend
+        self.server = server  # the UPnP device that's hosting that backend
 
         """ do whatever is necessary with the stuff we can
             extract from the config dict,
@@ -93,7 +93,7 @@ class BackendStore(Backend):
         """
         Backend.__init__(self, server, *args)
         self.config = kwargs
-        self.server = server # the UPnP device that's hosting that backend
+        self.server = server  # the UPnP device that's hosting that backend
         self.update_id = 0
 
         """ do whatever is necessary with the stuff we can
@@ -503,7 +503,7 @@ class LazyContainer(Container, log.Loggable):
         def items_retrieved(result, page, start_offset):
             if self.childrenRetrievingNeeded is True:
                 new_offset = len(self.retrieved_children)
-                return self.retrieve_children(new_offset, page+1) # we try the next page
+                return self.retrieve_children(new_offset, page+1)  # we try the next page
             return self.retrieved_children
 
 

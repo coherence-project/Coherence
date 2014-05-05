@@ -633,7 +633,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.info("loading: %r %r ", uri, mimetype)
         _,state,_ = self.player.get_state()
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-        self.stop(silent=True) # the check whether a stop is really needed is done inside stop
+        self.stop(silent=True)  # the check whether a stop is really needed is done inside stop
 
         if mimetype is None:
             _,ext =  os.path.splitext(uri)

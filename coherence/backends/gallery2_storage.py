@@ -35,7 +35,7 @@ class Gallery2Item(BackendItem):
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass,update=False):
         self.id = id
 
-        self.name = obj.get('title')#.encode('utf-8')
+        self.name = obj.get('title')  # .encode('utf-8')
         if self.name == None:
             self.name = obj.get('name')
         if self.name == None:

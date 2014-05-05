@@ -92,7 +92,7 @@ class LolcatsImage(BackendItem):
         # these hold detailed information about the media data
         # and can represent variants of it (different sizes, transcoded formats)
         res = DIDLLite.Resource(self.location, 'http-get:*:image/jpeg:*')
-        res.size = None #FIXME: we should have a size here
+        res.size = None  # FIXME: we should have a size here
                         #       and a resolution entry would be nice too
         self.item.res.append(res)
 
@@ -127,7 +127,7 @@ class LolcatsContainer(BackendItem):
         # understood as 'Container'.
         self.item = DIDLLite.Container(id, parent_id, self.name)
 
-        self.item.childCount = None # will be set as soon as we have images
+        self.item.childCount = None  # will be set as soon as we have images
 
     def get_children(self, start=0, end=0):
         # This is the only important implementation thing: we have to return our

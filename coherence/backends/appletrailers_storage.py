@@ -64,7 +64,7 @@ class Container(BackendItem):
         self.children = []
 
         self.item = DIDLLite.Container(id, parent_id, self.name)
-        self.item.childCount = None #self.get_child_count()
+        self.item.childCount = None  # self.get_child_count()
 
     def get_children(self, start=0, end=0):
         if(end - start > 25 or

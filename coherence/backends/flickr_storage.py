@@ -83,7 +83,7 @@ class FlickrAuthenticate(object):
             except:
                 pass
         else:
-            raise Exception('no form for authentication found') # lame :-/
+            raise Exception('no form for authentication found')  # lame :-/
 
 
 class ProxyImage(ReverseProxyResource):
@@ -132,7 +132,7 @@ class FlickrItem(log.Loggable):
             self.nsid = obj.get('nsid')
             self.mimetype = 'directory'
         else:
-            self.name = obj.get('title') #.encode('utf-8')
+            self.name = obj.get('title')  # .encode('utf-8')
             if self.name == None:
                 self.name = obj.find('title')
                 if self.name != None:
@@ -984,7 +984,7 @@ class FlickrStore(BackendStore):
 
         if DestinationURI.endswith('?import'):
             id = DestinationURI.split('/')[-1]
-            id = id[:-7] # remove the ?import
+            id = id[:-7]  # remove the ?import
         else:
             return failure.Failure(errorCode(718))
 
@@ -1009,7 +1009,7 @@ class FlickrStore(BackendStore):
         d = getPage(SourceURI)
         d.addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
 
-        transfer_id = 0  #FIXME
+        transfer_id = 0  # FIXME
 
         return {'TransferID': transfer_id}
 

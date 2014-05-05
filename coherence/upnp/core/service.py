@@ -212,7 +212,7 @@ class Service(log.Loggable):
         try:
             return self._actions[name]
         except KeyError:
-            return None # not implemented
+            return None  # not implemented
 
     def get_state_variables(self, instance):
         return self._variables.get(int(instance))
@@ -461,7 +461,7 @@ class ServiceServer(log.Loggable):
         try:
             return self._actions[action_name]
         except KeyError:
-            return None # not implemented
+            return None  # not implemented
 
     def get_actions(self):
         return self._actions

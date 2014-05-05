@@ -308,7 +308,7 @@ class Client(log.Loggable):
             conn_iface.CreateChannel(params, reply_handler=got_channel, error_handler=got_error)
         else:
             new_message = [
-                {}, # let the CM fill in the headers
+                {},  # let the CM fill in the headers
                 {
                     'content': message,
                     'content-type': 'text/plain',

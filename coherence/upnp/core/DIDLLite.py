@@ -323,7 +323,7 @@ class Resource(object):
         elif format == 'mpegts':
             if content_format == 'video/mpeg':
                 return None
-            dlna_pn = 'DLNA.ORG_PN=MPEG_PS_PAL' # 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
+            dlna_pn = 'DLNA.ORG_PN=MPEG_PS_PAL'  # 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
             content_format='video/mpeg'
         else:
             return None

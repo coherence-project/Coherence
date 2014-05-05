@@ -570,7 +570,7 @@ class DVBDStore(BackendStore):
         def process_GetChannelGroups_result(data):
             self.debug("GOT CHANNEL GROUPS %s", data)
             for group in data:
-                self.channel_groups.append(group) # id, name
+                self.channel_groups.append(group)  # id, name
                 container_id = BASE_CHANNEL_GROUP_ID + group[0]
                 group_item = Container(container_id, CHANNEL_GROUPS_CONTAINER_ID,
                     group[1], store=self)
@@ -746,14 +746,14 @@ class DVBDScheduledRecording(BackendStore):
 
     def upnp_BrowseRecordSchedules(self, *args, **kwargs):
         schedules = []
-        sched = RecordSchedule() # ChannelID, StartDateTime, Duration
+        sched = RecordSchedule()  # ChannelID, StartDateTime, Duration
 
         return self.get_timers()
 
     def upnp_BrowseRecordTasks(self, *args, **kwargs):
         rec_sched_id = int(kwargs['RecordScheduleID'])
         tasks = []
-        task = RecordTask() # ScheduleID, ChannelID, StartDateTime, Duration
+        task = RecordTask()  # ScheduleID, ChannelID, StartDateTime, Duration
 
         return self.get_timer_details(rec_sched_id)
 

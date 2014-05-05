@@ -557,7 +557,7 @@ class RootDevice(Device):
 
                 d = tree.find('./{%s}device' % ns)
                 if d is not None:
-                    self.parse_device(d) # root device
+                    self.parse_device(d)  # root device
 
         def gotError(failure, url):
             self.warning("error getting device description from %r", url)

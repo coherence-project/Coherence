@@ -68,7 +68,7 @@ class Gallery:
         version - version of the gallery being connected to (default 2),
                   either 1 for Gallery1 or 2 for Gallery2
         """
-        self.version = version # Gallery1 or Gallery2
+        self.version = version  # Gallery1 or Gallery2
         if version == 1:
             self.url = url + '/gallery_remote2.php'
         else:

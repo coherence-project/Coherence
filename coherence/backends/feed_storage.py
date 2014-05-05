@@ -115,7 +115,7 @@ class FeedStore(BackendStore):
             raise FeedStorageConfigurationException("only feed_urls OR opml_url can be set")
 
         self.server = server
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60) # TODO: not used yet
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)  # TODO: not used yet
         self.store = {}
         self.wmc_mapping = {'4': str(AUDIO_ALL_CONTAINER_ID),    # all tracks
                             '7': str(AUDIO_ALBUM_CONTAINER_ID),    # all albums

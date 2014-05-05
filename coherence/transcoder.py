@@ -296,7 +296,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
     def __init__(self, uri, destination=None):
         self.info('uri %s %r', uri, type(uri))
         if uri[:7] not in ['file://', 'http://']:
-            uri = 'file://' + urllib.quote(uri)   #FIXME
+            uri = 'file://' + urllib.quote(uri)   # FIXME
         self.uri = uri
         self.destination = destination
         resource.Resource.__init__(self)

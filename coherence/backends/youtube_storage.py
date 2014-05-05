@@ -48,8 +48,8 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         self.buffer_size = int(buffer_size)
         self.downloader = None
 
-        self.video_url = None # the url we get from the youtube page
-        self.stream_url = None # the real video stream, cached somewhere
+        self.video_url = None  # the url we get from the youtube page
+        self.stream_url = None  # the real video stream, cached somewhere
         self.mimetype = None
 
         self.filesize = 0
@@ -93,7 +93,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 self.stream_url = real_url
                 if self.stream_url is None:
                     self.warning('Unable to retrieve URL - inconsistent web page')
-                    return self.requestFinished(None) #FIXME
+                    return self.requestFinished(None)  # FIXME
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
                 self.info("Video URL: %s", self.stream_url)
@@ -556,7 +556,7 @@ class YouTubeStore(AbstractBackendStore):
                return
            for playlist_video_entry in playlist_video_feed.entry:
                title = playlist_video_entry.title.text
-               playlist_id = playlist_video_entry.id.text.split("/")[-1] # FIXME find better way to retrieve the playlist ID
+               playlist_id = playlist_video_entry.id.text.split("/")[-1]  # FIXME find better way to retrieve the playlist ID
 
                item = LazyContainer(parent, title, playlist_id, self.refresh, self.retrievePlaylistFeedItems, playlist_id=playlist_id)
                parent.add_child(item, external_id=playlist_id)

@@ -121,7 +121,7 @@ class BuzztardItem(log.Loggable):
         else:
             parent_id = parent.get_id()
 
-        UPnPClass = classChooser(mimetype, sub='music') # FIXME: this is stupid
+        UPnPClass = classChooser(mimetype, sub='music')  # FIXME: this is stupid
         self.item = UPnPClass(id, parent_id, self.name)
         self.child_count = 0
         self.children = []

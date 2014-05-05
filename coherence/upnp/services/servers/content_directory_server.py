@@ -82,7 +82,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id
             elif hasattr(self.backend, 'update_id'):
-                r['UpdateID'] = self.backend.update_id # FIXME
+                r['UpdateID'] = self.backend.update_id  # FIXME
             else:
                 r['UpdateID'] = 0
 
@@ -272,7 +272,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id
             elif hasattr(self.backend, 'update_id'):
-                r['UpdateID'] = self.backend.update_id # FIXME
+                r['UpdateID'] = self.backend.update_id  # FIXME
             else:
                 r['UpdateID'] = 0
 

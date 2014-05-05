@@ -29,7 +29,7 @@ class TedTalk(BackendItem):
 
         self.item = DIDLLite.VideoItem(id, parent_id, self.name)
 
-        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*') # FIXME should be video/x-m4a
+        res = DIDLLite.Resource(self.location, 'http-get:*:video/mp4:*')  # FIXME should be video/x-m4a
         res.size = size
         res.duration = duration
         self.item.res.append(res)

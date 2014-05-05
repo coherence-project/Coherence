@@ -525,7 +525,7 @@ class FSStore(BackendStore):
             if self.ignore_file_pattern.match(path):
                 continue
             try:
-                path = path.encode('utf-8') # patch for #267
+                path = path.encode('utf-8')  # patch for #267
                 self.walk(path, parent, self.ignore_file_pattern)
             except Exception,msg:
                 self.warning('on walk of %r: %r', path,msg)
@@ -818,7 +818,7 @@ class FSStore(BackendStore):
 
         if DestinationURI.endswith('?import'):
             id = DestinationURI.split('/')[-1]
-            id = id[:-7] # remove the ?import
+            id = id[:-7]  # remove the ?import
         else:
             return failure.Failure(errorCode(718))
 
@@ -859,7 +859,7 @@ class FSStore(BackendStore):
         utils.downloadPage(SourceURI,
                            tmp_path).addCallbacks(gotPage, gotError, None, None, [SourceURI], None)
 
-        transfer_id = 0  #FIXME
+        transfer_id = 0  # FIXME
 
         return {'TransferID': transfer_id}
 

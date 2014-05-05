@@ -561,7 +561,7 @@ class TreeWidget(object):
                 update_id = changes.pop(0).strip()
 
                 def match_func(model, iter, data):
-                    column, key = data # data is a tuple containing column number, key
+                    column, key = data  # data is a tuple containing column number, key
                     value = model.get_value(iter, column)
                     return value == key
 

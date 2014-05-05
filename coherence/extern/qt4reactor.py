@@ -188,13 +188,13 @@ class QTReactor(PosixReactorBase):
         super(QTReactor,self).crash()
 
     def iterate(self,delay=0.0):
-        t=self.running # not sure I entirely get the state of running
+        t=self.running  # not sure I entirely get the state of running
         self.running=True
-        self._timer.stop() # in case its not (rare?)
+        self._timer.stop()  # in case its not (rare?)
         try:
             if delay == 0.0:
                 self.reactorInvokePrivate()
-                self._timer.stop() # supports multiple invocations
+                self._timer.stop()  # supports multiple invocations
             else:
                 endTime = delay + time.time()
                 self.reactorInvokePrivate()
@@ -224,7 +224,7 @@ class QTReactor(PosixReactorBase):
             self.runReturn(installSignalHandlers)
             self._blockApp.exec_()
         finally:
-            self._timer.stop() # should already be stopped
+            self._timer.stop()  # should already be stopped
 
     def reactorInvocation(self):
         self._timer.setInterval(0)
@@ -238,7 +238,7 @@ class QTReactor(PosixReactorBase):
         if t is None: t=0.1
         else: t = min(t,0.1)
         self._timer.setInterval(t*1010)
-        self.qApp.processEvents() # could change interval
+        self.qApp.processEvents()  # could change interval
         self._timer.start()
 
     def doIteration(self):

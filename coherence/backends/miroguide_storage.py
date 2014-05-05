@@ -119,7 +119,7 @@ class MiroGuideStore(AbstractBackendStore):
                 print "Unable to retrieve list of categories"
                 return
             data,header = result
-            categories = eval(data) # FIXME add some checks to avoid code injection
+            categories = eval(data)  # FIXME add some checks to avoid code injection
             for category in categories:
                 name = category['name'].encode('ascii', 'strict')
                 category_url = category['url'].encode('ascii', 'strict')
@@ -134,7 +134,7 @@ class MiroGuideStore(AbstractBackendStore):
                 print "Unable to retrieve list of languages"
                 return
             data,header = result
-            languages = eval(data) # FIXME add some checks to avoid code injection
+            languages = eval(data)  # FIXME add some checks to avoid code injection
             for language in languages:
                 name = language['name'].encode('ascii', 'strict')
                 language_url = language['url'].encode('ascii', 'strict')
@@ -169,7 +169,7 @@ class MiroGuideStore(AbstractBackendStore):
         if self.server:
             self.server.connection_manager_server.set_variable(
                0, 'SourceProtocolInfo',
-               ['http-get:*:%s:*' % 'video/'], #FIXME put list of all possible video mimetypes
+               ['http-get:*:%s:*' % 'video/'],  # FIXME put list of all possible video mimetypes
                default=True)
 
         self.wmc_mapping = {'15': self.get_root_id()}

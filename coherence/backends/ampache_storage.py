@@ -717,7 +717,7 @@ class AmpacheStore(BackendStore):
         try:
             error = response.find('error')
             self.warning('error on token request %r %r', error.attrib['code'], error.text)
-            if error.attrib['code'] == '401': # session error, we need to renegotiate our session
+            if error.attrib['code'] == '401':  # session error, we need to renegotiate our session
                 d = self.get_token(renegotiate=True)
 
                 def resend_request(result, old_request):
@@ -916,7 +916,7 @@ class AmpacheStore(BackendStore):
             if hasattr(item, 'update_id'):
                 r['UpdateID'] = item.update_id
             elif hasattr(self, 'update_id'):
-                r['UpdateID'] = self.update_id # FIXME
+                r['UpdateID'] = self.update_id  # FIXME
             else:
                 r['UpdateID'] = 0
 

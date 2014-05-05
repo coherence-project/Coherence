@@ -141,12 +141,12 @@ def get_host_address():
             route_file = '/proc/net/route'
             route = open(route_file)
             if(route):
-                tmp = route.readline() #skip first line
+                tmp = route.readline()  # skip first line
                 while (tmp != ''):
                     tmp = route.readline()
                     l = tmp.split('\t')
                     if (len(l) > 2):
-                        if l[1] == '00000000': #default route...
+                        if l[1] == '00000000':  # default route...
                             route.close()
                             return get_ip_address(l[0])
         except IOError, msg:
@@ -205,7 +205,7 @@ def de_chunk_payload(response):
     len = read_chunk_length()
     while (len > 0):
         newresponse.write(response.read(len))
-        line = response.readline() # after chunk and before next chunk length
+        line = response.readline()  # after chunk and before next chunk length
         len = read_chunk_length()
 
     return newresponse.getvalue()

@@ -81,7 +81,7 @@ class Container(BackendItem):
             self.children = children_callback
         else:
             self.children = util.OrderedDict()
-        self.item.childCount = None #self.get_child_count()
+        self.item.childCount = None  # self.get_child_count()
 
         if store!=None:
             self.get_url = lambda: store.urlbase + str(self.id)
@@ -795,7 +795,7 @@ class TrackerStore(BackendStore):
                                  '5': lambda : self.get_by_id(AUDIO_GENRE_CONTAINER_ID),     # all genres
                                  '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
                                  '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),     # all albums
-                                 '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID), # all playlists
+                                 '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
                                 })
 
         fields=[u'Audio:Title',u'Audio:Artist',

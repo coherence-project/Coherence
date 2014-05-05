@@ -168,7 +168,7 @@ class IRadioItem(BackendItem):
                                                                      'DLNA.ORG_CI=0',
                                                                      'DLNA.ORG_OP=01',
                                                                      'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
-            res.size = 0 #None
+            res.size = 0  # None
             self.item.res.append(res)
         return self.item
 
@@ -186,7 +186,7 @@ class IRadioStore(AbstractBackendStore):
 
     implements = ['MediaServer']
 
-    genre_parent_items = {} # will list the parent genre for every given genre
+    genre_parent_items = {}  # will list the parent genre for every given genre
 
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self,server,**kwargs)
@@ -228,7 +228,7 @@ class IRadioStore(AbstractBackendStore):
         # in order to get the sub-genre containers first
         def childs_sort(x,y):
             if x.__class__ == y.__class__:
-                return cmp(x.name,y.name) # same class, we compare the names
+                return cmp(x.name,y.name)  # same class, we compare the names
             else:
                 # the IRadioItem is deemed the lowest item class,
                 # other classes are compared by name (as usual)
@@ -317,7 +317,7 @@ class IRadioStore(AbstractBackendStore):
         def got_error(error):
             self.warning("connection to ShoutCast service failed: %s", url)
             self.debug("%r", error.getTraceback())
-            parent.childrenRetrievingNeeded = True # we retry
+            parent.childrenRetrievingNeeded = True  # we retry
             return Failure("Unable to retrieve stations for genre" % genre)
 
         d = utils.getPage(url)

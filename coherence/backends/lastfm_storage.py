@@ -95,7 +95,7 @@ class LastFMUser(log.Loggable):
             self.warning("Login to LastFM Failed! %r", error)
             self.debug("%r", error.getTraceback())
 
-        def hexify(s): # This function might be GPL! Found this code in some other Projects, too.
+        def hexify(s):  # This function might be GPL! Found this code in some other Projects, too.
             result = ""
             for c in s:
                 result = result + ("%02x" % ord(c))
@@ -234,7 +234,7 @@ class LastFMItem(log.Loggable):
                                                                                'DLNA.ORG_CI=0',
                                                                                'DLNA.ORG_OP=01',
                                                                                'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
-            res.size = -1 #None
+            res.size = -1  # None
             self.item.res.append(res)
 
 
@@ -271,7 +271,7 @@ class LastFMItem(log.Loggable):
 
     def get_child_count(self):
         if self.mimetype == 'directory':
-            return 100 #Some Testing, with strange Numbers: 0/lots
+            return 100  # Some Testing, with strange Numbers: 0/lots
         return self.child_count
 
     def get_id(self):

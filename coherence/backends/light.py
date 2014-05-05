@@ -26,7 +26,7 @@ class SimpleLight(Backend):
     def __init__(self, server, **kwargs):
         self.name = kwargs.get('name','SimpleLight')
         self.server = server
-        self.state = 0 # we start switched off
+        self.state = 0  # we start switched off
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
     def upnp_init(self):
@@ -52,8 +52,8 @@ class BetterLight(Backend):
     def __init__(self, server, **kwargs):
         self.name = kwargs.get('name','BetterLight')
         self.server = server
-        self.state = 0 # we start switched off
-        self.loadlevel = 50 # we start with 50% brightness
+        self.state = 0  # we start switched off
+        self.loadlevel = 50  # we start with 50% brightness
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 

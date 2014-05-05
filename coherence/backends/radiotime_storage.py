@@ -60,7 +60,7 @@ class RadiotimeAudioItem(BackendItem):
                                                                      'DLNA.ORG_CI=0',
                                                                      'DLNA.ORG_OP=01',
                                                                      'DLNA.ORG_FLAGS=01700000000000000000000000000000'))))
-            res.size = 0 #None
+            res.size = 0  # None
             self.item.res.append(res)
         return self.item
 
@@ -169,14 +169,14 @@ class RadiotimeStore(AbstractBackendStore):
         def got_error(error):
             self.warning("connection to Radiotime service failed for url %s", url)
             self.debug("%r", error.getTraceback())
-            parent.childrenRetrievingNeeded = True # we retry
+            parent.childrenRetrievingNeeded = True  # we retry
             return Failure("Unable to retrieve items for url %s" % url)
 
         def got_xml_error(error):
             self.warning("Data received from Radiotime service is invalid: %s", url)
             #self.debug("%r", error.getTraceback())
             print error.getTraceback()
-            parent.childrenRetrievingNeeded = True # we retry
+            parent.childrenRetrievingNeeded = True  # we retry
             return Failure("Unable to retrieve items for url %s" % url)
 
         d = utils.getPage(url, )

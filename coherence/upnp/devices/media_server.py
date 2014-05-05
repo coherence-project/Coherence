@@ -163,7 +163,7 @@ class MSRoot(resource.Resource, log.Loggable):
             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
                 def got_stuff_to_transcode(ch):
                     #FIXME create a generic transcoder class and sort the details there
-                    format = request.uri.split('/')[-1] #request.args['transcoded'][0]
+                    format = request.uri.split('/')[-1]  # request.args['transcoded'][0]
                     uri = ch.get_path()
                     try:
                         from coherence.transcoder import TranscoderManager
@@ -253,11 +253,11 @@ class MSRoot(resource.Resource, log.Loggable):
                         new_backend = self.server.coherence.add_plugin(backend_type, **new_config)
                         if (self.server.coherence.writeable_config()):
                             self.server.coherence.store_plugin_config(new_backend.uuid, new_config)
-                            msg = "<html><p>Device restarted. Config file has been modified with posted data.</p></html>" #constructConfigData(new_backend)
+                            msg = "<html><p>Device restarted. Config file has been modified with posted data.</p></html>"  # constructConfigData(new_backend)
                         else:
-                            msg = "<html><p>Device restarted. Config file not modified</p></html>" #constructConfigData(new_backend)
+                            msg = "<html><p>Device restarted. Config file not modified</p></html>"  # constructConfigData(new_backend)
                     request.setResponseCode(202)
-                    return static.Data(msg,'text/html')#'text/xml')
+                    return static.Data(msg,'text/html')  # 'text/xml')
                 except SyntaxError, e:
                     request.setResponseCode(400)
                     return static.Data("<html><p>Invalid data posted:<BR>%s</p></html>" % e,'text/html')

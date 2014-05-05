@@ -17,7 +17,7 @@ ENV_VAR_NAME = 'COHERENCE_DEBUG'
 # _srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
 #
-if hasattr(sys, 'frozen'): #support for py2exe
+if hasattr(sys, 'frozen'):  # support for py2exe
     _srcfile = "coherence%slog%s" % (os.sep, __file__[-4:])
 elif __file__[-4:].lower() in ['.pyc', '.pyo']:
     _srcfile = __file__[:-4] + '.py'
@@ -45,7 +45,7 @@ class Logger(logging.Logger):
         while hasattr(f, "f_code"):
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
-            if filename in _srcfiles: ## chaanged line
+            if filename in _srcfiles:  # # chaanged line
                 f = f.f_back
                 continue
             rv = (co.co_filename, f.f_lineno, co.co_name)

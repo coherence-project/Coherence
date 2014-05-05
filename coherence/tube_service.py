@@ -97,7 +97,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
                     item.res = new_res
                 if changed == True:
                     didl.rebuild()
-                    ordered_result[argument.name] = didl.toString() #.replace('<ns0:','<')
+                    ordered_result[argument.name] = didl.toString()  # .replace('<ns0:','<')
                 else:
                     ordered_result[argument.name] = result[argument.name].decode('utf-8')
             else:

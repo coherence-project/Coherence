@@ -153,7 +153,7 @@ class FileDownloader(object):
         """Create directory components in filename. Similar to Unix "mkdir -p"."""
         components = filename.split(os.sep)
         aggregate = [os.sep.join(components[0:x]) for x in xrange(1, len(components))]
-        aggregate = ['%s%s' % (x, os.sep) for x in aggregate] # Finish names with separator
+        aggregate = ['%s%s' % (x, os.sep) for x in aggregate]  # Finish names with separator
         for dir in aggregate:
             if not os.path.exists(dir):
                 os.mkdir(dir)
@@ -183,7 +183,7 @@ class FileDownloader(object):
         if total is None:
             return '--:--'
         dif = now - start
-        if current == 0 or dif < 0.001: # One millisecond
+        if current == 0 or dif < 0.001:  # One millisecond
             return '--:--'
         rate = float(current) / dif
         eta = long((float(total) - float(current)) / rate)
@@ -195,14 +195,14 @@ class FileDownloader(object):
     @staticmethod
     def calc_speed(start, now, bytes):
         dif = now - start
-        if bytes == 0 or dif < 0.001: # One millisecond
+        if bytes == 0 or dif < 0.001:  # One millisecond
             return '%10s' % '---b/s'
         return '%10s' % ('%s/s' % FileDownloader.format_bytes(float(bytes) / dif))
 
     @staticmethod
     def best_block_size(elapsed_time, bytes):
         new_min = max(bytes / 2.0, 1.0)
-        new_max = min(max(bytes * 2.0, 1.0), 4194304) # Do not surpass 4 MB
+        new_max = min(max(bytes * 2.0, 1.0), 4194304)  # Do not surpass 4 MB
         if elapsed_time < 0.001:
             return long(new_max)
         rate = bytes / elapsed_time
@@ -504,7 +504,7 @@ class YoutubeIE(InfoExtractor):
     _LOGIN_URL = 'http://www.youtube.com/signup?next=/&gl=US&hl=en'
     _AGE_URL = 'http://www.youtube.com/verify_age?next_url=/&gl=US&hl=en'
     _NETRC_MACHINE = 'youtube'
-    _available_formats = ['22', '35', '18', '5', '17', '13', None] # listed in order of priority for -b flag
+    _available_formats = ['22', '35', '18', '5', '17', '13', None]  # listed in order of priority for -b flag
     _video_extensions = {
         '13': '3gp',
         '17': 'mp4',
@@ -921,7 +921,7 @@ class YoutubeSearchIE(InfoExtractor):
                     n = self._max_youtube_results
                 self._download_n_results(query, n)
                 return
-            except ValueError: # parsing prefix as integer fails
+            except ValueError:  # parsing prefix as integer fails
                 self._download_n_results(query, 1)
                 return
 
@@ -1075,7 +1075,7 @@ class PostProcessor(object):
         exception that will be taken into account by the downloader
         it was called from.
         """
-        return information # by default, do nothing
+        return information  # by default, do nothing
 
 ### MAIN PROGRAM ###
 if __name__ == '__main__':
@@ -1087,7 +1087,7 @@ if __name__ == '__main__':
         # General configuration
         urllib2.install_opener(urllib2.build_opener(urllib2.ProxyHandler()))
         urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor()))
-        socket.setdefaulttimeout(300) # 5 minutes should be enough (famous last words)
+        socket.setdefaulttimeout(300)  # 5 minutes should be enough (famous last words)
 
         # Parse command line
         parser = optparse.OptionParser(

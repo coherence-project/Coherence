@@ -88,7 +88,7 @@ class DBRow(object):
 
     def __getitem__(self, key):
         """Return the value of the named column"""
-        if type(key) == type(1): # if a number
+        if type(key) == type(1):  # if a number
             return self.row[key]
         else:  # a field name
             return self.row[self.fields[key]]

@@ -239,7 +239,7 @@ class EventProtocol(Protocol, log.Loggable):
                 timeout = headers['timeout']
                 self.debug("%r %r", headers['sid'], headers['timeout'])
                 if timeout == 'infinite':
-                    self.service.set_timeout(time.time() + 4294967296) # FIXME: that's lame
+                    self.service.set_timeout(time.time() + 4294967296)  # FIXME: that's lame
                 elif timeout.startswith('Second-'):
                     timeout = int(timeout[len('Second-'):])
                     self.service.set_timeout(timeout)

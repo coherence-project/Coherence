@@ -57,7 +57,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
         self.service = service
         self.dbus_device = dbus_device
 
-        self.type = self.service.service_type.split(':')[3] # get the service name
+        self.type = self.service.service_type.split(':')[3]  # get the service name
 
         bus_name = dbus.service.BusName(CDS_SERVICE, bus)
 
@@ -449,7 +449,7 @@ class DBusService(dbus.service.Object,log.Loggable):
         self.dbus_device = dbus_device
 
         if self.service is not None:
-            self.type = self.service.service_type.split(':')[3] # get the service name
+            self.type = self.service.service_type.split(':')[3]  # get the service name
             self.type = self.type.replace('-','')
         else:
             self.type = "from_the_tubes"
