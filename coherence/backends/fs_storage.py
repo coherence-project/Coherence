@@ -71,7 +71,7 @@ def _find_thumbnail(filename,thumbnail_folder='.thumbs'):
         or throws an Exception otherwise
     """
     name,ext = os.path.splitext(os.path.basename(filename))
-    pattern = os.path.join(os.path.dirname(filename),thumbnail_folder,name+'.*')
+    pattern = os.path.join(os.path.dirname(filename),thumbnail_folder,name + '.*')
     for f in glob.glob(pattern):
         mimetype,_ = mimetypes.guess_type(f, strict=False)
         if mimetype in ('image/jpeg','image/png'):
@@ -129,7 +129,7 @@ class FSItem(BackendItem):
                self.location.isdir() == True):
                 self.check_for_cover_art()
                 if hasattr(self, 'cover'):
-                    _,ext =  os.path.splitext(self.cover)
+                    _,ext = os.path.splitext(self.cover)
                     """ add the cover image extension to help clients not reacting on
                         the mimetype """
                     self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
@@ -138,7 +138,7 @@ class FSItem(BackendItem):
 
             if self.mimetype.startswith('audio/'):
                 if hasattr(parent, 'cover'):
-                    _,ext =  os.path.splitext(parent.cover)
+                    _,ext = os.path.splitext(parent.cover)
                     """ add the cover image extension to help clients not reacting on
                         the mimetype """
                     self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
@@ -159,13 +159,13 @@ class FSItem(BackendItem):
                                      'audio/x-wav',
                                      'audio/x-m4a',
                                      'application/x-flac'):
-                    new_res = Resource(self.url+'/transcoded.mp3',
+                    new_res = Resource(self.url + '/transcoded.mp3',
                         'http-get:*:%s:*' % 'audio/mpeg')
                     new_res.size = None
                     #self.item.res.append(new_res)
 
             if mimetype != 'item':
-                res = Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+                res = Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
                 res.size = size
                 self.item.res.append(res)
 
@@ -202,13 +202,13 @@ class FSItem(BackendItem):
                     dlna_tags = simple_dlna_tags[:]
                     #dlna_tags[1] = 'DLNA.ORG_OP=00'
                     dlna_tags[2] = 'DLNA.ORG_CI=1'
-                    new_res = Resource(self.url+'?transcoded=lpcm',
-                        'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn]+dlna_tags)))
+                    new_res = Resource(self.url + '?transcoded=lpcm',
+                        'http-get:*:%s:%s' % ('audio/L16;rate=44100;channels=2', ';'.join([dlna_pn] + dlna_tags)))
                     new_res.size = None
                     #self.item.res.append(new_res)
 
-                    if self.mimetype  != 'audio/mpeg':
-                        new_res = Resource(self.url+'?transcoded=mp3',
+                    if self.mimetype != 'audio/mpeg':
+                        new_res = Resource(self.url + '?transcoded=mp3',
                             'http-get:*:%s:*' % 'audio/mpeg')
                         new_res.size = None
                         #self.item.res.append(new_res)
@@ -249,8 +249,8 @@ class FSItem(BackendItem):
                     dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
 
                     hash_from_path = str(id(filename))
-                    new_res = Resource(self.url+'?attachment='+hash_from_path,
-                        'http-get:*:%s:%s' % (mimetype, ';'.join([dlna_pn]+dlna_tags)))
+                    new_res = Resource(self.url + '?attachment=' + hash_from_path,
+                        'http-get:*:%s:%s' % (mimetype, ';'.join([dlna_pn] + dlna_tags)))
                     new_res.size = os.path.getsize(filename)
                     self.item.res.append(new_res)
                     if not hasattr(self.item, 'attachments'):
@@ -259,12 +259,12 @@ class FSItem(BackendItem):
 
             if self.mimetype.startswith('video/'):
                 # check for a subtitles file
-                caption,_ =  os.path.splitext(self.get_path())
+                caption,_ = os.path.splitext(self.get_path())
                 caption = caption + '.srt'
                 if os.path.exists(caption):
                     hash_from_path = str(id(caption))
                     mimetype = 'smi/caption'
-                    new_res = Resource(self.url+'?attachment='+hash_from_path,
+                    new_res = Resource(self.url + '?attachment=' + hash_from_path,
                         'http-get:*:%s:%s' % (mimetype, '*'))
                     new_res.size = os.path.getsize(caption)
                     self.caption = new_res.data
@@ -292,7 +292,7 @@ class FSItem(BackendItem):
         UPnPClass = classChooser(self.mimetype)
         self.item = UPnPClass(self.id, self.parent.id, self.get_name())
         if hasattr(self.parent, 'cover'):
-            _,ext =  os.path.splitext(self.parent.cover)
+            _,ext = os.path.splitext(self.parent.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
             self.item.albumArtURI = ''.join((urlbase,str(self.id),'?cover',ext))
@@ -303,7 +303,7 @@ class FSItem(BackendItem):
         else:
             host = host_port
 
-        res = Resource('file://'+urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
+        res = Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (host,self.mimetype))
         try:
             res.size = self.location.getsize()
         except:
@@ -507,7 +507,7 @@ class FSStore(BackendStore):
         self.ignore_file_pattern = re.compile('|'.join(['^\..*'] + list(ignore_patterns)))
         parent = None
         self.update_id = 0
-        if(len(self.content)>1 or
+        if(len(self.content) > 1 or
            utils.means_true(kwargs.get('create_root',False)) or
            self.import_folder != None):
             UPnPClass = classChooser('root')
@@ -631,7 +631,7 @@ class FSStore(BackendStore):
         parent = self.append(path,parent)
         if parent != None:
             containers.append(parent)
-        while len(containers)>0:
+        while len(containers) > 0:
             container = containers.pop()
             try:
                 self.debug('adding %r', container.location)
@@ -654,7 +654,7 @@ class FSStore(BackendStore):
         if mimetype in ('root','directory'):
             id = str(id)
         else:
-            _,ext =  os.path.splitext(path)
+            _,ext = os.path.splitext(path)
             id = str(id) + ext.lower()
         update = False
         if hasattr(self, 'update_id'):
@@ -927,12 +927,12 @@ class FSStore(BackendStore):
         if item.upnp_class.startswith('object.item'):
             _,_,content_format,_ = item.res[0].protocolInfo.split(':')
             extension = mimetypes.guess_extension(content_format, strict=False)
-            path = os.path.join(parent_item.get_realpath(),item.title+extension)
+            path = os.path.join(parent_item.get_realpath(),item.title + extension)
             id = self.create('item',path,parent_item)
 
             new_item = self.get_by_id(id)
             for res in new_item.item.res:
-                res.importUri = new_item.url+'?import'
+                res.importUri = new_item.url + '?import'
                 res.data = None
             didl = DIDLElement()
             didl.addItem(new_item.item)

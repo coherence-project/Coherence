@@ -121,14 +121,14 @@ class ElisaPlayer(log.Loggable, Plugin):
                 self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 0)
 
             if position is not None:
-                m,s = divmod( position/1000000000, 60)
+                m,s = divmod( position / 1000000000, 60)
                 h,m = divmod(m,60)
                 if self.server != None:
                     self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
                     self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
 
             if duration is not None:
-                m,s = divmod( duration/1000000000, 60)
+                m,s = divmod( duration / 1000000000, 60)
                 h,m = divmod(m,60)
 
                 if self.server != None:
@@ -243,9 +243,9 @@ class ElisaPlayer(log.Loggable, Plugin):
     def set_volume(self, volume):
         volume = int(volume)
         if volume < 0:
-            volume=0
+            volume = 0
         if volume > 100:
-            volume=100
+            volume = 100
 
         def got_result(result):
             rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
@@ -288,9 +288,9 @@ class ElisaPlayer(log.Loggable, Plugin):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        local_protocol_infos = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
         #print '>>>', local_protocol_infos
-        if len(CurrentURIMetaData)==0:
+        if len(CurrentURIMetaData) == 0:
             self.load(CurrentURI,CurrentURIMetaData)
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)

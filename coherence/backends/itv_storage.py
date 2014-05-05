@@ -90,7 +90,7 @@ class ProxyStream(utils.ReverseProxyUriResource, log.Loggable):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
-        self.url = store.urlbase+str(id)
+        self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id
         self.name = title
@@ -286,7 +286,7 @@ class ITVStore(BackendStore):
                     genres.append(genre)
 
                 sameStation = stations.get(name)
-                if sameStation == None or bitrate>sameStation['bitrate']:
+                if sameStation == None or bitrate > sameStation['bitrate']:
                     station = {'name':name,
                                'station_id':station_id,
                                'mimetype':mimetype,

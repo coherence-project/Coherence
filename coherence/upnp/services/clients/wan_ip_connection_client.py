@@ -45,7 +45,7 @@ class WANIPConnectionClient:
                 def add_index(r,index):
                     r['NewPortMappingIndex'] = index
                     return r
-                d.addCallback(add_index,i+1)
+                d.addCallback(add_index,i + 1)
                 d.addErrback(handle_error)
                 l.append(d)
 

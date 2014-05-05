@@ -47,7 +47,7 @@ class BBCItem(BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
-        self.url = store.urlbase+str(id)
+        self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id
         self.name = title
@@ -105,7 +105,7 @@ class BBCStore(BackendStore):
         BackendStore.__init__(self,server,**kwargs)
 
         self.name = kwargs.get('name', 'BBC')
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1000
         self.update_id = 0
@@ -188,7 +188,7 @@ class BBCStore(BackendStore):
                             first.add_child(item)
                             item.mimetype = encoding.text
                             item.duration = duration
-                            item.size = int(size.text)*1024
+                            item.size = int(size.text) * 1024
                             item.description = episode.find('./{http://purl.org/dc/elements/1.1/}description').text
 
 

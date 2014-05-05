@@ -99,7 +99,7 @@ class Service(log.Loggable):
                         v2 = attribute[1]
                     if v2 in [None,'None']:
                         return
-                    if len(attribute)> 2:
+                    if len(attribute) > 2:
                         r.append((name,(v1,v2,attribute[2])))
                     else:
                         r.append((name,(v1,v2)))
@@ -179,12 +179,12 @@ class Service(log.Loggable):
         self.info("set timout for %s/%s to %d", self.device.friendly_name,self.service_type,int(timeout))
         self.timeout = timeout
         try:
-            self.renew_subscription_call.reset(int(self.timeout)-30)
-            self.info("reset renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout)-30)
+            self.renew_subscription_call.reset(int(self.timeout) - 30)
+            self.info("reset renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout) - 30)
         except:
-            self.renew_subscription_call = reactor.callLater(int(self.timeout)-30,
+            self.renew_subscription_call = reactor.callLater(int(self.timeout) - 30,
                                                                  self.renew_subscription)
-            self.info("starting renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout)-30)
+            self.info("starting renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout) - 30)
 
     def get_timeout(self):
         return self.timeout
@@ -485,7 +485,7 @@ class ServiceServer(log.Loggable):
             return
 
         root = ET.Element('e:propertyset')
-        root.attrib['xmlns:e']='urn:schemas-upnp-org:event-1-0'
+        root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
         evented_variables = 0
         for n in notify:
             e = ET.SubElement( root, 'e:property')
@@ -567,7 +567,7 @@ class ServiceServer(log.Loggable):
 
     def build_single_notification(self, instance, variable_name, value):
         root = ET.Element('e:propertyset')
-        root.attrib['xmlns:e']='urn:schemas-upnp-org:event-1-0'
+        root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
         e = ET.SubElement( root, 'e:property')
         s = ET.SubElement( e, variable_name).text = str(value)
         return ET.tostring( root, encoding='utf-8')
@@ -575,10 +575,10 @@ class ServiceServer(log.Loggable):
     def build_last_change_event(self, instance=0, force=False):
         got_one = False
         root = ET.Element('Event')
-        root.attrib['xmlns']=self.event_metadata
+        root.attrib['xmlns'] = self.event_metadata
         for instance, vdict in self._variables.items():
             e = ET.SubElement( root, 'InstanceID')
-            e.attrib['val']=str(instance)
+            e.attrib['val'] = str(instance)
             for variable in vdict.values():
                 if( variable.name != 'LastChange' and
                     variable.name[0:11] != 'A_ARG_TYPE_' and
@@ -591,7 +591,7 @@ class ServiceServer(log.Loggable):
                     if variable.dependant_variable != None:
                         dependants = variable.dependant_variable.get_allowed_values()
                         if dependants != None and len(dependants) > 0:
-                            s.attrib['channel']=dependants[0]
+                            s.attrib['channel'] = dependants[0]
         if got_one == True:
             return ET.tostring( root, encoding='utf-8')
         else:
@@ -605,7 +605,7 @@ class ServiceServer(log.Loggable):
             return
 
         root = ET.Element('e:propertyset')
-        root.attrib['xmlns:e']='urn:schemas-upnp-org:event-1-0'
+        root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
 
         if isinstance( notify, variable.StateVariable):
             notify = [notify,]
@@ -624,7 +624,7 @@ class ServiceServer(log.Loggable):
                 if n.dependant_variable != None:
                     dependants = n.dependant_variable.get_allowed_values()
                     if dependants != None and len(dependants) > 0:
-                        s.attrib['channel']=dependants[0]
+                        s.attrib['channel'] = dependants[0]
 
         if evented_variables == 0:
             return
@@ -940,7 +940,7 @@ class scpdXML(static.Data):
 
     def build_xml(self):
         root = ET.Element('scpd')
-        root.attrib['xmlns']='urn:schemas-upnp-org:service-1-0'
+        root.attrib['xmlns'] = 'urn:schemas-upnp-org:service-1-0'
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement( e, 'major').text = '1'
         ET.SubElement( e, 'minor').text = '0'

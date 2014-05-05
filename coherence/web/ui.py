@@ -226,8 +226,8 @@ class WebUI(athena.LivePage, log.Loggable):
 
     def render_listmenu(self, ctx, data):
         l = []
-        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/'+'devices',class_="coherence_menu_link")['Devices']])
-        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/'+'logging',class_="coherence_menu_link")['Logging']])
+        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/' + 'devices',class_="coherence_menu_link")['Devices']])
+        l.append(tags.div(id="t",class_="coherence_menu_item")[tags.a(href='/' + 'logging',class_="coherence_menu_link")['Logging']])
         return ctx.tag[l]
 
     def render_menu(self, ctx, data):

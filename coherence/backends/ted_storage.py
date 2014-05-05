@@ -46,7 +46,7 @@ class TEDStore(LolcatsStore):
         BackendStore.__init__(self,server,**kwargs)
 
         self.name = kwargs.get('name', 'TEDtalks')
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1001
         self.last_updated = None

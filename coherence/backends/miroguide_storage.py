@@ -86,7 +86,7 @@ class MiroGuideStore(AbstractBackendStore):
 
         self.language = kwargs.get('language','English')
 
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
 
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')

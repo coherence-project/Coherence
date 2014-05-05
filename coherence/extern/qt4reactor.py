@@ -127,19 +127,19 @@ class QTReactor(PosixReactorBase):
     def __init__(self):
         self._reads = {}
         self._writes = {}
-        self._timer=QTimer()
+        self._timer = QTimer()
         self._timer.setSingleShot(True)
         if QCoreApplication.startingUp():
-            self.qApp=QCoreApplication([])
-            self._ownApp=True
+            self.qApp = QCoreApplication([])
+            self._ownApp = True
         else:
             self.qApp = QCoreApplication.instance()
-            self._ownApp=False
+            self._ownApp = False
         self._blockApp = None
-        self._readWriteQ=[]
+        self._readWriteQ = []
 
         """ some debugging instrumentation """
-        self._doSomethingCount=0
+        self._doSomethingCount = 0
 
         PosixReactorBase.__init__(self)
 
@@ -188,8 +188,8 @@ class QTReactor(PosixReactorBase):
         super(QTReactor,self).crash()
 
     def iterate(self,delay=0.0):
-        t=self.running  # not sure I entirely get the state of running
-        self.running=True
+        t = self.running  # not sure I entirely get the state of running
+        self.running = True
         self._timer.stop()  # in case its not (rare?)
         try:
             if delay == 0.0:
@@ -202,9 +202,9 @@ class QTReactor(PosixReactorBase):
                     t = endTime - time.time()
                     if t <= 0.0: return
                     self.qApp.processEvents(QEventLoop.AllEvents |
-                                      QEventLoop.WaitForMoreEvents,t*1010)
+                                      QEventLoop.WaitForMoreEvents,t * 1010)
         finally:
-            self.running=t
+            self.running = t
 
     def addReadWrite(self,t):
         self._readWriteQ.append(t)
@@ -218,7 +218,7 @@ class QTReactor(PosixReactorBase):
     def run(self, installSignalHandlers=True):
         try:
             if self._ownApp:
-                self._blockApp=self.qApp
+                self._blockApp = self.qApp
             else:
                 self._blockApp = fakeApplication()
             self.runReturn(installSignalHandlers)
@@ -235,9 +235,9 @@ class QTReactor(PosixReactorBase):
         self._doSomethingCount += 1
         self.runUntilCurrent()
         t = self.timeout()
-        if t is None: t=0.1
+        if t is None: t = 0.1
         else: t = min(t,0.1)
-        self._timer.setInterval(t*1010)
+        self._timer.setInterval(t * 1010)
         self.qApp.processEvents()  # could change interval
         self._timer.start()
 

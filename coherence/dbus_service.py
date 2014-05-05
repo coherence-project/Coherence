@@ -571,7 +571,7 @@ class DBusService(dbus.service.Object,log.Loggable):
         print "call_action called by ", sender, connection, self.type, self.tube
         def reply(data,name,connection):
             if hasattr(connection,'_tube') == True:
-                if name  == 'Browse':
+                if name == 'Browse':
                     didl = DIDLLite.DIDLElement.fromString(data['Result'])
                     changed = False
                     for item in didl.getItems():
@@ -1041,7 +1041,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
 
     """ org.DLNA related methods and signals
     """
-    @dbus.service.method(DLNA_BUS_NAME+'.DMC',in_signature='',out_signature='av')
+    @dbus.service.method(DLNA_BUS_NAME + '.DMC',in_signature='',out_signature='av')
     def getDMSList(self):
         return dbus.Array(self._get_devices_of_type('MediaServer'),
                  signature='v', variant_level=2)

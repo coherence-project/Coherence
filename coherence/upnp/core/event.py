@@ -133,7 +133,7 @@ class EventSubscriptionServer(resource.Resource, log.Loggable):
                 from .uuid import UUID
                 sid = UUID()
                 s = { 'sid' : str(sid),
-                      'callback' : headers['callback'][1:len(headers['callback'])-1],
+                      'callback' : headers['callback'][1:len(headers['callback']) - 1],
                       'seq' : 0}
                 s['timeout'] = headers['timeout']
                 s['created'] = time.time()

@@ -52,7 +52,7 @@ class Item(BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
-        self.url = store.urlbase+str(id)
+        self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id
         self.name = title
@@ -111,7 +111,7 @@ class SWR3Store(BackendStore,BackendRssMixin):
         self.name = kwargs.get('name', 'SWR3')
         self.opml = kwargs.get('opml', 'http://www.swr3.de/rdf-feed/podcast/')
         self.encoding = kwargs.get('encoding', "ISO-8859-1")
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1000
         self.update_id = 0

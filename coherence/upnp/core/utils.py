@@ -441,7 +441,7 @@ class ReverseProxyUriResource(ReverseProxyResource):
         else:
             host = host_port
             port = 80
-        if path =='':
+        if path == '':
             path = '/'
         if params == '':
             rest = path
@@ -451,7 +451,7 @@ class ReverseProxyUriResource(ReverseProxyResource):
 
     def resetUri (self, uri):
         self.uri = uri
-        _,host_port,path,params,_ =  urlsplit(uri)
+        _,host_port,path,params,_ = urlsplit(uri)
         if host_port.find(':') != -1:
             host,port = tuple(host_port.split(':'))
             port = int(port)
@@ -472,7 +472,7 @@ class myHTTPPageGetter(client.HTTPPageGetter):
         self.sendHeader('Host', self.factory.headers.get("host", self.factory.host))
         self.sendHeader('User-Agent', self.factory.agent)
         if self.factory.cookies:
-            l=[]
+            l = []
             for cookie, cookval in self.factory.cookies.items():
                 l.append('%s=%s' % (cookie, cookval))
             self.sendHeader('Cookie', '; '.join(l))

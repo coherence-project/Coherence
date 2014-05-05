@@ -94,7 +94,7 @@ class StateVariable(log.Loggable):
                         i = 0
                         while i < len(v):
                             if v[i] == str(value[0]):
-                                del v[i:i+2]
+                                del v[i:i + 2]
                                 old_value = ','.join(v)
                                 break;
                             i += 2

@@ -68,7 +68,7 @@ synonym_genres = {
   "Italy" : ["Italia", "Italian", "Italiana", "Italo", "Italy"],
   "Latina" : ["Latin", "Latina", "Latino" ],
 }
-useless_title_content =[
+useless_title_content = [
     # TODO: extend list with title expressions which are clearly useless
     " - [SHOUTcast.com]"
 ]
@@ -192,7 +192,7 @@ class IRadioStore(AbstractBackendStore):
         AbstractBackendStore.__init__(self,server,**kwargs)
 
         self.name = kwargs.get('name','iRadioStore')
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
 
         self.shoutcast_ws_url = self.config.get('genrelist',SHOUTCAST_WS_URL)
 
@@ -263,7 +263,7 @@ class IRadioStore(AbstractBackendStore):
     # and corresponding IRadio (list retrieved from the shoutcast server)
     def retrieveItemsForGenre (self, parent, genres, per_page=1, offset=0, page=0):
         genre = genres[page]
-        if page < len(genres)-1:
+        if page < len(genres) - 1:
             parent.childrenRetrievingNeeded = True
         url = '%s?genre=%s' % (self.shoutcast_ws_url, genre)
 
@@ -294,7 +294,7 @@ class IRadioStore(AbstractBackendStore):
                 url = '%s?id=%s' % (tunein, stationResult.get('id'))
 
                 sameStation = stations.get(lower_name)
-                if sameStation == None or bitrate>sameStation['bitrate']:
+                if sameStation == None or bitrate > sameStation['bitrate']:
                     station = {'name':name,
                                'station_id':station_id,
                                'mimetype':mimetype,
@@ -306,10 +306,10 @@ class IRadioStore(AbstractBackendStore):
             for station in stations.values():
                 station_id = station.get('station_id')
                 name = station.get('name')
-                url =  station.get('url')
+                url = station.get('url')
                 mimetype = station.get('mimetype')
                 item = IRadioItem(station_id, name, url, mimetype)
-                parent.add_child(item, external_id = station_id)
+                parent.add_child(item, external_id=station_id)
 
             return True
 

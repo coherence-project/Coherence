@@ -10,17 +10,17 @@ mimetypes.init()
 try:
     import hashlib
     def md5(s):
-        m =hashlib.md5()
+        m = hashlib.md5()
         m.update(s)
         return m.hexdigest()
     def sha256(s):
-        m =hashlib.sha256()
+        m = hashlib.sha256()
         m.update(s)
         return m.hexdigest()
 except ImportError:
     import md5 as oldmd5
     def md5(s):
-        m=oldmd5.new()
+        m = oldmd5.new()
         m.update(s)
         return m.hexdigest()
 
@@ -87,7 +87,7 @@ class Container(BackendItem):
         self.store = store
         self.play_container = play_container
 
-        if self.store!=None:
+        if self.store != None:
             self.get_url = lambda: self.store.urlbase + str(self.id)
 
     def add_child(self, child):
@@ -100,10 +100,10 @@ class Container(BackendItem):
         self.info("container.get_children %r %r", start, end)
         if(end - start > 250 or
            end - start == 0):
-            end = start+250
+            end = start + 250
 
         if callable(self.children):
-            return self.children(start,end-start)
+            return self.children(start,end - start)
         else:
             children = self.children
         if end == 0:
@@ -165,12 +165,12 @@ class Playlist(BackendItem):
             self.cover = None
 
     def get_children(self,start=0,end=0):
-        return self.store.ampache_query('playlist_songs', start, end-start, filter=self.ampache_id)
+        return self.store.ampache_query('playlist_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
         return self.tracks
 
-    def get_item(self, parent_id = AUDIO_PLAYLIST_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_PLAYLIST_CONTAINER_ID):
         item = DIDLLite.PlaylistItem(self.id, parent_id, self.title)
         item.childCount = self.get_child_count()
         #item.artist = self.artist
@@ -206,12 +206,12 @@ class Album(BackendItem):
             self.cover = None
 
     def get_children(self,start=0,end=0):
-        return self.store.ampache_query('album_songs', start, end-start, filter=self.ampache_id)
+        return self.store.ampache_query('album_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
         return self.tracks
 
-    def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_ALBUM_CONTAINER_ID):
         item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
         item.childCount = self.get_child_count()
         item.artist = self.artist
@@ -264,7 +264,7 @@ class Artist(BackendItem):
         self.name = element.find('name').text
 
     def get_children(self,start=0,end=0):
-        return self.store.ampache_query('artist_albums', start, end-start, filter=self.ampache_id)
+        return self.store.ampache_query('artist_albums', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
         if self.count_albums != None:
@@ -278,7 +278,7 @@ class Artist(BackendItem):
         d.addCallback(got_childs)
         return d
 
-    def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_ARTIST_CONTAINER_ID):
         item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
         return item
 
@@ -314,7 +314,7 @@ class Genre(BackendItem):
         self.name = element.find('name').text
 
     def get_children(self,start=0,end=0):
-        return self.store.ampache_query('genre_songs', start, end-start, filter=self.ampache_id)
+        return self.store.ampache_query('genre_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
         if self.count_songs != None:
@@ -328,7 +328,7 @@ class Genre(BackendItem):
         d.addCallback(got_childs)
         return d
 
-    def get_item(self, parent_id = AUDIO_GENRE_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_GENRE_CONTAINER_ID):
         item = DIDLLite.Genre(self.id, parent_id, self.name)
         return item
 
@@ -364,7 +364,7 @@ class Tag(BackendItem):
         self.name = element.find('name').text
 
     def get_children(self,start=0,end=0):
-        return self.store.ampache_query('tag_songs', start, end-start, filter=self.ampache_id)
+        return self.store.ampache_query('tag_songs', start, end - start, filter=self.ampache_id)
 
     def get_child_count(self):
         if self.count_songs != None:
@@ -378,7 +378,7 @@ class Tag(BackendItem):
         d.addCallback(got_childs)
         return d
 
-    def get_item(self, parent_id = AUDIO_TAG_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_TAG_CONTAINER_ID):
         item = DIDLLite.Genre(self.id, parent_id, self.name)
         return item
 
@@ -596,7 +596,7 @@ class AmpacheStore(BackendStore):
         self.albums = 0
         self.artists = 0
 
-        self.api_version=int(kwargs.get('api_version',350001))
+        self.api_version = int(kwargs.get('api_version',350001))
         #self.api_version=int(kwargs.get('api_version',340001))
 
         self.get_token()
@@ -940,7 +940,7 @@ class AmpacheStore(BackendStore):
                         if int(RequestedCount) == 0:
                             items = item[StartingIndex:]
                         else:
-                            items = item[StartingIndex:StartingIndex+RequestedCount]
+                            items = item[StartingIndex:StartingIndex + RequestedCount]
                     else:
                         d = defer.maybeDeferred( item.get_children, StartingIndex, StartingIndex + RequestedCount)
                         d.addCallback( process_result)

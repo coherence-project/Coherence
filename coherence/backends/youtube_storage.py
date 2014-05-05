@@ -184,15 +184,15 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                             if end:
                                 end = int(end)
                             else:
-                                end = self.filesize -1
+                                end = self.filesize - 1
                             # Are we requesting something beyond the current size of the file?
                             try:
                                 size = os.path.getsize(filepath)
                             except OSError:
                                 size = 0
                             if (start >= size and
-                                end+10 > self.filesize and
-                                end-start < 200000):
+                                end + 10 > self.filesize and
+                                end - start < 200000):
                                 #print "let's hand that through, it is probably a mp4 index request"
                                 res = ReverseProxyResource.render(self,request)
                                 if isinstance(res,int):
@@ -281,7 +281,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         self.info("Cache size: %d (max is %s)", cache_size, self.cache_maxsize)
 
         if (cache_size > self.cache_maxsize):
-            cache_targetsize = self.cache_maxsize * 2/3
+            cache_targetsize = self.cache_maxsize * 2 / 3
             self.info("Cache above max size: Reducing to %d", cache_targetsize)
 
             def compare_atime(filename1, filename2):
@@ -419,7 +419,7 @@ class YouTubeStore(AbstractBackendStore):
         self.locale = kwargs.get('location',None)
         self.quality = kwargs.get('quality','sd')
         self.showStandardFeeds = (kwargs.get('standard_feeds','True') in ['Yes','yes','true','True','1'])
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
         self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
         self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
         try:

@@ -80,7 +80,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
             return result
         ordered_result = OrderedDict()
         for argument in action.get_out_arguments():
-            if action.name  == 'XXXBrowse' and argument.name == 'Result':
+            if action.name == 'XXXBrowse' and argument.name == 'Result':
                 didl = DIDLLite.DIDLElement.fromString(result['Result'].decode('utf-8'))
                 changed = False
                 for item in didl.getItems():
@@ -149,7 +149,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         #print 'callit action', action
         #print 'callit dbus action', self.service.service.action
         d = defer.Deferred()
-        self.service.service.call_action( action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler = d.callback, error_handler = d.errback,utf8_strings=True)
+        self.service.service.call_action( action.name, dbus.Dictionary(kwargs,signature='ss'), reply_handler=d.callback, error_handler=d.errback,utf8_strings=True)
         d.addCallback( self.get_action_results, action, instance)
         d.addErrback(got_error)
         return d
@@ -318,7 +318,7 @@ class TubeDeviceProxy(log.Loggable):
                 except:
                     namespace = 'schemas-upnp-org'
 
-                device_description_tmpl = 'description-%d.xml'  % device_version
+                device_description_tmpl = 'description-%d.xml' % device_version
                 if hasattr(service,'device_description_tmpl'):
                     device_description_tmpl = service.device_description_tmpl
 

@@ -378,7 +378,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
     def list_content(self, name, item, request):
         self.info('list_content %s %s %s', name, item, request)
-        page = """<html><head><title>%s</title></head><body><p>%s</p>"""% \
+        page = """<html><head><title>%s</title></head><body><p>%s</p>""" % \
                                             (item.get_name().encode('ascii','xmlcharrefreplace'),
                                              item.get_name().encode('ascii','xmlcharrefreplace'))
 
@@ -454,11 +454,11 @@ class MSRoot(resource.Resource, log.Loggable):
         return cl
 
     def import_response(self,result,id):
-        return static.Data('<html><p>import of %s finished</p></html>'% id,'text/html')
+        return static.Data('<html><p>import of %s finished</p></html>' % id,'text/html')
 
     def render(self,request):
         #print "render", request
-        return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>'% \
+        return '<html><p>root of the %s MediaServer</p><p><ul>%s</ul></p></html>' % \
                                         (self.server.backend,
                                          self.listchilds(request.uri))
 
@@ -476,7 +476,7 @@ class RootDeviceXML(static.Data):
                         presentationURL=None):
         uuid = str(uuid)
         root = ET.Element('root')
-        root.attrib['xmlns']='urn:schemas-upnp-org:device-1-0'
+        root.attrib['xmlns'] = 'urn:schemas-upnp-org:device-1-0'
         device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, int(version))
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement(e, 'major').text = '1'
@@ -523,13 +523,13 @@ class RootDeviceXML(static.Data):
                     for k,v in icon.items():
                         if k == 'url':
                             if v.startswith('file://'):
-                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
                                 continue
                             elif v == '.face':
-                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+'face-icon.png'
+                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + 'face-icon.png'
                                 continue
                             else:
-                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
                                 continue
                         ET.SubElement(i, k).text = str(v)
 
@@ -571,13 +571,13 @@ class RootDeviceXML(static.Data):
         ET.SubElement(d, 'presentationURL').text = presentationURL
 
         x = ET.SubElement(d, 'dlna:X_DLNADOC')
-        x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
         x.text = 'DMS-1.50'
         x = ET.SubElement(d, 'dlna:X_DLNADOC')
-        x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
         x.text = 'M-DMS-1.50'
-        x=ET.SubElement(d, 'dlna:X_DLNACAP')
-        x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+        x = ET.SubElement(d, 'dlna:X_DLNACAP')
+        x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
         x.text = 'av-upload,image-upload,audio-upload'
 
         #if self.has_level(LOG_DEBUG):
@@ -670,7 +670,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                     services=self._services,
                                     devices=self._devices,
                                     icons=self.icons,
-                                    presentationURL = self.presentationURL))
+                                    presentationURL=self.presentationURL))
             self.web_resource.putChild( 'xbox-description-%d.xml' % version,
                                     RootDeviceXML( self.coherence.hostname,
                                     str(self.uuid),
@@ -681,7 +681,7 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                                     services=self._services,
                                     devices=self._devices,
                                     icons=self.icons,
-                                    presentationURL = self.presentationURL))
+                                    presentationURL=self.presentationURL))
             version -= 1
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)

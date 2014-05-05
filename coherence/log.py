@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 
-LOG_FORMAT =('%(asctime)s %(levelname)s '
+LOG_FORMAT = ('%(asctime)s %(levelname)s '
              '%(name)s: %(message)s '
              '(%(filename)s:%(lineno))')
 

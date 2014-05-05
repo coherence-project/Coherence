@@ -183,12 +183,12 @@ class CoverGetter(object):
                 query = '&'.join((query, 'Title=%s' % urllib.quote(title)))
         else:
             raise KeyError("Please supply either asin, title or artist and title arguments")
-        url = self.server+self.aws_base_query+aws_response_group+query
+        url = self.server + self.aws_base_query + aws_response_group + query
         WorkQueue(self.send_request, url)
 
     def send_request(self,url,*args,**kwargs):
         #print "send_request", url
-        d= client.getPage(url)
+        d = client.getPage(url)
         d.addCallback(self.got_response)
         d.addErrback(self.got_error, url)
         return d
@@ -201,7 +201,7 @@ class CoverGetter(object):
                 import Image
 
                 im = Image.open(StringIO.StringIO(result))
-                name,file_ext =  os.path.splitext(self.filename)
+                name,file_ext = os.path.splitext(self.filename)
                 self.filename = name + convert_to
 
                 im.save(self.filename)
@@ -220,7 +220,7 @@ class CoverGetter(object):
                     c,a,kw = self.callback
                     if not isinstance(a,tuple):
                         a = (a,)
-                    a=(data,) + a
+                    a = (data,) + a
                     c(*a,**kw)
                 if len(self.callback) == 2:
                     c,a = self.callback
@@ -229,7 +229,7 @@ class CoverGetter(object):
                     else:
                         if not isinstance(a,tuple):
                             a = (a,)
-                        a=(data,) + a
+                        a = (data,) + a
                         c(*a)
                 if len(self.callback) == 1:
                     c = self.callback
@@ -246,13 +246,13 @@ class CoverGetter(object):
             if self.filename == None:
                 d = client.getPage(image_url)
             else:
-                _,file_ext =  os.path.splitext(self.filename)
+                _,file_ext = os.path.splitext(self.filename)
                 if file_ext == '':
-                    _,image_ext =  os.path.splitext(image_url)
+                    _,image_ext = os.path.splitext(image_url)
                     if image_ext != '':
                         self.filename = ''.join((self.filename, image_ext))
                 else:
-                    _,image_ext =  os.path.splitext(image_url)
+                    _,image_ext = os.path.splitext(image_url)
                     if image_ext != '' and file_ext != image_ext:
                         #print "hmm, we need a conversion..."
                         convert_from = image_ext

@@ -85,7 +85,7 @@ class TestDBUS(unittest.TestCase):
 
             reactor.callLater(2,remove_it,uuid)
 
-        self.coherence_service.add_plugin('SimpleLight',{'name':'dbus-test-light-%d'%os.getpid(),'uuid':str(self.uuid)},
+        self.coherence_service.add_plugin('SimpleLight',{'name':'dbus-test-light-%d' % os.getpid(),'uuid':str(self.uuid)},
                                           dbus_interface=BUS_NAME,
                                           reply_handler=handle_add_plugin_reply,
                                           error_handler=handle_error)

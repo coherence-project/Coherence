@@ -182,7 +182,7 @@ class LolcatsStore(BackendStore):
         self.name = kwargs.get('name', 'Lolcats')
 
         # timeout between updates in hours:
-        self.refresh = int(kwargs.get('refresh', 1)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         # the UPnP device that's hosting that backend, that's already done
         # in the BackendStore.__init__, just left here the sake of completeness

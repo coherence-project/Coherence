@@ -98,7 +98,7 @@ class AudioCDStore(AbstractBackendStore):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
         self.name = 'audio CD'
-        self.device_name= kwargs.get('device_name',"/dev/cdom");
+        self.device_name = kwargs.get('device_name',"/dev/cdom");
 
         threads.deferToThread(self.extractAudioCdInfo)
 
@@ -135,7 +135,7 @@ class AudioCDStore(AbstractBackendStore):
         self.disc_title = query_info['title'].encode('utf-8')
         tracks = {}
         for i in range(track_count):
-            tracks[i+1] = read_info['TTITLE' + `i`].decode('ISO-8859-1').encode('utf-8')
+            tracks[i + 1] = read_info['TTITLE' + `i`].decode('ISO-8859-1').encode('utf-8')
 
         self.name = self.disc_title
 
@@ -150,7 +150,7 @@ class AudioCDStore(AbstractBackendStore):
         for number, title in tracks.items():
             item = TrackItem(self.device_name, number, "Unknown", title)
             external_id = "%s_%d" % (disc_id, number)
-            root_item.add_child(item, external_id = external_id)
+            root_item.add_child(item, external_id=external_id)
 
         self.info('Sharing audio CD %s', self.disc_title)
 

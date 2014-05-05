@@ -71,10 +71,10 @@ class ControlPoint(object):
 class DeviceExportWidget(object):
 
     def __init__(self,name='Nautilus',standalone=True,root=None):
-        self.root=root
+        self.root = root
         self.uuid = None
         self.name = name
-        self.standalone=standalone
+        self.standalone = standalone
 
         icon = resource_filename(__name__, os.path.join('icons','emblem-new.png'))
         self.new_icon = gtk.gdk.pixbuf_new_from_file(icon)
@@ -194,8 +194,8 @@ class DeviceExportWidget(object):
 class DeviceImportWidget(object):
 
     def __init__(self,standalone=True,root=None):
-        self.standalone=standalone
-        self.root=root
+        self.standalone = standalone
+        self.root = root
         self.build_ui()
         self.init_controlpoint()
 
@@ -361,7 +361,7 @@ class DeviceImportWidget(object):
 
                 def reply(r,udn):
                     if 'CreateObject' in r:
-                        self.devices[udn] =  {'ContentDirectory':{}}
+                        self.devices[udn] = {'ContentDirectory':{}}
                         self.devices[udn]['ContentDirectory']['actions'] = r
 
                         item = self.store.append(None)
@@ -369,10 +369,10 @@ class DeviceImportWidget(object):
                         self.store.set_value(item, 1, str(device['udn']))
                         self.store.set_value(item, 2, self.device_icon)
 
-                        d = self.bus.get_object(BUS_NAME+'.device',device['path'])
+                        d = self.bus.get_object(BUS_NAME + '.device',device['path'])
                         d.get_device_icons(reply_handler=lambda x : got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
 
-                s = self.bus.get_object(BUS_NAME+'.service',service)
+                s = self.bus.get_object(BUS_NAME + '.service',service)
                 s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
 
     def media_server_removed(self,udn):
@@ -609,7 +609,7 @@ class TreeWidget(object):
 
         self.store.append(item, ('...loading...','','placeholder',-1,'','',None,'',None))
 
-        self.devices[str(device['udn'])] =  {'ContentDirectory':{}}
+        self.devices[str(device['udn'])] = {'ContentDirectory':{}}
         for service in device['services']:
             service_type = service.split('/')[-1]
             if service_type == 'ContentDirectory':
@@ -636,12 +636,12 @@ class TreeWidget(object):
                     for k,v in r.iteritems():
                         self.state_variable_change(udn,service,k,v)
 
-                s = self.bus.get_object(BUS_NAME+'.service',service)
-                s.connect_to_signal('StateVariableChanged', self.state_variable_change, dbus_interface=BUS_NAME+'.service')
+                s = self.bus.get_object(BUS_NAME + '.service',service)
+                s.connect_to_signal('StateVariableChanged', self.state_variable_change, dbus_interface=BUS_NAME + '.service')
                 s.get_available_actions(reply_handler=lambda x : reply(x,str(device['udn'])),error_handler=self.handle_error)
                 s.subscribe(reply_handler=reply_subscribe,error_handler=self.handle_error)
 
-                d = self.bus.get_object(BUS_NAME+'.device',device['path'])
+                d = self.bus.get_object(BUS_NAME + '.device',device['path'])
                 d.get_device_icons(reply_handler=lambda x : got_icons(x,str(device['udn']),item),error_handler=self.handle_error)
 
 
@@ -717,7 +717,7 @@ class TreeWidget(object):
                         title = "%s (n/a)" % item.title
                         child_count = -1
                 else:
-                    icon=None
+                    icon = None
                     service = ''
 
                     if callable(self.cb_resource_chooser):
@@ -747,25 +747,25 @@ class TreeWidget(object):
                     self.store.append(new_iter, ('...loading...','','placeholder',-1,'','',None,'',None))
 
 
-            if((int(r['TotalMatches']) > 0 and force==False) or
-                expand==True):
+            if((int(r['TotalMatches']) > 0 and force == False) or
+                expand == True):
                 view.expand_row(row_path, False)
 
             if(requested_count != int(r['NumberReturned']) and
-               int(r['NumberReturned']) < (int(r['TotalMatches'])-starting_index)):
+               int(r['NumberReturned']) < (int(r['TotalMatches']) - starting_index)):
                 print "seems we have been returned only a part of the result"
                 print "requested %d, starting at %d" % (requested_count,starting_index)
                 print "got %d out of %d" % (int(r['NumberReturned']), int(r['TotalMatches']))
-                print "requesting more starting now at %d" % (starting_index+int(r['NumberReturned']))
+                print "requesting more starting now at %d" % (starting_index + int(r['NumberReturned']))
 
                 self.browse(view,row_path,column,
-                            starting_index=starting_index+int(r['NumberReturned']),
+                            starting_index=starting_index + int(r['NumberReturned']),
                             force=True)
 
         service, = self.store.get(iter,SERVICE_COLUMN)
         if service == '':
             return
-        s = self.bus.get_object(BUS_NAME+'.service',service)
+        s = self.bus.get_object(BUS_NAME + '.service',service)
         s.action('browse',
                  {'object_id':object_id,'process_result':'no',
                   'starting_index':str(starting_index),'requested_count':str(requested_count)},
@@ -784,7 +784,7 @@ class TreeWidget(object):
             #print "destroy_object reply", r
             pass
 
-        s = self.bus.get_object(BUS_NAME+'.service',service)
+        s = self.bus.get_object(BUS_NAME + '.service',service)
         s.action('destroy_object',
                  {'object_id':object_id},
                  reply_handler=reply,error_handler=self.handle_error)
@@ -792,7 +792,7 @@ class TreeWidget(object):
 
 if __name__ == '__main__':
 
-    ui=TreeWidget()
+    ui = TreeWidget()
 
     window = gtk.Window()
     window.connect("delete_event", gtk.main_quit)

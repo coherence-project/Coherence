@@ -58,11 +58,11 @@ class Device(log.Loggable):
 
     def remove(self,*args):
         self.info("removal of  %s %s", self.friendly_name, self.udn)
-        while len(self.devices)>0:
+        while len(self.devices) > 0:
             device = self.devices.pop()
             self.debug("try to remove %r", device)
             device.remove()
-        while len(self.services)>0:
+        while len(self.services) > 0:
             service = self.services.pop()
             self.debug("try to remove %r", service)
             service.remove()

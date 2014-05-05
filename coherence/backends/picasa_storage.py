@@ -114,7 +114,7 @@ class PicasaStore(AbstractBackendStore):
 
         self.name = kwargs.get('name','Picasa Web Albums')
 
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
 
         self.login = kwargs.get('userid',kwargs.get('login',''))
         self.password = kwargs.get('password','')

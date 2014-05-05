@@ -444,7 +444,7 @@ class MP2TSTranscoder(BaseTranscoder, InternalTranscoder):
         self.info("start %r", request)
         ### FIXME mpeg2enc
         self.pipeline = gst.parse_launch(
-            "mpegtsmux name=mux %s ! decodebin2 name=d ! queue ! ffmpegcolorspace ! mpeg2enc ! queue ! mux. d. ! queue ! audioconvert ! twolame ! queue ! mux."  % self.uri)
+            "mpegtsmux name=mux %s ! decodebin2 name=d ! queue ! ffmpegcolorspace ! mpeg2enc ! queue ! mux. d. ! queue ! audioconvert ! twolame ! queue ! mux." % self.uri)
         enc = self.pipeline.get_by_name('mux')
         sink = DataSink(destination=self.destination, request=request)
         self.pipeline.add(sink)

@@ -288,7 +288,7 @@ class Album(BackendItem):
         item.artist = self.artist.name
         item.childCount = self.get_child_count()
         if self.cover:
-            _,ext =  os.path.splitext(self.cover)
+            _,ext = os.path.splitext(self.cover)
             item.albumArtURI = ''.join((self._db.urlbase,
                                         self.get_id(), '?cover', ext))
 
@@ -460,7 +460,7 @@ class BaseTrack(BackendItem):
         else:
             host = host_port
 
-        _,ext =  os.path.splitext(self.location)
+        _,ext = os.path.splitext(self.location)
         ext = ext.lower()
 
         # FIXME: drop this hack when we switch to tagbin
@@ -523,7 +523,7 @@ class Track(BaseTrack):
         item.playlist = self.playlist
 
         if self.album.cover != '':
-            _,ext =  os.path.splitext(self.album.cover)
+            _,ext = os.path.splitext(self.album.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
             item.albumArtURI = ''.join((self._db.urlbase, self.get_id(),

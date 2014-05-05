@@ -101,7 +101,7 @@ class Resources(list):
             return -1
         return 1
 
-    def get_matching(self, local_protocol_infos, protocol_type = None):
+    def get_matching(self, local_protocol_infos, protocol_type=None):
         result = []
         if not isinstance(local_protocol_infos, list):
             local_protocol_infos = [local_protocol_infos]
@@ -167,29 +167,29 @@ simple_dlna_tags = ['DLNA.ORG_OP=01',      # operations parameter
 def build_dlna_additional_info(content_format,does_playcontainer=False):
     additional_info = ['*']
     if content_format == 'audio/mpeg':
-        additional_info = ['DLNA.ORG_PN=MP3']+simple_dlna_tags
+        additional_info = ['DLNA.ORG_PN=MP3'] + simple_dlna_tags
     if content_format == 'audio/ms-wma':
-        additional_info = ['DLNA.ORG_PN=WMABASE']+simple_dlna_tags
+        additional_info = ['DLNA.ORG_PN=WMABASE'] + simple_dlna_tags
     if content_format == 'image/jpeg':
         dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
-        additional_info = ['DLNA.ORG_PN=JPEG_LRG']+dlna_tags
+        additional_info = ['DLNA.ORG_PN=JPEG_LRG'] + dlna_tags
     if content_format == 'image/png':
         dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
-        additional_info = ['DLNA.ORG_PN=PNG_LRG']+dlna_tags
+        additional_info = ['DLNA.ORG_PN=PNG_LRG'] + dlna_tags
     if content_format == 'video/mpeg':
-        additional_info = ['DLNA.ORG_PN=MPEG_PS_PAL']+simple_dlna_tags
+        additional_info = ['DLNA.ORG_PN=MPEG_PS_PAL'] + simple_dlna_tags
     if content_format == 'video/mpegts':
-        additional_info = ['DLNA.ORG_PN=MPEG_TS_PAL']+simple_dlna_tags
+        additional_info = ['DLNA.ORG_PN=MPEG_TS_PAL'] + simple_dlna_tags
         content_format = 'video/mpeg'
     if content_format in ['video/mp4','video/x-m4a']:
-        additional_info = ['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC']+simple_dlna_tags
+        additional_info = ['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'] + simple_dlna_tags
     if content_format in ['video/x-msvideo','video/avi','video/divx']:
         #additional_info = ';'.join(['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC']+simple_dlna_tags)
         additional_info = ['*']
     if content_format == 'video/x-ms-wmv':
-        additional_info = ['DLNA.ORG_PN=WMV_BASE']+simple_dlna_tags
+        additional_info = ['DLNA.ORG_PN=WMV_BASE'] + simple_dlna_tags
     if content_format == '*':
         additional_info = simple_dlna_tags
 
@@ -199,7 +199,7 @@ def build_dlna_additional_info(content_format,does_playcontainer=False):
             if part.startswith('DLNA.ORG_FLAGS'):
                 _,bits = part.split('=')
                 bits = int(bits,16)
-                bits |=  0x10000000000000000000000000000000
+                bits |= 0x10000000000000000000000000000000
                 additional_info[i] = 'DLNA.ORG_FLAGS=%.32x' % bits
                 break
             i += 1
@@ -315,23 +315,23 @@ class Resource(object):
         if format == 'mp3':
             if content_format == 'audio/mpeg':
                 return None
-            content_format='audio/mpeg'
+            content_format = 'audio/mpeg'
             dlna_pn = 'DLNA.ORG_PN=MP3'
         elif format == 'lpcm':
             dlna_pn = 'DLNA.ORG_PN=LPCM'
-            content_format='audio/L16;rate=44100;channels=2'
+            content_format = 'audio/L16;rate=44100;channels=2'
         elif format == 'mpegts':
             if content_format == 'video/mpeg':
                 return None
             dlna_pn = 'DLNA.ORG_PN=MPEG_PS_PAL'  # 'DLNA.ORG_PN=MPEG_TS_SD_EU' # FIXME - don't forget HD
-            content_format='video/mpeg'
+            content_format = 'video/mpeg'
         else:
             return None
 
-        additional_info = ';'.join([dlna_pn]+dlna_tags)
+        additional_info = ';'.join([dlna_pn] + dlna_tags)
         new_protocol_info = ':'.join((protocol,network,content_format,additional_info))
 
-        new_res = Resource(self.data+'/transcoded/%s' % format,
+        new_res = Resource(self.data + '/transcoded/%s' % format,
                         new_protocol_info)
         new_res.size = None
         new_res.duration = self.duration
@@ -386,7 +386,7 @@ class Object(log.Loggable):
     genre = None
     genres = None
     album = None
-    originalTrackNumber=None
+    originalTrackNumber = None
 
     description = None
     longDescription = None
@@ -823,7 +823,7 @@ class Container(Object):
     searchable = None
 
     def __init__(self, id=None, parentID=None, title=None,
-                 restricted = False, creator = None):
+                 restricted=False, creator=None):
         Object.__init__(self, id, parentID, title, restricted, creator)
         self.searchClass = []
 
@@ -937,8 +937,8 @@ class DIDLElement(ElementInterface,log.Loggable):
         self.transcoding = transcoding
 
 
-    def addContainer(self, id, parentID, title, restricted = False):
-        e = Container(id, parentID, title, restricted, creator = '')
+    def addContainer(self, id, parentID, title, restricted=False):
+        e = Container(id, parentID, title, restricted, creator='')
         self.append(e.toElement())
 
     def addItem(self, item):
@@ -992,7 +992,7 @@ class DIDLElement(ElementInterface,log.Loggable):
         elt = utils.parse_xml(aString, 'utf-8')
         elt = elt.getroot()
         for node in elt.getchildren():
-            upnp_class_name =  node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
+            upnp_class_name = node.findtext('{%s}class' % 'urn:schemas-upnp-org:metadata-1-0/upnp/')
             upnp_class = instance.get_upnp_class(upnp_class_name.strip())
             new_node = upnp_class.fromString(ET.tostring(node))
             instance.addItem(new_node)

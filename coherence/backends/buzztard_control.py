@@ -214,7 +214,7 @@ class BuzztardItem(log.Loggable):
             parent = 'root'
         else:
             parent = str(self.parent.get_id())
-        return 'id: ' + str(self.id) +'/' + self.name + '/' + parent + ' ' + str(self.child_count) + ' @ ' + self.url
+        return 'id: ' + str(self.id) + '/' + self.name + '/' + parent + ' ' + str(self.child_count) + ' @ ' + self.url
 
 class BuzztardStore(log.Loggable,Plugin):
     logCategory = 'buzztard_store'
@@ -226,8 +226,8 @@ class BuzztardStore(log.Loggable,Plugin):
         self.name = kwargs.get('name','Buzztard')
 
         self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
+        if( len(self.urlbase) > 0 and
+            self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
 
         self.host = kwargs.get('host','127.0.0.1')
@@ -485,10 +485,10 @@ class BuzztardPlayer(log.Loggable):
     def set_volume(self, volume):
         volume = int(volume)
         if volume < 0:
-            volume=0
+            volume = 0
         if volume > 100:
-            volume=100
-        self.buzztard.connection.sendMessage('set|volume|%d'% volume)
+            volume = 100
+        self.buzztard.connection.sendMessage('set|volume|%d' % volume)
 
     def upnp_init(self):
         self.current_connection_id = None
@@ -525,8 +525,8 @@ class BuzztardPlayer(log.Loggable):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        local_protocol_info=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
-        if len(CurrentURIMetaData)==0:
+        local_protocol_info = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        if len(CurrentURIMetaData) == 0:
             self.load(CurrentURI,CurrentURIMetaData)
             return {}
         else:

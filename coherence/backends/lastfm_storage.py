@@ -121,14 +121,14 @@ class LastFMUser(log.Loggable):
                 #Fixme: This section needs some work
                 print "adding Track"
                 data['mimetype'] = 'audio/mpeg'
-                data['name'] =get_data('creator') + " - " + get_data('title')
+                data['name'] = get_data('creator') + " - " + get_data('title')
                 data['title'] = get_data('title')
                 data['artist'] = get_data('creator')
                 data['creator'] = get_data('creator')
                 data['album'] = get_data('album')
                 data['duration'] = get_data('duration')
                 #FIXME: Image is the wrong tag.
-                data['image'] =get_data('image')
+                data['image'] = get_data('image')
                 data['url'] = track.find('location').text.encode('utf-8')
                 item = self.parent.store.append(data, self.parent)
                 self.tracks.append(item)
@@ -198,7 +198,7 @@ class LastFMItem(log.Loggable):
         self.artist = obj.get('artist')
         self.creator = obj.get('creator')
         self.album = obj.get('album')
-        self.duration  = obj.get('duration')
+        self.duration = obj.get('duration')
         self.mimetype = mimetype
 
         self.parent = parent

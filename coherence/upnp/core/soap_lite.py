@@ -42,13 +42,13 @@ def build_soap_error(status,description='without words'):
     """ builds an UPnP SOAP error msg
     """
     root = ET.Element('s:Fault')
-    ET.SubElement(root,'faultcode').text='s:Client'
-    ET.SubElement(root,'faultstring').text='UPnPError'
+    ET.SubElement(root,'faultcode').text = 's:Client'
+    ET.SubElement(root,'faultstring').text = 'UPnPError'
     e = ET.SubElement(root,'detail')
     e = ET.SubElement(e, 'UPnPError')
-    e.attrib['xmlns']='urn:schemas-upnp-org:control-1-0'
-    ET.SubElement(e,'errorCode').text=str(status)
-    ET.SubElement(e,'errorDescription').text=UPNPERRORS.get(status,description)
+    e.attrib['xmlns'] = 'urn:schemas-upnp-org:control-1-0'
+    ET.SubElement(e,'errorCode').text = str(status)
+    ET.SubElement(e,'errorDescription').text = UPNPERRORS.get(status,description)
     return build_soap_call(None, root, encoding=None)
 
 def build_soap_call(method, arguments, is_response=False,

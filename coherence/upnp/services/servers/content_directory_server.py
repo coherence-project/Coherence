@@ -34,7 +34,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
 
     def __init__(self, device, backend=None,transcoding=False):
         self.device = device
-        self.transcoding=transcoding
+        self.transcoding = transcoding
         if backend == None:
             backend = self.device.backend
         resource.Resource.__init__(self)
@@ -54,7 +54,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
         return cl
 
     def render(self,request):
-        return '<html><p>root of the ContentDirectory</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
+        return '<html><p>root of the ContentDirectory</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)
 
     def upnp_Search(self, *args, **kwargs):
         ContainerID = kwargs['ContainerID']
@@ -157,7 +157,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                             if int(RequestedCount) == 0:
                                 items = item[StartingIndex:]
                             else:
-                                items = item[StartingIndex:StartingIndex+RequestedCount]
+                                items = item[StartingIndex:StartingIndex + RequestedCount]
                             return process_result(items,total=total)
                         else:
                             if isinstance(item,defer.Deferred):
@@ -306,7 +306,7 @@ class ContentDirectoryServer(service.ServiceServer, resource.Resource,
                         if int(RequestedCount) == 0:
                             items = item[StartingIndex:]
                         else:
-                            items = item[StartingIndex:StartingIndex+RequestedCount]
+                            items = item[StartingIndex:StartingIndex + RequestedCount]
                         return process_result(items,total=total)
                     else:
                         if isinstance(item,defer.Deferred):

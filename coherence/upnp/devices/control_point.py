@@ -68,7 +68,7 @@ class ControlPoint(log.Loggable):
                                         XMLRPC(self))
 
         self.auto_client = auto_client
-        self.queries=[]
+        self.queries = []
 
         for device in self.get_devices():
             self.check_device( device)
@@ -183,7 +183,7 @@ class ControlPoint(log.Loggable):
             f = open(path)
             data = f.read()
             f.close()
-            headers= {
+            headers = {
                 "Content-Type": "application/octet-stream",
                 "Content-Length": str(len(data))
             }
@@ -208,10 +208,10 @@ class XMLRPC( xmlrpc.XMLRPC):
         for device in self.control_point.get_devices():
             #print device.get_friendly_name(), device.get_service_type(), device.get_location(), device.get_id()
             d = {}
-            d[u'friendly_name']=device.get_friendly_name()
-            d[u'device_type']=device.get_device_type()
-            d[u'location']=unicode(device.get_location())
-            d[u'id']=unicode(device.get_id())
+            d[u'friendly_name'] = device.get_friendly_name()
+            d[u'device_type'] = device.get_device_type()
+            d[u'location'] = unicode(device.get_location())
+            d[u'id'] = unicode(device.get_id())
             r.append(d)
         return r
 

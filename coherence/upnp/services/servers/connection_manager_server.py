@@ -147,7 +147,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                 if avt_variables:
                     avt_active = False
                     for variable in avt_variables.values():
-                        if variable.last_time_touched+300 >= now:
+                        if variable.last_time_touched + 300 >= now:
                             avt_active = True
                             break
             if rcs_id > 0:
@@ -155,7 +155,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                 if rcs_variables:
                     rcs_active = False
                     for variable in rcs_variables.values():
-                        if variable.last_time_touched+300 >= now:
+                        if variable.last_time_touched + 300 >= now:
                             rcs_active = True
                             break
             if( avt_active == False and rcs_active == False):
@@ -183,7 +183,7 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
         return cl
 
     def render(self,request):
-        return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
+        return '<html><p>root of the ConnectionManager</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)
 
     def set_variable(self, instance, variable_name, value, default=False):
         if(variable_name == 'SourceProtocolInfo' or

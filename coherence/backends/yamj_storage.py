@@ -31,7 +31,7 @@ mimetypes.add_type('video/x-matroska', '.mkv')
 
 class MovieItem(BackendItem):
 
-    def __init__(self, movie, store, title = None, url = None):
+    def __init__(self, movie, store, title=None, url=None):
         self.movie_id = 'UNK'
         if movie.find('./id') is not None:
             self.movie_id = movie.find('./id').text
@@ -49,7 +49,7 @@ class MovieItem(BackendItem):
         self.year = movie.find('year').text
         self.audioChannels = movie.find('audioChannels').text
         self.resolution = movie.find('resolution').text
-        self.language =  movie.find('language').text
+        self.language = movie.find('language').text
         self.season = movie.find('season').text
 
         if title is not None:
@@ -143,7 +143,7 @@ class YamjStore(AbstractBackendStore):
         self.name = kwargs.get('name','YAMJ')
         self.yamj_url = kwargs.get('yamj_url',"http://localhost/yamj");
         self.jukebox_url = self.yamj_url + "/Jukebox/"
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
 
         self.nbMoviesPerFile = None
 
@@ -280,7 +280,7 @@ class YamjStore(AbstractBackendStore):
                             episodeIndex = file.attrib['firstPart']
                             episodeTitle = file.attrib['title']
                             if (episodeTitle == 'UNKNOWN'):
-                                title = "%s - %s" %(name, episodeIndex)
+                                title = "%s - %s" % (name, episodeIndex)
                             else:
                                 title = "%s - %s " % (episodeIndex, episodeTitle)
                             episodeUrl = file.find('./fileURL').text

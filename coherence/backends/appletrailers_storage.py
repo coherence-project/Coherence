@@ -70,7 +70,7 @@ class Container(BackendItem):
         if(end - start > 25 or
            start - end == start or
            end - start == 0):
-            end = start+25
+            end = start + 25
         if end != 0:
             return self.children[start:end]
         return self.children[start:]
@@ -96,7 +96,7 @@ class AppleTrailersStore(BackendStore):
         BackendStore.__init__(self,server,**kwargs)
         self.next_id = 1000
         self.name = kwargs.get('name','Apple Trailers')
-        self.refresh = int(kwargs.get('refresh', 8)) * (60 *60)
+        self.refresh = int(kwargs.get('refresh', 8)) * (60 * 60)
 
         self.trailers = {}
 
@@ -182,9 +182,9 @@ class AppleTrailersStore(BackendStore):
             dlna_pn = 'DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'
             dlna_tags = DIDLLite.simple_dlna_tags[:]
             dlna_tags[2] = 'DLNA.ORG_CI=1'
-            url = self.urlbase + str(trailer.id)+'?transcoded=mp4'
+            url = self.urlbase + str(trailer.id) + '?transcoded=mp4'
             new_res = DIDLLite.Resource(url,
-                'http-get:*:%s:%s' % ('video/mp4', ';'.join([dlna_pn]+dlna_tags)))
+                'http-get:*:%s:%s' % ('video/mp4', ';'.join([dlna_pn] + dlna_tags)))
             new_res.size = None
             res.duration = duration
             trailer.item.res.append(new_res)
@@ -193,7 +193,7 @@ class AppleTrailersStore(BackendStore):
             dlna_tags = DIDLLite.simple_dlna_tags[:]
             dlna_tags[2] = 'DLNA.ORG_CI=1'
             dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
-            url = self.urlbase + str(trailer.id)+'?attachment=poster&transcoded=thumb&type=jpeg'
+            url = self.urlbase + str(trailer.id) + '?attachment=poster&transcoded=thumb&type=jpeg'
             new_res = DIDLLite.Resource(url,
                 'http-get:*:%s:%s' % ('image/jpeg', ';'.join([dlna_pn] + dlna_tags)))
             new_res.size = None

@@ -55,7 +55,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
         return cl
 
     def render(self,request):
-        return '<html><p>root of the %s %s</p><p><ul>%s</ul></p></html>'% (self.server.backend.name,
+        return '<html><p>root of the %s %s</p><p><ul>%s</ul></p></html>' % (self.server.backend.name,
                                                                            self.server.device_type,
                                                                            self.listchilds(request.uri))
 
@@ -81,7 +81,7 @@ class RootDeviceXML(static.Data):
                         dlna_caps=[]):
         uuid = str(uuid)
         root = ET.Element('root')
-        root.attrib['xmlns']=xmlns
+        root.attrib['xmlns'] = xmlns
         device_type_uri = ':'.join((device_uri_base,device_type, str(version)))
         e = ET.SubElement(root, 'specVersion')
         ET.SubElement( e, 'major').text = '1'
@@ -93,17 +93,17 @@ class RootDeviceXML(static.Data):
 
         if device_type == 'MediaServer':
             x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
             x.text = 'DMS-1.50'
             x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
             x.text = 'M-DMS-1.50'
         elif device_type == 'MediaRenderer':
             x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
             x.text = 'DMR-1.50'
             x = ET.SubElement(d, 'dlna:X_DLNADOC')
-            x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+            x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
             x.text = 'M-DMR-1.50'
 
         if len(dlna_caps) > 0:
@@ -111,7 +111,7 @@ class RootDeviceXML(static.Data):
                 dlna_caps = [dlna_caps]
             for cap in dlna_caps:
                 x = ET.SubElement(d, 'dlna:X_DLNACAP')
-                x.attrib['xmlns:dlna']='urn:schemas-dlna-org:device-1-0'
+                x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
                 x.text = cap
 
         ET.SubElement( d, 'deviceType').text = device_type_uri
@@ -173,13 +173,13 @@ class RootDeviceXML(static.Data):
                     for k,v in icon.items():
                         if k == 'url':
                             if v.startswith('file://'):
-                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
                                 continue
                             elif v == '.face':
-                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+'face-icon.png'
+                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + 'face-icon.png'
                                 continue
                             else:
-                                ET.SubElement(i, k).text = '/'+uuid[5:]+'/'+os.path.basename(v)
+                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
                                 continue
                         ET.SubElement(i, k).text = str(v)
 
@@ -280,7 +280,7 @@ class BasicDeviceMixin(object):
                 except:
                     namespace = 'schemas-upnp-org'
 
-                device_description_tmpl = 'description-%d.xml'  % device_version
+                device_description_tmpl = 'description-%d.xml' % device_version
                 if hasattr(service,'device_description_tmpl'):
                     device_description_tmpl = service.device_description_tmpl
 

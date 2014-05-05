@@ -104,8 +104,8 @@ class FeedStore(BackendStore):
         BackendStore.__init__(self,server,**kwargs)
         self.name = kwargs.get('name', 'Feed Store')
         self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase)>0 and
-            self.urlbase[len(self.urlbase)-1] != '/'):
+        if( len(self.urlbase) > 0 and
+            self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
         self.feed_urls = kwargs.get('feed_urls')
         self.opml_url = kwargs.get('opml_url')

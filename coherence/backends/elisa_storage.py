@@ -48,7 +48,7 @@ class ElisaMediaStore(Plugin):
         self.urlbase = kwargs.get('urlbase','')
         ignore_patterns = kwargs.get('ignore_patterns',[])
 
-        if self.urlbase[len(self.urlbase)-1] != '/':
+        if self.urlbase[len(self.urlbase) - 1] != '/':
             self.urlbase += '/'
         self.server = server
         self.update_id = 0
@@ -126,7 +126,7 @@ class ElisaMediaStore(Plugin):
                         pass
 
                     res = Resource(internal_url,
-                                   'internal:%s:*:*' %self.host)
+                                   'internal:%s:*:*' % self.host)
                     res.size = size
                     upnp_item.res.append(res)
                     res = Resource(external_url,
@@ -143,7 +143,7 @@ class ElisaMediaStore(Plugin):
                 if RequestedCount == 0:
                     childs = children[StartingIndex:]
                 else:
-                    childs = children[StartingIndex:StartingIndex+RequestedCount]
+                    childs = children[StartingIndex:StartingIndex + RequestedCount]
                 for child in childs:
                     if child is not None:
                         item = build_upnp_item(child)

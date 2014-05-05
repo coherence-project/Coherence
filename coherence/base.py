@@ -106,7 +106,7 @@ class WebServer(log.Loggable):
 
 
             from nevow import __version_info__, __version__
-            if __version_info__ <(0,9,17):
+            if __version_info__ < (0,9,17):
                 self.warning( "Nevow version %s too old, disabling WebUI", __version__)
                 raise ImportError
 
@@ -350,7 +350,7 @@ class Coherence(log.Loggable):
         try:
             plugins = self.config['plugin']
             if isinstance(plugins,dict):
-                plugins=[plugins]
+                plugins = [plugins]
         except:
             plugins = None
         if plugins is None:
@@ -438,7 +438,7 @@ class Coherence(log.Loggable):
                 raise KeyError
             for device in plugin_class.implements:
                 try:
-                    device_class=globals().get(device,None)
+                    device_class = globals().get(device,None)
                     if device_class == None:
                         raise KeyError
                     self.info("Activating %s plugin as %s...", plugin, device)
@@ -643,7 +643,7 @@ class Coherence(log.Loggable):
             root = RootDevice(infos)
         else:
             self.info("creating device/service  %s",infos['USN'])
-            root_id = infos['USN'][:-len(infos['ST'])-2]
+            root_id = infos['USN'][:-len(infos['ST']) - 2]
             root = self.get_device_with_id(root_id)
             device = Device(infos, root)
         # fire this only after the device detection is fully completed

@@ -82,17 +82,17 @@ class ContentDirectoryClient:
                 #print "process_result", item
                 i = {}
                 i['upnp_class'] = item.upnp_class
-                i['id'] =  item.id
-                i['title'] =  item.title
-                i['parent_id'] =  item.parentID
+                i['id'] = item.id
+                i['title'] = item.title
+                i['parent_id'] = item.parentID
                 if hasattr(item,'childCount'):
-                    i['child_count'] =  str(item.childCount)
+                    i['child_count'] = str(item.childCount)
                 if hasattr(item,'date') and item.date:
-                    i['date'] =  item.date
+                    i['date'] = item.date
                 if hasattr(item,'album') and item.album:
-                    i['album'] =  item.album
+                    i['album'] = item.album
                 if hasattr(item,'artist') and item.artist:
-                    i['artist'] =  item.artist
+                    i['artist'] = item.artist
                 if hasattr(item,'albumArtURI') and item.albumArtURI:
                     i['album_art_uri'] = item.albumArtURI
                 if hasattr(item,'res'):
@@ -101,7 +101,7 @@ class ContentDirectoryClient:
                         url = res.data
                         resources[url] = res.protocolInfo
                     if len(resources):
-                        i['resources']= resources
+                        i['resources'] = resources
                 r['items'][item.id] = i
             return r
 
@@ -167,7 +167,7 @@ class ContentDirectoryClient:
         if isinstance(elements,DIDLLite.Object):
             didl = DIDLLite.DIDLElement()
             didl.addItem(elements)
-            elements=didl.toString()
+            elements = didl.toString()
         if elements is None:
             elements = ''
         action = self.service.get_action('CreateObject')

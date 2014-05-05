@@ -73,7 +73,7 @@ class ConfigDict(dict,ConfigMixin):
         for n in node:
             if n.get('active','yes') == 'yes':
                 if len(n) == 0:
-                    if n.text is not None and len(n.text)>0:
+                    if n.text is not None and len(n.text) > 0:
                         self[n.get('name',n.tag)] = n.text
                     for attr,value in n.items():
                         if attr == 'active':

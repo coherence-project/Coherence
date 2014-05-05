@@ -124,8 +124,8 @@ class Client(log.Loggable):
                 # request the list of members
                 channel[DBUS_PROPERTIES].Get(CHANNEL_INTERFACE_GROUP,
                                              'Members',
-                                             reply_handler = self.members_cb,
-                                             error_handler = self.parent.error_cb)
+                                             reply_handler=self.members_cb,
+                                             error_handler=self.parent.error_cb)
 
             def members_cb(self, handles):
                 # request information for this list of handles using the
@@ -137,8 +137,8 @@ class Client(log.Loggable):
                         CONNECTION_INTERFACE_SIMPLE_PRESENCE,
                     ],
                     False,
-                    reply_handler = self.get_contact_attributes_cb,
-                    error_handler = self.parent.error_cb)
+                    reply_handler=self.get_contact_attributes_cb,
+                    error_handler=self.parent.error_cb)
 
             def get_contact_attributes_cb(self, attributes):
                 self.parent.roster[self.group] = attributes
@@ -155,8 +155,8 @@ class Client(log.Loggable):
                 CHANNEL + '.TargetHandleType': HANDLE_TYPE_LIST,
                 CHANNEL + '.TargetID'        : name,
                 },
-                reply_handler = ensure_channel_cb(self, name),
-                error_handler = no_channel_available)
+                reply_handler=ensure_channel_cb(self, name),
+                error_handler=no_channel_available)
 
     def join_muc(self):
         conn_obj = self.conn[CONN_INTERFACE]
@@ -179,9 +179,9 @@ class Client(log.Loggable):
                 self.got_tube(tube)
         else:
             conn_iface = self.conn[CONNECTION_INTERFACE_REQUESTS]
-            params = {CHANNEL_INTERFACE+".ChannelType": CHANNEL_TYPE_TEXT,
-                      CHANNEL_INTERFACE+".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
-                      CHANNEL_INTERFACE+".TargetID": muc_id}
+            params = {CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_TEXT,
+                      CHANNEL_INTERFACE + ".TargetHandleType": CONNECTION_HANDLE_TYPE_ROOM,
+                      CHANNEL_INTERFACE + ".TargetID": muc_id}
 
             def got_channel(chan_path, props):
                 self.channel_text = Channel(self.conn.dbus_proxy.bus_name, chan_path)
@@ -293,9 +293,9 @@ class Client(log.Loggable):
         channel = self._text_channels.get(target_handle)
         if not channel:
             conn_iface = self.conn[CONNECTION_INTERFACE_REQUESTS]
-            params = {CHANNEL_INTERFACE+".ChannelType": CHANNEL_TYPE_TEXT,
-                      CHANNEL_INTERFACE+".TargetHandleType": CONNECTION_HANDLE_TYPE_CONTACT,
-                      CHANNEL_INTERFACE+ ".TargetHandle": target_handle}
+            params = {CHANNEL_INTERFACE + ".ChannelType": CHANNEL_TYPE_TEXT,
+                      CHANNEL_INTERFACE + ".TargetHandleType": CONNECTION_HANDLE_TYPE_CONTACT,
+                      CHANNEL_INTERFACE + ".TargetHandle": target_handle}
 
             def got_channel(chan_path, props):
                 channel = Channel(self.conn.dbus_proxy.bus_name, chan_path)

@@ -15,13 +15,13 @@ from email.Utils import parsedate_tz
 try:
     import hashlib
     def md5(s):
-        m =hashlib.md5()
+        m = hashlib.md5()
         m.update(s)
         return m.hexdigest()
 except ImportError:
     import md5 as oldmd5
     def md5(s):
-        m=oldmd5.new()
+        m = oldmd5.new()
         m.update(s)
         return m.hexdigest()
 
@@ -67,12 +67,12 @@ class FlickrAuthenticate(object):
         browser.set_handle_redirect(True)
 
         api_sig = ''.join((api_secret,'api_key',api_key,'frob',frob,'perms',perms))
-        api_sig=md5(api_sig)
+        api_sig = md5(api_sig)
         login_url = "http://flickr.com/services/auth/?api_key=%s&perms=%s&frob=%s&api_sig=%s" % (api_key,perms,frob,api_sig)
         browser.open(login_url)
         browser.select_form(name='login_form')
-        browser['login']=userid
-        browser['passwd']=password
+        browser['login'] = userid
+        browser['passwd'] = password
         browser.submit()
         for form in browser.forms():
             try:
@@ -291,23 +291,23 @@ class FlickrItem(log.Loggable):
             for size in result.getiterator('size'):
                 #print size.get('label'), size.get('source')
                 if size.get('label') == 'Original':
-                    self.original_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.original_url = (size.get('source'),size.get('width') + 'x' + size.get('height'))
                     if self.store.proxy == False:
                         self.url = self.original_url[0]
                     else:
                         self.location = ProxyImage(self.original_url[0])
                 elif size.get('label') == 'Large':
-                    self.large_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.large_url = (size.get('source'),size.get('width') + 'x' + size.get('height'))
                     if self.store.proxy == False:
                         self.url = self.large_url[0]
                     else:
                         self.location = ProxyImage(self.large_url[0])
                 elif size.get('label') == 'Medium':
-                    self.medium_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.medium_url = (size.get('source'),size.get('width') + 'x' + size.get('height'))
                 elif size.get('label') == 'Small':
-                    self.small_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.small_url = (size.get('source'),size.get('width') + 'x' + size.get('height'))
                 elif size.get('label') == 'Thumbnail':
-                    self.thumb_url = (size.get('source'),size.get('width')+'x'+size.get('height'))
+                    self.thumb_url = (size.get('source'),size.get('width') + 'x' + size.get('height'))
 
             self.item = Photo(self.id,self.parent.get_id(),self.get_name())
             #print self.id, self.store.proxy, self.url
@@ -318,45 +318,45 @@ class FlickrItem(log.Loggable):
             if hasattr(self,'original_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
                 if self.store.proxy == False:
-                    res = Resource(self.original_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.original_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                 else:
-                    res = Resource(self.url+'?attachment=original', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.url + '?attachment=original', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                     self.item.attachments['original'] = ProxyImage(self.original_url[0])
                 res.resolution = self.original_url[1]
                 self.item.res.append(res)
             elif hasattr(self,'large_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'
                 if self.store.proxy == False:
-                    res = Resource(self.large_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.large_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                 else:
-                    res = Resource(self.url+'?attachment=large', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.url + '?attachment=large', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                     self.item.attachments['large'] = ProxyImage(self.large_url[0])
                 res.resolution = self.large_url[1]
                 self.item.res.append(res)
             if hasattr(self,'medium_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_MED'
                 if self.store.proxy == False:
-                    res = Resource(self.medium_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.medium_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                 else:
-                    res = Resource(self.url+'?attachment=medium', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.url + '?attachment=medium', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                     self.item.attachments['medium'] = ProxyImage(self.medium_url[0])
                 res.resolution = self.medium_url[1]
                 self.item.res.append(res)
             if hasattr(self,'small_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_SM'
                 if self.store.proxy == False:
-                    res = Resource(self.small_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.small_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                 else:
-                    res = Resource(self.url+'?attachment=small', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.url + '?attachment=small', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                     self.item.attachments['small'] = ProxyImage(self.small_url[0])
                 res.resolution = self.small_url[1]
                 self.item.res.append(res)
             if hasattr(self,'thumb_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
                 if self.store.proxy == False:
-                    res = Resource(self.thumb_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.thumb_url[0], 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                 else:
-                    res = Resource(self.url+'?attachment=thumb', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn]+dlna_tags)))
+                    res = Resource(self.url + '?attachment=thumb', 'http-get:*:%s:%s' % (self.mimetype,';'.join([dlna_pn] + dlna_tags)))
                     self.item.attachments['thumb'] = ProxyImage(self.thumb_url[0])
                 res.resolution = self.thumb_url[1]
                 self.item.res.append(res)
@@ -384,7 +384,7 @@ class FlickrStore(BackendStore):
         self.next_id = 10000
         self.name = kwargs.get('name','Flickr')
         self.proxy = kwargs.get('proxy','false')
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
 
         self.limit = int(kwargs.get('limit',100))
 
@@ -714,7 +714,7 @@ class FlickrStore(BackendStore):
         d.addErrback(self.got_error)
 
         if self.flickr_authtoken != None:
-            d= self.flickr_photosets()
+            d = self.flickr_photosets()
             d.addCallback(self.update_flickr_result, self.photosets, 'photoset')
             d.addErrback(self.got_error)
 
@@ -785,7 +785,7 @@ class FlickrStore(BackendStore):
 
     def flickr_interestingness(self, date=None, per_page=100):
         if date == None:
-            date = time.strftime( "%Y-%m-%d", time.localtime(time.time()-86400))
+            date = time.strftime( "%Y-%m-%d", time.localtime(time.time() - 86400))
         if per_page > 500:
             per_page = 500
         d = self.flickr_call('flickr.interestingness.getList',extras='date_taken',per_page=per_page)
@@ -793,7 +793,7 @@ class FlickrStore(BackendStore):
 
     def flickr_recent(self, date=None, per_page=100):
         if date == None:
-            date = time.strftime( "%Y-%m-%d", time.localtime(time.time()-86400))
+            date = time.strftime( "%Y-%m-%d", time.localtime(time.time() - 86400))
         if per_page > 500:
             per_page = 500
         d = self.flickr_call('flickr.photos.getRecent',extras='date_taken',per_page=per_page)
@@ -873,7 +873,7 @@ class FlickrStore(BackendStore):
             self.server.coherence.store_plugin_config(self.server.uuid, {'authtoken':token})
 
         def get_auth_token(result,frob):
-            d =self.flickr_auth_getToken(frob)
+            d = self.flickr_auth_getToken(frob)
             d.addCallback(got_auth_token)
             d.addErrback(got_error)
             return d
@@ -1052,7 +1052,7 @@ class FlickrStore(BackendStore):
 
         if item.upnp_class.startswith('object.item.imageItem'):
             new_id = self.getnextID()
-            new_id = 'upload.'+str(new_id)
+            new_id = 'upload.' + str(new_id)
             title = item.title or 'unknown'
             mimetype = 'image/jpeg'
             self.uploads[new_id] = FlickrItem( new_id, title, self.store[UNSORTED_CONTAINER_ID], mimetype, self.urlbase,
@@ -1060,7 +1060,7 @@ class FlickrStore(BackendStore):
 
             new_item = self.uploads[new_id]
             for res in new_item.item.res:
-                res.importUri = new_item.url+'?import'
+                res.importUri = new_item.url + '?import'
                 res.data = None
             didl = DIDLElement()
             didl.addItem(new_item.item)
@@ -1114,10 +1114,10 @@ class FlickrStore(BackendStore):
         fields['photo'] = image
 
         (content_type, formdata) = self.encode_multipart_form(fields)
-        headers= {"Content-Type": content_type,
+        headers = {"Content-Type": content_type,
                   "Content-Length": str(len(formdata))}
 
-        d= getPage("http://api.flickr.com/services/upload/",
+        d = getPage("http://api.flickr.com/services/upload/",
                               method="POST",
                               headers=headers,
                               postdata=formdata)

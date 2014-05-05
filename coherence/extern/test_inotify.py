@@ -167,7 +167,7 @@ class TestINotify(unittest.TestCase):
         for mask, value in FLAG_TO_HUMAN.iteritems():
             self.assert_(inotify.flag_to_human(mask)[0], value)
 
-        checkMask = inotify.IN_CLOSE_WRITE|inotify.IN_ACCESS|inotify.IN_OPEN
+        checkMask = inotify.IN_CLOSE_WRITE | inotify.IN_ACCESS | inotify.IN_OPEN
         self.assert_(
             len(inotify.flag_to_human(checkMask)),
             3

@@ -81,7 +81,7 @@ class RadiotimeStore(AbstractBackendStore):
         AbstractBackendStore.__init__(self,server,**kwargs)
 
         self.name = kwargs.get('name','radiotimeStore')
-        self.refresh = int(kwargs.get('refresh',60))*60
+        self.refresh = int(kwargs.get('refresh',60)) * 60
 
         self.browse_url = self.config.get('browse_url', OPML_BROWSE_URL)
         self.partner_id = self.config.get('partner_id', 'TMe3Cn6v')
@@ -95,7 +95,7 @@ class RadiotimeStore(AbstractBackendStore):
         else:
             identification_param = "serial=%s" % self.serial
         formats_value = DEFAULT_FORMAT
-        root_url =  "%s?partnerId=%s&%s&formats=%s&locale=%s" % (self.browse_url, self.partner_id, identification_param, formats_value, self.locale)
+        root_url = "%s?partnerId=%s&%s&formats=%s&locale=%s" % (self.browse_url, self.partner_id, identification_param, formats_value, self.locale)
 
         # set root item
         root_item = LazyContainer(None, "root", "root", self.refresh, self.retrieveItemsForOPML, url=root_url)

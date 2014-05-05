@@ -83,7 +83,7 @@ class Container(BackendItem):
             self.children = util.OrderedDict()
         self.item.childCount = None  # self.get_child_count()
 
-        if store!=None:
+        if store != None:
             self.get_url = lambda: store.urlbase + str(self.id)
 
     def add_child(self, child):
@@ -98,7 +98,7 @@ class Container(BackendItem):
         self.info("container.get_children %r %r", start, end)
 
         if callable(self.children):
-            return self.children(start,end-start)
+            return self.children(start,end - start)
         else:
             children = self.children.values()
         if end == 0:
@@ -172,7 +172,7 @@ class Artist(BackendItem):
     def get_child_count(self):
         return len(self.children)
 
-    def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_ARTIST_CONTAINER_ID):
         item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
         return item
 
@@ -223,7 +223,7 @@ class Album(BackendItem):
     def get_child_count(self):
         return len(self.children)
 
-    def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_ALBUM_CONTAINER_ID):
         item = DIDLLite.MusicAlbum(self.id, parent_id, self.name)
         item.childCount = self.get_child_count()
         item.artist = self.artist
@@ -551,7 +551,7 @@ class TrackerStore(BackendStore):
         services = map(lambda x: x.strip().lower(),services.split(','))
 
         l = []
-        mapping =  {'music':self.get_tracks,
+        mapping = {'music':self.get_tracks,
                     'videos':self.get_videos,
                     'images':self.get_images}
         for service in services:
@@ -559,7 +559,7 @@ class TrackerStore(BackendStore):
                 l.append(mapping[service]())
             except KeyError:
                 self.warning('Wrong Tracker service definition - %r', service)
-        if len(l)>0:
+        if len(l) > 0:
             dl = defer.DeferredList(l)
             dl.addCallback(queries_finished)
             dl.addErrback(lambda x: louie.send('Coherence.UPnP.Backend.init_failed', None, backend=self, msg='Connection to Tracker service(s) failed!'))
@@ -639,7 +639,7 @@ class TrackerStore(BackendStore):
                           children_callback=None)
         self.containers[VIDEO_CONTAINER_ID].add_child(self.containers[VIDEO_ALL_CONTAINER_ID])
 
-        fields=[u'Video:Title',u'Video:Duration',
+        fields = [u'Video:Title',u'Video:Duration',
                 u'File:Size',u'File:Mime']
 
         d = defer.Deferred()
@@ -686,7 +686,7 @@ class TrackerStore(BackendStore):
                           children_callback=None)
         self.containers[IMAGE_CONTAINER_ID].add_child(self.containers[IMAGE_ALL_CONTAINER_ID])
 
-        fields=[u'Image:Title',u'Image:Album',
+        fields = [u'Image:Title',u'Image:Album',
                 u'Image:Date',u'Image:Width',u'Image:Height',
                 u'File:Size',u'File:Mime']
 
@@ -798,7 +798,7 @@ class TrackerStore(BackendStore):
                                  '13': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
                                 })
 
-        fields=[u'Audio:Title',u'Audio:Artist',
+        fields = [u'Audio:Title',u'Audio:Artist',
                 u'Audio:Album',u'Audio:Genre',
                 u'Audio:Duration',u'Audio:AlbumTrackCount',
                 u'Audio:TrackNo',u'Audio:Codec',

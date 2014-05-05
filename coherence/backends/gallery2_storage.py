@@ -109,7 +109,7 @@ class Gallery2Item(BackendItem):
 
 
     def get_children(self,start=0,request_count=0):
-        def process_items(result = None):
+        def process_items(result=None):
             if self.children == None:
                 return  []
             if request_count == 0:
@@ -322,7 +322,7 @@ class Gallery2Store(BackendStore):
                     title = image.get('title')
                     description = image.get('description')
 
-                    gallery2_id =  resized_gallery2_id
+                    gallery2_id = resized_gallery2_id
                     if gallery2_id == '':
                         gallery2_id = image_gallery2_id
 

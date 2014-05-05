@@ -48,7 +48,7 @@ class TestContentDirectoryServer(unittest.TestCase):
                                                                                         'soap':'error'},'controlpoint':'yes'})
         self.uuid = UUID()
         p = self.coherence.add_plugin('FSStore',
-                                      name='MediaServer-%d'%os.getpid(),
+                                      name='MediaServer-%d' % os.getpid(),
                                       content=self.tmp_content.path,
                                       uuid=str(self.uuid))
 

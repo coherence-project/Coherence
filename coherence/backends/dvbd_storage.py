@@ -50,7 +50,7 @@ class Container(BackendItem):
         else:
             self.children = util.OrderedDict()
 
-        if store!=None:
+        if store != None:
             self.get_url = lambda: store.urlbase + str(self.id)
 
     def add_child(self, child):
@@ -65,7 +65,7 @@ class Container(BackendItem):
         self.info("container.get_children %r %r", start, end)
 
         if callable(self.children):
-            return self.children(start,end-start)
+            return self.children(start,end - start)
         else:
             children = self.children.values()
         if end == 0:
@@ -194,7 +194,7 @@ class Recording(BackendItem):
         item.res.append(res)
 
         # add internal resource
-        res = DIDLLite.Resource('file://'+ urllib.quote(self.get_path()), 'internal:%s:%s:*' % (self.store.server.coherence.hostname,self.mimetype))
+        res = DIDLLite.Resource('file://' + urllib.quote(self.get_path()), 'internal:%s:%s:*' % (self.store.server.coherence.hostname,self.mimetype))
         if self.size > 0:
             res.size = self.size
         if self.duration > 0:

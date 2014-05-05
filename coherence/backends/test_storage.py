@@ -263,7 +263,7 @@ class ResourceItem(Item,BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
-        self.url = store.urlbase+str(id)
+        self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id
         self.name = title
@@ -358,7 +358,7 @@ class TestStore(BackendStore):
                     extension = '.' + extension
 
                 if extension != None:
-                    item_id = str(item_id)+extension
+                    item_id = str(item_id) + extension
 
                 if type in ('file','url'):
                     new_item = Item(self.store[ROOT_CONTAINER_ID], item_id, name, location,self.urlbase + str(item_id))

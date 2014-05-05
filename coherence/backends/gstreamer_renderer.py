@@ -149,14 +149,14 @@ class Player(log.Loggable):
         """ playbin volume is a double from 0.0 - 10.0
         """
         volume = self.sink.get_property('volume')
-        return int((volume*100) / self.max_playbin_volume)
+        return int((volume * 100) / self.max_playbin_volume)
 
     def set_volume_playbin(self, volume):
         volume = int(volume)
         if volume < 0:
-            volume=0
+            volume = 0
         if volume > 100:
-            volume=100
+            volume = 100
         volume = (volume * self.max_playbin_volume) / 100.
         self.sink.set_property('volume', volume)
 
@@ -164,29 +164,29 @@ class Player(log.Loggable):
         """ dspmp3sink volume is a n in from 0 to 65535
         """
         volume = self.sink.get_property('volume')
-        return int(volume*100/65535)
+        return int(volume * 100 / 65535)
 
     def set_volume_dsp_mp3_sink(self, volume):
         volume = int(volume)
         if volume < 0:
-            volume=0
+            volume = 0
         if volume > 100:
-            volume=100
-        self.sink.set_property('volume',  volume*65535/100)
+            volume = 100
+        self.sink.set_property('volume',  volume * 65535 / 100)
 
     def get_volume_dsp_pcm_sink(self):
         """ dspmp3sink volume is a n in from 0 to 65535
         """
         volume = self.sink.get_property('volume')
-        return int(volume*100/65535)
+        return int(volume * 100 / 65535)
 
     def set_volume_dsp_pcm_sink(self, volume):
         volume = int(volume)
         if volume < 0:
-            volume=0
+            volume = 0
         if volume > 100:
-            volume=100
-        self.sink.set_property('volume',  volume*65535/100)
+            volume = 100
+        self.sink.set_property('volume',  volume * 65535 / 100)
 
     def mute_playbin(self):
         self.player.set_property('mute', True)
@@ -312,12 +312,12 @@ class Player(log.Loggable):
             return r
         r[u'raw'] = {u'position':unicode(str(position)), u'remaining':unicode(str(self.duration - position)), u'duration':unicode(str(self.duration))}
 
-        position_human = u'%d:%02d' % (divmod( position/1000000000, 60))
-        duration_human = u'%d:%02d' % (divmod( self.duration/1000000000, 60))
-        remaining_human = u'%d:%02d' % (divmod( (self.duration-position)/1000000000, 60))
+        position_human = u'%d:%02d' % (divmod( position / 1000000000, 60))
+        duration_human = u'%d:%02d' % (divmod( self.duration / 1000000000, 60))
+        remaining_human = u'%d:%02d' % (divmod( (self.duration - position) / 1000000000, 60))
 
         r[u'human'] = {u'position':position_human, u'remaining':remaining_human, u'duration':duration_human}
-        r[u'percent'] = {u'position':position*100/self.duration, u'remaining':100-(position*100/self.duration)}
+        r[u'percent'] = {u'position':position * 100 / self.duration, u'remaining':100 - (position * 100 / self.duration)}
 
         self.debug(r)
         return r
@@ -385,19 +385,19 @@ class Player(log.Loggable):
         _,state,_ = self.player.get_state()
         if state != gst.STATE_PAUSED:
             self.player.set_state(gst.STATE_PAUSED)
-        l = long(location)*1000000000
+        l = long(location) * 1000000000
         p = self.query_position()
 
         #print p['raw']['position'], l
 
         if location[0] == '+':
-            l =  long(p[u'raw'][u'position']) + (long(location[1:])*1000000000)
+            l = long(p[u'raw'][u'position']) + (long(location[1:]) * 1000000000)
             l = min( l, long(p[u'raw'][u'duration']))
         elif location[0] == '-':
             if location == '-0':
                 l = 0L
             else:
-                l = long(p[u'raw'][u'position']) - (long(location[1:])*1000000000)
+                l = long(p[u'raw'][u'position']) - (long(location[1:]) * 1000000000)
                 l = max( l, 0L)
 
 
@@ -511,12 +511,12 @@ class GStreamerPlayer(log.Loggable,Plugin):
             av_transport.set_variable(conn_id, 'TransportState',
                                       'PAUSED_PLAYBACK')
         elif self.playcontainer != None and message == gst.MESSAGE_EOS and \
-             self.playcontainer[0]+1 < len(self.playcontainer[2]):
+             self.playcontainer[0] + 1 < len(self.playcontainer[2]):
             state = 'transitioning'
             av_transport.set_variable(conn_id, 'TransportState', 'TRANSITIONING')
 
             next_track = ()
-            item = self.playcontainer[2][self.playcontainer[0]+1]
+            item = self.playcontainer[2][self.playcontainer[0] + 1]
             infos = connection_manager.get_variable('SinkProtocolInfo')
             local_protocol_infos = infos.value.split(',')
             res = item.res.get_matching(local_protocol_infos,
@@ -530,11 +530,11 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 didl = DIDLLite.DIDLElement()
                 didl.addItem(item)
                 next_track = (res.data, didl.toString(), remote_content_format)
-                self.playcontainer[0] = self.playcontainer[0]+1
+                self.playcontainer[0] = self.playcontainer[0] + 1
 
             if len(next_track) == 3:
                 av_transport.set_variable(conn_id, 'CurrentTrack',
-                                          self.playcontainer[0]+1)
+                                          self.playcontainer[0] + 1)
                 self.load(next_track[0], next_track[1], next_track[2])
                 self.play()
             else:
@@ -579,7 +579,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
             if self.duration == None and 'duration' in position[u'raw']:
                 self.duration = int(position[u'raw'][u'duration'])
-                if self.metadata != None and len(self.metadata)>0:
+                if self.metadata != None and len(self.metadata) > 0:
                     # FIXME: duration breaks client parsing MetaData?
                     elt = DIDLLite.DIDLElement.fromString(self.metadata)
                     for item in elt:
@@ -599,9 +599,9 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
 
             self.info("%s %d/%d/%d - %d%%/%d%% - %s/%s/%s", state,
-                      string.atol(position[u'raw'][u'position'])/1000000000,
-                      string.atol(position[u'raw'][u'remaining'])/1000000000,
-                      string.atol(position[u'raw'][u'duration'])/1000000000,
+                      string.atol(position[u'raw'][u'position']) / 1000000000,
+                      string.atol(position[u'raw'][u'remaining']) / 1000000000,
+                      string.atol(position[u'raw'][u'duration']) / 1000000000,
                       position[u'percent'][u'position'],
                       position[u'percent'][u'remaining'],
                       position[u'human'][u'position'],
@@ -636,7 +636,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.stop(silent=True)  # the check whether a stop is really needed is done inside stop
 
         if mimetype is None:
-            _,ext =  os.path.splitext(uri)
+            _,ext = os.path.splitext(uri)
             if ext == '.ogg':
                 mimetype = 'application/ogg'
             elif ext == '.flac':
@@ -657,7 +657,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         else:
             self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',self.playcontainer[1])
             self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',len(self.playcontainer[2]))
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack',self.playcontainer[0]+1)
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack',self.playcontainer[0] + 1)
 
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
         self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
@@ -673,7 +673,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             transport_actions.add('NEXT')
 
         if self.playcontainer != None:
-            if len(self.playcontainer[2]) - (self.playcontainer[0]+1) > 0:
+            if len(self.playcontainer[2]) - (self.playcontainer[0] + 1) > 0:
                 transport_actions.add('NEXT')
             if self.playcontainer[0] > 0:
                 transport_actions.add('PREVIOUS')
@@ -782,7 +782,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 next_track = ()
                 elt = DIDLLite.DIDLElement.fromString(r['Result'])
                 item = elt.getItems()[0]
-                local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+                local_protocol_infos = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
                 res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
                 if len(res) == 0:
                     res = item.res.get_matching(local_protocol_infos)
@@ -817,15 +817,15 @@ class GStreamerPlayer(log.Loggable,Plugin):
                             browse_more(starting_index,int(r['NumberReturned']),int(r['TotalMatches']))
 
                         if((number_returned != 5 or
-                           number_returned < (total_matches-starting_index)) and
-                            (total_matches-number_returned) != starting_index):
+                           number_returned < (total_matches - starting_index)) and
+                            (total_matches - number_returned) != starting_index):
                             self.info("seems we have been returned only a part of the result")
                             self.info("requested %d, starting at %d", 5,starting_index)
                             self.info("got %d out of %d", number_returned, total_matches)
-                            self.info("requesting more starting now at %d", starting_index+number_returned)
-                            self.playcontainer[4]['StartingIndex'] = str(starting_index+number_returned)
+                            self.info("requesting more starting now at %d", starting_index + number_returned)
+                            self.playcontainer[4]['StartingIndex'] = str(starting_index + number_returned)
                             d = self.playcontainer[3].call(**self.playcontainer[4])
-                            d.addCallback(handle_reply,starting_index+number_returned)
+                            d.addCallback(handle_reply,starting_index + number_returned)
                             d.addErrback(handle_error)
                     except:
                         import traceback
@@ -845,7 +845,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             return failure.Failure(errorCode(714))
 
         try:
-            udn,args =  uri[21:].split('?')
+            udn,args = uri[21:].split('?')
             udn = unquote(udn)
             args = parse_qs(args)
 
@@ -948,8 +948,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 sign = '-'
 
             h,m,s = Target.split(':')
-            seconds = int(h)*3600 + int(m)*60 + int(s)
-            self.seek(sign+str(seconds), old_state)
+            seconds = int(h) * 3600 + int(m) * 60 + int(s)
+            self.seek(sign + str(seconds), old_state)
         if Unit in ['TRACK_NR']:
             if self.playcontainer == None:
                 NextURI = self.server.av_transport_server.get_variable('NextAVTransportURI',InstanceID).value
@@ -965,8 +965,8 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 if 0 < Target <= len(self.playcontainer[2]):
                     self.server.av_transport_server.set_variable(InstanceID, 'TransportState', 'TRANSITIONING')
                     next_track = ()
-                    item = self.playcontainer[2][Target-1]
-                    local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+                    item = self.playcontainer[2][Target - 1]
+                    local_protocol_infos = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
                     res = item.res.get_matching(local_protocol_infos, protocol_type='internal')
                     if len(res) == 0:
                         res = item.res.get_matching(local_protocol_infos)
@@ -976,7 +976,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                         didl = DIDLLite.DIDLElement()
                         didl.addItem(item)
                         next_track = (res.data,didl.toString(),remote_content_format)
-                        self.playcontainer[0] = Target-1
+                        self.playcontainer[0] = Target - 1
 
                     if len(next_track) == 3:
                         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'CurrentTrack',Target)
@@ -990,12 +990,12 @@ class GStreamerPlayer(log.Loggable,Plugin):
     def upnp_Next(self,*args,**kwargs):
         InstanceID = int(kwargs['InstanceID'])
         track_nr = self.server.av_transport_server.get_variable('CurrentTrack')
-        return self.upnp_Seek(self,InstanceID=InstanceID,Unit='TRACK_NR',Target=str(int(track_nr.value)+1))
+        return self.upnp_Seek(self,InstanceID=InstanceID,Unit='TRACK_NR',Target=str(int(track_nr.value) + 1))
 
     def upnp_Previous(self,*args,**kwargs):
         InstanceID = int(kwargs['InstanceID'])
         track_nr = self.server.av_transport_server.get_variable('CurrentTrack')
-        return self.upnp_Seek(self,InstanceID=InstanceID,Unit='TRACK_NR',Target=str(int(track_nr.value)-1))
+        return self.upnp_Seek(self,InstanceID=InstanceID,Unit='TRACK_NR',Target=str(int(track_nr.value) - 1))
 
     def upnp_SetNextAVTransportURI(self, *args, **kwargs):
         InstanceID = int(kwargs['InstanceID'])
@@ -1036,12 +1036,12 @@ class GStreamerPlayer(log.Loggable,Plugin):
             d.addCallback(handle_result)
             d.addErrback(pass_error)
             return d
-        elif len(CurrentURIMetaData)==0:
+        elif len(CurrentURIMetaData) == 0:
             self.playcontainer = None
             self.load(CurrentURI,CurrentURIMetaData)
             return {}
         else:
-            local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+            local_protocol_infos = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
             #print local_protocol_infos
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
             if elt.numItems() == 1:

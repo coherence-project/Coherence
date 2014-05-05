@@ -142,7 +142,7 @@ class BackendStore(Backend):
         item = self.get_by_id(id)
         if item is not None:
             containers = [item]
-            while len(containers)>0:
+            while len(containers) > 0:
                 container = containers.pop()
                 if container.mimetype not in ['root', 'directory']:
                     continue
@@ -347,7 +347,7 @@ class Container(BackendItem):
         self.sorting_method = childs_sort
 
 
-    def register_child(self, child, external_id = None):
+    def register_child(self, child, external_id=None):
         id = self.store.append_item(child)
         child.url = self.store.urlbase + str(id)
         child.parent = self
@@ -355,7 +355,7 @@ class Container(BackendItem):
             child.external_id = external_id
             self.children_by_external_id[external_id] = child
 
-    def add_child(self, child, external_id = None, update=True):
+    def add_child(self, child, external_id=None, update=True):
         id = self.register_child(child, external_id)
         if self.children is None:
             self.children = []
@@ -364,7 +364,7 @@ class Container(BackendItem):
         if update == True:
             self.update_id += 1
 
-    def remove_child(self, child, external_id = None, update=True):
+    def remove_child(self, child, external_id=None, update=True):
         self.children.remove(child)
         self.store.remove_item(child)
         if update == True:
@@ -416,7 +416,7 @@ class LazyContainer(Container, log.Loggable):
         self.childrenRetriever = childrenRetriever
         self.children_retrieval_campaign_in_progress = False
         self.childrenRetriever_params = kwargs
-        self.childrenRetriever_params['parent']=self
+        self.childrenRetriever_params['parent'] = self
         self.has_pages = (self.childrenRetriever_params.has_key('per_page'))
 
         self.external_id = None
@@ -432,7 +432,7 @@ class LazyContainer(Container, log.Loggable):
             return (self.external_id == item.external_id)
         return True
 
-    def add_child(self, child, external_id = None, update=True):
+    def add_child(self, child, external_id=None, update=True):
         if self.children_retrieval_campaign_in_progress is True:
             self.retrieved_children[external_id] = child
         else:
@@ -503,7 +503,7 @@ class LazyContainer(Container, log.Loggable):
         def items_retrieved(result, page, start_offset):
             if self.childrenRetrievingNeeded is True:
                 new_offset = len(self.retrieved_children)
-                return self.retrieve_children(new_offset, page+1)  # we try the next page
+                return self.retrieve_children(new_offset, page + 1)  # we try the next page
             return self.retrieved_children
 
 
@@ -574,7 +574,7 @@ class AbstractBackendStore (BackendStore):
         return len(self.store)
 
     def set_root_item(self, item):
-        return self.append_item(item, storage_id = ROOT_CONTAINER_ID)
+        return self.append_item(item, storage_id=ROOT_CONTAINER_ID)
 
     def get_root_id(self):
         return ROOT_CONTAINER_ID

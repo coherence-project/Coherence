@@ -216,9 +216,9 @@ class Artist(item.Item,BackendItem):
             return children[start:request_count]
 
     def get_children(self,start=0,request_count=0):
-        all_id = 'artist_all_tracks_%d' % (self.storeID+1000)
+        all_id = 'artist_all_tracks_%d' % (self.storeID + 1000)
         self.store.containers[all_id] = \
-                Container( all_id, self.storeID+1000, 'All tracks of %s' % self.name,
+                Container( all_id, self.storeID + 1000, 'All tracks of %s' % self.name,
                           children_callback=self.get_artist_all_tracks,
                           store=self.store,play_container=True)
 
@@ -232,7 +232,7 @@ class Artist(item.Item,BackendItem):
         return len(list(self.store.query(Album, Album.artist == self))) + 1
 
     def get_item(self):
-        item = DIDLLite.MusicArtist(self.storeID+1000, AUDIO_ARTIST_CONTAINER_ID, self.name)
+        item = DIDLLite.MusicArtist(self.storeID + 1000, AUDIO_ARTIST_CONTAINER_ID, self.name)
         item.childCount = self.get_child_count()
         return item
 
@@ -273,11 +273,11 @@ class Album(item.Item,BackendItem):
         return len(list(self.store.query(Track, Track.album == self)))
 
     def get_item(self):
-        item = DIDLLite.MusicAlbum(self.storeID+1000, AUDIO_ALBUM_CONTAINER_ID, self.title)
+        item = DIDLLite.MusicAlbum(self.storeID + 1000, AUDIO_ALBUM_CONTAINER_ID, self.title)
         item.artist = self.artist.name
         item.childCount = self.get_child_count()
-        if len(self.cover)>0:
-            _,ext =  os.path.splitext(self.cover)
+        if len(self.cover) > 0:
+            _,ext = os.path.splitext(self.cover)
             item.albumArtURI = ''.join((self.store.urlbase,str(self.get_id()),'?cover',ext))
 
         if self.get_child_count() > 0:
@@ -314,9 +314,9 @@ class Track(item.Item,BackendItem):
     cd_nr = attributes.integer(default=1,allowNone=False)
     album = attributes.reference(allowNone=False, indexed=True)
     location = attributes.text(allowNone=False)
-    rating=attributes.integer(default=0,allowNone=False)
-    last_played=attributes.timestamp()
-    added=attributes.timestamp(default=Time(),allowNone=False)
+    rating = attributes.integer(default=0,allowNone=False)
+    last_played = attributes.timestamp()
+    added = attributes.timestamp(default=Time(),allowNone=False)
 
     def get_children(self,start=0,request_count=0):
         return []
@@ -325,14 +325,14 @@ class Track(item.Item,BackendItem):
         return 0
 
     def get_item(self):
-        item = DIDLLite.MusicTrack(self.storeID+1000, self.album.storeID+1000,self.title)
+        item = DIDLLite.MusicTrack(self.storeID + 1000, self.album.storeID + 1000,self.title)
         item.artist = self.album.artist.name
         item.album = self.album.title
         if self.album.cover != '':
-            _,ext =  os.path.splitext(self.album.cover)
+            _,ext = os.path.splitext(self.album.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
-            item.albumArtURI = ''.join((self.store.urlbase,str(self.storeID+1000),'?cover',ext))
+            item.albumArtURI = ''.join((self.store.urlbase,str(self.storeID + 1000),'?cover',ext))
         item.originalTrackNumber = self.track_nr
         item.server_uuid = str(self.store.server.uuid)[5:]
 
@@ -342,7 +342,7 @@ class Track(item.Item,BackendItem):
         else:
             host = host_port
 
-        _,ext =  os.path.splitext(self.location)
+        _,ext = os.path.splitext(self.location)
         ext = ext.lower()
 
         try:
@@ -352,14 +352,14 @@ class Track(item.Item,BackendItem):
 
         statinfo = os.stat(self.location)
 
-        res = DIDLLite.Resource('file://'+self.location, 'internal:%s:%s:*' % (host,mimetype))
+        res = DIDLLite.Resource('file://' + self.location, 'internal:%s:%s:*' % (host,mimetype))
         try:
             res.size = statinfo.st_size
         except:
             res.size = 0
         item.res.append(res)
 
-        url = self.store.urlbase + str(self.storeID+1000) + ext
+        url = self.store.urlbase + str(self.storeID + 1000) + ext
 
         res = DIDLLite.Resource(url, 'http-get:*:%s:*' % mimetype)
         try:
@@ -407,7 +407,7 @@ class Track(item.Item,BackendItem):
         return self.title
 
     def get_url(self):
-        return self.store.urlbase + str(self.storeID+1000).encode('utf-8')
+        return self.store.urlbase + str(self.storeID + 1000).encode('utf-8')
 
     def get_cover(self):
         return self.album.cover
@@ -476,7 +476,7 @@ class MediaStore(BackendStore):
                 if os.path.isdir(os.path.join(path,filename)):
                     self.walk(os.path.join(path,filename))
                 else:
-                    _,ext =  os.path.splitext(filename)
+                    _,ext = os.path.splitext(filename)
                     if ext.lower() in KNOWN_AUDIO_TYPES:
                         self.filelist.append(os.path.join(path,filename))
 
@@ -506,10 +506,10 @@ class MediaStore(BackendStore):
         def got_tags(tags, file):
             #print "got_tags", tags
 
-            album=tags.get('album', '')
-            artist=tags.get('artist', '')
-            title=tags.get('title', '')
-            track=tags.get('track', 0)
+            album = tags.get('album', '')
+            artist = tags.get('artist', '')
+            title = tags.get('title', '')
+            track = tags.get('track', 0)
 
             if len(artist) == 0:
                 return;
@@ -598,7 +598,7 @@ class MediaStore(BackendStore):
             filename = sanitize(filename)
 
             if self.coverlocation is not None:
-                cover_path = os.path.join(self.coverlocation,filename +'.jpg')
+                cover_path = os.path.join(self.coverlocation,filename + '.jpg')
                 if os.path.exists(cover_path) is True:
                     print "cover found:", cover_path
                     album.cover = cover_path
@@ -631,7 +631,7 @@ class MediaStore(BackendStore):
             item = self.containers[id]
         except:
             try:
-                item = self.db.getItemByID(id-1000)
+                item = self.db.getItemByID(id - 1000)
             except:
                 item = None
         self.info("get_by_id found %s", item)

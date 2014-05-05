@@ -42,4 +42,4 @@ class ScheduledRecordingServer(service.ServiceServer, resource.Resource):
         return cl
 
     def render(self,request):
-        return '<html><p>root of the ScheduledRecording</p><p><ul>%s</ul></p></html>'% self.listchilds(request.uri)
+        return '<html><p>root of the ScheduledRecording</p><p><ul>%s</ul></p></html>' % self.listchilds(request.uri)

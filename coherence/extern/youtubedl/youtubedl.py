@@ -169,7 +169,7 @@ class FileDownloader(object):
         else:
             exponent = long(math.log(bytes, 1024.0))
         suffix = 'bkMGTPEZY'[exponent]
-        converted = float(bytes) / float(1024**exponent)
+        converted = float(bytes) / float(1024 ** exponent)
         return '%.2f%s' % (converted, suffix)
 
     @staticmethod
@@ -249,7 +249,7 @@ class FileDownloader(object):
 
     def to_stderr(self, message):
         """Print message to stderr."""
-        print >>sys.stderr, message.encode(preferredencoding())
+        print >> sys.stderr, message.encode(preferredencoding())
 
     def fixed_template(self):
         """Checks if the output template is fixed."""
@@ -484,7 +484,7 @@ class InfoExtractor(object):
 
     def to_stderr(self, message):
         """Print message to stderr."""
-        print >>sys.stderr, message
+        print >> sys.stderr, message
 
     def _real_initialize(self):
         """Real initialization process. Redefine in subclasses."""
@@ -917,7 +917,7 @@ class YoutubeSearchIE(InfoExtractor):
                     self._downloader.trouble(u'ERROR: invalid download number %s for query "%s"' % (n, query))
                     return
                 elif n > self._max_youtube_results:
-                    self._downloader.to_stderr(u'WARNING: ytsearch returns max %i results (you requested %i)'  % (self._max_youtube_results, n))
+                    self._downloader.to_stderr(u'WARNING: ytsearch returns max %i results (you requested %i)' % (self._max_youtube_results, n))
                     n = self._max_youtube_results
                 self._download_n_results(query, n)
                 return
@@ -1051,7 +1051,7 @@ class PostProcessor(object):
 
     def to_stderr(self, message):
         """Print message to stderr."""
-        print >>sys.stderr, message
+        print >> sys.stderr, message
 
     def set_downloader(self, downloader):
         """Sets the downloader for this PP."""
