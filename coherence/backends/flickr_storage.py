@@ -228,7 +228,7 @@ class FlickrItem(log.Loggable):
             self.update_id += 1
 
     def remove_child(self, child):
-        self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        self.info("remove_from %d (%s) child %d (%s)", self.id, self.get_name(), child.id, child.get_name())
         if child in self.children:
             self.children.remove(child)
             self.update_id += 1
@@ -597,14 +597,14 @@ class FlickrStore(BackendStore):
         for photo in result.getiterator('photo'):
             self.append(photo, parent)
             count += 1
-        self.info("initialized photo set %s with %d images" % (parent.get_name(), count))
+        self.info("initialized photo set %s with %d images", parent.get_name(), count)
 
     def append_flickr_photo_result(self, result, parent):
         count = 0
         for photo in result.getiterator('photo'):
             self.appendPhoto(photo, parent)
             count += 1
-        self.info("initialized photo set %s with %d images" % (parent.get_name(), count))
+        self.info("initialized photo set %s with %d images", parent.get_name(), count)
 
     def append_flickr_photoset_result(self, result, parent):
         photoset_count = 0
@@ -630,7 +630,7 @@ class FlickrStore(BackendStore):
             self.info("get_by_id looking for %s", id)
             try:
                 item = self.uploads[id]
-                self.info('get_by_id found %r' % item)
+                self.info('get_by_id found %r', item)
                 return item
             except:
                 return None
@@ -689,7 +689,7 @@ class FlickrStore(BackendStore):
         self.debug("refresh pass 2: old: %i - new: %i - store: %i",
                    len(old_ones), len(new_ones), len(self.store))
         if len(new_ones) > 0:
-            self.info("updated %s with %d new %ss" % (parent.get_name(), len(new_ones), element))
+            self.info("updated %s with %d new %ss", parent.get_name(), len(new_ones), element)
 
         if element == 'photoset':
             """ now we need to check the childs of all photosets
@@ -728,12 +728,12 @@ class FlickrStore(BackendStore):
 
     def flickr_call(self, method, **kwargs):
         def got_result(result,method):
-            self.debug('flickr_call %r result %r' % (method,result))
+            self.debug('flickr_call %r result %r', method,result)
             result = parse_xml(result, encoding='utf-8')
             return result
 
         def got_error(error,method):
-            self.warning("connection to Flickr %r service failed! %r" % (method, error))
+            self.warning("connection to Flickr %r service failed! %r", method, error)
             self.debug("%r", error.getTraceback())
             return error
 

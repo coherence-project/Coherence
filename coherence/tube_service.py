@@ -39,9 +39,9 @@ class MirabeauProxy(resource.Resource, log.Loggable):
         self.isLeaf = 0
 
     def getChildWithDefault(self, path, request):
-        self.info('MiraBeau getChildWithDefault %s, %s, %s %s' % (request.method, path, request.uri, request.client))
+        self.info('MiraBeau getChildWithDefault %s, %s, %s %s', request.method, path, request.uri, request.client)
         uri = urllib.unquote_plus(path)
-        self.info('MiraBeau  uri %r' % uri)
+        self.info('MiraBeau  uri %r', uri)
         return ReverseProxyUriResource(uri)
 
 
@@ -131,11 +131,11 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.critical('argument %s not valid for action %s' % (arg_name,action.name))
+                self.critical('argument %s not valid for action %s', arg_name,action.name)
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
-            self.critical('argument %s missing for action %s' %
-                                ([ a.get_name() for a in in_arguments],action.name))
+            self.critical('argument %s missing for action %s', 
+                                [ a.get_name() for a in in_arguments],action.name)
             return failure.Failure(errorCode(402))
 
 
@@ -276,7 +276,7 @@ class TubeDeviceProxy(log.Loggable):
         s = self.coherence.ssdp_server
         uuid = str(self.uuid)
         host = self.coherence.hostname
-        self.msg('%s register' % self.device_type)
+        self.msg('%s register', self.device_type)
         # we need to do this after the children are there, since we send notifies
         s.register('local',
                     '%s::upnp:rootdevice' % uuid,

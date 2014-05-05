@@ -129,7 +129,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
             self._gotError(failure.Failure(errorCode(415)), request, methodName)
             return server.NOT_DONE_YET
 
-        self.debug('headers: %r' % headers)
+        self.debug('headers: %r', headers)
 
         function, useKeywords = self.lookupFunction(methodName)
         #print 'function', function, 'keywords', useKeywords, 'args', args, 'kwargs', kwargs

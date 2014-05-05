@@ -614,7 +614,7 @@ class MediaStore(BackendStore):
                                 title=album.title)
 
     def get_by_id(self,id):
-        self.info("get_by_id %s" % id)
+        self.info("get_by_id %s", id)
         if isinstance(id, basestring):
             id = id.split('@',1)
             id = id[0].split('.')[0]

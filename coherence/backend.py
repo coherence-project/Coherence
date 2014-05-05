@@ -447,7 +447,7 @@ class LazyContainer(Container, log.Loggable):
         # Phase 1
         # let's classify the item between items to be removed,
         # to be updated or to be added
-        self.debug("Refresh pass 1:%d %d" % (len(new_children), len(old_children)))
+        self.debug("Refresh pass 1:%d %d", len(new_children), len(old_children))
         for id,item in old_children.items():
             children_to_be_removed[id] = item
         for id,item in new_children.items():
@@ -461,7 +461,7 @@ class LazyContainer(Container, log.Loggable):
         # Phase 2
         # Now, we remove, update or add the relevant items
         # to the list of items
-        self.debug("Refresh pass 2: %d %d %d" % (len(children_to_be_removed), len(children_to_be_replaced), len(children_to_be_added)))
+        self.debug("Refresh pass 2: %d %d %d", len(children_to_be_removed), len(children_to_be_replaced), len(children_to_be_added))
         # Remove relevant items from Container children
         for id,item in children_to_be_removed.items():
             self.remove_child(item, external_id=id, update=False)
@@ -551,7 +551,7 @@ class LazyContainer(Container, log.Loggable):
         delay_since_last_updated = current_time - self.last_updated
         period = self.refresh
         if (period > 0) and (delay_since_last_updated > period):
-            self.info("Last update is older than %d s -> update data" % period)
+            self.info("Last update is older than %d s -> update data", period)
             self.childrenRetrievingNeeded = True
 
         if self.childrenRetrievingNeeded is True:

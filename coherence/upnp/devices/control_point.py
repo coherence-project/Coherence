@@ -129,12 +129,12 @@ class ControlPoint(log.Loggable):
 
     def check_device( self, device):
         if device.client == None:
-            self.info("found device %s of type %s - %r" %(device.get_friendly_name(),
-                                                device.get_device_type(), device.client))
+            self.info("found device %s of type %s - %r", device.get_friendly_name(),
+                                                device.get_device_type(), device.client)
             short_type = device.get_friendly_device_type()
             if short_type in self.auto_client and short_type is not None:
-                self.info("identified %s %r" %
-                        (short_type, device.get_friendly_name()))
+                self.info("identified %s %r", 
+                        short_type, device.get_friendly_name())
 
                 if short_type == 'MediaServer':
                     client = MediaServerClient(device)
@@ -153,13 +153,13 @@ class ControlPoint(log.Loggable):
         self.process_queries(device)
 
     def completed(self, client, udn):
-        self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected %r' % (client.device_type, udn))
+        self.info('sending signal Coherence.UPnP.ControlPoint.%s.detected %r', client.device_type, udn)
         louie.send('Coherence.UPnP.ControlPoint.%s.detected' % client.device_type, None,
                                client=client,udn=udn)
 
     def remove_client(self, udn, client):
         louie.send('Coherence.UPnP.ControlPoint.%s.removed' % client.device_type, None, udn=udn)
-        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
+        self.info("removed %s %s", client.device_type,client.device.get_friendly_name())
         client.remove()
 
     def propagate(self, event):

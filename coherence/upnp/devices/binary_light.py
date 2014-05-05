@@ -42,7 +42,7 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
                 self.backend = backend
 
             def backend_failure(x):
-                self.warning('backend not installed, %s activation aborted' % self.device_type)
+                self.warning('backend not installed, %s activation aborted', self.device_type)
                 self.debug(x)
 
             d.addCallback(backend_ready)
@@ -100,4 +100,4 @@ class BinaryLight(log.Loggable,BasicDeviceMixin):
                                                static.File(icon['url'][7:]))
 
         self.register()
-        self.warning("%s %s (%s) activated with %s" % (self.backend.name, self.device_type, self.backend, str(self.uuid)[5:]))
+        self.warning("%s %s (%s) activated with %s", self.backend.name, self.device_type, self.backend, str(self.uuid)[5:])

@@ -152,7 +152,7 @@ class AudioCDStore(AbstractBackendStore):
             external_id = "%s_%d" % (disc_id, number)
             root_item.add_child(item, external_id = external_id)
 
-        self.info('Sharing audio CD %s' % self.disc_title)
+        self.info('Sharing audio CD %s', self.disc_title)
 
         reactor.callLater(2,self.checkIfAudioCdStillPresent)
         self.init_completed()
@@ -163,7 +163,7 @@ class AudioCDStore(AbstractBackendStore):
             disc_id = DiscID.disc_id(self.cdrom)
             reactor.callLater(2,self.checkIfAudioCdStillPresent)
         except:
-            self.warning('audio CD %s ejected: closing UPnP server!' % self.disc_title)            
+            self.warning('audio CD %s ejected: closing UPnP server!', self.disc_title)            
             self.server.coherence.remove_plugin(self.server)
 
         

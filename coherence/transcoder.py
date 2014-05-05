@@ -231,11 +231,11 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.cleanup()
 
     def getChild(self, name, request):
-        self.info('getChild %s, %s' % (name, request))
+        self.info('getChild %s, %s', name, request)
         return self
 
     def render_GET(self, request):
-        self.info('render GET %r' % (request))
+        self.info('render GET %r', request)
         request.setResponseCode(200)
         if hasattr(self, 'contentType'):
             request.setHeader('Content-Type', self.contentType)
@@ -257,13 +257,13 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         return server.NOT_DONE_YET
 
     def render_HEAD(self, request):
-        self.info('render HEAD %r' % (request))
+        self.info('render HEAD %r', request)
         request.setResponseCode(200)
         request.setHeader('Content-Type', self.contentType)
         request.write('')
 
     def requestFinished(self, result, request):
-        self.info("requestFinished %r" % result)
+        self.info("requestFinished %r", result)
         """ we need to find a way to destroy the pipeline here
         """
         #from twisted.internet import reactor
@@ -294,7 +294,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
     addSlash = True
 
     def __init__(self, uri, destination=None):
-        self.info('uri %s %r' % (uri, type(uri)))
+        self.info('uri %s %r', uri, type(uri))
         if uri[:7] not in ['file://', 'http://']:
             uri = 'file://' + urllib.quote(uri)   #FIXME
         self.uri = uri
@@ -302,11 +302,11 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         resource.Resource.__init__(self)
 
     def getChild(self, name, request):
-        self.info('getChild %s, %s' % (name, request))
+        self.info('getChild %s, %s', name, request)
         return self
 
     def render_GET(self, request):
-        self.info('render GET %r' % (request))
+        self.info('render GET %r', request)
         request.setResponseCode(200)
         if hasattr(self, 'contentType'):
             request.setHeader('Content-Type', self.contentType)
@@ -321,13 +321,13 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         return server.NOT_DONE_YET
 
     def render_HEAD(self, request):
-        self.info('render HEAD %r' % (request))
+        self.info('render HEAD %r', request)
         request.setResponseCode(200)
         request.setHeader('Content-Type', self.contentType)
         request.write('')
 
     def requestFinished(self, result):
-        self.info("requestFinished %r" % result)
+        self.info("requestFinished %r", result)
         """ we need to find a way to destroy the pipeline here
         """
         #from twisted.internet import reactor
@@ -735,7 +735,7 @@ class TranscoderManager(log.Loggable):
                 self.transcoders[transcoder_name] = wrapped
 
         #FIXME reduce that to info later
-        self.warning("available transcoders %r" % self.transcoders)
+        self.warning("available transcoders %r", self.transcoders)
 
 
     def select(self, name, uri, backend=None):

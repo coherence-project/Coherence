@@ -33,7 +33,7 @@ class InternetGatewayDeviceClient(log.Loggable):
             self.warning("Embedded WANDevice device not available, device not implemented properly according to the UPnP specification")
             raise
 
-        self.info("InternetGatewayDevice %s" % (self.device.get_friendly_name()))
+        self.info("InternetGatewayDevice %s", self.device.get_friendly_name())
 
     def remove(self):
         self.info("removal of InternetGatewayDeviceClient started")
@@ -41,7 +41,7 @@ class InternetGatewayDeviceClient(log.Loggable):
             self.wan_device.remove()
 
     def embedded_device_notified(self, device):
-        self.info("EmbeddedDevice %r sent notification" % device);
+        self.info("EmbeddedDevice %r sent notification", device);
         if self.detection_completed == True:
             return
         self.detection_completed = True

@@ -67,8 +67,8 @@ class MSRoot(resource.Resource, log.Loggable):
     #    request.finish()
 
     def getChildWithDefault(self, path, request):
-        self.info('%s getChildWithDefault, %s, %s, %s %s' % (self.server.device_type,
-                                request.method, path, request.uri, request.client))
+        self.info('%s getChildWithDefault, %s, %s, %s %s', self.server.device_type,
+                                request.method, path, request.uri, request.client)
         headers = request.getAllHeaders()
         self.msg( request.getAllHeaders())
 
@@ -81,7 +81,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
         if request.method == 'HEAD':
             if 'getcaptioninfo.sec' in headers:
-                self.warning("requesting srt file for id %s" % path)
+                self.warning("requesting srt file for id %s", path)
                 ch = self.store.get_by_id(path)
                 try:
                     location = ch.get_path()
@@ -102,13 +102,13 @@ class MSRoot(resource.Resource, log.Loggable):
             request._dlna_transfermode = 'Streaming'
         if request.method in ('GET','HEAD'):
             if COVER_REQUEST_INDICATOR.match(request.uri):
-                self.info("request cover for id %s" % path)
+                self.info("request cover for id %s", path)
                 def got_item(ch):
                     if ch is not None:
                         request.setResponseCode(200)
                         file = ch.get_cover()
                         if os.path.exists(file):
-                            self.info("got cover %s" % file)
+                            self.info("got cover %s", file)
                             return StaticFile(file)
                     request.setResponseCode(404)
                     return static.Data('<html><p>cover requested not found</p></html>','text/html')
@@ -119,7 +119,7 @@ class MSRoot(resource.Resource, log.Loggable):
                 return dfr
 
             if ATTACHMENT_REQUEST_INDICATOR.match(request.uri):
-                self.info("request attachment %r for id %s" % (request.args,path))
+                self.info("request attachment %r for id %s", request.args,path)
                 def got_attachment(ch):
                     try:
                         #FIXME same as below
@@ -127,7 +127,7 @@ class MSRoot(resource.Resource, log.Loggable):
                             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
                                 format = request.args['transcoded'][0]
                                 type = request.args['type'][0]
-                                self.info("request transcoding %r %r" % (format, type))
+                                self.info("request transcoding %r %r", format, type)
                                 try:
                                     from coherence.transcoder import TranscoderManager
                                     manager = TranscoderManager(self.server.coherence)
@@ -159,7 +159,7 @@ class MSRoot(resource.Resource, log.Loggable):
 
         if(request.method in ('GET','HEAD') and
            TRANSCODED_REQUEST_INDICATOR.match(request.uri)):
-            self.info("request transcoding to %s for id %s" % (request.uri.split('/')[-1],path))
+            self.info("request transcoding to %s for id %s", request.uri.split('/')[-1],path)
             if self.server.coherence.config.get('transcoding', 'no') == 'yes':
                 def got_stuff_to_transcode(ch):
                     #FIXME create a generic transcoder class and sort the details there
@@ -246,7 +246,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     element_tree = utils.parse_xml(request.content.getvalue(), encoding='utf-8')
                     new_config = convert_elementtree_to_dict(element_tree.getroot())
                     self.server.coherence.remove_plugin(self.server)
-                    self.warning("%s %s (%s) with id %s desactivated" % (backend.name, self.server.device_type, backend, str(self.server.uuid)[5:]))
+                    self.warning("%s %s (%s) with id %s desactivated", backend.name, self.server.device_type, backend, str(self.server.uuid)[5:])
                     if new_config is None :
                         msg = "<plugin active=\"no\"/>"
                     else:
@@ -273,13 +273,13 @@ class MSRoot(resource.Resource, log.Loggable):
         return self.getChild(path, request)
 
     def requestFinished(self, result, id, request):
-        self.info("finished, remove %d from connection table" % id)
-        self.info("finished, sentLength: %d chunked: %d code: %d" % (request.sentLength, request.chunked, request.code))
-        self.info("finished %r" % request.headers)
+        self.info("finished, remove %d from connection table", id)
+        self.info("finished, sentLength: %d chunked: %d code: %d", request.sentLength, request.chunked, request.code)
+        self.info("finished %r", request.headers)
         self.server.connection_manager_server.remove_connection(id)
 
     def import_file(self,name,request):
-        self.info("import file, id %s" % name)
+        self.info("import file, id %s", name)
         print "import file, id %s" % name
         def got_file(ch):
             print "ch", ch
@@ -300,7 +300,7 @@ class MSRoot(resource.Resource, log.Loggable):
                                                                     'Output',
                                                                     -1,
                                                                     '')
-        self.info("startup, add %d to connection table" % new_id)
+        self.info("startup, add %d to connection table", new_id)
         d = request.notifyFinish()
         d.addBoth(self.requestFinished, new_id, request)
 
@@ -321,22 +321,22 @@ class MSRoot(resource.Resource, log.Loggable):
                request.method == 'HEAD'):
                 headers = request.getAllHeaders()
                 if headers.has_key('content-length'):
-                    self.warning('%s request with content-length %s header - sanitizing' % (
+                    self.warning('%s request with content-length %s header - sanitizing', 
                                     request.method,
-                                    headers['content-length']))
+                                    headers['content-length'])
                     del request.received_headers['content-length']
                 self.debug('data', )
                 if len(request.content.getvalue()) > 0:
                     """ shall we remove that?
                         can we remove that?
                     """
-                    self.warning('%s request with %d bytes of message-body - sanitizing' % (
+                    self.warning('%s request with %d bytes of message-body - sanitizing', 
                                     request.method,
-                                    len(request.content.getvalue())))
+                                    len(request.content.getvalue()))
                     request.content = StringIO()
 
             if hasattr(ch, "location"):
-                self.debug("we have a location %s" % isinstance(ch.location, resource.Resource))
+                self.debug("we have a location %s", isinstance(ch.location, resource.Resource))
                 if(isinstance(ch.location, ReverseProxyResource) or
                    isinstance(ch.location, resource.Resource)):
                     #self.info('getChild proxy %s to %s' % (name, ch.location.uri))
@@ -348,16 +348,16 @@ class MSRoot(resource.Resource, log.Loggable):
             except TypeError:
                 return self.list_content(name, ch, request)
             except Exception, msg:
-                self.debug("error accessing items path %r" % msg)
+                self.debug("error accessing items path %r", msg)
                 self.debug(traceback.format_exc())
                 return self.list_content(name, ch, request)
             if p != None and os.path.exists(p):
-                self.info("accessing path %r" % p)
+                self.info("accessing path %r", p)
                 self.prepare_connection(request)
                 self.prepare_headers(ch,request)
                 ch = StaticFile(p)
             else:
-                self.debug("accessing path %r failed" % p)
+                self.debug("accessing path %r failed", p)
                 return self.list_content(name, ch, request)
 
         if ch is None:
@@ -368,7 +368,7 @@ class MSRoot(resource.Resource, log.Loggable):
         return ch
 
     def getChild(self, name, request):
-        self.info('getChild %s, %s' % (name, request))
+        self.info('getChild %s, %s', name, request)
         ch = self.store.get_by_id(name)
         if isinstance(ch, defer.Deferred):
             ch.addCallback(self.process_child,name,request)
@@ -444,7 +444,7 @@ class MSRoot(resource.Resource, log.Loggable):
         return static.Data(page,'text/html')
 
     def listchilds(self, uri):
-        self.info('listchilds %s' % uri)
+        self.info('listchilds %s', uri)
         if uri[-1] != '/':
             uri += '/'
         cl = '<p><a href=%s0>content</a></p>' % uri
@@ -708,4 +708,4 @@ class MediaServer(log.Loggable,BasicDeviceMixin):
                         self.web_resource.putChild(icon['url'],StaticFile(icon_path,defaultType=icon['mimetype']))
 
         self.register()
-        self.warning("%s %s (%s) activated with id %s" % (self.device_type, self.backend.name, self.backend, str(self.uuid)[5:]))
+        self.warning("%s %s (%s) activated with id %s", self.device_type, self.backend.name, self.backend, str(self.uuid)[5:])

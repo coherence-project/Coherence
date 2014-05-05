@@ -29,7 +29,8 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
         self.server = server
 
     def getChildWithDefault(self, path, request):
-        self.info('DeviceHttpRoot %s getChildWithDefault ' % self.server.device_type, path, request.uri, request.client)
+        self.info('DeviceHttpRoot %s getChildWithDefault %s %s %s',
+                  self.server.device_type, path, request.uri, request.client)
         self.info( request.getAllHeaders())
         if self.children.has_key(path):
             return self.children[path]
@@ -38,7 +39,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
         return self.getChild(path, request)
 
     def getChild(self, name, request):
-        self.info('DeviceHttpRoot %s getChild %s ' % (name, request))
+        self.info('DeviceHttpRoot %s getChild %s', name, request)
         ch = None
         if ch is None:
             p = util.sibpath(__file__, name)

@@ -51,7 +51,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
         self.http_hostname = '%s:%d' % (self.coherence.hostname, self.coherence.web_server_port)
 
     def getChild(self, name, request):
-        self.debug('SimpleRoot getChild %s, %s' % (name, request))
+        self.debug('SimpleRoot getChild %s, %s', name, request)
         if name == 'oob':
             """ we have an out-of-band request """
             return static.File(self.coherence.dbus.pinboard[request.args['key'][0]])
@@ -69,7 +69,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
 
     def listchilds(self, uri):
-        self.info('listchilds %s' % uri)
+        self.info('listchilds %s', uri)
         if uri[-1] != '/':
             uri += '/'
         cl = []
@@ -107,7 +107,7 @@ class WebServer(log.Loggable):
 
             from nevow import __version_info__, __version__
             if __version_info__ <(0,9,17):
-                self.warning( "Nevow version %s too old, disabling WebUI" % __version__)
+                self.warning( "Nevow version %s too old, disabling WebUI", __version__)
                 raise ImportError
 
             from nevow import appserver, inevow
@@ -127,7 +127,7 @@ class WebServer(log.Loggable):
         self.port = reactor.listenTCP( port, self.site)
         coherence.web_server_port = self.port._realPortNumber
         # XXX: is this the right way to do it?
-        self.warning( "WebServer on port %d ready" % coherence.web_server_port)
+        self.warning( "WebServer on port %d ready", coherence.web_server_port)
 
 
 class Plugins(log.Loggable):
@@ -163,7 +163,7 @@ class Plugins(log.Loggable):
             try:
                 plugin = plugin.load(require=False)
             except (ImportError, AttributeError, pkg_resources.ResolutionError), msg:
-                self.warning("Can't load plugin %s (%s), maybe missing dependencies..." % (plugin.name,msg))
+                self.warning("Can't load plugin %s (%s), maybe missing dependencies...", plugin.name,msg)
                 self.info(traceback.format_exc())
                 del self._plugins[key]
                 raise KeyError
@@ -270,7 +270,7 @@ class Coherence(log.Loggable):
                         continue
                 except (KeyError,TypeError):
                     pass
-                self.info( "setting log-level for subsystem %s to %s" % (subsystem['name'],subsystem['level']))
+                self.info( "setting log-level for subsystem %s to %s", subsystem['name'],subsystem['level'])
                 logging.getLogger(subsystem['name'].lower()).setLevel(subsystem['level'].upper())
 
         except (KeyError,TypeError):
@@ -286,7 +286,7 @@ class Coherence(log.Loggable):
             logfile = config.get('logfile', None)
         log.init(logfile, logmode.upper())
 
-        self.warning("Coherence UPnP framework version %s starting..." % __version__)
+        self.warning("Coherence UPnP framework version %s starting...", __version__)
 
         if network_if:
             self.hostname = get_ip_address('%s' % network_if)
@@ -309,7 +309,7 @@ class Coherence(log.Loggable):
 
     def setup_part2(self):
 
-        self.info('running on host: %s' % self.hostname)
+        self.info('running on host: %s', self.hostname)
         if self.hostname.startswith('127.'):
             self.warning('detection of own ip failed, using %s as own address, functionality will be limited', self.hostname)
 
@@ -335,7 +335,7 @@ class Coherence(log.Loggable):
         try:
             self.web_server = WebServer( self.config.get('web-ui',None), self.web_server_port, self)
         except CannotListenError:
-            self.warning('port %r already in use, aborting!' % self.web_server_port)
+            self.warning('port %r already in use, aborting!', self.web_server_port)
             reactor.stop()
             return
 
@@ -366,7 +366,7 @@ class Coherence(log.Loggable):
                             arguments = {}
                         self.add_plugin(plugin, **arguments)
                     except Exception, msg:
-                        self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
+                        self.warning("Can't enable plugin, %s: %s!", plugin, msg)
                         self.info(traceback.format_exc())
             else:
                 for plugin in plugins:
@@ -385,7 +385,7 @@ class Coherence(log.Loggable):
                                 plugin['uuid'] = str(backend.uuid)[5:]
                                 self.config.save()
                     except Exception, msg:
-                        self.warning("Can't enable plugin, %s: %s!" % (plugin, msg))
+                        self.warning("Can't enable plugin, %s: %s!", plugin, msg)
                         self.info(traceback.format_exc())
 
 
@@ -414,7 +414,7 @@ class Coherence(log.Loggable):
                 self.ctrl.auto_client_append('InternetGatewayDevice')
                 self.dbus = dbus_service.DBusPontoon(self.ctrl)
             except Exception, msg:
-                self.warning("Unable to activate dbus sub-system: %r" % msg)
+                self.warning("Unable to activate dbus sub-system: %r", msg)
                 self.debug(traceback.format_exc())
             else:
                 if self.config.get('enable_mirabeau', 'no') == 'yes':
@@ -441,19 +441,19 @@ class Coherence(log.Loggable):
                     device_class=globals().get(device,None)
                     if device_class == None:
                         raise KeyError
-                    self.info("Activating %s plugin as %s..." % (plugin, device))
+                    self.info("Activating %s plugin as %s...", plugin, device)
                     new_backend = device_class(self, plugin_class, **kwargs)
                     self.active_backends[str(new_backend.uuid)] = new_backend
                     return new_backend
                 except KeyError:
-                    self.warning("Can't enable %s plugin, sub-system %s not found!" % (plugin, device))
+                    self.warning("Can't enable %s plugin, sub-system %s not found!", plugin, device)
                 except Exception, msg:
-                    self.warning("Can't enable %s plugin for sub-system %s, %s!" % (plugin, device, msg))
+                    self.warning("Can't enable %s plugin for sub-system %s, %s!", plugin, device, msg)
                     self.debug(traceback.format_exc())
         except KeyError, error:
-            self.warning("Can't enable %s plugin, not found!" % plugin)
+            self.warning("Can't enable %s plugin, not found!", plugin)
         except Exception, msg:
-            self.warning("Can't enable %s plugin, %s!" % (plugin, msg))
+            self.warning("Can't enable %s plugin, %s!", plugin, msg)
             self.debug(traceback.format_exc())
 
     def remove_plugin(self, plugin):
@@ -465,7 +465,7 @@ class Coherence(log.Loggable):
             try:
                 plugin = self.active_backends[plugin]
             except KeyError:
-                self.warning("no backend with the uuid %r found" % plugin)
+                self.warning("no backend with the uuid %r found", plugin)
                 return ""
 
         try:
@@ -474,7 +474,7 @@ class Coherence(log.Loggable):
             plugin.unregister()
             return plugin.uuid
         except KeyError:
-            self.warning("no backend with the uuid %r found" % plugin.uuid)
+            self.warning("no backend with the uuid %r found", plugin.uuid)
             return ""
 
     def writeable_config(self):
@@ -510,7 +510,7 @@ class Coherence(log.Loggable):
             except:
                 pass
         else:
-            self.info("storing plugin config option for %s failed, plugin not found" % uuid)
+            self.info("storing plugin config option for %s failed, plugin not found", uuid)
 
     def receiver( self, signal, *args, **kwargs):
         #print "Coherence receiver called with", signal

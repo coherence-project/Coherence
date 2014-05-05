@@ -75,7 +75,7 @@ class Service(log.Loggable):
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
-        self.info("%s %s %s initialized" % (self.device.friendly_name,self.service_type,self.id))
+        self.info("%s %s %s initialized", self.device.friendly_name,self.service_type,self.id)
 
     def as_tuples(self):
         r = []
@@ -176,15 +176,15 @@ class Service(log.Loggable):
         return self.service_type
 
     def set_timeout(self, timeout):
-        self.info("set timout for %s/%s to %d" %(self.device.friendly_name,self.service_type,int(timeout)))
+        self.info("set timout for %s/%s to %d", self.device.friendly_name,self.service_type,int(timeout))
         self.timeout = timeout
         try:
             self.renew_subscription_call.reset(int(self.timeout)-30)
-            self.info("reset renew subscription call for %s/%s to %d" % (self.device.friendly_name,self.service_type,int(self.timeout)-30))
+            self.info("reset renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout)-30)
         except:
             self.renew_subscription_call = reactor.callLater(int(self.timeout)-30,
                                                                  self.renew_subscription)
-            self.info("starting renew subscription call for %s/%s to %d" % (self.device.friendly_name,self.service_type,int(self.timeout)-30))
+            self.info("starting renew subscription call for %s/%s to %d", self.device.friendly_name,self.service_type,int(self.timeout)-30)
 
     def get_timeout(self):
         return self.timeout
@@ -196,7 +196,7 @@ class Service(log.Loggable):
         return self.subscription_id
 
     def set_sid(self, sid):
-        self.info("set subscription id for %s/%s to %s" %(self.device.friendly_name,self.service_type,sid))
+        self.info("set subscription id for %s/%s to %s", self.device.friendly_name,self.service_type,sid)
         self.subscription_id = sid
         if sid is not None:
             subscribe(self)
@@ -272,7 +272,7 @@ class Service(log.Loggable):
         event.subscribe(self)
 
     def process_event(self,event):
-        self.info("process event %r %r" % (self,event))
+        self.info("process event %r %r", self,event)
         for var_name, var_value  in event.items():
             if var_name == 'LastChange':
                 self.info("we have a LastChange event")
@@ -281,13 +281,13 @@ class Service(log.Loggable):
                 namespace_uri, tag = tree.tag[1:].split( "}", 1)
                 for instance in tree.findall('{%s}InstanceID' % namespace_uri):
                     instance_id = instance.attrib['val']
-                    self.info("instance_id %r %r" % (instance,instance_id))
+                    self.info("instance_id %r %r", instance,instance_id)
                     for var in instance.getchildren():
-                        self.info("var %r" % var)
+                        self.info("var %r", var)
                         namespace_uri, tag = var.tag[1:].split("}", 1)
-                        self.info("%r %r %r" % (namespace_uri, tag,var.attrib['val']))
+                        self.info("%r %r %r", namespace_uri, tag,var.attrib['val'])
                         self.get_state_variable(tag, instance_id).update(var.attrib['val'])
-                        self.info("updated var %r" % var)
+                        self.info("updated var %r", var)
                         if len(var.attrib) > 1:
                             self.info("Extended StateVariable %s - %r", var.tag, var.attrib)
                             if var.attrib.has_key('channel') and var.attrib['channel'] != 'Master':
@@ -318,7 +318,7 @@ class Service(log.Loggable):
             # so we need to set it here and now to avoid a potential race condition
             self.last_time_updated = time.time()
             louie.send('Coherence.UPnP.DeviceClient.Service.notified', sender=self.device, service=self)
-            self.info("send signal Coherence.UPnP.DeviceClient.Service.notified for %r" % self)
+            self.info("send signal Coherence.UPnP.DeviceClient.Service.notified for %r", self)
         self.last_time_updated = time.time()
 
     def parse_actions(self):
@@ -367,7 +367,7 @@ class Service(log.Loggable):
             #print 'service parse:', self, self.device
             self.detection_completed = True
             louie.send('Coherence.UPnP.Service.detection_completed', sender=self.device, device=self.device)
-            self.info("send signal Coherence.UPnP.Service.detection_completed for %r" % self)
+            self.info("send signal Coherence.UPnP.Service.detection_completed for %r", self)
             """
             if (self.last_time_updated == None):
                 if( self.id.endswith('AVTransport') or
@@ -754,12 +754,12 @@ class ServiceServer(log.Loggable):
                 issue a warning for now
             """
             if implementation == 'optional':
-                self.info('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                self.info('%s has a missing callback for %s action %s, action disabled', self.id,implementation,name)
                 return
             else:
                 if((hasattr(self,'implementation') and self.implementation == 'required') or
                     not hasattr(self,'implementation')):
-                    self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
+                    self.warning('%s has a missing callback for %s action %s, service disabled', self.id,implementation,name)
                 raise LookupError("missing callback")
 
         arguments_list = []
@@ -770,7 +770,7 @@ class ServiceServer(log.Loggable):
         self._actions[name] = new_action
         if callback != None:
             new_action.set_callback(callback)
-            self.info('Add callback %s for %s/%s' % (callback, self.id, name))
+            self.info('Add callback %s for %s/%s', callback, self.id, name)
         return new_action
 
     def init_var_and_actions(self):
@@ -818,19 +818,19 @@ class ServiceServer(log.Loggable):
                     issue a warning for now
                 """
                 if implementation == 'optional':
-                    self.info('%s has a missing callback for %s action %s, action disabled' % (self.id,implementation,name))
+                    self.info('%s has a missing callback for %s action %s, action disabled', self.id,implementation,name)
                     continue
                 else:
                     if((hasattr(self,'implementation') and self.implementation == 'required') or
                         not hasattr(self,'implementation')):
-                        self.warning('%s has a missing callback for %s action %s, service disabled' % (self.id,implementation,name))
+                        self.warning('%s has a missing callback for %s action %s, service disabled', self.id,implementation,name)
                     raise LookupError,"missing callback"
 
             new_action = action.Action(self, name, implementation, arguments)
             self._actions[name] = new_action
             if callback != None:
                 new_action.set_callback(callback)
-                self.info('Add callback %s for %s/%s' % (callback, self.id, name))
+                self.info('Add callback %s for %s/%s', callback, self.id, name)
 
 
         backend_vendor_value_defaults = getattr(self.backend, "vendor_value_defaults", None)
@@ -888,8 +888,8 @@ class ServiceServer(log.Loggable):
                 if service_value_defaults:
                     variable_value_defaults = service_value_defaults.get(name, None)
                     if variable_value_defaults:
-                        self.info("overwriting %s default value with %s" % (name,
-                                                               variable_value_defaults))
+                        self.info("overwriting %s default value with %s", name,
+                                                               variable_value_defaults)
                         self._variables.get(instance)[name].set_allowed_values(variable_value_defaults)
 
                 if vendor_values != None:
@@ -908,11 +908,11 @@ class ServiceServer(log.Loggable):
                             variable_range_defaults = service_range_defaults.get(name)
                             if( variable_range_defaults != None and
                                 variable_range_defaults.get(e.tag) != None):
-                                self.info("overwriting %s attribute %s with %s" % (name,
-                                                               e.tag, str(variable_range_defaults[e.tag])))
+                                self.info("overwriting %s attribute %s with %s", name,
+                                                               e.tag, str(variable_range_defaults[e.tag]))
                                 range[e.tag] = variable_range_defaults[e.tag]
                             elif e.text == None:
-                                self.info("missing vendor definition for %s, attribute %s" % (name, e.tag))
+                                self.info("missing vendor definition for %s, attribute %s", name, e.tag)
                 self._variables.get(instance)[name].set_allowed_value_range(**range)
                 if vendor_values != None:
                     self._variables.get(instance)[name].has_vendor_values = True
@@ -1060,11 +1060,11 @@ class ServiceControl(log.Loggable):
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.critical('argument %s not valid for action %s' % (arg_name,action.name))
+                self.critical('argument %s not valid for action %s', arg_name,action.name)
                 return failure.Failure(errorCode(402))
         if len(in_arguments) > 0:
-            self.critical('argument %s missing for action %s' %
-                                ([ a.get_name() for a in in_arguments],action.name))
+            self.critical('argument %s missing for action %s', 
+                                [ a.get_name() for a in in_arguments],action.name)
             return failure.Failure(errorCode(402))
 
         def callit( *args, **kwargs):

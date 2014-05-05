@@ -122,7 +122,7 @@ class Channel(BackendItem):
         return 0
 
     def get_item(self, parent_id=None):
-        self.debug("Channel get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Channel get_item %r @ %r", self.id,self.parent_id)
         item = DIDLLite.VideoBroadcast(self.id,self.parent_id)
         item.title = self.name
         res = DIDLLite.Resource(self.stream_url, 'rtsp-rtp-udp:*:%s:*' % self.mimetype)
@@ -176,7 +176,7 @@ class Recording(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.debug("Recording get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Recording get_item %r @ %r", self.id,self.parent_id)
 
         # create item
         item = DIDLLite.VideoBroadcast(self.id,self.parent_id)

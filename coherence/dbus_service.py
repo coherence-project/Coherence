@@ -97,7 +97,7 @@ class DBusCDSService(dbus.service.Object,log.Loggable):
     @dbus.service.signal(CDS_SERVICE,
                          signature='sssv')
     def StateVariableChanged(self, udn, service, variable, value):
-        self.info("%s service %s signals StateVariable %s changed to %r" % (self.dbus_device.device.get_friendly_name(), self.type, variable, value))
+        self.info("%s service %s signals StateVariable %s changed to %r", self.dbus_device.device.get_friendly_name(), self.type, variable, value)
 
     @dbus.service.method(CDS_SERVICE,in_signature='',out_signature='as')
     def getAvailableActions(self):
@@ -774,7 +774,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
                                      object_path=OBJECT_PATH)
 
 
-        self.debug("D-Bus pontoon %r %r %r" % (self, self.bus, self.bus_name))
+        self.debug("D-Bus pontoon %r %r %r", self, self.bus, self.bus_name)
 
         self.devices = {}
         self.controlpoint = controlpoint
@@ -829,7 +829,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         return self.controlpoint.coherence.urlbase + 'oob?key=' + key
 
     def remove_client(self, usn, client):
-        self.info("removed %s %s" % (client.device_type,client.device.get_friendly_name()))
+        self.info("removed %s %s", client.device_type,client.device.get_friendly_name())
         try:
             getattr(self,str('UPnP_ControlPoint_%s_removed' % client.device_type))(usn)
         except:
@@ -903,7 +903,7 @@ class DBusPontoon(dbus.service.Object,log.Loggable):
         try:
             plugin = self.controlpoint.coherence.active_backends[uuid]
         except KeyError:
-            self.warning("no backend with the uuid %r found" % uuid)
+            self.warning("no backend with the uuid %r found", uuid)
             return ""
         function = getattr(plugin.backend, method, None)
         if function == None:

@@ -255,7 +255,7 @@ class LastFMItem(log.Loggable):
 
 
     def remove_child(self, child):
-        self.info("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        self.info("remove_from %d (%s) child %d (%s)", self.id, self.get_name(), child.id, child.get_name())
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):

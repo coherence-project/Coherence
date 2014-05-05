@@ -57,7 +57,7 @@ class SOAPProxy(log.Loggable):
         self.debug("callRemote payload:  %s", payload)
 
         def gotError(error, url):
-            self.warning("error requesting url %r" % url)
+            self.warning("error requesting url %r", url)
             self.debug(error)
             try:
                 tree = parse_xml(error.value.response)
@@ -84,7 +84,7 @@ class SOAPProxy(log.Loggable):
                 print c, c.tag
                 print_c(c)
 
-        self.debug("result: %r" % page)
+        self.debug("result: %r", page)
 
         tree = parse_xml(page)
         #print tree, "find %s" % self.action

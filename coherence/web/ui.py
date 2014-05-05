@@ -59,7 +59,7 @@ class MenuFragment(athena.LiveElement, log.Loggable):
     athena.expose(going_live)
 
     def add_tab(self,title,active,id):
-        self.info("add tab %s to the MenuFragment" % title)
+        self.info("add tab %s to the MenuFragment", title)
         new_tab = {u'title':unicode(title),
                    u'active':unicode(active),
                    u'athenaid':u'athenaid:%d' % id}
@@ -115,10 +115,10 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
         self.info("remove view from the DevicesFragment")
 
     def add_device(self, device):
-        self.info("DevicesFragment found device %s %s of type %s" %(
+        self.info("DevicesFragment found device %s %s of type %s", 
                                                 device.get_usn(),
                                                 device.get_friendly_name(),
-                                                device.get_device_type()))
+                                                device.get_device_type())
         self.callRemote('addDevice',
                 {u'name': device.get_markup_name(),
                 u'usn':unicode(device.get_usn())})
@@ -129,7 +129,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
 
     def render_devices(self, ctx, data):
         cl = []
-        self.info('children: %s' % self.coherence.children)
+        self.info('children: %s', self.coherence.children)
         for child in self.coherence.children:
             device = self.coherence.get_device_with_id(child)
             if device is not None:
@@ -212,7 +212,7 @@ class WebUI(athena.LivePage, log.Loggable):
         self.menu = MenuFragment(self)
 
     def childFactory(self, ctx, name):
-        self.info('WebUI childFactory: %s' % name)
+        self.info('WebUI childFactory: %s', name)
         try:
             return self.rootObject.coherence.children[name]
         except:

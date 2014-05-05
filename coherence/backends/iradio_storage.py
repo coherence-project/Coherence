@@ -273,7 +273,7 @@ class IRadioStore(AbstractBackendStore):
                 self.append_genre(parent, family_genre)
         
         def got_page(result):
-            self.info('connection to ShoutCast service successful for genre %s' % genre)
+            self.info('connection to ShoutCast service successful for genre %s', genre)
             result = utils.parse_xml(result, encoding='utf-8')
             tunein = result.find('tunein')
             if tunein != None:
@@ -315,7 +315,7 @@ class IRadioStore(AbstractBackendStore):
 
 
         def got_error(error):
-            self.warning("connection to ShoutCast service failed: %s" % url)
+            self.warning("connection to ShoutCast service failed: %s", url)
             self.debug("%r", error.getTraceback())
             parent.childrenRetrievingNeeded = True # we retry
             return Failure("Unable to retrieve stations for genre" % genre)
@@ -335,7 +335,7 @@ class IRadioStore(AbstractBackendStore):
             if self.retrieveGenreList_attemptCount == 0:
                 self.info("Connection to ShoutCast service successful for genre listing")
             else:
-                self.warning("Connection to ShoutCast service successful for genre listing after %d attempts." % self.retrieveGenreList_attemptCount)
+                self.warning("Connection to ShoutCast service successful for genre listing after %d attempts.", self.retrieveGenreList_attemptCount)
             result = utils.parse_xml(result, encoding='utf-8')
             
             genres = {}

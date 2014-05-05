@@ -114,7 +114,7 @@ class SQLiteDB(Loggable):
             result = db_row.getdict(all_rows, cursor.description)
         cursor.close()
         delta = time.time() - t0
-        self.log("SQL request took %s seconds" % delta)
+        self.log("SQL request took %s seconds", delta)
         return result
 
 class Container(BackendItem):
@@ -837,7 +837,7 @@ class BansheeStore(BackendStore, BansheeDB):
         self.db.disconnect()
 
     def get_by_id(self,item_id):
-        self.info("get_by_id %s" % item_id)
+        self.info("get_by_id %s", item_id)
         if isinstance(item_id, basestring) and item_id.find('.') > 0:
             item_id = item_id.split('@',1)
             item_type, item_id = item_id[0].split('.')[:2]

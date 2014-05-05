@@ -90,12 +90,12 @@ class Action(log.Loggable):
             if len(l) > 0:
                 in_arguments.remove(l[0])
             else:
-                self.error("argument %s not valid for action %s" % (arg_name,self.name))
+                self.error("argument %s not valid for action %s", arg_name,self.name)
                 return
             if arg_name == 'InstanceID':
                 instance_id = int(arg)
         if len(in_arguments) > 0:
-            self.error("argument %s missing for action %s" % ([ a.get_name() for a in in_arguments],self.name))
+            self.error("argument %s missing for action %s", [ a.get_name() for a in in_arguments],self.name)
             return
 
         action_name = self.name
@@ -107,9 +107,9 @@ class Action(log.Loggable):
             self.info("changing action to %r %r", action_name, kwargs)
 
         def got_error(failure):
-            self.warning("error on %s request with %s %s" % (self.name,self.
+            self.warning("error on %s request with %s %s", self.name,self.
                                                             service.service_type,
-                                                            self.service.control_url))
+                                                            self.service.control_url)
             self.info(failure)
             return failure
 
@@ -135,10 +135,10 @@ class Action(log.Loggable):
     def got_results( self, results, instance_id, name):
         instance_id = int(instance_id)
         out_arguments = self.get_out_arguments()
-        self.info( "call %s (instance %d) returns %d arguments: %r" % (name,
+        self.info( "call %s (instance %d) returns %d arguments: %r", name,
                                                                     instance_id,
                                                                     len(out_arguments),
-                                                                    results))
+                                                                    results)
 
         # XXX A_ARG_TYPE_ arguments probably don't need a variable update
         #if len(out_arguments) == 1:

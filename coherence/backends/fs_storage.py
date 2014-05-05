@@ -488,9 +488,9 @@ class FSStore(BackendStore):
                 try:
                     self.inotify = INotify()
                 except Exception,msg:
-                    self.info("%s" %msg)
+                    self.info("%s", msg)
             else:
-                self.info("%s" %no_inotify_reason)
+                self.info("%s", no_inotify_reason)
         else:
             self.info("FSStore content auto-update disabled upon user request")
 
@@ -528,7 +528,7 @@ class FSStore(BackendStore):
                 path = path.encode('utf-8') # patch for #267
                 self.walk(path, parent, self.ignore_file_pattern)
             except Exception,msg:
-                self.warning('on walk of %r: %r' % (path,msg))
+                self.warning('on walk of %r: %r', path,msg)
                 import traceback
                 self.debug(traceback.format_exc())
 
@@ -572,14 +572,14 @@ class FSStore(BackendStore):
         return r
 
     def get_id_by_name(self, parent='0', name=''):
-        self.info('get_id_by_name %r (%r) %r' % (parent, type(parent), name))
+        self.info('get_id_by_name %r (%r) %r', parent, type(parent), name)
         try:
             parent = self.store[parent]
-            self.debug("%r %d" % (parent,len(parent.children)))
+            self.debug("%r %d", parent,len(parent.children))
             for child in parent.children:
                 #if not isinstance(name, unicode):
                 #    name = name.decode("utf8")
-                self.debug("%r %r %r" % (child.get_name(),child.get_realpath(), name == child.get_realpath()))
+                self.debug("%r %r %r", child.get_name(),child.get_realpath(), name == child.get_realpath())
                 if name == child.get_realpath():
                     return child.id
         except:
@@ -590,7 +590,7 @@ class FSStore(BackendStore):
         return None
 
     def get_url_by_name(self,parent='0',name=''):
-        self.info('get_url_by_name %r %r' % (parent, name))
+        self.info('get_url_by_name %r %r', parent, name)
         id = self.get_id_by_name(parent,name)
         #print 'get_url_by_name', id
         if id == None:
@@ -626,7 +626,7 @@ class FSStore(BackendStore):
             self.content.remove(path)
 
     def walk(self, path, parent=None, ignore_file_pattern=''):
-        self.debug("walk %r" % path)
+        self.debug("walk %r", path)
         containers = []
         parent = self.append(path,parent)
         if parent != None:
@@ -634,7 +634,7 @@ class FSStore(BackendStore):
         while len(containers)>0:
             container = containers.pop()
             try:
-                self.debug('adding %r' % container.location)
+                self.debug('adding %r', container.location)
                 for child in container.location.children():
                     if ignore_file_pattern.match(child.basename()) != None:
                         continue
@@ -729,8 +729,8 @@ class FSStore(BackendStore):
 
 
     def notify(self, ignore, path, mask, parameter=None):
-        self.info("Event %s on %s - parameter %r" % (
-            ', '.join(self.inotify.flag_to_human(mask)), path.path, parameter))
+        self.info("Event %s on %s - parameter %r", 
+            ', '.join(self.inotify.flag_to_human(mask)), path.path, parameter)
 
         if mask & IN_CHANGED:
             # FIXME react maybe on access right changes, loss of read rights?
@@ -738,15 +738,15 @@ class FSStore(BackendStore):
             pass
 
         if(mask & IN_DELETE or mask & IN_MOVED_FROM):
-            self.info('%s was deleted, parent %r (%s)' % (path.path, parameter, path.parent.path))
+            self.info('%s was deleted, parent %r (%s)', path.path, parameter, path.parent.path)
             id = self.get_id_by_name(parameter,path.path)
             if id != None:
                 self.remove(id)
         if(mask & IN_CREATE or mask & IN_MOVED_TO):
             if mask & IN_ISDIR:
-                self.info('directory %s was created, parent %r (%s)' % (path.path, parameter, path.parent.path))
+                self.info('directory %s was created, parent %r (%s)', path.path, parameter, path.parent.path)
             else:
-                self.info('file %s was created, parent %r (%s)' % (path.path, parameter, path.parent.path))
+                self.info('file %s was created, parent %r (%s)', path.path, parameter, path.parent.path)
             if self.get_id_by_name(parameter,path.path) is None:
                 if path.isdir():
                     self.walk(path.path, self.get_by_id(parameter), self.ignore_file_pattern)
@@ -769,7 +769,7 @@ class FSStore(BackendStore):
             item.rebuild(self.urlbase)
             return 200
         except IOError:
-            self.warning("import of file %s failed" % item.get_path())
+            self.warning("import of file %s failed", item.get_path())
         except Exception,msg:
             import traceback
             self.warning(traceback.format_exc())

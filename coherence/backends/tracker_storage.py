@@ -295,7 +295,7 @@ class Track(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.debug("Track get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Track get_item %r @ %r", self.id,self.parent_id)
 
         # create item
         item = DIDLLite.MusicTrack(self.id,self.parent_id)
@@ -402,7 +402,7 @@ class Video(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.debug("Video get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Video get_item %r @ %r", self.id,self.parent_id)
 
         # create item
         item = DIDLLite.VideoItem(self.id,self.parent_id)
@@ -467,7 +467,7 @@ class Image(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.debug("Image get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Image get_item %r @ %r", self.id,self.parent_id)
 
         # create item
         item = DIDLLite.ImageItem(self.id,self.parent_id)
@@ -558,7 +558,7 @@ class TrackerStore(BackendStore):
             try:
                 l.append(mapping[service]())
             except KeyError:
-                self.warning('Wrong Tracker service definition - %r' % service)
+                self.warning('Wrong Tracker service definition - %r', service)
         if len(l)>0:
             dl = defer.DeferredList(l)
             dl.addCallback(queries_finished)

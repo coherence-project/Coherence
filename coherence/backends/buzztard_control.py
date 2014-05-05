@@ -168,7 +168,7 @@ class BuzztardItem(log.Loggable):
             self.update_id += 1
 
     def remove_child(self, child):
-        self.debug("remove_from %d (%s) child %d (%s)" % (self.id, self.get_name(), child.id, child.get_name()))
+        self.debug("remove_from %d (%s) child %d (%s)", self.id, self.get_name(), child.id, child.get_name())
         if child in self.children:
             self.child_count -= 1
             if isinstance(self.item, Container):

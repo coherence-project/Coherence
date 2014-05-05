@@ -157,7 +157,7 @@ class RadiotimeStore(AbstractBackendStore):
                 parent.add_child(item, external_id=item.preset_id)
         
         def got_page(result):
-            self.info('connection to Radiotime service successful for url %s' % url)
+            self.info('connection to Radiotime service successful for url %s', url)
             
             outlines = result.findall('body/outline')
             for outline in outlines:
@@ -167,13 +167,13 @@ class RadiotimeStore(AbstractBackendStore):
 
 
         def got_error(error):
-            self.warning("connection to Radiotime service failed for url %s" % url)
+            self.warning("connection to Radiotime service failed for url %s", url)
             self.debug("%r", error.getTraceback())
             parent.childrenRetrievingNeeded = True # we retry
             return Failure("Unable to retrieve items for url %s" % url)
 
         def got_xml_error(error):
-            self.warning("Data received from Radiotime service is invalid: %s" % url)
+            self.warning("Data received from Radiotime service is invalid: %s", url)
             #self.debug("%r", error.getTraceback())
             print error.getTraceback()
             parent.childrenRetrievingNeeded = True # we retry

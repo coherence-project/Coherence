@@ -79,7 +79,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         if self.stream_url is None:
 
             web_url = "http://%s%s" % (self.host,self.path)
-            self.info("Web_url: %s" % web_url)
+            self.info("Web_url: %s", web_url)
 
             def got_real_urls(real_urls):
                 if len(real_urls) == 0:
@@ -89,14 +89,14 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                     got_real_url(real_urls[0])
 
             def got_real_url(real_url):
-                self.info("Real URL is %s" % real_url)
+                self.info("Real URL is %s", real_url)
                 self.stream_url = real_url
                 if self.stream_url is None:
                     self.warning('Unable to retrieve URL - inconsistent web page')
                     return self.requestFinished(None) #FIXME
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
-                self.info("Video URL: %s" % self.stream_url)
+                self.info("Video URL: %s", self.stream_url)
                 self.video_url = self.stream_url[:]
                 d = self.followRedirects(request)
                 d.addCallback(self.proxyURL)
@@ -126,11 +126,11 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
         def gotError(error,request):
             # error should be a "Failure" instance at this point
-            self.info("gotError" % error)
+            self.info("gotError %s", error)
 
             error_value = error.value
             if (isinstance(error_value,PageRedirect)):
-                self.info("got PageRedirect %r" % error_value.location)
+                self.info("got PageRedirect %r", error_value.location)
                 self.stream_url = error_value.location
                 self.resetUri(self.stream_url)
                 return self.followRedirects(request)
@@ -144,7 +144,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         return d
 
     def proxyURL(self, request):
-        self.info("proxy_mode: %s, request %s" % (self.proxy_mode,request.method))
+        self.info("proxy_mode: %s, request %s", self.proxy_mode,request.method)
 
         if self.proxy_mode == 'redirect':
             # send stream url to client for redirection
@@ -209,7 +209,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                     request.finish()
 
         else:
-            self.warning("Unsupported Proxy Mode: %s" % self.proxy_mode)
+            self.warning("Unsupported Proxy Mode: %s", self.proxy_mode)
             return self.requestFinished(None)
 
     def getMimetype(self):
@@ -220,7 +220,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             
 
     def renderFile(self,request,filepath):
-        self.info('Cache file available %r %r ' %(request, filepath))
+        self.info('Cache file available %r %r ', request, filepath)
         downloadedFile = utils.StaticFile(filepath, self.mimetype)
         downloadedFile.type = self.getMimetype()
         downloadedFile.encoding = None
@@ -229,7 +229,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 
     def renderBufferFile (self, request, filepath, buffer_size):
         # Try to render file(if we have enough data)
-        self.info("renderBufferFile %s" % filepath)
+        self.info("renderBufferFile %s", filepath)
         rendering = False
         if os.path.exists(filepath) is True:
             filesize = os.path.getsize(filepath)
@@ -254,13 +254,13 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
         self.downloader = None
 
     def gotDownloadError(self, error, request):
-        self.info("Unable to download stream to file: %s" % self.stream_url)
+        self.info("Unable to download stream to file: %s", self.stream_url)
         self.info(request)
         self.info(error)
 
     def downloadFile(self, request, filepath, callback, *args):
         if (self.downloader is None):
-            self.info("Proxy: download data to cache file %s" % filepath)
+            self.info("Proxy: download data to cache file %s", filepath)
             self.checkCacheSize()
             self.downloader = utils.downloadPage(self.stream_url, filepath, supportPartial=1)
             self.downloader.addCallback(self.downloadFinished)
@@ -278,11 +278,11 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
             path = "%s%s%s" % (self.cache_directory, os.sep, filename)
             statinfo = os.stat(path)
             cache_size += statinfo.st_size
-        self.info("Cache size: %d (max is %s)" % (cache_size, self.cache_maxsize))
+        self.info("Cache size: %d (max is %s)", cache_size, self.cache_maxsize)
 
         if (cache_size > self.cache_maxsize):
             cache_targetsize = self.cache_maxsize * 2/3
-            self.info("Cache above max size: Reducing to %d" % cache_targetsize)
+            self.info("Cache above max size: Reducing to %d", cache_targetsize)
 
             def compare_atime(filename1, filename2):
                 path1 = "%s%s%s" % (self.cache_directory, os.sep, filename1)
@@ -296,9 +296,9 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 path = "%s%s%s" % (self.cache_directory, os.sep, filename)
                 cache_size -= os.stat(path).st_size
                 os.remove(path)
-                self.info("removed %s" % filename)
+                self.info("removed %s", filename)
 
-            self.info("new cache size is %d" % cache_size)
+            self.info("new cache size is %d", cache_size)
 
 
 class YoutubeVideoItem(BackendItem):
@@ -505,13 +505,13 @@ class YouTubeStore(AbstractBackendStore):
 
         def gotFeed(feed):
            if feed is None:
-               self.warning("Unable to retrieve feed %s" % feed_uri)
+               self.warning("Unable to retrieve feed %s", feed_uri)
                return
            for entry in feed.entry:
                self.appendVideoEntry(entry, parent)
 
         def gotError(error):
-            self.warning("ERROR: %s" % error)
+            self.warning("ERROR: %s", error)
 
         feed.addCallbacks(gotFeed, gotError)
         return feed
@@ -521,13 +521,13 @@ class YouTubeStore(AbstractBackendStore):
         feed = threads.deferToThread(self.yt_service.GetYouTubePlaylistVideoFeed,playlist_id=playlist_id)
         def gotFeed(feed):
            if feed is None:
-               self.warning("Unable to retrieve playlist items %s" % feed_uri)
+               self.warning("Unable to retrieve playlist items %s", feed_uri)
                return
            for entry in feed.entry:
                self.appendVideoEntry(entry, parent)
 
         def gotError(error):
-            self.warning("ERROR: %s" % error)
+            self.warning("ERROR: %s", error)
 
         feed.addCallbacks(gotFeed, gotError)
         return feed
@@ -537,13 +537,13 @@ class YouTubeStore(AbstractBackendStore):
 
         def gotEntry(entry):
            if entry is None:
-               self.warning("Unable to retrieve subscription items %s" % uri)
+               self.warning("Unable to retrieve subscription items %s", uri)
                return
            feed_uri = entry.feed_link[0].href
            return self.retrieveFeedItems(parent, feed_uri)
 
         def gotError(error):
-            self.warning("ERROR: %s" % error)
+            self.warning("ERROR: %s", error)
         entry.addCallbacks(gotEntry, gotError)
         return entry
 
@@ -562,7 +562,7 @@ class YouTubeStore(AbstractBackendStore):
                parent.add_child(item, external_id=playlist_id)
 
         def gotError(error):
-            self.warning("ERROR: %s" % error)
+            self.warning("ERROR: %s", error)
 
         playlists_feed.addCallbacks(gotPlaylists, gotError)
         return playlists_feed
@@ -586,7 +586,7 @@ class YouTubeStore(AbstractBackendStore):
                parent.add_child(item, external_id=uri)
 
         def gotError(error):
-            self.warning("ERROR: %s" % error)
+            self.warning("ERROR: %s", error)
 
         playlists_feed.addCallbacks(gotPlaylists, gotError)
         return playlists_feed

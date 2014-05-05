@@ -34,7 +34,7 @@ class WANConnectionDeviceClient(log.Loggable):
                 self.wan_ip_connection = WANIPConnectionClient(service)
             if service.get_type() in ["urn:schemas-upnp-org:service:WANPPPConnection:1"]:
                 self.wan_ppp_connection = WANPPPConnectionClient(service)
-        self.info("WANConnectionDevice %s" % (self.device.get_friendly_name()))
+        self.info("WANConnectionDevice %s", self.device.get_friendly_name())
         if self.wan_ip_connection:
             self.info("WANIPConnection service available")
         if self.wan_ppp_connection:
@@ -48,7 +48,7 @@ class WANConnectionDeviceClient(log.Loggable):
             self.wan_ppp_connection.remove()
 
     def service_notified(self, service):
-        self.info("Service %r sent notification" % service);
+        self.info("Service %r sent notification", service);
         if self.detection_completed == True:
             return
         if self.wan_ip_connection != None:

@@ -193,7 +193,7 @@ class YamjStore(AbstractBackendStore):
                     name = index.get('name')
                     first_filename = index.text
                     root_name = first_filename[:-2]
-                    self.debug("adding index %s:%s" % (type,name))
+                    self.debug("adding index %s:%s", type,name)
                     parent = categoryItem
                     if (type == 'Other'):
                         parent = parent_item                    
@@ -202,7 +202,7 @@ class YamjStore(AbstractBackendStore):
             self.init_completed()                  
 
         def fail_categories_read(f):
-            self.warning("failure reading yamj categories (%s): %r" % (filepath,f.getErrorMessage()))
+            self.warning("failure reading yamj categories (%s): %r", filepath,f.getErrorMessage())
             return f
 
         dfr.addCallback(parse_xml)
@@ -221,11 +221,11 @@ class YamjStore(AbstractBackendStore):
         fileUrl = "%s/%s_%d.xml" % (self.jukebox_url, urllib.quote(root_name), counter)
 
         def fail_readPage(f):
-            self.warning("failure reading yamj index (%s): %r" % (fileUrl,f.getErrorMessage()))
+            self.warning("failure reading yamj index (%s): %r", fileUrl,f.getErrorMessage())
             return f
         
         def fail_parseIndex(f):
-            self.warning("failure parsing yamj index (%s): %r" % (fileUrl,f.getErrorMessage()))
+            self.warning("failure parsing yamj index (%s): %r", fileUrl,f.getErrorMessage())
             return f
 
         def readIndex(data):
@@ -236,7 +236,7 @@ class YamjStore(AbstractBackendStore):
                     lastIndex = index.get('lastIndex')
                     if (currentIndex != lastIndex):
                         parent.childrenRetrievingNeeded = True
-                    self.debug("%s: %s/%s" % (root_name, currentIndex, lastIndex))
+                    self.debug("%s: %s/%s", root_name, currentIndex, lastIndex)
                     break
             movies = data.findall('movies/movie')
             if self.nbMoviesPerFile is None:
@@ -249,7 +249,7 @@ class YamjStore(AbstractBackendStore):
                     name = movie.find('./title').text
                     index_name = movie.find('./baseFilename').text
                     set_root_name = index_name[:-2]
-                    self.debug("adding set %s" % name)
+                    self.debug("adding set %s", name)
                     indexItem = LazyContainer(parent, name, None, self.refresh, self.retrieveIndexMovies, per_page=1, name=name, root_name=set_root_name)
                     parent.add_child(indexItem, set_root_name)
                                     
@@ -289,7 +289,7 @@ class YamjStore(AbstractBackendStore):
                             container_item.add_child(fileItem, file_external_id)
                             
 
-        self.debug("Reading index file %s" % fileUrl)
+        self.debug("Reading index file %s", fileUrl)
         d = getPage(fileUrl)
         d.addCallback(parse_xml)
         d.addErrback(fail_readPage)

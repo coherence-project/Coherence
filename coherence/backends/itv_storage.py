@@ -267,7 +267,7 @@ class ITVStore(BackendStore):
             if self.retrieveList_attemptCount == 0:
                 self.info("Connection to ShoutCast service successful for TV listing")
             else:
-                self.warning("Connection to ShoutCast service successful for TV listing after %d attempts." % self.retrieveList_attemptCount)
+                self.warning("Connection to ShoutCast service successful for TV listing after %d attempts.", self.retrieveList_attemptCount)
             result = result[0]
             result = utils.parse_xml(result, encoding='utf-8')
 

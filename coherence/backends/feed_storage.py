@@ -131,7 +131,7 @@ class FeedStore(BackendStore):
         try:
             self._update_data()
         except Exception, e:
-            self.error('error while updateing the feed contant for %s: %s' % (self.name, str(e)))
+            self.error('error while updateing the feed contant for %s: %s', self.name, str(e))
         self.init_completed()
 
     def get_by_id(self,id):
@@ -142,7 +142,7 @@ class FeedStore(BackendStore):
         try:
             return self.store[int(id)]
         except (ValueError,KeyError):
-            self.info("can't get item %d from %s feed storage" % (int(id), self.name))
+            self.info("can't get item %d from %s feed storage", int(id), self.name)
         return None
 
     def _update_data(self):
@@ -164,7 +164,7 @@ class FeedStore(BackendStore):
             conn.request('HEAD', '%s?%s#%s' % (path, query, fragment))
             res = conn.getresponse()
             if res.status >= 400:
-                self.warning('error getting %s status code: %d' % (feed_url, res.status))
+                self.warning('error getting %s status code: %d', feed_url, res.status)
                 continue
             fp_dict = feedparser.parse(feed_url)
             name = fp_dict.feed.title

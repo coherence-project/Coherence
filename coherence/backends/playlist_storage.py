@@ -172,7 +172,7 @@ class PlaylistStore(AbstractBackendStore):
             return items
 
         def gotError(error):
-            self.warning("Unable to retrieve playlist: %s" % url)
+            self.warning("Unable to retrieve playlist: %s", url)
             print "Error: %s" % error
             return None
         

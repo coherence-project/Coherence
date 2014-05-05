@@ -37,7 +37,7 @@ class MediaRendererClient(log.Loggable):
             if service.get_type() in ["urn:schemas-upnp-org:service:AVTransport:1",
                                       "urn:schemas-upnp-org:service:AVTransport:2"]:
                 self.av_transport = AVTransportClient( service)
-        self.info("MediaRenderer %s" % (self.device.get_friendly_name()))
+        self.info("MediaRenderer %s", self.device.get_friendly_name())
         if self.rendering_control:
             self.info("RenderingControl available")
             """
@@ -84,7 +84,7 @@ class MediaRendererClient(log.Loggable):
         #del self
 
     def service_notified(self, service):
-        self.info("Service %r sent notification" % service);
+        self.info("Service %r sent notification", service);
         if self.detection_completed == True:
             return
         if self.rendering_control != None:

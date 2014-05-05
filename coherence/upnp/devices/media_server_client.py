@@ -41,7 +41,7 @@ class MediaServerClient(log.Loggable):
             #if service.get_type()  in ["urn:schemas-upnp-org:service:ScheduledRecording:1",
             #                           "urn:schemas-upnp-org:service:ScheduledRecording:2"]:
             #    self.scheduled_recording = ScheduledRecordingClient( service)
-        self.info("MediaServer %s" % (self.device.get_friendly_name()))
+        self.info("MediaServer %s", self.device.get_friendly_name())
         if self.content_directory:
             self.info("ContentDirectory available")
         else:
@@ -77,7 +77,7 @@ class MediaServerClient(log.Loggable):
         #del self
 
     def service_notified(self, service):
-        self.info('notified about %r' % service)
+        self.info('notified about %r', service)
         if self.detection_completed == True:
             return
         if self.content_directory != None:
@@ -103,7 +103,7 @@ class MediaServerClient(log.Loggable):
         self.detection_completed = True
         louie.send('Coherence.UPnP.DeviceClient.detection_completed', None,
                                client=self,udn=self.device.udn)
-        self.info('detection_completed for %r' % self)
+        self.info('detection_completed for %r', self)
 
     def state_variable_change( self, variable, usn):
         self.info('%(name)r changed from %(old_value)r to %(value)r',

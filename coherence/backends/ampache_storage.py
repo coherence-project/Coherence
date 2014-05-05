@@ -443,7 +443,7 @@ class Track(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.debug("Track get_item %r @ %r" %(self.id,self.parent_id))
+        self.debug("Track get_item %r @ %r", self.id,self.parent_id)
 
         # create item
         item = DIDLLite.MusicTrack(self.id,self.parent_id)
@@ -533,7 +533,7 @@ class Video(BackendItem):
 
     def get_item(self, parent_id=VIDEO_CONTAINER_ID):
 
-        self.debug("video get_item %r @ %r" %(self.id,parent_id))
+        self.debug("video get_item %r @ %r", self.id,parent_id)
 
         # create item
         item = DIDLLite.VideoItem(self.id,parent_id)
@@ -662,8 +662,8 @@ class AmpacheStore(BackendStore):
                 except:
                     self.videos = 0
                 self.info('ampache returned auth token %r', self.token)
-                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d, Videos %d' %
-                          (self.songs, self.artists,self.albums,self.playlists,self.genres,self.tags,self.videos))
+                self.info('Songs: %d, Artists: %d, Albums: %d, Playlists %d, Genres %d, Tags %d, Videos %d', 
+                          self.songs, self.artists,self.albums,self.playlists,self.genres,self.tags,self.videos)
 
                 if renegotiate == False:
                     self.containers = {}
@@ -716,7 +716,7 @@ class AmpacheStore(BackendStore):
         items = []
         try:
             error = response.find('error')
-            self.warning('error on token request %r %r' % (error.attrib['code'], error.text))
+            self.warning('error on token request %r %r', error.attrib['code'], error.text)
             if error.attrib['code'] == '401': # session error, we need to renegotiate our session
                 d = self.get_token(renegotiate=True)
 

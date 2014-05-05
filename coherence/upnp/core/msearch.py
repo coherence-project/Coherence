@@ -33,11 +33,11 @@ class MSearch(DatagramProtocol, log.Loggable):
 
     def datagramReceived(self, data, (host, port)):
         cmd, headers = utils.parse_http_response(data)
-        self.info('datagramReceived from %s:%d, protocol %s code %s' % (host, port, cmd[0], cmd[1]))
+        self.info('datagramReceived from %s:%d, protocol %s code %s', host, port, cmd[0], cmd[1])
         if cmd[0].startswith('HTTP/1.') and cmd[1] == '200':
             self.msg('for %r', headers['usn'])
             if not self.ssdp_server.isKnown(headers['usn']):
-                self.info('register as remote %s, %s, %s' % (headers['usn'], headers['st'], headers['location']))
+                self.info('register as remote %s, %s, %s', headers['usn'], headers['st'], headers['location'])
                 self.ssdp_server.register('remote',
                                             headers['usn'], headers['st'],
                                             headers['location'],
@@ -46,7 +46,7 @@ class MSearch(DatagramProtocol, log.Loggable):
                                             host=host)
             else:
                 self.ssdp_server.known[headers['usn']]['last-seen'] = time.time()
-                self.debug('updating last-seen for %r' % headers['usn'])
+                self.debug('updating last-seen for %r', headers['usn'])
 
         # make raw data available
         # send out the signal after we had a chance to register the device
@@ -70,4 +70,4 @@ class MSearch(DatagramProtocol, log.Loggable):
         try:
             self.transport.write(req, (SSDP_ADDR, SSDP_PORT))
         except socket.error, msg:
-            self.info("failure sending out the discovery message: %r" % msg)
+            self.info("failure sending out the discovery message: %r", msg)

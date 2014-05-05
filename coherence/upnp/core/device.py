@@ -81,7 +81,7 @@ class Device(log.Loggable):
             return
         self.detection_completed = True
         if self.parent != None:
-            self.info("embedded device %r %r initialized, parent %r" % (self.friendly_name,self.device_type,self.parent))
+            self.info("embedded device %r %r initialized, parent %r", self.friendly_name,self.device_type,self.parent)
         louie.send('Coherence.UPnP.Device.detection_completed', None, device=self)
         if self.parent != None:
             louie.send('Coherence.UPnP.Device.detection_completed', self.parent, device=self)
@@ -161,14 +161,17 @@ class Device(log.Loggable):
 
     def renew_service_subscriptions(self):
         """ iterate over device's services and renew subscriptions """
-        self.info("renew service subscriptions for %s" % self.friendly_name)
+        self.info("renew service subscriptions for %s", self.friendly_name)
         now = time.time()
         for service in self.services:
-            self.info("check service %r %r " % (service.id, service.get_sid()), service.get_timeout(), now)
+            self.info("check service %r %r %s %s", service.id, service.get_sid(),
+                      service.get_timeout(), now)
             if service.get_sid() is not None:
                 if service.get_timeout() < now:
-                    self.debug("wow, we lost an event subscription for %s %s, " % (self.friendly_name, service.get_id()),
-                          "maybe we need to rethink the loop time and timeout calculation?")
+                    self.debug("wow, we lost an event subscription for %s %s, "
+                               "maybe we need to rethink the loop time and "
+                               "timeout calculation?",
+                               self.friendly_name, service.get_id())
                 if service.get_timeout() < now + 30 :
                     service.renew_subscription()
 
@@ -185,13 +188,13 @@ class Device(log.Loggable):
         return dl
 
     def parse_device(self, d):
-        self.info("parse_device %r" %d)
+        self.info("parse_device %r", d)
         self.device_type = unicode(d.findtext('./{%s}deviceType' % ns))
         self.friendly_device_type, self.device_type_version = \
                 self.device_type.split(':')[-2:]
         self.friendly_name = unicode(d.findtext('./{%s}friendlyName' % ns))
         self.udn = d.findtext('./{%s}UDN' % ns)
-        self.info("found udn %r %r" % (self.udn,self.friendly_name))
+        self.info("found udn %r %r", self.udn,self.friendly_name)
 
         try:
             self.manufacturer = d.findtext('./{%s}manufacturer' % ns)
@@ -265,11 +268,11 @@ class Device(log.Loggable):
                     i['realurl'] = icon.find('./{%s}url' % ns).text
                     i['url'] = self.make_fullyqualified(i['realurl'])
                     self.icons.append(i)
-                    self.debug("adding icon %r for %r" % (i,self.friendly_name))
+                    self.debug("adding icon %r for %r", i,self.friendly_name)
                 except:
                     import traceback
                     self.debug(traceback.format_exc())
-                    self.warning("device %r seems to have an invalid icon description, ignoring that icon" % self.friendly_name)
+                    self.warning("device %r seems to have an invalid icon description, ignoring that icon", self.friendly_name)
 
         serviceList = d.find('./{%s}serviceList' % ns)
         if serviceList:
@@ -514,7 +517,7 @@ class RootDevice(Device):
                 return
         # now must be done, so notify root done
         self.root_detection_completed = True
-        self.info("rootdevice %r %r %r initialized, manifestation %r" % (self.friendly_name,self.st,self.host,self.manifestation))
+        self.info("rootdevice %r %r %r initialized, manifestation %r", self.friendly_name,self.st,self.host,self.manifestation)
         louie.send('Coherence.UPnP.RootDevice.detection_completed', None, device=self)
 
     def add_device(self, device):
@@ -528,7 +531,7 @@ class RootDevice(Device):
     def parse_description(self):
 
         def gotPage(x):
-            self.debug("got device description from %r" % self.location)
+            self.debug("got device description from %r", self.location)
             data, headers = x
             xml_data = None
             try:

@@ -27,7 +27,7 @@ class BinaryLightClient(log.Loggable):
             if service.get_type() in ["urn:schemas-upnp-org:service:SwitchPower:1"]:
                 self.switch_power = SwitchPowerClient(service)
 
-        self.info("BinaryLight %s" % (self.device.get_friendly_name()))
+        self.info("BinaryLight %s", self.device.get_friendly_name())
         if self.switch_power:
             self.info("SwitchPower service available")
         else:
@@ -39,7 +39,7 @@ class BinaryLightClient(log.Loggable):
             self.switch_power.remove()
 
     def service_notified(self, service):
-        self.info("Service %r sent notification" % service);
+        self.info("Service %r sent notification", service);
         if self.detection_completed == True:
             return
         if self.switch_power != None:

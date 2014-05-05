@@ -253,7 +253,7 @@ class Player(log.Loggable):
         #print t
         if t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
-            self.warning("Gstreamer error: %s,%r" % (err.message, debug))
+            self.warning("Gstreamer error: %s,%r", err.message, debug)
             if self.playing == True:
                 self.seek('-0')
             #self.player.set_state(gst.STATE_READY)
@@ -323,7 +323,7 @@ class Player(log.Loggable):
         return r
 
     def load( self, uri, mimetype):
-        self.debug("load --> %r %r" % (uri, mimetype))
+        self.debug("load --> %r %r", uri, mimetype)
         _,state,_ = self.player.get_state()
         if( state == gst.STATE_PLAYING or state == gst.STATE_PAUSED):
             self.stop()
@@ -347,7 +347,7 @@ class Player(log.Loggable):
     def play( self):
         uri = self.get_uri()
         mimetype = self.mimetype
-        self.debug("play --> %r %r" % (uri, mimetype))
+        self.debug("play --> %r %r", uri, mimetype)
 
         if self.player.get_name() != 'player':
             if self.player_clean == False:
@@ -364,16 +364,16 @@ class Player(log.Loggable):
         self.debug("play <--")
 
     def pause(self):
-        self.debug("pause --> %r" % self.get_uri())
+        self.debug("pause --> %r", self.get_uri())
         self.player.set_state(gst.STATE_PAUSED)
         self.debug("pause <--")
 
     def stop(self):
-        self.debug("stop --> %r" % self.get_uri())
+        self.debug("stop --> %r", self.get_uri())
         self.seek('-0')
         self.player.set_state(gst.STATE_READY)
         self.update(message=gst.MESSAGE_EOS)
-        self.debug("stop <-- %r " % self.get_uri())
+        self.debug("stop <-- %r ", self.get_uri())
 
     def seek(self, location):
         """
@@ -401,7 +401,7 @@ class Player(log.Loggable):
                 l = max( l, 0L)
 
 
-        self.debug("seeking to %r" % l)
+        self.debug("seeking to %r", l)
         """
         self.player.seek( 1.0, gst.FORMAT_TIME,
             gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
@@ -561,7 +561,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
             state = 'idle'
             av_transport.set_variable(conn_id, 'TransportState', 'STOPPED')
 
-        self.info("update %r" % state)
+        self.info("update %r", state)
         self._update_transport_position(state)
 
     def _update_transport_position(self, state):
@@ -630,7 +630,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         return formatted
 
     def load( self, uri,metadata, mimetype=None):
-        self.info("loading: %r %r " % (uri, mimetype))
+        self.info("loading: %r %r ", uri, mimetype)
         _,state,_ = self.player.get_state()
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
         self.stop(silent=True) # the check whether a stop is really needed is done inside stop
@@ -721,7 +721,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
         self.play()
 
     def stop(self,silent=False):
-        self.info('Stopping: %r' % self.player.get_uri())
+        self.info('Stopping: %r', self.player.get_uri())
         if self.player.get_uri() == None:
             return
         if self.player.get_state()[1] in [gst.STATE_PLAYING,gst.STATE_PAUSED]:
@@ -730,7 +730,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
                 self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'STOPPED')
 
     def play( self):
-        self.info("Playing: %r" % self.player.get_uri())
+        self.info("Playing: %r", self.player.get_uri())
         if self.player.get_uri() == None:
             return
         self.player.play()
@@ -738,7 +738,7 @@ class GStreamerPlayer(log.Loggable,Plugin):
 
 
     def pause( self):
-        self.info('Pausing: %r' % self.player.get_uri())
+        self.info('Pausing: %r', self.player.get_uri())
         self.player.pause()
         self.server.av_transport_server.set_variable(self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), 'TransportState', 'PAUSED_PLAYBACK')
 
@@ -820,9 +820,9 @@ class GStreamerPlayer(log.Loggable,Plugin):
                            number_returned < (total_matches-starting_index)) and
                             (total_matches-number_returned) != starting_index):
                             self.info("seems we have been returned only a part of the result")
-                            self.info("requested %d, starting at %d" % (5,starting_index))
-                            self.info("got %d out of %d" % (number_returned, total_matches))
-                            self.info("requesting more starting now at %d" % (starting_index+number_returned))
+                            self.info("requested %d, starting at %d", 5,starting_index)
+                            self.info("got %d out of %d", number_returned, total_matches)
+                            self.info("requesting more starting now at %d", starting_index+number_returned)
                             self.playcontainer[4]['StartingIndex'] = str(starting_index+number_returned)
                             d = self.playcontainer[3].call(**self.playcontainer[4])
                             d.addCallback(handle_reply,starting_index+number_returned)

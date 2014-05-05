@@ -133,7 +133,7 @@ class StateVariable(log.Loggable):
                             elif v.upper() in [x.upper() for x in self.allowed_values]:
                                 new_value.append(v)
                             else:
-                                self.warning("Variable %s update, %r value %s doesn't fit in %r" % (self.name, self.has_vendor_values, v, self.allowed_values))
+                                self.warning("Variable %s update, %r value %s doesn't fit in %r", self.name, self.has_vendor_values, v, self.allowed_values)
                                 new_value = 'Coherence_Value_Error'
                         else:
                             new_value.append(v)
@@ -156,7 +156,7 @@ class StateVariable(log.Loggable):
                     elif value.upper() in [v.upper() for v in self.allowed_values]:
                         new_value = value
                     else:
-                        self.warning("Variable %s NOT updated, value %s doesn't fit" % (self.name, value))
+                        self.warning("Variable %s NOT updated, value %s doesn't fit", self.name, value)
                         new_value = 'Coherence_Value_Error'
                 else:
                     new_value = value
@@ -199,7 +199,7 @@ class StateVariable(log.Loggable):
     def notify(self):
         if self.name.startswith('A_ARG_TYPE_'):
             return
-        self.info("Variable %s sends notify about new value >%r<" %(self.name, self.value))
+        self.info("Variable %s sends notify about new value >%r<", self.name, self.value)
         #if self.old_value == '':
         #    return
         louie.send(signal='Coherence.UPnP.StateVariable.%s.changed' % self.name, sender=self.service, variable=self)
