@@ -80,7 +80,7 @@ class PlaylistStore(AbstractBackendStore):
     options = [{'option': 'name', 'text': 'Server Name:', 'type': 'string', 'default': 'my media', 'help': 'the name under this MediaServer shall show up with on other UPnP clients'},
        {'option': 'version', 'text': 'UPnP Version:', 'type': 'int', 'default': 2, 'enum': (2, 1), 'help': 'the highest UPnP version this MediaServer shall support', 'level': 'advance'},
        {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
-       {'option': 'playlist_url', 'text': 'Playlist file URL:', 'type': 'string', 'help': 'URL to the playlist file (M3U).'}, 
+       {'option': 'playlist_url', 'text': 'Playlist file URL:', 'type': 'string', 'help': 'URL to the playlist file (M3U).'},
     ]
 
     playlist_url = None
@@ -126,7 +126,7 @@ class PlaylistStore(AbstractBackendStore):
             return self.store[id]
 
         return None
-     
+
     def upnp_init(self):
         self.current_connection_id = None
         if self.server:

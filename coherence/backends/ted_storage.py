@@ -67,7 +67,7 @@ class TEDStore(LolcatsStore):
 
     def upnp_init(self):
         if self.server:
-            self.server.connection_manager_server.set_variable(\
+            self.server.connection_manager_server.set_variable( \
                 0, 'SourceProtocolInfo', ['http-get:*:video/mp4:*'])
 
     def parse_data(self, xml_data):

@@ -298,7 +298,7 @@ if __name__ == '__main__':
         optParameters = [['artist', 'a', '', 'artist name'],
                          ['title', 't', '', 'title'],
                          ['asin', 's', '', 'ASIN'],
-                         ['filename', 'f', 'cover.jpg', 'filename'], 
+                         ['filename', 'f', 'cover.jpg', 'filename'],
                     ]
 
     options = Options()

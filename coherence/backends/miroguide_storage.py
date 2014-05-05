@@ -77,7 +77,7 @@ class MiroGuideStore(AbstractBackendStore):
        {'option': 'proxy_mode', 'text': 'Proxy mode:', 'type': 'string', 'enum': ('redirect', 'proxy', 'cache', 'buffered')},
        {'option': 'buffer_size', 'text': 'Buffering size:', 'type': 'int'},
        {'option': 'cache_directory', 'text': 'Cache directory:', 'type': 'dir', 'group': 'Cache'},
-       {'option': 'cache_maxsize', 'text': 'Cache max size:', 'type': 'int', 'group': 'Cache'}, 
+       {'option': 'cache_maxsize', 'text': 'Cache max size:', 'type': 'int', 'group': 'Cache'},
     ]
 
     def __init__(self, server, **kwargs):

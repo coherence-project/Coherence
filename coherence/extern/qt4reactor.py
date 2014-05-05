@@ -8,7 +8,7 @@ In order to use this support, simply do the following::
     |  app = QApplication(sys.argv) # your code to init Qt
     |  import qt4reactor
     |  qt4reactor.install()
-    
+
 alternatively:
 
     |  from twisted.application import reactors
@@ -197,7 +197,8 @@ class QTReactor(PosixReactorBase):
                 self.reactorInvokePrivate()
                 while True:
                     t = endTime - time.time()
-                    if t <= 0.0: return
+                    if t <= 0.0:
+                        return
                     self.qApp.processEvents(QEventLoop.AllEvents |
                                       QEventLoop.WaitForMoreEvents, t * 1010)
         finally:
@@ -232,8 +233,10 @@ class QTReactor(PosixReactorBase):
         self._doSomethingCount += 1
         self.runUntilCurrent()
         t = self.timeout()
-        if t is None: t = 0.1
-        else: t = min(t, 0.1)
+        if t is None:
+            t = 0.1
+        else:
+            t = min(t, 0.1)
         self._timer.setInterval(t * 1010)
         self.qApp.processEvents()  # could change interval
         self._timer.start()

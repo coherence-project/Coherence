@@ -75,7 +75,7 @@ class MovieItem(BackendItem):
         url_mimetype, _ = mimetypes.guess_type(self.movie_url, strict=False)
         if url_mimetype == None:
             url_mimetype = "video"
-        
+
         self.name = self.title
         self.duration = None
         self.size = None

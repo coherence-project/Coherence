@@ -205,7 +205,7 @@ class FSItem(BackendItem):
                                      'audio/flac',
                                      'application/x-flac'):
                     dlna_pn = 'DLNA.ORG_PN=LPCM'
-                    dlna_tags = simple_dlna_tags[: ]
+                    dlna_tags = simple_dlna_tags[:]
                     #dlna_tags[1] = 'DLNA.ORG_OP=00'
                     dlna_tags[2] = 'DLNA.ORG_CI=1'
                     new_res = Resource(self.url + '?transcoded=lpcm',
@@ -251,7 +251,7 @@ class FSItem(BackendItem):
                 except:
                     self.warning(traceback.format_exc())
                 else:
-                    dlna_tags = simple_dlna_tags[: ]
+                    dlna_tags = simple_dlna_tags[:]
                     dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
 
                     hash_from_path = str(id(filename))

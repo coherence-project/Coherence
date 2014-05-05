@@ -221,7 +221,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         resp = ['NOTIFY * HTTP/1.1',
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
-            'NTS: ssdp:alive', 
+            'NTS: ssdp:alive',
             ]
         stcpy = dict(self.known[usn].iteritems())
         stcpy['NT'] = stcpy['ST']
@@ -247,7 +247,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         resp = ['NOTIFY * HTTP/1.1',
                 'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
-                'NTS: ssdp:byebye', 
+                'NTS: ssdp:byebye',
                 ]
         try:
             stcpy = dict(self.known[usn].iteritems())

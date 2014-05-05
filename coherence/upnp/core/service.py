@@ -398,7 +398,7 @@ moderated_variables = \
          'urn:schemas-upnp-org:service:RenderingControl:1':
             ['LastChange'],
          'urn:schemas-upnp-org:service:ScheduledRecording:1':
-            ['LastChange'], 
+            ['LastChange'],
         }
 
 

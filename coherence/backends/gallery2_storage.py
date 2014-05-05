@@ -165,7 +165,7 @@ class Gallery2Store(BackendStore):
        {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
        {'option': 'server_url', 'text': 'Server URL:', 'type': 'string'},
        {'option': 'username', 'text': 'User ID:', 'type': 'string', 'group': 'User Account'},
-       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'}, 
+       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'},
     ]
 
     def __init__(self, server, **kwargs):
@@ -293,7 +293,7 @@ class Gallery2Store(BackendStore):
                                   'parent_id': parent_gallery2_id,
                                   'title': title,
                                   'description': description,
-                                  'mimetype': 'directory', 
+                                  'mimetype': 'directory',
                                     }
                         self.append(store_item, parent)
 
@@ -328,7 +328,7 @@ class Gallery2Store(BackendStore):
                                   'thumbnail_gallery2_id': thumbnail_gallery2_id,
                                   'title': title,
                                   'description': description,
-                                  'mimetype': 'image/jpeg', 
+                                  'mimetype': 'image/jpeg',
                                 }
                     self.append(store_item, parent)
 

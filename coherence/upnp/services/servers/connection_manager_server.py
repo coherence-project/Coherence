@@ -300,5 +300,5 @@ class ConnectionManagerServer(service.ServiceServer, resource.Resource,
                     'PeerConnectionManager': connection['PeerConnectionManager'],
                     'PeerConnectionID': connection['PeerConnectionID'],
                     'Direction': connection['Direction'],
-                    'Status': connection['Status'], 
+                    'Status': connection['Status'],
                     }

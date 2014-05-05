@@ -173,7 +173,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def stop(self):
         def got_result(result):
-            self.server.av_transport_server.set_variable(\
+            self.server.av_transport_server.set_variable( \
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), \
                                  'TransportState', 'STOPPED')
 
@@ -181,7 +181,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def play(self):
         def got_result(result):
-            self.server.av_transport_server.set_variable(\
+            self.server.av_transport_server.set_variable( \
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), \
                                  'TransportState', 'PLAYING')
 
@@ -189,7 +189,7 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def pause(self):
         def got_result(result):
-            self.server.av_transport_server.set_variable(\
+            self.server.av_transport_server.set_variable( \
                 self.server.connection_manager_server.lookup_avt_id(self.current_connection_id), \
                                  'TransportState', 'PAUSED_PLAYBACK')
         self.call_player("pause", got_result)

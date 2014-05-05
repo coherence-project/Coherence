@@ -317,7 +317,7 @@ class FlickrItem(log.Loggable):
             #print self.id, self.store.proxy, self.url
             self.item.date = self.date
             self.item.attachments = {}
-            dlna_tags = simple_dlna_tags[: ]
+            dlna_tags = simple_dlna_tags[:]
             dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
             if hasattr(self, 'original_url'):
                 dlna_pn = 'DLNA.ORG_PN=JPEG_LRG'

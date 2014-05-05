@@ -87,7 +87,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
     def render(self, request):
         result = """<html><head><title>Coherence</title></head><body>
-<a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>"""        % self.listchilds(request.uri)
+<a href="http://coherence.beebits.net">Coherence</a> - a Python DLNA/UPnP framework for the Digital Living<p>Hosting:<ul>%s</ul></p></body></html>""" % self.listchilds(request.uri)
         return result.encode('utf-8')
 
 

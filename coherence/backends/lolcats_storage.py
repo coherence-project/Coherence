@@ -237,7 +237,7 @@ class LolcatsStore(BackendStore):
         # here we define what kind of media content we do provide
         # mostly needed to make some naughty DLNA devices behave
         # will probably move into Coherence internals one day
-        self.server.connection_manager_server.set_variable(\
+        self.server.connection_manager_server.set_variable( \
             0, 'SourceProtocolInfo', ['http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
                                       'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',
                                       'http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00f00000000000000000000000000000',

@@ -247,7 +247,7 @@ class ITVStore(BackendStore):
 
         if self.server:
             self.server.connection_manager_server.set_variable(0, 'SourceProtocolInfo',
-                                                                    ['http-get:*:%s:*' % VIDEO_MIMETYPE, 
+                                                                    ['http-get:*:%s:*' % VIDEO_MIMETYPE,
                                                                      ],
                                                                    default=True)
         rootItem = Container(ROOT_CONTAINER_ID, self, -1, self.name)

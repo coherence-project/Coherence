@@ -568,7 +568,8 @@ class TreeWidget(object):
                         if func(model, iter, data):
                             return iter
                         result = search(model, model.iter_children(iter), func, data)
-                        if result: return result
+                        if result:
+                            return result
                         iter = model.iter_next(iter)
                     return None
 

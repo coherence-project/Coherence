@@ -175,11 +175,11 @@ def build_dlna_additional_info(content_format, does_playcontainer=False):
     if content_format == 'audio/ms-wma':
         additional_info = ['DLNA.ORG_PN=WMABASE'] + simple_dlna_tags
     if content_format == 'image/jpeg':
-        dlna_tags = simple_dlna_tags[: ]
+        dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
         additional_info = ['DLNA.ORG_PN=JPEG_LRG'] + dlna_tags
     if content_format == 'image/png':
-        dlna_tags = simple_dlna_tags[: ]
+        dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
         additional_info = ['DLNA.ORG_PN=PNG_LRG'] + dlna_tags
     if content_format == 'video/mpeg':
@@ -312,7 +312,7 @@ class Resource(object):
 
     def transcoded(self, format):
         protocol, network, content_format, additional_info = self.protocolInfo.split(':')
-        dlna_tags = simple_dlna_tags[: ]
+        dlna_tags = simple_dlna_tags[:]
         #dlna_tags[1] = 'DLNA.ORG_OP=00'
         dlna_tags[2] = 'DLNA.ORG_CI=1'
         if format == 'mp3':
@@ -1051,7 +1051,7 @@ upnp_classes = {'object': Object,
                 'object.container.genre.movieGenre': MovieGenre,
                 'object.container.storageSystem': StorageSystem,
                 'object.container.storageVolume': StorageVolume,
-                'object.container.storageFolder': StorageFolder, 
+                'object.container.storageFolder': StorageFolder,
 }
 
 

@@ -353,7 +353,7 @@ class DVBDStore(BackendStore):
             reply_handler=lambda x, success: d.callback(x),
             error_handler=lambda x, success: d.errback(x))
         return d
-    
+
     def get_recordings(self):
         self.debug("GET RECORDINGS")
 

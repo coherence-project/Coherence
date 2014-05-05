@@ -163,6 +163,6 @@ class AudioCDStore(AbstractBackendStore):
         except:
             self.warning('audio CD %s ejected: closing UPnP server!', self.disc_title)
             self.server.coherence.remove_plugin(self.server)
-        
+
     def __repr__(self):
         return self.__class__.__name__

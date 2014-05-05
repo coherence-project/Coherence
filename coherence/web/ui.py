@@ -37,7 +37,7 @@ class MenuFragment(athena.LiveElement, log.Loggable):
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="coherence_menu_box", class_="coherence_menu_box")[""], 
+            tags.div(id="coherence_menu_box", class_="coherence_menu_box")[""],
         ]
         )
 
@@ -81,7 +81,7 @@ class DevicesFragment(athena.LiveElement, log.Loggable):
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="Devices-container", class_="coherence_container")[""], 
+            tags.div(id="Devices-container", class_="coherence_container")[""],
         ]
         )
 
@@ -151,7 +151,7 @@ class LoggingFragment(athena.LiveElement, log.Loggable):
 
     docFactory = loaders.stan(
         tags.div(render=tags.directive('liveElement'))[
-            tags.div(id="Logging-container", class_="coherence_container")[""], 
+            tags.div(id="Logging-container", class_="coherence_container")[""],
         ]
         )
 

@@ -95,7 +95,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                 self.stream_url = self.stream_url.encode('ascii', 'strict')
                 self.resetUri(self.stream_url)
                 self.info("Video URL: %s", self.stream_url)
-                self.video_url = self.stream_url[: ]
+                self.video_url = self.stream_url[:]
                 d = self.followRedirects(request)
                 d.addCallback(self.proxyURL)
                 d.addErrback(self.requestFinished)
@@ -325,7 +325,7 @@ class YoutubeVideoItem(BackendItem):
                 'format': format,
                 'outtmpl': u'%(id)s.%(ext)s',
                 'ignoreerrors': True,
-                'ratelimit': None, 
+                'ratelimit': None,
                 }
             if len(self.store.login) > 0:
                 kwargs['username'] = self.store.login
@@ -399,7 +399,7 @@ class YouTubeStore(AbstractBackendStore):
        {'option': 'proxy_mode', 'text': 'Proxy mode:', 'type': 'string', 'enum': ('redirect', 'proxy', 'cache', 'buffered')},
        {'option': 'buffer_size', 'text': 'Buffering size:', 'type': 'int'},
        {'option': 'cache_directory', 'text': 'Cache directory:', 'type': 'dir', 'group': 'Cache'},
-       {'option': 'cache_maxsize', 'text': 'Cache max size:', 'type': 'int', 'group': 'Cache'}, 
+       {'option': 'cache_maxsize', 'text': 'Cache max size:', 'type': 'int', 'group': 'Cache'},
     ]
 
     def __init__(self, server, **kwargs):

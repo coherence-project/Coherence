@@ -799,7 +799,7 @@ class GStreamerPlayer(log.Loggable, Plugin):
                     the kwargs for the Browse call
                      - kwargs['StartingIndex'] will be modified during further Browse requests
                 """
-                self.playcontainer = [int(kw['StartingIndex']), uri, elt.getItems()[: ], action, kw]
+                self.playcontainer = [int(kw['StartingIndex']), uri, elt.getItems()[:], action, kw]
 
                 def browse_more(starting_index, number_returned, total_matches):
                     self.info("browse_more %s %s %s", starting_index, number_returned, total_matches)
@@ -810,7 +810,7 @@ class GStreamerPlayer(log.Loggable, Plugin):
 
                         def handle_reply(r, starting_index):
                             elt = DIDLLite.DIDLElement.fromString(r['Result'])
-                            self.playcontainer[2] += elt.getItems()[: ]
+                            self.playcontainer[2] += elt.getItems()[:]
                             browse_more(starting_index, int(r['NumberReturned']), int(r['TotalMatches']))
 
                         if((number_returned != 5 or

@@ -103,7 +103,7 @@ class PicasaStore(AbstractBackendStore):
        {'option': 'uuid', 'text': 'UUID Identifier:', 'type': 'string', 'help': 'the unique (UPnP) identifier for this MediaServer, usually automatically set', 'level': 'advance'},
        {'option': 'refresh', 'text': 'Refresh period', 'type': 'string'},
        {'option': 'login', 'text': 'User ID:', 'type': 'string', 'group': 'User Account'},
-       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'}, 
+       {'option': 'password', 'text': 'Password:', 'type': 'string', 'group': 'User Account'},
     ]
 
     def __init__(self, server, **kwargs):

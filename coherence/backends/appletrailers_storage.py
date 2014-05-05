@@ -182,7 +182,7 @@ class AppleTrailersStore(BackendStore):
 
         if self.server.coherence.config.get('transcoding', 'no') == 'yes':
             dlna_pn = 'DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'
-            dlna_tags = DIDLLite.simple_dlna_tags[: ]
+            dlna_tags = DIDLLite.simple_dlna_tags[:]
             dlna_tags[2] = 'DLNA.ORG_CI=1'
             url = self.urlbase + str(trailer.id) + '?transcoded=mp4'
             new_res = DIDLLite.Resource(url,
@@ -192,7 +192,7 @@ class AppleTrailersStore(BackendStore):
             trailer.item.res.append(new_res)
 
             dlna_pn = 'DLNA.ORG_PN=JPEG_TN'
-            dlna_tags = DIDLLite.simple_dlna_tags[: ]
+            dlna_tags = DIDLLite.simple_dlna_tags[:]
             dlna_tags[2] = 'DLNA.ORG_CI=1'
             dlna_tags[3] = 'DLNA.ORG_FLAGS=00f00000000000000000000000000000'
             url = self.urlbase + str(trailer.id) + '?attachment=poster&transcoded=thumb&type=jpeg'
@@ -218,7 +218,7 @@ class AppleTrailersStore(BackendStore):
 
     def upnp_init(self):
         if self.server:
-            self.server.connection_manager_server.set_variable(\
+            self.server.connection_manager_server.set_variable( \
                 0, 'SourceProtocolInfo', ['http-get:*:video/quicktime:*', 'http-get:*:video/mp4:*'])
         self.container = Container(ROOT_ID, -1, self.name)
         trailers = self.trailers.values()

@@ -118,7 +118,7 @@ class BackendStore(Backend):
 
         self.wmc_mapping.update({'4': lambda: self._get_all_items(0),
                                  '8': lambda: self._get_all_items(0),
-                                 'B': lambda: self._get_all_items(0), 
+                                 'B': lambda: self._get_all_items(0),
                                 })
 
         """ and send out the signal when ready

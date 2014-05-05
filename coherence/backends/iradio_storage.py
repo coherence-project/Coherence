@@ -51,7 +51,7 @@ genre_families = {
     "Seasonal/Holiday": ["Anniversary", "Birthday", "Christmas", "Halloween", "Hanukkah", "Honeymoon", "Valentine", "Wedding", "Winter"],
     "Soundtracks": ["Anime", "Bollywood", "Kids", "Original Score", "Showtunes", "Video Game Music"],
     "Talk": ["Comedy", "Community", "Educational", "Government", "News", "Old Time Radio", "Other Talk", "Political", "Public Radio", "Scanner", "Spoken Word", "Sports", "Technology", "Hardcore", "Eclectic", "Instrumental"],
-    "Misc": [], 
+    "Misc": [],
 }
 
 synonym_genres = {
@@ -66,7 +66,7 @@ synonym_genres = {
   "Hip Hop": ["Hip", "Hop", "Hippop", "Hip Hop"],
   "Islam": ["Islam", "Islamic"],
   "Italy": ["Italia", "Italian", "Italiana", "Italo", "Italy"],
-  "Latina": ["Latin", "Latina", "Latino"], 
+  "Latina": ["Latin", "Latina", "Latino"],
 }
 useless_title_content = [
     # TODO: extend list with title expressions which are clearly useless

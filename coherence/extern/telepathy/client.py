@@ -135,7 +135,7 @@ class Client(log.Loggable):
                     handles, [
                         CONNECTION,
                         CONNECTION_INTERFACE_ALIASING,
-                        CONNECTION_INTERFACE_SIMPLE_PRESENCE, 
+                        CONNECTION_INTERFACE_SIMPLE_PRESENCE,
                     ],
                     False,
                     reply_handler=self.get_contact_attributes_cb,
@@ -154,7 +154,7 @@ class Client(log.Loggable):
             conn[CONNECTION_INTERFACE_REQUESTS].EnsureChannel({
                 CHANNEL + '.ChannelType': CHANNEL_TYPE_CONTACT_LIST,
                 CHANNEL + '.TargetHandleType': HANDLE_TYPE_LIST,
-                CHANNEL + '.TargetID': name, 
+                CHANNEL + '.TargetID': name,
                 },
                 reply_handler=ensure_channel_cb(self, name),
                 error_handler=no_channel_available)
@@ -311,8 +311,8 @@ class Client(log.Loggable):
                 {},  # let the CM fill in the headers
                 {
                     'content': message,
-                    'content-type': 'text/plain', 
-                    }, 
+                    'content-type': 'text/plain',
+                    },
                 ]
 
             channel[CHANNEL_INTERFACE_MESSAGES].SendMessage(new_message, 0,

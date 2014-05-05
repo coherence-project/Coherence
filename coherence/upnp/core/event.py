@@ -286,12 +286,12 @@ def subscribe(service, action='subscribe'):
                 timeout = 1800
             request = ["SUBSCRIBE %s HTTP/1.1" % event_path,
                         "HOST: %s:%d" % (host, port),
-                        "TIMEOUT: Second-%d" % timeout, 
+                        "TIMEOUT: Second-%d" % timeout,
                         ]
             service.event_connection = p
         else:
             request = ["UNSUBSCRIBE %s HTTP/1.1" % event_path,
-                        "HOST: %s:%d" % (host, port), 
+                        "HOST: %s:%d" % (host, port),
                         ]
 
         if service.get_sid():
