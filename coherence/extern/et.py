@@ -108,9 +108,9 @@ def indent(elem, level=0):
 
 def parse_xml(data, encoding="utf-8", dump_invalid_data=False):
     try:
-        p = ET.XMLParser(encoding=encoding)
+        parser = ET.XMLParser(encoding=encoding)
     except exceptions.TypeError:
-        p = ET.XMLParser()
+        parser = ET.XMLParser()
 
     # my version of twisted.web returns page_infos as a dictionary in
     # the second item of the data list
@@ -125,11 +125,11 @@ def parse_xml(data, encoding="utf-8", dump_invalid_data=False):
     # Guess from who we're getting this?
     data = data.replace('\x00', '')
     try:
-        p.feed(data)
+        parser.feed(data)
     except Exception, error:
         if dump_invalid_data:
             print error, repr(data)
-        p.close()
+        parser.close()
         raise
     else:
-        return ET.ElementTree(p.close())
+        return ET.ElementTree(parser.close())
