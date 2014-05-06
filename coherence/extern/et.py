@@ -114,6 +114,7 @@ def parse_xml(data, encoding="utf-8", dump_invalid_data=False):
 
     # my version of twisted.web returns page_infos as a dictionary in
     # the second item of the data list
+    # :fixme: This must be handled where twisted.web is fetching the data
     if isinstance(data, (list, tuple)):
         data = data[0]
 
