@@ -441,6 +441,9 @@ def getPage(url, contextFactory=None, *args, **kwargs):
 
     See HTTPClientFactory to see what extra args can be passed.
     """
+    # This function is like twisted.web.client.getPage, except it uses
+    # our HeaderAwareHTTPClientFactory instead of HTTPClientFactory
+    # and sets the user agent.
     kwargs['agent'] = "Coherence PageGetter"
     return client._makeGetterFactory(
         url,
