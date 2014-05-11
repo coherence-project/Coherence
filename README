@@ -85,6 +85,19 @@ networking issue are responsible for that.
 
  - Any firewall on your system?
 
+Writing and integrating your own backend/plugin
+===============================================
+
+You can extend the functionality of coherence by writing your own backends/plugins.
+ 
+- A good starting point for coders interested in writing their own backend, would be 
+  taking a look at th LolCatsStorage example. The LolCatsStorage is a very simple and well 
+  commented backend. You can find it inside the backends directory of coherence.
+
+- To integrate your own backend, open the file "setup.py" of the coherence 
+  installer and add it to the list of 'entry_points'. Also copy your backend into the 
+  subfolder "coherence/backends" of the coherence installer. Finally start the installation 
+  like described above (Installation from source). 
 
 Support
 =======
