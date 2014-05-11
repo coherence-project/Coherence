@@ -528,20 +528,8 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
         client.HTTPClientFactory.page(self, (page, self.response_headers))
 
 
-class HeaderAwareHTTPDownloader(client.HTTPDownloader):
-
-    def gotHeaders(self, headers):
-        self.value = headers
-        if self.requestedPartial:
-            contentRange = headers.get("content-range", None)
-            if not contentRange:
-                # server doesn't support partial requests, oh well
-                self.requestedPartial = 0
-                return
-            start, end, realLength = http.parseContentRange(contentRange[0])
-            if start != self.requestedPartial:
-                # server is acting wierdly
-                self.requestedPartial = 0
+# already in tisted.web since at least 1.3.0
+HeaderAwareHTTPDownloader = client.HTTPDownloader
 
 
 def getPage(url, contextFactory=None, *args, **kwargs):
