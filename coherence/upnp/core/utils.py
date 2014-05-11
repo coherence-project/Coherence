@@ -267,45 +267,30 @@ class Site(server.Site):
         #http._logDateTimeStart()
 
 
-class ProxyClient(http.HTTPClient):
-    """Used by ProxyClientFactory to implement a simple web proxy."""
+class ProxyClient(proxy.ProxyClient):
 
     def __init__(self, command, rest, version, headers, data, father):
-        self.father = father
-        self.command = command
-        self.rest = rest
-        if headers.has_key("proxy-connection"):
-            del headers["proxy-connection"]
         #headers["connection"] = "close"
-        self.headers = headers
-        #print "command", command
-        #print "rest", rest
-        #print "headers", headers
-        self.data = data
         self.send_data = 0
-
+        web.ProxyClient.__init__(self, command, rest, version,
+                                 headers, data, father)
 
     def handleStatus(self, version, code, message):
         if message:
             # Add a whitespace to message, this allows empty messages
             # transparently
             message = " %s" % (message, )
-
         if version == 'ICY':
             version = 'HTTP/1.1'
-        #print "ProxyClient handleStatus", version, code, message
-        self.father.transport.write("%s %s %s\r\n" % (version, code, message))
+        web.ProxyClient.handleStatus(self, version, code, message)
 
     def handleHeader(self, key, value):
-        #print "ProxyClient handleHeader", key, value
         if not key.startswith('icy-'):
-            #print "ProxyClient handleHeader", key, value
-            self.father.transport.write("%s: %s\r\n" % (key, value))
+            web.ProxyClient.handleHeader(self, key, value)
 
     def handleResponsePart(self, buffer):
-        #print "ProxyClient handleResponsePart", len(buffer), self.father.chunked
         self.send_data += len(buffer)
-        self.father.write(buffer)
+        web.ProxyClient.handleResponsePart(self, buffer)
 
 
 class ProxyClientFactory(protocol.ClientFactory):
