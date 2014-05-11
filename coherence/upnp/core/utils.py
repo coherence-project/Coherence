@@ -456,17 +456,18 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
 
     See HTTPDownloader to see what extra args can be passed.
     """
-    scheme, host, port, path = client._parse(url)
-    factory = HeaderAwareHTTPDownloader(url, file, *args, **kwargs)
-    factory.noisy = False
-    if scheme == 'https':
-        from twisted.internet import ssl
-        if contextFactory is None:
-            contextFactory = ssl.ClientContextFactory()
-        reactor.connectSSL(host, port, factory, contextFactory)
-    else:
-        reactor.connectTCP(host, port, factory)
-    return factory.deferred
+    # This function is like twisted.web.client.downloadPage, except it
+    # uses our HeaderAwareHTTPDownloader instead of HTTPDownloader and
+    # sets the user agent.
+    factory.noisy = False # :todo: handle this
+    kwargs['agent'] = "Coherence PageGetter"
+    factoryFactory = lambda url, *a, **kw: HeaderAwareHTTPDownloader(url, file, *a, **kw)
+    return client._makeGetterFactory(
+        url,
+        factoryFactory,
+        contextFactory=contextFactory,
+        file, *args, **kwargs).deferred
+
 
 # StaticFile used to be a patched version of static.File. The later
 # was fixed in TwistedWeb 8.2.0 and 9.0.0, while the patched variant
