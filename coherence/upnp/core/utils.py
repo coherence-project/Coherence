@@ -461,56 +461,11 @@ class ReverseProxyUriResource(ReverseProxyResource):
         self.resetTarget(host, port, path, params)
 
 
+# already on twisted.web since at least 8.0.0
 class myHTTPPageGetter(client.HTTPPageGetter):
 
     followRedirect = True
 
-    def connectionMade(self):
-        method = getattr(self, 'method', 'GET')
-        #print "myHTTPPageGetter", method, self.factory.path
-        self.sendCommand(method, self.factory.path)
-        self.sendHeader('Host', self.factory.headers.get("host", self.factory.host))
-        self.sendHeader('User-Agent', self.factory.agent)
-        if self.factory.cookies:
-            l = []
-            for cookie, cookval in self.factory.cookies.items():
-                l.append('%s=%s' % (cookie, cookval))
-            self.sendHeader('Cookie', '; '.join(l))
-        data = getattr(self.factory, 'postdata', None)
-        if data is not None:
-            self.sendHeader("Content-Length", str(len(data)))
-        for (key, value) in self.factory.headers.items():
-            if key.lower() != "content-length":
-                # we calculated it on our own
-                self.sendHeader(key, value)
-        self.endHeaders()
-        self.headers = {}
-
-        if data is not None:
-            self.transport.write(data)
-
-    def handleResponse(self, response):
-        if self.quietLoss:
-            return
-        if self.failed:
-            self.factory.noPage(
-                failure.Failure(
-                    error.Error(
-                        self.status, self.message, response)))
-        elif self.factory.method != 'HEAD' and self.length != None and self.length != 0:
-            self.factory.noPage(failure.Failure(
-                client.PartialDownloadError(self.status, self.message, response)))
-        else:
-            if(self.headers.has_key('transfer-encoding') and
-               self.headers['transfer-encoding'][0].lower() == 'chunked'):
-                self.factory.page(de_chunk_payload(response))
-            else:
-                self.factory.page(response)
-        # server might be stupid and not close connection. admittedly
-        # the fact we do only one request per connection is also
-        # stupid...
-        self.quietLoss = 1
-        self.transport.loseConnection()
 
 
 class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
