@@ -284,12 +284,6 @@ class ProxyClient(http.HTTPClient):
         self.data = data
         self.send_data = 0
 
-    def connectionMade(self):
-        self.sendCommand(self.command, self.rest)
-        for header, value in self.headers.items():
-            self.sendHeader(header, value)
-        self.endHeaders()
-        self.transport.write(self.data)
 
     def handleStatus(self, version, code, message):
         if message:
@@ -308,24 +302,10 @@ class ProxyClient(http.HTTPClient):
             #print "ProxyClient handleHeader", key, value
             self.father.transport.write("%s: %s\r\n" % (key, value))
 
-    def handleEndHeaders(self):
-        #self.father.transport.write("%s: %s\r\n" % ( 'Keep-Alive', ''))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Accept-Ranges', 'bytes'))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Content-Length', '2000000'))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Date', 'Mon, 26 Nov 2007 11:04:12 GMT'))
-        #self.father.transport.write("%s: %s\r\n" % ( 'Last-Modified', 'Sun, 25 Nov 2007 23:19:51 GMT'))
-        ##self.father.transport.write("%s: %s\r\n" % ( 'Server', 'Apache/2.0.52 (Red Hat)'))
-        self.father.transport.write("\r\n")
-
     def handleResponsePart(self, buffer):
         #print "ProxyClient handleResponsePart", len(buffer), self.father.chunked
         self.send_data += len(buffer)
         self.father.write(buffer)
-
-    def handleResponseEnd(self):
-        #print "handleResponseEnd", self.send_data
-        self.transport.loseConnection()
-        self.father.channel.transport.loseConnection()
 
 
 class ProxyClientFactory(protocol.ClientFactory):
