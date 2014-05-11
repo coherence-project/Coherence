@@ -295,7 +295,10 @@ class ProxyClient(proxy.ProxyClient):
 
 class ProxyClientFactory(proxy.ProxyClientFactory):
 
+    # :fixme: Why here proxy.ProxyClient is used instad of our own
+    # ProxyClent? Is out ProxyClient used at all?
     protocol = proxy.ProxyClient
+
 
 class ReverseProxyResource(proxy.ReverseProxyResource):
     """
