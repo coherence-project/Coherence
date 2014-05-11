@@ -16,6 +16,10 @@ import os, sys
 
 import string
 
+import warnings
+warnings.filterwarnings('ignore', "extern.louie will soon be deprecated")
+warnings.filterwarnings('ignore', "coherence.extern.inotify is deprecated.")
+
 from coherence import __version__
 
 from coherence.extern.simple_config import Config,ConfigItem
