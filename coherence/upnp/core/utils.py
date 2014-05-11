@@ -483,7 +483,7 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
         client.HTTPClientFactory.page(self, (page, self.response_headers))
 
 
-# already in tisted.web since at least 1.3.0
+# already in twisted.web since at least 1.3.0
 HeaderAwareHTTPDownloader = client.HTTPDownloader
 
 
