@@ -33,7 +33,7 @@ class Container(BackendItem):
 
     logCategory = 'rb_media_store'
 
-    def __init__(self, id, parent_id, name, children_callback=None,store=None,play_container=False):
+    def __init__(self, id, parent_id, name, children_callback=None, store=None, play_container=False):
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -49,7 +49,7 @@ class Container(BackendItem):
     def add_child(self, child):
         self.children.append(child)
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         if callable(self.children):
             children = self.children(self.id)
         else:
@@ -65,11 +65,11 @@ class Container(BackendItem):
         return len(self.get_children())
 
     def get_item(self, parent_id=None):
-        item = DIDLLite.Container(self.id,self.parent_id,self.name)
+        item = DIDLLite.Container(self.id, self.parent_id, self.name)
         item.childCount = self.get_child_count()
         if self.store and self.play_container == True:
             if item.childCount > 0:
-                res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
+                res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
                 item.res.append(res)
         return item
 
@@ -93,12 +93,12 @@ class Playlist(BackendItem):
 
         query = self.store.db.query_new()
         self.store.db.query_append(query,
-                                   [ rhythmdb.QUERY_PROP_EQUALS,
+                                   [rhythmdb.QUERY_PROP_EQUALS,
                                      rhythmdb.PROP_TYPE,
-                                     self.store.db.entry_type_get_by_name('song') ],
-                                   [ rhythmdb.QUERY_PROP_EQUALS,
+                                     self.store.db.entry_type_get_by_name('song')],
+                                   [rhythmdb.QUERY_PROP_EQUALS,
                                      rhythmdb.PROP_ALBUM,
-                                     self.title ])
+                                     self.title])
 
     def get_children(self, start=0, request_count=0):
         if self.children == None:
@@ -121,9 +121,9 @@ class Playlist(BackendItem):
 
     def get_item(self):
         item = DIDLLite.PlaylistContainer(self.id, AUDIO_PLAYLIST_CONTAINER_ID, self.title)
-        if __version_info__ >= (0,6,4):
+        if __version_info__ >= (0, 6, 4):
             if self.get_child_count() > 0:
-                res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=str(TRACK_COUNT+int(self.get_children()[0].get_id())))
+                res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
                 item.res.append(res)
         return item
 
@@ -144,26 +144,26 @@ class Album(BackendItem):
         self.store = store
 
         query = self.store.db.query_new()
-        self.store.db.query_append(query,[rhythmdb.QUERY_PROP_EQUALS, rhythmdb.PROP_TYPE, self.store.db.entry_type_get_by_name('song')],
+        self.store.db.query_append(query, [rhythmdb.QUERY_PROP_EQUALS, rhythmdb.PROP_TYPE, self.store.db.entry_type_get_by_name('song')],
                                       [rhythmdb.QUERY_PROP_EQUALS, rhythmdb.PROP_ALBUM, self.title])
         self.tracks_per_album_query = self.store.db.query_model_new(query)
         #self.tracks_per_album_query.set_sort_order(rhythmdb.rhythmdb_query_model_track_sort_func)
         self.store.db.do_full_query_async_parsed(self.tracks_per_album_query, query)
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         children = []
 
-        def track_sort(x,y):
-            entry = self.store.db.entry_lookup_by_id (x.id)
-            x_track = self.store.db.entry_get (entry, rhythmdb.PROP_TRACK_NUMBER)
-            entry = self.store.db.entry_lookup_by_id (y.id)
-            y_track = self.store.db.entry_get (entry, rhythmdb.PROP_TRACK_NUMBER)
-            return cmp(x_track,y_track)
+        def track_sort(x, y):
+            entry = self.store.db.entry_lookup_by_id(x.id)
+            x_track = self.store.db.entry_get(entry, rhythmdb.PROP_TRACK_NUMBER)
+            entry = self.store.db.entry_lookup_by_id(y.id)
+            y_track = self.store.db.entry_get(entry, rhythmdb.PROP_TRACK_NUMBER)
+            return cmp(x_track, y_track)
 
         def collate (model, path, iter):
-            self.info("Album get_children %r %r %r" %(model, path, iter))
+            self.info("Album get_children %r %r %r" % (model, path, iter))
             id = model.get(iter, 0)[0]
-            children.append(Track(self.store,id,self.id))
+            children.append(Track(self.store, id, self.id))
 
         self.tracks_per_album_query.foreach(collate)
 
@@ -177,12 +177,12 @@ class Album(BackendItem):
     def get_child_count(self):
         return len(self.get_children())
 
-    def get_item(self, parent_id = AUDIO_ALBUM_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_ALBUM_CONTAINER_ID):
         item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
 
-        if __version_info__ >= (0,6,4):
+        if __version_info__ >= (0, 6, 4):
             if self.get_child_count() > 0:
-                res = DIDLLite.PlayContainerResource(self.store.server.uuid,cid=self.get_id(),fid=str(TRACK_COUNT+int(self.get_children()[0].get_id())))
+                res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
                 item.res.append(res)
         return item
 
@@ -206,7 +206,7 @@ class Artist(BackendItem):
         self.store = store
 
         query = self.store.db.query_new()
-        self.store.db.query_append(query,[rhythmdb.QUERY_PROP_EQUALS, rhythmdb.PROP_TYPE, self.store.db.entry_type_get_by_name('song')],
+        self.store.db.query_append(query, [rhythmdb.QUERY_PROP_EQUALS, rhythmdb.PROP_TYPE, self.store.db.entry_type_get_by_name('song')],
                                       [rhythmdb.QUERY_PROP_EQUALS, rhythmdb.PROP_ARTIST, self.name])
         self.tracks_per_artist_query = self.store.db.query_model_new(query)
         self.store.db.do_full_query_async_parsed(self.tracks_per_artist_query, query)
@@ -214,18 +214,18 @@ class Artist(BackendItem):
         self.albums_per_artist_query = self.store.db.property_model_new(rhythmdb.PROP_ALBUM)
         self.albums_per_artist_query.props.query_model = self.tracks_per_artist_query
 
-    def get_artist_all_tracks(self,id):
+    def get_artist_all_tracks(self, id):
         children = []
 
         def collate (model, path, iter):
             id = model.get(iter, 0)[0]
             print id
-            children.append(Track(self.store,id,self.id))
+            children.append(Track(self.store, id, self.id))
 
         self.tracks_per_artist_query.foreach(collate)
         return children
 
-    def get_children(self,start=0,request_count=0):
+    def get_children(self, start=0, request_count=0):
         children = []
 
         def collate (model, path, iter):
@@ -245,11 +245,11 @@ class Artist(BackendItem):
             all_id = 'artist_all_tracks_%d' % (self.id)
             if all_id not in self.store.containers:
                 self.store.containers[all_id] = \
-                    Container( all_id, self.id, 'All tracks of %s' % self.name,
+                    Container(all_id, self.id, 'All tracks of %s' % self.name,
                               children_callback=self.get_artist_all_tracks,
-                              store=self.store,play_container=True)
+                              store=self.store, play_container=True)
 
-            children.insert(0,self.store.containers[all_id])
+            children.insert(0, self.store.containers[all_id])
 
         if request_count == 0:
             return children[start:]
@@ -259,7 +259,7 @@ class Artist(BackendItem):
     def get_child_count(self):
         return len(self.get_children())
 
-    def get_item(self, parent_id = AUDIO_ARTIST_CONTAINER_ID):
+    def get_item(self, parent_id=AUDIO_ARTIST_CONTAINER_ID):
         item = DIDLLite.MusicArtist(self.id, parent_id, self.name)
         return item
 
@@ -279,7 +279,7 @@ class Track(BackendItem):
         if type(id) == int:
             self.id = id
         else:
-            self.id = self.store.db.entry_get (id, rhythmdb.PROP_ENTRY_ID)
+            self.id = self.store.db.entry_get(id, rhythmdb.PROP_ENTRY_ID)
         self.parent_id = parent_id
 
     def get_children(self, start=0, request_count=0):
@@ -290,7 +290,7 @@ class Track(BackendItem):
 
     def get_item(self, parent_id=None):
 
-        self.info("Track get_item %r @ %r" %(self.id,self.parent_id))
+        self.info("Track get_item %r @ %r" % (self.id, self.parent_id))
 
         host = ""
 
@@ -321,21 +321,20 @@ class Track(BackendItem):
                 pass
 
         # create item
-        item = DIDLLite.MusicTrack(self.id + TRACK_COUNT,self.parent_id)
+        item = DIDLLite.MusicTrack(self.id + TRACK_COUNT, self.parent_id)
         item.album = album
 
         item.artist = self.store.db.entry_get(entry, rhythmdb.PROP_ARTIST)
         #item.date =
         item.genre = self.store.db.entry_get(entry, rhythmdb.PROP_GENRE)
-        item.originalTrackNumber = str(self.store.db.entry_get (entry, rhythmdb.PROP_TRACK_NUMBER))
-        item.title = self.store.db.entry_get(entry, rhythmdb.PROP_TITLE) # much nicer if it was entry.title
+        item.originalTrackNumber = str(self.store.db.entry_get(entry, rhythmdb.PROP_TRACK_NUMBER))
+        item.title = self.store.db.entry_get(entry, rhythmdb.PROP_TITLE)  # much nicer if it was entry.title
 
         cover = self.store.db.entry_request_extra_metadata(entry, "rb:coverArt-uri")
         #self.warning("cover for %r is %r", item.title, cover)
         if cover != None:
-            _,ext =  os.path.splitext(cover)
-            item.albumArtURI = ''.join((self.get_url(),'?cover',ext))
-
+            _, ext = os.path.splitext(cover)
+            item.albumArtURI = ''.join((self.get_url(), '?cover', ext))
 
         # add http resource
         res = DIDLLite.Resource(self.get_url(), 'http-get:*:%s:*' % mimetype)
@@ -363,15 +362,15 @@ class Track(BackendItem):
         return self.id
 
     def get_name(self):
-        entry = self.store.db.entry_lookup_by_id (self.id)
+        entry = self.store.db.entry_lookup_by_id(self.id)
         return self.store.db.entry_get(entry, rhythmdb.PROP_TITLE)
 
     def get_url(self):
         return self.store.urlbase + str(self.id + TRACK_COUNT)
 
-    def get_path(self, entry = None):
+    def get_path(self, entry=None):
         if entry is None:
-            entry = self.store.db.entry_lookup_by_id (self.id)
+            entry = self.store.db.entry_lookup_by_id(self.id)
         uri = self.store.db.entry_get(entry, rhythmdb.PROP_LOCATION)
         self.info("Track get_path uri = %r", uri)
         location = None
@@ -393,15 +392,15 @@ class MediaStore(BackendStore):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self,server,**kwargs)
+        BackendStore.__init__(self, server, **kwargs)
         self.warning("__init__ MediaStore %r", kwargs)
         self.db = kwargs['db']
         self.plugin = kwargs['plugin']
 
-        self.wmc_mapping.update({'4': lambda : self.get_by_id(AUDIO_ALL_CONTAINER_ID),    # all tracks
-                                 '7': lambda : self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),    # all albums
-                                 '6': lambda : self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),    # all artists
-                                 '14': lambda : self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
+        self.wmc_mapping.update({'4': lambda: self.get_by_id(AUDIO_ALL_CONTAINER_ID),  # all tracks
+                                 '7': lambda: self.get_by_id(AUDIO_ALBUM_CONTAINER_ID),  # all albums
+                                 '6': lambda: self.get_by_id(AUDIO_ARTIST_CONTAINER_ID),  # all artists
+                                 '14': lambda: self.get_by_id(AUDIO_PLAYLIST_CONTAINER_ID),  # all playlists
                                 })
 
         self.next_id = CONTAINER_COUNT
@@ -410,8 +409,8 @@ class MediaStore(BackendStore):
         self.tracks = None
         self.playlists = None
 
-        self.urlbase = kwargs.get('urlbase','')
-        if( len(self.urlbase) > 0 and self.urlbase[len(self.urlbase)-1] != '/'):
+        self.urlbase = kwargs.get('urlbase', '')
+        if(len(self.urlbase) > 0 and self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
 
         try:
@@ -435,32 +434,32 @@ class MediaStore(BackendStore):
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
-                Container( ROOT_CONTAINER_ID,-1, "Rhythmbox on %s" % self.server.coherence.hostname)
+                Container(ROOT_CONTAINER_ID, -1, "Rhythmbox on %s" % self.server.coherence.hostname)
 
         self.containers[AUDIO_ALL_CONTAINER_ID] = \
-                Container( AUDIO_ALL_CONTAINER_ID,ROOT_CONTAINER_ID, 'All tracks',
+                Container(AUDIO_ALL_CONTAINER_ID, ROOT_CONTAINER_ID, 'All tracks',
                           children_callback=self.children_tracks,
-                          store=self,play_container=True)
+                          store=self, play_container=True)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALL_CONTAINER_ID])
 
         self.containers[AUDIO_ALBUM_CONTAINER_ID] = \
-                Container( AUDIO_ALBUM_CONTAINER_ID,ROOT_CONTAINER_ID, 'Albums',
+                Container(AUDIO_ALBUM_CONTAINER_ID, ROOT_CONTAINER_ID, 'Albums',
                           children_callback=self.children_albums)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ALBUM_CONTAINER_ID])
 
         self.containers[AUDIO_ARTIST_CONTAINER_ID] = \
-                Container( AUDIO_ARTIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Artists',
+                Container(AUDIO_ARTIST_CONTAINER_ID, ROOT_CONTAINER_ID, 'Artists',
                           children_callback=self.children_artists)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_ARTIST_CONTAINER_ID])
 
         self.containers[AUDIO_PLAYLIST_CONTAINER_ID] = \
-                Container( AUDIO_PLAYLIST_CONTAINER_ID,ROOT_CONTAINER_ID, 'Playlists',
+                Container(AUDIO_PLAYLIST_CONTAINER_ID, ROOT_CONTAINER_ID, 'Playlists',
                           children_callback=self.children_playlists)
         self.containers[ROOT_CONTAINER_ID].add_child(self.containers[AUDIO_PLAYLIST_CONTAINER_ID])
 
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
 
-    def get_by_id(self,id):
+    def get_by_id(self, id):
 
         self.info("looking for id %r", id)
         if isinstance(id, basestring) and id.startswith('artist_all_tracks_'):
@@ -469,7 +468,7 @@ class MediaStore(BackendStore):
             except:
                 return None
 
-        id = id.split('@',1)
+        id = id.split('@', 1)
         item_id = id[0]
         item_id = int(item_id)
         if item_id < TRACK_COUNT:
@@ -478,7 +477,7 @@ class MediaStore(BackendStore):
             except KeyError:
                 item = None
         else:
-            item = Track(self, (item_id - TRACK_COUNT),None)
+            item = Track(self, (item_id - TRACK_COUNT), None)
 
         return item
 
@@ -499,22 +498,22 @@ class MediaStore(BackendStore):
         tracks = []
 
         def track_cb (entry):
-            if self.db.entry_get (entry, rhythmdb.PROP_HIDDEN):
+            if self.db.entry_get(entry, rhythmdb.PROP_HIDDEN):
                 return
-            id = self.db.entry_get (entry, rhythmdb.PROP_ENTRY_ID)
+            id = self.db.entry_get(entry, rhythmdb.PROP_ENTRY_ID)
             track = Track(self, id, parent_id)
             tracks.append(track)
 
-        self.db.entry_foreach_by_type (self.db.entry_type_get_by_name('song'), track_cb)
+        self.db.entry_foreach_by_type(self.db.entry_type_get_by_name('song'), track_cb)
         return tracks
 
-    def children_albums(self,parent_id):
-        albums =  {}
+    def children_albums(self, parent_id):
+        albums = {}
 
         self.info('children_albums')
 
-        def album_sort(x,y):
-            r = cmp(x.title,y.title)
+        def album_sort(x, y):
+            r = cmp(x.title, y.title)
             self.info("sort %r - %r = %r", x.title, y.title, r)
             return r
 
@@ -524,7 +523,7 @@ class MediaStore(BackendStore):
             self.info("children_albums collate %r %r", name, priority)
             if priority is False:
                 id = self.get_next_container_id()
-                album = Album(self, name, id,parent_id)
+                album = Album(self, name, id, parent_id)
                 self.containers[id] = album
                 albums[name] = album
 
@@ -532,11 +531,11 @@ class MediaStore(BackendStore):
             self.album_query.foreach(collate)
             self.albums = albums
 
-        albums = self.albums.values() #.sort(cmp=album_sort)
+        albums = self.albums.values()  # .sort(cmp=album_sort)
         albums.sort(cmp=album_sort)
         return albums
 
-    def children_artists(self,parent_id):
+    def children_artists(self, parent_id):
         artists = []
 
         def collate (model, path, iter):
@@ -544,7 +543,7 @@ class MediaStore(BackendStore):
             priority = model.get(iter, 1)[0]
             if priority is False:
                 id = self.get_next_container_id()
-                artist = Artist(self,name, id,parent_id)
+                artist = Artist(self, name, id, parent_id)
                 self.containers[id] = artist
                 artists.append(artist)
 
@@ -554,11 +553,11 @@ class MediaStore(BackendStore):
 
         return self.artists
 
-    def children_playlists(self,killbug=False):
+    def children_playlists(self, killbug=False):
         playlists = []
 
-        def playlist_sort(x,y):
-            r = cmp(x.title,y.title)
+        def playlist_sort(x, y):
+            r = cmp(x.title, y.title)
             self.info("sort %r - %r = %r", x.title, y.title, r)
             return r
 
@@ -571,7 +570,7 @@ class MediaStore(BackendStore):
                 playlists.append(playlist)
 
         if self.playlists is None:
-            PLAYLISTS_PARENT = 2 # 0 -> Library, 1 -> Stores, 2 -> Playlists
+            PLAYLISTS_PARENT = 2  # 0 -> Library, 1 -> Stores, 2 -> Playlists
             parent = self.playlist_model.iter_nth_child(None, PLAYLISTS_PARENT)
             parent_path = self.playlist_model.get_path(parent)
             self.playlist_model.foreach(collate, parent_path)

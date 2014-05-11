@@ -39,20 +39,22 @@ import dbus.service
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'
 
-def do_export(name,directories):
+
+def do_export(name, directories):
 
     bus = dbus.SessionBus()
-    coherence = bus.get_object(BUS_NAME,OBJECT_PATH)
+    coherence = bus.get_object(BUS_NAME, OBJECT_PATH)
 
     r = coherence.add_plugin('FSStore',
                              {'name': name,
-                              'content':','.join(directories)},
+                              'content': ','.join(directories)},
                              dbus_interface=BUS_NAME)
     return r
 
 try:
     import nautilus
     from urllib import unquote
+
 
     class CoherenceExportExtension(nautilus.MenuProvider):
 
@@ -66,7 +68,7 @@ try:
                 print "can't setup Coherence connection"
                 self.ui = None
 
-        def ui_destroy(self,*args):
+        def ui_destroy(self, *args):
             self.window = None
 
         def ui_create(self):
@@ -119,4 +121,4 @@ if __name__ == '__main__':
 
     import os.path
     files = [x for x in sys.argv[1:] if os.path.isdir(x)]
-    do_export('Nautilus',files)
+    do_export('Nautilus', files)

@@ -12,8 +12,8 @@
     point your browser to: http://coherence-project.org
 """
 
-import os, sys
-
+import os
+import sys
 import string
 
 import warnings
@@ -21,13 +21,12 @@ warnings.filterwarnings('ignore', "extern.louie will soon be deprecated")
 warnings.filterwarnings('ignore', "coherence.extern.inotify is deprecated.")
 
 from coherence import __version__
+from coherence.extern.simple_config import Config, ConfigItem
 
-from coherence.extern.simple_config import Config,ConfigItem
 
-"""
- thankfully taken from twisted.scripts._twistd_unix.py
-"""
+
 def daemonize():
+    # thankfully taken from twisted.scripts._twistd_unix.py
     # See http://www.erlenstar.demon.co.uk/unix/faq_toc.html#TOC16
     if os.fork():   # launch child and...
         os._exit(0) # kill off parent
@@ -35,7 +34,7 @@ def daemonize():
     if os.fork():   # launch child and...
         os._exit(0) # kill off parent again.
     os.umask(077)
-    null=os.open('/dev/null', os.O_RDWR)
+    null = os.open('/dev/null', os.O_RDWR)
     for i in range(3):
         try:
             os.dup2(null, i)
@@ -43,6 +42,7 @@ def daemonize():
             if e.errno != errno.EBADF:
                 raise
     os.close(null)
+
 
 def setConfigFile():
     def findConfigDir():
@@ -52,7 +52,8 @@ def setConfigFile():
             configDir = os.getcwd()
         return configDir
 
-    return os.path.join( findConfigDir(), '.coherence')
+    return os.path.join(findConfigDir(), '.coherence')
+
 
 def __opt_option(option, opt, value, parser):
     try:
@@ -77,11 +78,14 @@ def main(config):
 if __name__ == '__main__':
 
     import optparse
+
+
     class OptionParser(optparse.OptionParser):
         """
         Simple wrapper to add list of available plugins to help
         message, but only if help message is really printed
         """
+
         def print_help(self, file=None):
             from coherence.base import Plugins
             # hack: avoid plugins are displaying there help message
@@ -90,7 +94,6 @@ if __name__ == '__main__':
             p.sort()
             self.epilog = 'Available backends are: %s' % ', '.join(p)
             optparse.OptionParser.print_help(self, file)
-
 
     parser = OptionParser('%prog [options]',
                           version="Coherence version: %s" % __version__)
@@ -127,7 +130,7 @@ if __name__ == '__main__':
     if options.configfile:
         try:
             config = Config(options.configfile, root='config',
-                            element2attr_mappings={'active':'active'}).config
+                            element2attr_mappings={'active': 'active'}).config
         except SyntaxError:
             import traceback
             #print traceback.format_exc()
@@ -168,7 +171,7 @@ if __name__ == '__main__':
                     pass
         else:
             if not config.get('logfile', None):
-                config.set('logmode','none')
+                config.set('logmode', 'none')
                 try:
                     del config['logfile']
                 except KeyError:
@@ -204,11 +207,11 @@ if __name__ == '__main__':
             plugin = {}
             plugin_conf = p.split(',')
             for pair in plugin_conf:
-                pair = pair.split(':',1)
+                pair = pair.split(':', 1)
                 if len(pair) == 2:
                     pair[0] = pair[0].strip()
                     if pair[0] in plugin:
-                        if not isinstance(plugin[pair[0]],list):
+                        if not isinstance(plugin[pair[0]], list):
                             new_list = [plugin[pair[0]]]
                             plugin[pair[0]] = new_list
                         plugin[pair[0]].append(pair[1])
@@ -218,7 +221,6 @@ if __name__ == '__main__':
                 plugins.append(plugin)
             except AttributeError:
                 print "mixing commandline plugins and configfile does not work with the old config file format"
-
 
     from twisted.internet import reactor
 

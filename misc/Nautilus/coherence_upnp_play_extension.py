@@ -32,6 +32,7 @@ import dbus.service
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'
 
+
 class CoherencePlayExtension(GObject.GObject, Nautilus.MenuProvider):
 
     def __init__(self):
@@ -44,7 +45,7 @@ class CoherencePlayExtension(GObject.GObject, Nautilus.MenuProvider):
 
     def init_controlpoint(self):
         self.bus = dbus.SessionBus()
-        self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
+        self.coherence = self.bus.get_object(BUS_NAME, OBJECT_PATH)
 
     def get_file_items(self, window, files):
         if self.coherence == None:
@@ -61,21 +62,21 @@ class CoherencePlayExtension(GObject.GObject, Nautilus.MenuProvider):
         #if pin == 'Coherence::Pin::None':
         #    return
         devices = self.coherence.get_devices(dbus_interface=BUS_NAME)
-        i=0
+        i = 0
         menuitem = None
         for device in devices:
-            print device['friendly_name'],device['device_type']
+            print device['friendly_name'], device['device_type']
             if device['device_type'].split(':')[3] == 'MediaRenderer':
                 if i == 0:
                     menuitem = Nautilus.MenuItem(name='CoherencePlayExtension::Play',
-                        label='Play on MediaRenderer', 
+                        label='Play on MediaRenderer',
                         tip='Play the selected file(s) on a DLNA/UPnP MediaRenderer',
                         icon='media')
                     submenu = Nautilus.Menu()
                     menuitem.set_submenu(submenu)
 
-                item = Nautilus.MenuItem(name='CoherencePlayExtension::Play%d' %i, 
-                    label=device['friendly_name'], 
+                item = Nautilus.MenuItem(name='CoherencePlayExtension::Play%d' % i,
+                    label=device['friendly_name'],
                     tip='')
                 for service in device['services']:
                     service_type = service.split('/')[-1]
@@ -91,7 +92,7 @@ class CoherencePlayExtension(GObject.GObject, Nautilus.MenuProvider):
         return menuitem,
 
     def play(self, menu, service, uuid, files):
-        print "play",uuid,service,files
+        print "play", uuid, service, files
         #pin = self.coherence.get_pin('Nautilus::MediaServer::%d'%os.getpid())
         #if pin == 'Coherence::Pin::None':
         #    return
@@ -103,8 +104,8 @@ class CoherencePlayExtension(GObject.GObject, Nautilus.MenuProvider):
         #print 'result', result
         print uri
 
-        s = self.bus.get_object(BUS_NAME+'.service',service)
+        s = self.bus.get_object(BUS_NAME + '.service', service)
         print s
-        s.action('stop','')
-        s.action('set_av_transport_uri',{'current_uri':uri})
-        s.action('play','')
+        s.action('stop', '')
+        s.action('set_av_transport_uri', {'current_uri': uri})
+        s.action('play', '')

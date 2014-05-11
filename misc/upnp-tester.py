@@ -34,6 +34,7 @@ try:
 
     import StringIO
 
+
     class SMTPClient(smtp.ESMTPClient):
 
         """ build an email message and send it to our googlemail account
@@ -44,8 +45,8 @@ try:
             self.mailFrom = mail_from
             self.mailTo = mail_to
             self.mailSubject = mail_subject
-            self.mail_file =  mail_file
-            self.mail_from =  mail_from
+            self.mail_file = mail_file
+            self.mail_from = mail_from
 
         def getMailFrom(self):
             result = self.mailFrom
@@ -64,7 +65,7 @@ try:
             msg['From'] = self.mail_from
             msg['To'] = self.mailTo
             fp = open(self.mail_file, 'rb')
-            tar = MIMEApplication(fp.read(),'x-tar')
+            tar = MIMEApplication(fp.read(), 'x-tar')
             fp.close()
             tar.add_header('Content-Disposition', 'attachment', filename=os.path.basename(self.mail_file))
             msg.attach(tar)
@@ -72,6 +73,7 @@ try:
 
         def sentMail(self, code, resp, numOk, addresses, log):
             print 'Sent', numOk, 'messages'
+
 
     class SMTPClientFactory(protocol.ClientFactory):
         protocol = SMTPClient
@@ -95,6 +97,7 @@ from twisted.web import client
 
 from coherence.base import Coherence
 
+
 class UI(basic.LineReceiver):
     from os import linesep as delimiter
 
@@ -110,16 +113,16 @@ class UI(basic.LineReceiver):
             elif cmd == "?":
                 self.cmd_help(args[1:])
             else:
-                self.transport.write("""Unknown command '%s'\n"""%(cmd))
+                self.transport.write("""Unknown command '%s'\n""" % (cmd))
         self.print_prompt()
 
-    def cmd_help(self,args):
+    def cmd_help(self, args):
         "help -- show help"
-        methods = Set([ getattr(self, x) for x in dir(self) if x[:4] == "cmd_" ])
+        methods = Set([getattr(self, x) for x in dir(self) if x[:4] == "cmd_"])
         self.transport.write("Commands:\n")
         for method in methods:
             if hasattr(method, '__doc__'):
-                self.transport.write("%s\n"%(method.__doc__))
+                self.transport.write("%s\n" % (method.__doc__))
 
     def cmd_list(self, args):
         "list -- list devices"
@@ -138,13 +141,13 @@ class UI(basic.LineReceiver):
                 l = []
 
                 def device_extract(workdevice, path):
-                    tmp_dir = os.path.join(path,workdevice.get_uuid())
+                    tmp_dir = os.path.join(path, workdevice.get_uuid())
                     os.mkdir(tmp_dir)
-                    d = client.downloadPage(workdevice.get_location(),os.path.join(tmp_dir,'device-description.xml'))
+                    d = client.downloadPage(workdevice.get_location(), os.path.join(tmp_dir, 'device-description.xml'))
                     l.append(d)
 
                     for service in workdevice.services:
-                        d = client.downloadPage(service.get_scpd_url(),os.path.join(tmp_dir,'%s-description.xml'%service.service_type.split(':',3)[3]))
+                        d = client.downloadPage(service.get_scpd_url(), os.path.join(tmp_dir, '%s-description.xml' % service.service_type.split(':', 3)[3]))
                         l.append(d)
 
 
@@ -152,10 +155,10 @@ class UI(basic.LineReceiver):
                         device_extract(ed, tmp_dir)
 
                 def finished(result):
-                    self.transport.write(str("\nextraction of device %s finished\nfiles have been saved to /tmp/%s\n" %(args[0],args[0])))
+                    self.transport.write(str("\nextraction of device %s finished\nfiles have been saved to /tmp/%s\n" % (args[0], args[0])))
                     self.print_prompt()
 
-                device_extract(device,'/tmp')
+                device_extract(device, '/tmp')
 
                 dl = defer.DeferredList(l)
                 dl.addCallback(finished)
@@ -164,13 +167,13 @@ class UI(basic.LineReceiver):
 
     def cmd_send(self, args):
         "send <uuid> -- send before extracted xml files to the Coherence home base"
-        if os.path.isdir(os.path.join('/tmp',args[0])) == 1:
+        if os.path.isdir(os.path.join('/tmp', args[0])) == 1:
             cwd = os.getcwd()
             os.chdir('/tmp')
             import tarfile
-            tar = tarfile.open(os.path.join('/tmp',args[0]+'.tgz'), "w:gz")
-            for file in os.listdir(os.path.join('/tmp',args[0])):
-                tar.add(os.path.join(args[0],file))
+            tar = tarfile.open(os.path.join('/tmp', args[0] + '.tgz'), "w:gz")
+            for file in os.listdir(os.path.join('/tmp', args[0])):
+                tar.add(os.path.join(args[0], file))
             tar.close()
             os.chdir(cwd)
 
@@ -178,14 +181,14 @@ class UI(basic.LineReceiver):
                 mx_list = result[0]
                 mx_list.sort(lambda x, y: cmp(x.payload.preference, y.payload.preference))
                 if len(mx_list) > 0:
-                    import posix, pwd
+                    import posix
+                    import pwd
                     import socket
                     reactor.connectTCP(str(mx_list[0].payload.name), 25,
-                        SMTPClientFactory('@'.join((pwd.getpwuid(posix.getuid())[0],socket.gethostname())), 'upnp.fingerprint@googlemail.com', 'xml-files', os.path.join('/tmp',args[0]+'.tgz')))
+                        SMTPClientFactory('@'.join((pwd.getpwuid(posix.getuid())[0], socket.gethostname())), 'upnp.fingerprint@googlemail.com', 'xml-files', os.path.join('/tmp', args[0] + '.tgz')))
 
             mx = namesclient.lookupMailExchange('googlemail.com')
             mx.addCallback(got_mx)
-
 
     def cmd_quit(self, args):
         "quit -- quits this program"
@@ -200,7 +203,7 @@ class UI(basic.LineReceiver):
 
 if __name__ == '__main__':
 
-    c = Coherence({'logmode':'none'})
+    c = Coherence({'logmode': 'none'})
     ui = UI()
     ui.coherence = c
 

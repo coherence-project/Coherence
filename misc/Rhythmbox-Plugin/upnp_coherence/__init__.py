@@ -7,8 +7,8 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-
-import rhythmdb, rb
+import rhythmdb
+import rb
 import gobject
 gobject.threads_init()
 
@@ -20,7 +20,8 @@ from coherence import log
 from CoherenceDBEntryType import CoherenceDBEntryType
 
 # for the icon
-import os.path, urllib, gio, gtk.gdk
+import urllib
+import gio
 
 # the gconf configuration
 gconf_keys = {
@@ -39,6 +40,7 @@ gconf_keys = {
     # DMC
     'dmc_active': "/apps/rhythmbox/plugins/coherence/dmc/active",
 }
+
 
 class CoherencePlugin(rb.Plugin, log.Loggable):
 
@@ -85,10 +87,10 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         the_icon = None
         face_path = os.path.join(os.path.expanduser('~'), ".face")
         if os.path.exists(face_path):
-            file = gio.File(path=face_path);
-            url = file.get_uri();
-            info = file.query_info("standard::fast-content-type");
-            mimetype = info.get_attribute_as_string("standard::fast-content-type");
+            file = gio.File(path=face_path)
+            url = file.get_uri()
+            info = file.query_info("standard::fast-content-type")
+            mimetype = info.get_attribute_as_string("standard::fast-content-type")
             pixbuf = gtk.gdk.pixbuf_new_from_file(face_path)
             width = "%s" % pixbuf.get_width()
             height = "%s" % pixbuf.get_height()
@@ -121,7 +123,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
             name = self.config.get_string(gconf_keys['dms_name'])
             if name:
-                name = name.replace('{host}',self.coherence.hostname)
+                name = name.replace('{host}', self.coherence.hostname)
                 kwargs['name'] = name
 
             self.server = MediaServer(self.coherence, MediaStore, **kwargs)
@@ -155,7 +157,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
                 name = self.config.get_string(gconf_keys['dmr_name'])
                 if name:
-                    name = name.replace('{host}',self.coherence.hostname)
+                    name = name.replace('{host}', self.coherence.hostname)
                     kwargs['name'] = name
 
                 self.renderer = MediaRenderer(self.coherence,
@@ -202,9 +204,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
         for usn, source in self.sources.iteritems():
             source.delete_thyself()
         del self.sources
-
         # uninstall twisted reactor? probably not, since other things may have used it
-
 
     def get_coherence (self):
         coherence_instance = None
@@ -250,20 +250,20 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             del self.sources[udn]
 
     def detected_media_server(self, client, udn):
-        self.info("found upnp server %s (%s)"  %  (client.device.get_friendly_name(), udn))
+        self.info("found upnp server %s (%s)" % (client.device.get_friendly_name(), udn))
 
         """ don't react on our own MediaServer"""
         if hasattr(self, 'server') and client.device.get_id() == str(self.server.uuid):
             return
 
         db = self.shell.props.db
-        group = rb.rb_display_page_group_get_by_id ("shared")
-            
+        group = rb.rb_display_page_group_get_by_id("shared")
+
         entry_type = CoherenceDBEntryType(client.device.get_id()[5:])
         db.register_entry_type(entry_type)
 
         from UpnpSource import UpnpSource
-        source = gobject.new (UpnpSource,
+        source = gobject.new(UpnpSource,
                     shell=self.shell,
                     entry_type=entry_type,
                     plugin=self,
@@ -272,42 +272,42 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
         self.sources[udn] = source
 
-        self.shell.append_display_page (source, group)
+        self.shell.append_display_page(source, group)
 
     def create_configure_dialog(self, dialog=None):
         if dialog is None:
 
-            def store_config(dialog,port_spinner,interface_entry,
-                                    dms_check,dms_name_entry,dms_version_entry,dms_uuid_entry,
-                                    dmr_check,dmr_name_entry,dmr_version_entry,dmr_uuid_entry,
+            def store_config(dialog, port_spinner, interface_entry,
+                                    dms_check, dms_name_entry, dms_version_entry, dms_uuid_entry,
+                                    dmr_check, dmr_name_entry, dmr_version_entry, dmr_uuid_entry,
                                     dmc_check):
                 port = port_spinner.get_value_as_int()
-                self.config.set_int(gconf_keys['port'],port)
+                self.config.set_int(gconf_keys['port'], port)
                 interface = interface_entry.get_text()
                 if len(interface) != 0:
-                    self.config.set_string(gconf_keys['interface'],interface)
-                self.config.set_bool(gconf_keys['dms_active'],dms_check.get_active())
-                self.config.set_string(gconf_keys['dms_name'],dms_name_entry.get_text())
-                self.config.set_int(gconf_keys['dms_version'],int(dms_version_entry.get_active_text()))
-                self.config.set_string(gconf_keys['dms_uuid'],dms_uuid_entry.get_text())
+                    self.config.set_string(gconf_keys['interface'], interface)
+                self.config.set_bool(gconf_keys['dms_active'], dms_check.get_active())
+                self.config.set_string(gconf_keys['dms_name'], dms_name_entry.get_text())
+                self.config.set_int(gconf_keys['dms_version'], int(dms_version_entry.get_active_text()))
+                self.config.set_string(gconf_keys['dms_uuid'], dms_uuid_entry.get_text())
 
-                self.config.set_bool(gconf_keys['dmr_active'],dmr_check.get_active())
-                self.config.set_string(gconf_keys['dmr_name'],dmr_name_entry.get_text())
-                self.config.set_int(gconf_keys['dmr_version'],int(dmr_version_entry.get_active_text()))
-                self.config.set_string(gconf_keys['dmr_uuid'],dmr_uuid_entry.get_text())
+                self.config.set_bool(gconf_keys['dmr_active'], dmr_check.get_active())
+                self.config.set_string(gconf_keys['dmr_name'], dmr_name_entry.get_text())
+                self.config.set_int(gconf_keys['dmr_version'], int(dmr_version_entry.get_active_text()))
+                self.config.set_string(gconf_keys['dmr_uuid'], dmr_uuid_entry.get_text())
 
-                self.config.set_bool(gconf_keys['dmc_active'],dmc_check.get_active())
+                self.config.set_bool(gconf_keys['dmc_active'], dmc_check.get_active())
                 dialog.hide()
 
             dialog = gtk.Dialog(title='DLNA/UPnP Configuration',
-                            parent=None,flags=0,buttons=None)
-            dialog.set_default_size(500,350)
+                            parent=None, flags=0, buttons=None)
+            dialog.set_default_size(500, 350)
 
             table = gtk.Table(rows=2, columns=2, homogeneous=False)
             dialog.vbox.pack_start(table, False, False, 0)
 
             label = gtk.Label("Network Interface:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 0, 1)
             interface_entry = gtk.Entry()
             interface_entry.set_max_length(16)
@@ -316,10 +316,10 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             else:
                 interface_entry.set_text('')
             table.attach(interface_entry, 1, 2, 0, 1,
-                         xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
+                         xoptions=gtk.FILL | gtk.EXPAND, yoptions=gtk.FILL | gtk.EXPAND, xpadding=5, ypadding=5)
 
             label = gtk.Label("Port:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 1, 2)
 
             value = 0
@@ -330,7 +330,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             port_spinner.set_wrap(True)
             port_spinner.set_numeric(True)
             table.attach(port_spinner, 1, 2, 1, 2,
-                         xoptions=gtk.FILL|gtk.EXPAND,yoptions=gtk.FILL|gtk.EXPAND,xpadding=5,ypadding=5)
+                         xoptions=gtk.FILL | gtk.EXPAND, yoptions=gtk.FILL | gtk.EXPAND, xpadding=5, ypadding=5)
 
             frame = gtk.Frame('MediaServer')
             dialog.vbox.add(frame)
@@ -341,14 +341,14 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             vbox.pack_start(table, False, False, 0)
 
             label = gtk.Label("enabled:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 0, 1)
             dms_check = gtk.CheckButton()
             dms_check.set_active(self.config.get_bool(gconf_keys['dms_active']))
             table.attach(dms_check, 1, 2, 0, 1)
 
             label = gtk.Label("Name:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 1, 2)
             dms_name_entry = gtk.Entry()
             if self.config.get_string(gconf_keys['dms_name']) != None:
@@ -358,12 +358,12 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             table.attach(dms_name_entry, 1, 2, 1, 2)
 
             label = gtk.Label("UPnP version:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 3, 4)
 
             dms_version_entry = gtk.combo_box_new_text()
-            dms_version_entry.insert_text(0,'2')
-            dms_version_entry.insert_text(1,'1')
+            dms_version_entry.insert_text(0, '2')
+            dms_version_entry.insert_text(1, '1')
             dms_version_entry.set_active(0)
             if self.config.get_int(gconf_keys['dms_version']) != None:
                 if self.config.get_int(gconf_keys['dms_version']) == 1:
@@ -371,7 +371,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             table.attach(dms_version_entry, 1, 2, 3, 4)
 
             label = gtk.Label("UUID:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 2, 3)
             dms_uuid_entry = gtk.Entry()
             if self.config.get_string(gconf_keys['dms_uuid']) != None:
@@ -389,14 +389,14 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             vbox.pack_start(table, False, False, 0)
 
             label = gtk.Label("enabled:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 0, 1)
             dmr_check = gtk.CheckButton()
             dmr_check.set_active(self.config.get_bool(gconf_keys['dmr_active']))
             table.attach(dmr_check, 1, 2, 0, 1)
 
             label = gtk.Label("Name:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 1, 2)
             dmr_name_entry = gtk.Entry()
             if self.config.get_string(gconf_keys['dmr_name']) != None:
@@ -406,12 +406,12 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             table.attach(dmr_name_entry, 1, 2, 1, 2)
 
             label = gtk.Label("UPnP version:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 3, 4)
 
             dmr_version_entry = gtk.combo_box_new_text()
-            dmr_version_entry.insert_text(0,'2')
-            dmr_version_entry.insert_text(1,'1')
+            dmr_version_entry.insert_text(0, '2')
+            dmr_version_entry.insert_text(1, '1')
             dmr_version_entry.set_active(0)
             if self.config.get_int(gconf_keys['dmr_version']) != None:
                 if self.config.get_int(gconf_keys['dmr_version']) == 1:
@@ -419,7 +419,7 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             table.attach(dmr_version_entry, 1, 2, 3, 4)
 
             label = gtk.Label("UUID:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 2, 3)
             dmr_uuid_entry = gtk.Entry()
             if self.config.get_string(gconf_keys['dmr_uuid']) != None:
@@ -427,7 +427,6 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             else:
                 dmr_uuid_entry.set_text('')
             table.attach(dmr_uuid_entry, 1, 2, 2, 3)
-
 
             frame = gtk.Frame('MediaClient')
             dialog.vbox.add(frame)
@@ -438,24 +437,22 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
             vbox.pack_start(table, False, False, 0)
 
             label = gtk.Label("enabled:")
-            label.set_alignment(0,0.5)
+            label.set_alignment(0, 0.5)
             table.attach(label, 0, 1, 0, 1)
             dmc_check = gtk.CheckButton()
             dmc_check.set_active(self.config.get_bool(gconf_keys['dmc_active']))
             table.attach(dmc_check, 1, 2, 0, 1)
 
-
             button = gtk.Button(stock=gtk.STOCK_CANCEL)
             dialog.action_area.pack_start(button, True, True, 5)
             button.connect("clicked", lambda w: dialog.hide())
             button = gtk.Button(stock=gtk.STOCK_OK)
-            button.connect("clicked", lambda w: store_config(dialog,port_spinner,interface_entry,
-                                                             dms_check,dms_name_entry,dms_version_entry,dms_uuid_entry,
-                                                             dmr_check,dmr_name_entry,dmr_version_entry,dmr_uuid_entry,
+            button.connect("clicked", lambda w: store_config(dialog, port_spinner, interface_entry,
+                                                             dms_check, dms_name_entry, dms_version_entry, dms_uuid_entry,
+                                                             dmr_check, dmr_name_entry, dmr_version_entry, dmr_uuid_entry,
                                                              dmc_check))
             dialog.action_area.pack_start(button, True, True, 5)
             dialog.show_all()
-
 
         dialog.present()
         return dialog

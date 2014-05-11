@@ -29,7 +29,8 @@ import gtk
 
 from coherence.ui.av_widgets import DeviceImportWidget
 
-def show_upload_widget(files,standalone=True):
+
+def show_upload_widget(files, standalone=True):
 
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     if standalone:
@@ -37,7 +38,7 @@ def show_upload_widget(files,standalone=True):
     window.set_default_size(350, 300)
     window.set_title('Coherence DLNA/UPnP Upload')
 
-    ui=DeviceImportWidget(standalone=standalone,root=window)
+    ui = DeviceImportWidget(standalone=standalone, root=window)
 
     window.add(ui.window)
 
@@ -60,9 +61,9 @@ try:
 
 
     def log(t):
-	return
-        f = open('/tmp/coherence.log','a')
-        f.write(t+'\n')
+        return
+        f = open('/tmp/coherence.log', 'a')
+        f.write(t + '\n')
         f.close()
 
 
@@ -81,8 +82,8 @@ try:
 
         def init_controlpoint(self):
             self.bus = dbus.SessionBus()
-            self.coherence = self.bus.get_object(BUS_NAME,OBJECT_PATH)
-        
+            self.coherence = self.bus.get_object(BUS_NAME, OBJECT_PATH)
+
         def get_file_items(self, window, files):
             log("get_file_items")
             log("coherence %r" % self.coherence)
@@ -109,7 +110,7 @@ try:
             if len(files) == 0:
                 return
 
-            show_upload_widget([unquote(file.get_uri()[7:]) for file in files],standalone=False)
+            show_upload_widget([unquote(file.get_uri()[7:]) for file in files], standalone=False)
 
 
 except ImportError:

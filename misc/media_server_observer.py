@@ -5,6 +5,7 @@ from coherence.base import Coherence
 from coherence.upnp.devices.control_point import ControlPoint
 from coherence.upnp.core import DIDLLite
 
+
 # browse callback
 def process_media_server_browse(result, client):
     print "browsing root of", client.device.get_friendly_name()
@@ -16,10 +17,11 @@ def process_media_server_browse(result, client):
 
         if item.upnp_class.startswith("object.container"):
             print "  container %s (%s) with %d items" % \
-                    (item.title,item.id, item.childCount)
+                    (item.title, item.id, item.childCount)
 
         if item.upnp_class.startswith("object.item"):
             print "  item %s (%s)" % (item.title, item.id)
+
 
 # called for each media server found
 def media_server_found(client, udn):
@@ -31,12 +33,14 @@ def media_server_found(client, udn):
             backward_compatibility=False)
     d.addCallback(process_media_server_browse, client)
 
+
 # sadly they sometimes get removed as well :(
 def media_server_removed(udn):
     print "media_server_removed", udn
 
+
 def start():
-    control_point = ControlPoint(Coherence({'logmode':'warning'}),
+    control_point = ControlPoint(Coherence({'logmode': 'warning'}),
             auto_client=['MediaServer'])
     control_point.connect(media_server_found,
             'Coherence.UPnP.ControlPoint.MediaServer.detected')
@@ -50,4 +54,3 @@ def start():
 if __name__ == "__main__":
     reactor.callWhenRunning(start)
     reactor.run()
-    

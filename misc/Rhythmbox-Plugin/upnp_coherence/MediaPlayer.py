@@ -24,6 +24,7 @@ from CoherenceDBEntryType import CoherenceDBEntryType
 
 TRACK_COUNT = 1000000
 
+
 class RhythmboxPlayer(log.Loggable):
 
     """ a backend to the Rhythmbox
@@ -32,9 +33,9 @@ class RhythmboxPlayer(log.Loggable):
     logCategory = 'rb_media_renderer'
 
     implements = ['MediaRenderer']
-    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel':'Master'},
-                             'AVTransport': {'A_ARG_TYPE_SeekMode':('ABS_TIME','REL_TIME','TRACK_NR')}}
-    vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum':100}}}
+    vendor_value_defaults = {'RenderingControl': {'A_ARG_TYPE_Channel': 'Master'},
+                             'AVTransport': {'A_ARG_TYPE_SeekMode': ('ABS_TIME', 'REL_TIME', 'TRACK_NR')}}
+    vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum': 100}}}
 
     def __init__(self, device, **kwargs):
         self.warning("__init__ RhythmboxPlayer %r", kwargs)
@@ -52,7 +53,7 @@ class RhythmboxPlayer(log.Loggable):
 
         self.player = self.shell.get_player()
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
-        
+
         coherence_player_entry_type = CoherenceDBEntryType("CoherencePlayer")
         self.shell.props.db.register_entry_type(coherence_player_entry_type)
 
@@ -72,7 +73,7 @@ class RhythmboxPlayer(log.Loggable):
         self.info('volume_changed to %r', self.volume)
         if self.volume > 0:
             rcs_id = self.server.connection_manager_server.lookup_rcs_id(self.current_connection_id)
-            self.server.rendering_control_server.set_variable(rcs_id, 'Volume', self.volume*100)
+            self.server.rendering_control_server.set_variable(rcs_id, 'Volume', self.volume * 100)
 
     def playing_song_changed(self, player, entry):
         self.info("playing_song_changed %r", entry)
@@ -85,7 +86,7 @@ class RhythmboxPlayer(log.Loggable):
             self.metadata = None
             self.duration = None
         else:
-            id = self.shell.props.db.entry_get (entry, rhythmdb.PROP_ENTRY_ID)
+            id = self.shell.props.db.entry_get(entry, rhythmdb.PROP_ENTRY_ID)
             bitrate = self.shell.props.db.entry_get(entry, rhythmdb.PROP_BITRATE) * 1024 / 8
             # Duration is in HH:MM:SS format
             seconds = self.shell.props.db.entry_get(entry, rhythmdb.PROP_DURATION)
@@ -102,17 +103,17 @@ class RhythmboxPlayer(log.Loggable):
             size = self.shell.props.db.entry_get(entry, rhythmdb.PROP_FILE_SIZE)
 
             # create item
-            item = DIDLLite.MusicTrack(id + TRACK_COUNT,'101')
+            item = DIDLLite.MusicTrack(id + TRACK_COUNT, '101')
             item.album = self.shell.props.db.entry_get(entry, rhythmdb.PROP_ALBUM)
             item.artist = self.shell.props.db.entry_get(entry, rhythmdb.PROP_ARTIST)
             item.genre = self.shell.props.db.entry_get(entry, rhythmdb.PROP_GENRE)
-            item.originalTrackNumber = str(self.shell.props.db.entry_get (entry, rhythmdb.PROP_TRACK_NUMBER))
-            item.title = self.shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE) # much nicer if it was entry.title
+            item.originalTrackNumber = str(self.shell.props.db.entry_get(entry, rhythmdb.PROP_TRACK_NUMBER))
+            item.title = self.shell.props.db.entry_get(entry, rhythmdb.PROP_TITLE)  # much nicer if it was entry.title
 
             cover = self.shell.props.db.entry_request_extra_metadata(entry, "rb:coverArt-uri")
             if cover != None:
-                _,ext =  os.path.splitext(cover)
-                item.albumArtURI = ''.join((self.server.coherence.urlbase+str(self.dmr_uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT),'?cover',ext))
+                _, ext = os.path.splitext(cover)
+                item.albumArtURI = ''.join((self.server.coherence.urlbase + str(self.dmr_uuid)[5:] + '/' + str(int(id) + TRACK_COUNT), '?cover', ext))
 
             item.res = []
 
@@ -120,7 +121,7 @@ class RhythmboxPlayer(log.Loggable):
             if location.startswith("file://"):
                 location = unicode(urllib.unquote(location[len("file://"):]))
 
-            uri = ''.join((self.server.coherence.urlbase+str(self.dmr_uuid)[5:]+'/'+ str(int(id) + TRACK_COUNT)))
+            uri = ''.join((self.server.coherence.urlbase + str(self.dmr_uuid)[5:] + '/' + str(int(id) + TRACK_COUNT)))
 
             res = DIDLLite.Resource(uri, 'http-get:*:%s:*' % mimetype)
             if size > 0:
@@ -146,13 +147,13 @@ class RhythmboxPlayer(log.Loggable):
             self.metadata = elt.toString()
             self.entry = entry
             if self.server != None:
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-                self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
-                self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI', uri)
+                self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI', uri)
+                self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData', self.metadata)
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData', self.metadata)
             self.info("playing_song_changed %r", self.metadata)
         if self.server != None:
-            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
+            self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions', 'PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
             self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '00:00:00')
             self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '00:00:00')
 
@@ -174,7 +175,7 @@ class RhythmboxPlayer(log.Loggable):
             duration = player.get_playing_song_duration()
         except:
             duration = None
-        self.update_position(position,duration)
+        self.update_position(position, duration)
         self.info("playing_changed %r %r ", position, duration)
 
     def elapsed_changed(self, player, time):
@@ -183,13 +184,13 @@ class RhythmboxPlayer(log.Loggable):
             duration = player.get_playing_song_duration()
         except:
             duration = None
-        self.update_position(time,duration)
+        self.update_position(time, duration)
 
     def update(self, state):
 
         self.info("update %r", state)
 
-        if state in ('STOPPED','READY'):
+        if state in ('STOPPED', 'READY'):
             transport_state = 'STOPPED'
         if state == 'PLAYING':
             transport_state = 'PLAYING'
@@ -204,31 +205,30 @@ class RhythmboxPlayer(log.Loggable):
                                                              'TransportState',
                                                              transport_state)
 
-
-    def update_position(self, position,duration):
-        self.info("update_position %r %r", position,duration)
+    def update_position(self, position, duration):
+        self.info("update_position %r %r", position, duration)
 
         if self.server != None:
             connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
             self.server.av_transport_server.set_variable(connection_id, 'CurrentTrack', 1)
 
         if position is not None:
-            m,s = divmod( position, 60)
-            h,m = divmod(m,60)
+            m, s = divmod(position, 60)
+            h, m = divmod(m, 60)
             if self.server != None:
-                self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h,m,s))
-                self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h,m,s))
+                self.server.av_transport_server.set_variable(connection_id, 'RelativeTimePosition', '%02d:%02d:%02d' % (h, m, s))
+                self.server.av_transport_server.set_variable(connection_id, 'AbsoluteTimePosition', '%02d:%02d:%02d' % (h, m, s))
 
         if duration <= 0:
             duration = None
 
         if duration is not None:
-            m,s = divmod( duration, 60)
-            h,m = divmod(m,60)
+            m, s = divmod(duration, 60)
+            h, m = divmod(m, 60)
 
             if self.server != None:
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h,m,s))
-                self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h,m,s))
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackDuration', '%02d:%02d:%02d' % (h, m, s))
+                self.server.av_transport_server.set_variable(connection_id, 'CurrentMediaDuration', '%02d:%02d:%02d' % (h, m, s))
 
             if self.duration is None:
                 if self.metadata is not None:
@@ -236,16 +236,16 @@ class RhythmboxPlayer(log.Loggable):
                     elt = DIDLLite.DIDLElement.fromString(self.metadata)
                     for item in elt:
                         for res in item.findall('res'):
-                            res.attrib['duration'] = "%d:%02d:%02d" % (h,m,s)
+                            res.attrib['duration'] = "%d:%02d:%02d" % (h, m, s)
                     self.metadata = elt.toString()
 
                     if self.server != None:
-                        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',self.metadata)
-                        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',self.metadata)
+                        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData', self.metadata)
+                        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData', self.metadata)
 
                 self.duration = duration
 
-    def load( self, uri, metadata):
+    def load(self, uri, metadata):
         self.info("player load %r %r", uri, metadata)
         #self.shell.load_uri(uri,play=False)
         self.duration = None
@@ -257,7 +257,7 @@ class RhythmboxPlayer(log.Loggable):
         if was_playing == True:
             self.stop()
 
-        if len(metadata)>0:
+        if len(metadata) > 0:
             elt = DIDLLite.DIDLElement.fromString(metadata)
             if elt.numItems() == 1:
                 item = elt.getItems()[0]
@@ -266,7 +266,7 @@ class RhythmboxPlayer(log.Loggable):
                     self.entry = self.shell.props.db.entry_lookup_by_id(int(uri[6:]))
                 else:
                     self.entry = self.shell.props.db.entry_lookup_by_location(uri)
-                self.info("check for entry %r %r %r", self.entry,item.server_uuid,uri)
+                self.info("check for entry %r %r %r", self.entry, item.server_uuid, uri)
                 if self.entry == None:
                     db = self.shell.props.db
                     if item.server_uuid is not None:
@@ -301,20 +301,20 @@ class RhythmboxPlayer(log.Loggable):
                     pass
 
                 try:
-                    self.info("%r %r", item.title,item.originalTrackNumber)
+                    self.info("%r %r", item.title, item.originalTrackNumber)
                     if item.originalTrackNumber is not None:
                         self.shell.props.db.set(self.entry, rhythmdb.PROP_TRACK_NUMBER, int(item.originalTrackNumber))
                 except AttributeError:
                     pass
 
                 if duration is not None:
-                    h,m,s = duration.split(':')
-                    seconds = int(h)*3600 + int(m)*60 + int(s)
-                    self.info("%r %r:%r:%r %r", duration, h, m , s, seconds)
+                    h, m, s = duration.split(':')
+                    seconds = int(h) * 3600 + int(m) * 60 + int(s)
+                    self.info("%r %r:%r:%r %r", duration, h, m, s, seconds)
                     self.shell.props.db.set(self.entry, rhythmdb.PROP_DURATION, seconds)
 
                 if size is not None:
-                    self.shell.props.db.set(self.entry, rhythmdb.PROP_FILE_SIZE,int(size))
+                    self.shell.props.db.set(self.entry, rhythmdb.PROP_FILE_SIZE, int(size))
 
         else:
             if uri.startswith('track-'):
@@ -324,18 +324,17 @@ class RhythmboxPlayer(log.Loggable):
                 #self.entry = self.shell.props.db.entry_lookup_by_location(uri)
                 self.entry = self.shell.props.db.entry_new(self.coherence_player_entry_type, uri)
 
-
         self.playing = False
         self.metadata = metadata
 
         connection_id = self.server.connection_manager_server.lookup_avt_id(self.current_connection_id)
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions','PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
-        self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks',1)
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI',uri)
-        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData',metadata)
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI',uri)
-        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData',metadata)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTransportActions', 'PLAY,STOP,PAUSE,SEEK,NEXT,PREVIOUS')
+        self.server.av_transport_server.set_variable(connection_id, 'NumberOfTracks', 1)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI', uri)
+        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURI', uri)
+        self.server.av_transport_server.set_variable(connection_id, 'AVTransportURIMetaData', metadata)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackURI', uri)
+        self.server.av_transport_server.set_variable(connection_id, 'CurrentTrackMetaData', metadata)
 
         if was_playing == True:
             self.play()
@@ -358,9 +357,9 @@ class RhythmboxPlayer(log.Loggable):
 
         if self.playing == False:
             if self.entry:
-               self.player.play_entry(self.entry)
+                self.player.play_entry(self.entry)
             else:
-               self.player.playpause()
+                self.player.playpause()
             self.playing = True
         else:
             self.player.playpause()
@@ -409,18 +408,18 @@ class RhythmboxPlayer(log.Loggable):
         self.info("set_volume %r", volume)
         volume = int(volume)
         if volume < 0:
-            volume=0
+            volume = 0
         if volume > 100:
-            volume=100
+            volume = 100
 
-        self.player.set_volume(float(volume/100.0))
+        self.player.set_volume(float(volume / 100.0))
 
     def upnp_init(self):
-        self.player.connect ('playing-song-changed',
+        self.player.connect('playing-song-changed',
                                  self.playing_song_changed),
-        self.player.connect ('playing-changed',
+        self.player.connect('playing-changed',
                                  self.playing_changed)
-        self.player.connect ('elapsed-changed',
+        self.player.connect('elapsed-changed',
                                  self.elapsed_changed)
         self.player.connect("notify::volume", self.volume_changed)
 
@@ -480,7 +479,7 @@ class RhythmboxPlayer(log.Loggable):
         InstanceID = int(kwargs['InstanceID'])
         Unit = kwargs['Unit']
         Target = kwargs['Target']
-        if Unit in ['ABS_TIME','REL_TIME']:
+        if Unit in ['ABS_TIME', 'REL_TIME']:
             old_state = self.server.av_transport_server.get_variable('TransportState').value
             self.server.av_transport_server.set_variable(0, 'TransportState', 'TRANSITIONING')
 
@@ -490,21 +489,21 @@ class RhythmboxPlayer(log.Loggable):
             if Target[0] == '-':
                 Target = Target[1:]
                 sign = -1
-            h,m,s = Target.split(':')
-            seconds = int(h)*3600 + int(m)*60 + int(s)
+            h, m, s = Target.split(':')
+            seconds = int(h) * 3600 + int(m) * 60 + int(s)
 
             if Unit == 'ABS_TIME':
                 position = self.player.get_playing_time()
-                self.seek(seconds-position, old_state)
+                self.seek(seconds - position, old_state)
             elif Unit == 'REL_TIME':
-                self.seek(seconds*sign, old_state)
+                self.seek(seconds * sign, old_state)
         return {}
 
-    def upnp_Next(self,*args,**kwargs):
+    def upnp_Next(self, *args, **kwargs):
         self.player.do_next()
         return {}
 
-    def upnp_Previous(self,*args,**kwargs):
+    def upnp_Previous(self, *args, **kwargs):
         self.player.do_previous()
         return {}
 
@@ -512,10 +511,10 @@ class RhythmboxPlayer(log.Loggable):
         InstanceID = int(kwargs['InstanceID'])
         CurrentURI = kwargs['CurrentURI']
         CurrentURIMetaData = kwargs['CurrentURIMetaData']
-        local_protocol_infos=self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
+        local_protocol_infos = self.server.connection_manager_server.get_variable('SinkProtocolInfo').value.split(',')
         #print '>>>', local_protocol_infos
-        if len(CurrentURIMetaData)==0:
-            self.load(CurrentURI,CurrentURIMetaData)
+        if len(CurrentURIMetaData) == 0:
+            self.load(CurrentURI, CurrentURIMetaData)
             return {}
         else:
             elt = DIDLLite.DIDLElement.fromString(CurrentURIMetaData)
@@ -527,8 +526,8 @@ class RhythmboxPlayer(log.Loggable):
                     res = item.res.get_matching(local_protocol_infos)
                 if len(res) > 0:
                     res = res[0]
-                    remote_protocol,remote_network,remote_content_format,_ = res.protocolInfo.split(':')
-                    self.load(res.data,CurrentURIMetaData)
+                    remote_protocol, remote_network, remote_content_format, _ = res.protocolInfo.split(':')
+                    self.load(res.data, CurrentURIMetaData)
                     return {}
         return failure.Failure(errorCode(714))
 
@@ -536,7 +535,7 @@ class RhythmboxPlayer(log.Loggable):
         InstanceID = int(kwargs['InstanceID'])
         Channel = kwargs['Channel']
         DesiredMute = kwargs['DesiredMute']
-        if DesiredMute in ['TRUE', 'True', 'true', '1','Yes','yes']:
+        if DesiredMute in ['TRUE', 'True', 'true', '1', 'Yes', 'yes']:
             self.mute()
         else:
             self.unmute()

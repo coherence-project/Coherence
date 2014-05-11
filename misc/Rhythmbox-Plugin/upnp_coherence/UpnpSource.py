@@ -5,8 +5,10 @@
 # Copyright 2007-2010 Frank Scholz <dev@coherence-project.org>
 # Copyright 2007, James Livingston  <doclivingston@gmail.com>
 
-import rb, rhythmdb
-import gobject, gtk
+import rb
+import rhythmdb
+import gobject
+import gtk
 import re
 
 from coherence import __version_info__ as coherence_version
@@ -14,14 +16,15 @@ from coherence import __version_info__ as coherence_version
 from coherence import log
 from coherence.upnp.core import DIDLLite
 
-class UpnpSource(rb.BrowserSource,log.Loggable):
+
+class UpnpSource(rb.BrowserSource, log.Loggable):
 
     logCategory = 'rb_media_store'
 
     __gproperties__ = {
-        'plugin': (rb.Plugin, 'plugin', 'plugin', gobject.PARAM_WRITABLE|gobject.PARAM_CONSTRUCT_ONLY),
-        'client': (gobject.TYPE_PYOBJECT, 'client', 'client', gobject.PARAM_WRITABLE|gobject.PARAM_CONSTRUCT_ONLY),
-        'udn': (gobject.TYPE_PYOBJECT, 'udn', 'udn', gobject.PARAM_WRITABLE|gobject.PARAM_CONSTRUCT_ONLY),
+        'plugin': (rb.Plugin, 'plugin', 'plugin', gobject.PARAM_WRITABLE | gobject.PARAM_CONSTRUCT_ONLY),
+        'client': (gobject.TYPE_PYOBJECT, 'client', 'client', gobject.PARAM_WRITABLE | gobject.PARAM_CONSTRUCT_ONLY),
+        'udn': (gobject.TYPE_PYOBJECT, 'udn', 'udn', gobject.PARAM_WRITABLE | gobject.PARAM_CONSTRUCT_ONLY),
     }
 
     def __init__(self):
@@ -66,13 +69,13 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
     def load_db(self):
         self.browse_count = 0
         self.load_children(0)
-        
+
     def load_children(self, id):
         self.browse_count += 1
         d = self.__client.content_directory.browse(id, browse_flag='BrowseDirectChildren', process_result=False, backward_compatibility=False)
         d.addCallback(self.process_media_server_browse, self.__udn)
         d.addErrback(self.err_back)
-    
+
     def err_back(self, *args, **kw):
         self.info("Browse action failed: %s" % str(args))
         self.browse_count -= 1
@@ -111,8 +114,8 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                 bitrate = None
 
                 for res in item.res:
-                    remote_protocol,remote_network,remote_content_format,remote_flags = res.protocolInfo.split(':')
-                    self.info("%r %r %r %r",remote_protocol,remote_network,remote_content_format,remote_flags)
+                    remote_protocol, remote_network, remote_content_format, remote_flags = res.protocolInfo.split(':')
+                    self.info("%r %r %r %r", remote_protocol, remote_network, remote_content_format, remote_flags)
                     if remote_protocol == 'http-get':
                         url = res.data
                         duration = res.duration
@@ -121,9 +124,9 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                         break
 
                 if url is not None and item.refID is None:
-                    self.info("url %r %r",url,item.title)
+                    self.info("url %r %r", url, item.title)
 
-                    entry = self.__db.entry_lookup_by_location (url)
+                    entry = self.__db.entry_lookup_by_location(url)
                     if entry == None:
                         entry = self.__db.entry_new(self.__entry_type, url)
 
@@ -144,7 +147,7 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                     except AttributeError:
                         pass
                     try:
-                        self.info("%r %r", item.title,item.originalTrackNumber)
+                        self.info("%r %r", item.title, item.originalTrackNumber)
                         if item.originalTrackNumber is not None:
                             self.__db.set(entry, rhythmdb.PROP_TRACK_NUMBER, int(item.originalTrackNumber))
                     except AttributeError:
@@ -153,28 +156,28 @@ class UpnpSource(rb.BrowserSource,log.Loggable):
                     if duration is not None:
                         #match duration via regular expression.
                         #in case RB ever supports fractions of a second, here's the full regexp:
-                        #"(\d+):([0-5][0-9]):([0-5][0-9])(?:\.(\d+))?(?:\.(\d+)\/(\d+))?" 
-                        self.info("duration: %r" %(duration))
+                        #"(\d+):([0-5][0-9]):([0-5][0-9])(?:\.(\d+))?(?:\.(\d+)\/(\d+))?"
+                        self.info("duration: %r" % (duration))
                         match = re.match("(\d+):([0-5][0-9]):([0-5][0-9])", duration)
                         if match is not None:
                             h = match.group(1)
                             m = match.group(2)
                             s = match.group(3)
-                            seconds = int(h)*3600 + int(m)*60 + int(s)
-                            self.info("duration parsed as %r:%r:%r (%r seconds)" % (h,m,s,seconds))
+                            seconds = int(h) * 3600 + int(m) * 60 + int(s)
+                            self.info("duration parsed as %r:%r:%r (%r seconds)" % (h, m, s, seconds))
                             self.__db.set(entry, rhythmdb.PROP_DURATION, seconds)
 
                     if size is not None:
                         try:
-                             self.__db.set(entry, rhythmdb.PROP_FILE_SIZE,int(size))
+                            self.__db.set(entry, rhythmdb.PROP_FILE_SIZE, int(size))
                         except AttributeError:
                             pass
                     if bitrate is not None:
                         try:
-                            self.__db.set(entry, rhythmdb.PROP_BITRATE,int(bitrate))
+                            self.__db.set(entry, rhythmdb.PROP_BITRATE, int(bitrate))
                         except AttributeError:
                             pass
 
                     self.__db.commit()
-                            
+
 gobject.type_register(UpnpSource)
