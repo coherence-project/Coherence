@@ -96,9 +96,9 @@ You can extend the functionality of coherence by writing your own backends/plugi
   backends directory of coherence.
 
 - To integrate your own backend, open the file ``setup.py`` of the coherence
-  installer and add it to the list of ``entry_points``. Also copy your
-  backend into the subfolder ``coherence/backends`` of the coherence installer.
-  Finally start the installation like described in `Installation from source`_. 
+  installer and add it to the list of ``entry_points``. Also copy your backend 
+  into the subfolder ``coherence/backends`` of the coherence installer. Finally 
+  start the installation like described above (Installation from source). 
 
 Support
 =======
