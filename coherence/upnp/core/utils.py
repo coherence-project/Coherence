@@ -293,32 +293,9 @@ class ProxyClient(proxy.ProxyClient):
         web.ProxyClient.handleResponsePart(self, buffer)
 
 
-class ProxyClientFactory(protocol.ClientFactory):
-    """
-    Used by ProxyRequest to implement a simple web proxy.
-    """
+class ProxyClientFactory(proxy.ProxyClientFactory):
 
     protocol = proxy.ProxyClient
-
-    def __init__(self, command, rest, version, headers, data, father):
-        self.father = father
-        self.command = command
-        self.rest = rest
-        self.headers = headers
-        self.data = data
-        self.version = version
-
-    def buildProtocol(self, addr):
-        return self.protocol(self.command, self.rest, self.version,
-                             self.headers, self.data, self.father)
-
-    def clientConnectionFailed(self, connector, reason):
-        self.father.transport.write("HTTP/1.0 501 Gateway error\r\n")
-        self.father.transport.write("Content-Type: text/html\r\n")
-        self.father.transport.write("\r\n")
-        self.father.transport.write('''<H1>Could not connect</H1>''')
-        self.father.transport.loseConnection()
-
 
 class ReverseProxyResource(proxy.ReverseProxyResource):
     """
