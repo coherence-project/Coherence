@@ -469,7 +469,7 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
         url,
         factoryFactory,
         contextFactory=contextFactory,
-        file, *args, **kwargs).deferred
+        *args, **kwargs).deferred
 
 
 # StaticFile used to be a patched version of static.File. The later
