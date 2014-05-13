@@ -678,4 +678,4 @@ _bdates = [datetime(1997,2,28,17,20,tzinfo=_CET()),  # Sebastian Oliver
 
 
 def datefaker():
-    return random.choice(bdates)
+    return random.choice(_bdates)
