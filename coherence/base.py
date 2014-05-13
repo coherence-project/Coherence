@@ -429,6 +429,7 @@ class Coherence(log.Loggable):
 
         self.available_plugins = Plugins()
 
+        # :todo: clean up this exception concept
         try:
             plugin_class = self.available_plugins.get(plugin, None)
             if plugin_class == None:
