@@ -444,8 +444,9 @@ class Coherence(log.Loggable):
                     return new_backend
                 except KeyError:
                     self.warning("Can't enable %s plugin, sub-system %s not found!", plugin, device)
-                except Exception, msg:
-                    self.warning("Can't enable %s plugin for sub-system %s, %s!", plugin, device, msg)
+                except:
+                    self.exception("Can't enable %s plugin for sub-system %s",
+                                   plugin, device)
                     self.debug(traceback.format_exc())
         except KeyError, error:
             self.warning("Can't enable %s plugin, not found!", plugin)
