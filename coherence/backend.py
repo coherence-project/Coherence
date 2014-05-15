@@ -408,7 +408,7 @@ class Container(BackendItem):
         return self.update_id
 
 
-class LazyContainer(Container, log.Loggable):
+class LazyContainer(Container):
     logCategory = 'lazyContainer'
 
     def __init__(self, parent, title, external_id=None, refresh=0, childrenRetriever=None, **kwargs):

@@ -46,10 +46,11 @@ class MirabeauProxy(resource.Resource, log.Loggable):
         return ReverseProxyUriResource(uri)
 
 
-class TubeServiceControl(UPnPPublisher, log.Loggable):
+class TubeServiceControl(UPnPPublisher):
     logCategory = 'mirabeau'
 
     def __init__(self, server):
+        UPnPPublisher.__init__(self)
         self.service = server
         self.variables = server.get_variables()
         self.actions = server.get_actions()
@@ -155,8 +156,7 @@ class TubeServiceControl(UPnPPublisher, log.Loggable):
         return d
 
 
-class TubeServiceProxy(service.ServiceServer, resource.Resource,
-                              log.Loggable):
+class TubeServiceProxy(service.ServiceServer, resource.Resource):
     logCategory = 'mirabeau'
 
     def __init__(self, tube_service, device, backend=None):

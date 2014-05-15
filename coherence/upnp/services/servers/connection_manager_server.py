@@ -28,8 +28,7 @@ class ConnectionManagerControl(service.ServiceControl, UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class ConnectionManagerServer(service.ServiceServer, resource.Resource,
-                              log.Loggable):
+class ConnectionManagerServer(service.ServiceServer, resource.Resource):
     logCategory = 'connection_manager_server'
 
     def __init__(self, device, backend=None):

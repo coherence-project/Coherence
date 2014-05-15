@@ -28,8 +28,7 @@ class ContentDirectoryControl(service.ServiceControl, UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class ContentDirectoryServer(service.ServiceServer, resource.Resource,
-                             log.Loggable):
+class ContentDirectoryServer(service.ServiceServer, resource.Resource):
     logCategory = 'content_directory_server'
 
     def __init__(self, device, backend=None, transcoding=False):

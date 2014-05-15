@@ -21,8 +21,7 @@ class DimmingControl(service.ServiceControl, UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class DimmingServer(service.ServiceServer, resource.Resource,
-                              log.Loggable):
+class DimmingServer(service.ServiceServer, resource.Resource):
     logCategory = 'dimming_server'
 
     def __init__(self, device, backend=None):

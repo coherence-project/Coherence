@@ -24,8 +24,7 @@ class SwitchPowerControl(service.ServiceControl, UPnPPublisher):
         self.actions = server.get_actions()
 
 
-class SwitchPowerServer(service.ServiceServer, resource.Resource,
-                              log.Loggable):
+class SwitchPowerServer(service.ServiceServer, resource.Resource):
     logCategory = 'switch_power_server'
 
     def __init__(self, device, backend=None):
