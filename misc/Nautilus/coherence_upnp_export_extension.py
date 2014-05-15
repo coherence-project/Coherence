@@ -105,7 +105,12 @@ try:
             if len(files) == 0:
                 return
 
-            self.build()
+            try:
+                # Current versions of NautilusPython do not have this
+                # method. I doubt, if ever existed.
+                self.build()
+            except:
+                pass
 
             if self.window == None:
                 self.ui_create()
