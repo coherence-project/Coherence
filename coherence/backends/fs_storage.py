@@ -14,6 +14,7 @@ import time
 import re
 from datetime import datetime
 import urllib
+from functools import partial
 
 from sets import Set
 
