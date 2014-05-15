@@ -70,6 +70,7 @@ class LolcatsImage(BackendItem):
     # item with data.
 
     def __init__(self, parent_id, id, title, url):
+        BackendItem.__init__(self)
         self.parentid = parent_id       # used to be able to 'go back'
 
         self.update_id = 0
@@ -103,6 +104,7 @@ class LolcatsContainer(BackendItem):
     # some more stuff to do in here.
 
     def __init__(self, parent_id, id):
+        BackendItem.__init__(self)
         # the ids as above
         self.parent_id = parent_id
         self.id = id

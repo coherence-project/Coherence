@@ -212,6 +212,7 @@ class BackendItem(log.Loggable):
             res.size = size
             self.item.res.append(res)
         """
+        log.Loggable.__init__(self)
         self.name = u'my_name' # the basename of a file, the album title,
                                # the artists name,...
                                # is expected to be unicode

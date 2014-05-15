@@ -34,6 +34,7 @@ class RadiotimeAudioItem(BackendItem):
     logCategory = 'radiotime'
 
     def __init__(self, outline):
+        BackendItem.__init__(self)
         self.preset_id = outline.get('preset_id')
         self.name = outline.get('text')
         self.mimetype = DEFAULT_MIMETYPE

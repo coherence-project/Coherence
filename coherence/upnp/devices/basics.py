@@ -25,6 +25,7 @@ class DeviceHttpRoot(resource.Resource, log.Loggable):
 
     def __init__(self, server):
         resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
         self.server = server
 
     def getChildWithDefault(self, path, request):

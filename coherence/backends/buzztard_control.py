@@ -26,6 +26,9 @@ from coherence import log
 class BzClient(LineReceiver, log.Loggable):
     logCategory = 'buzztard_client'
 
+    def __init__(self, *args, **kwargs):
+        log.Loggable.__init__(self)
+
     def connectionMade(self):
         self.info("connected to Buzztard")
         self.factory.clientReady(self)
@@ -52,6 +55,7 @@ class BzFactory(protocol.ClientFactory, log.Loggable):
     protocol = BzClient
 
     def __init__(self, backend):
+        log.Loggable.__init__(self)
         self.backend = backend
 
     def clientConnectionFailed(self, connector, reason):
@@ -104,6 +108,7 @@ class BzConnection(log.Loggable):
             return obj
 
     def __init__(self, backend=None, host='localhost', port=7654):
+        log.Loggable.__init__(self)
         self.debug("BzConnection __init__")
 
 
@@ -111,6 +116,7 @@ class BuzztardItem(log.Loggable):
     logCategory = 'buzztard_item'
 
     def __init__(self, id, name, parent, mimetype, urlbase, host, update=False):
+        log.Loggable.__init__(self)
         self.id = id
         self.name = name
         self.mimetype = mimetype
@@ -224,6 +230,7 @@ class BuzztardStore(log.Loggable, Plugin):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
+        log.Loggable.__init__(self)
         self.next_id = 1000
         self.config = kwargs
         self.name = kwargs.get('name', 'Buzztard')
@@ -339,6 +346,7 @@ class BuzztardPlayer(log.Loggable):
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum': 100}}}
 
     def __init__(self, device, **kwargs):
+        log.Loggable.__init__(self)
         self.name = kwargs.get('name', 'Buzztard MediaRenderer')
         self.host = kwargs.get('host', '127.0.0.1')
         self.port = int(kwargs.get('port', 7654))

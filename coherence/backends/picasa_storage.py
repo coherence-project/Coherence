@@ -39,6 +39,7 @@ class PicasaProxy(ReverseProxyUriResource):
 
 class PicasaPhotoItem(BackendItem):
     def __init__(self, photo):
+        BackendItem.__init__(self)
         #print photo
         self.photo = photo
 

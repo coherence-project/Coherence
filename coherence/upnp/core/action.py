@@ -45,6 +45,7 @@ class Action(log.Loggable):
     logCategory = 'action'
 
     def __init__(self, service, name, implementation, arguments_list):
+        log.Loggable.__init__(self)
         self.service = service
         self.name = name
         self.implementation = implementation

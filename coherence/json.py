@@ -15,6 +15,8 @@ class JsonInterface(resource.Resource, log.Loggable):
     #isLeaf = False
 
     def __init__(self, controlpoint):
+        resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
         self.controlpoint = controlpoint
         self.controlpoint.coherence.add_web_resource('json',
                                         self)

@@ -77,6 +77,7 @@ class Container(BackendItem):
     get_path = None
 
     def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container, play_container=False):
+        BackendItem.__init__(self)
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -158,6 +159,7 @@ class Playlist(BackendItem):
     get_path = None
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.ampache_id = element.get('id')
         self.id = 'playlist.%d' % int(element.get('id'))
@@ -199,6 +201,7 @@ class Album(BackendItem):
     get_path = None
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.ampache_id = element.get('id')
         self.id = 'album.%d' % int(element.get('id'))
@@ -254,6 +257,7 @@ class Artist(BackendItem):
     get_path = None
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.ampache_id = element.get('id')
         self.id = 'artist.%d' % int(element.get('id'))
@@ -301,6 +305,7 @@ class Genre(BackendItem):
     get_path = None
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.ampache_id = element.get('id')
         self.id = 'genre.%d' % int(element.get('id'))
@@ -352,6 +357,7 @@ class Tag(BackendItem):
     get_path = None
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.ampache_id = element.get('id')
         self.id = 'tag.%d' % int(element.get('id'))
@@ -401,6 +407,7 @@ class Track(BackendItem):
     logCategory = 'ampache_store'
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'song.%d' % int(element.get('id'))
         self.parent_id = 'album.%d' % int(element.find('album').get('id'))
@@ -497,6 +504,7 @@ class Video(BackendItem):
     logCategory = 'ampache_store'
 
     def __init__(self, store, element):
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'video.%d' % int(element.get('id'))
 

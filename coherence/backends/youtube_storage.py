@@ -38,6 +38,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
                  fct=None, **kwargs):
 
         ReverseProxyUriResource.__init__(self, uri)
+        log.Loggable.__init__(self)
 
         self.id = id
         if isinstance(self.id, int):
@@ -299,6 +300,7 @@ class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
 class YoutubeVideoItem(BackendItem):
 
     def __init__(self, external_id, title, url, mimetype, entry, store):
+        BackendItem.__init__(self)
         self.external_id = external_id
         self.name = title
         self.duration = None

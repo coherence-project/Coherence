@@ -37,6 +37,7 @@ class Container(BackendItem):
     logCategory = 'dvbd_store'
 
     def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container):
+        BackendItem.__init__(self)
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -104,7 +105,7 @@ class Channel(BackendItem):
                  id, parent_id,
                  name, url, network,
                  mimetype):
-
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'channel.%s' % id
         self.parent_id = parent_id
@@ -145,7 +146,7 @@ class Recording(BackendItem):
                  file, title,
                  date, duration,
                  mimetype):
-
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'recording.%s' % id
         self.parent_id = parent_id

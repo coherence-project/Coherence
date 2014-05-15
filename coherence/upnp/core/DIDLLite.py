@@ -399,6 +399,7 @@ class Object(log.Loggable):
 
     def __init__(self, id=None, parentID=None, title=None, restricted=False,
                        creator=None):
+        log.Loggable.__init__(self)
         self.id = id
         self.parentID = parentID
         self.title = title
@@ -937,6 +938,7 @@ class DIDLElement(ElementInterface, log.Loggable):
                  parent_container=None, requested_id=None,
                  transcoding=False):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
+        log.Loggable.__init__(self)
         self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
         self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
         self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp/'

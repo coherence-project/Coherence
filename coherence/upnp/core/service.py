@@ -46,6 +46,7 @@ class Service(log.Loggable):
 
     def __init__(self, service_type, service_id, location, control_url,
                  event_sub_url, presentation_url, scpd_url, device):
+        log.Loggable.__init__(self)
         #if not control_url.startswith('/'):
         #    control_url = "/%s" % control_url
         #if not event_sub_url.startswith('/'):
@@ -406,6 +407,7 @@ class ServiceServer(log.Loggable):
     logCategory = 'service_server'
 
     def __init__(self, id, version, backend):
+        log.Loggable.__init__(self)
         self.id = id
         self.version = version
         self.backend = backend

@@ -22,6 +22,7 @@ class TedTalk(BackendItem):
 
     def __init__(self, parent_id, id, title=None, url=None,
             duration=None, size=None):
+        BackendItem.__init__(self)
         self.parentid = parent_id
         self.update_id = 0
         self.id = id
@@ -45,7 +46,7 @@ class TEDStore(LolcatsStore):
     ROOT_ID = 0
 
     def __init__(self, server, *args, **kwargs):
-        BackendStore.__init__(self, server, **kwargs)
+        LolcatsStore.__init__(self, server, **kwargs)
 
         self.name = kwargs.get('name', 'TEDtalks')
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)

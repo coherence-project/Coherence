@@ -130,6 +130,8 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
     addSlash = True
 
     def __init__(self, pipeline, mimetype):
+        log.Loggable.__init__(self)
+        resource.Resource.__init__(self)
         self.uri = pipeline
         self.mimetype = mimetype
 
@@ -142,11 +144,12 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
         return server.NOT_DONE_YET
 
 
-class ExternalProcessProducer(object):
+class ExternalProcessProducer(log.Loggable):
     logCategory = 'externalprocess'
     addSlash = True
 
     def __init__(self, pipeline, request):
+        log.Loggable.__init__(self)
         self.pipeline = pipeline
         self.request = request
         self.process = None
@@ -192,6 +195,7 @@ class ExternalProcessProducer(object):
 class Item(BackendItem):
 
     def __init__(self, parent, id, title, location, url):
+        BackendItem.__init__(self)
         self.parent = parent
         self.id = id
         self.location = location
@@ -245,7 +249,7 @@ class Item(BackendItem):
             return self.size
 
 
-class ResourceItem(Item, BackendItem):
+class ResourceItem(Item):
 
     def get_name(self):
         if self.name == None:
@@ -262,6 +266,7 @@ class ResourceItem(Item, BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
+        BackendItem.__init__(self)
         self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id

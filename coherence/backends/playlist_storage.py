@@ -31,7 +31,7 @@ class PlaylistItem(BackendItem):
     logCategory = 'playlist_store'
 
     def __init__(self, title, stream_url, mimetype):
-
+        BackendItem.__init__(self)
         self.name = title
         self.stream_url = stream_url
         self.mimetype = mimetype

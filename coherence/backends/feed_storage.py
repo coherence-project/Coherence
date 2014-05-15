@@ -51,6 +51,7 @@ class FeedStorageConfigurationException(Exception):
 
 class FeedContainer(BackendItem):
     def __init__(self, parent_id, id, title):
+        BackendItem.__init__(self)
         self.id = id
         self.parent_id = parent_id
         self.name = title
@@ -72,6 +73,7 @@ class FeedContainer(BackendItem):
 
 class FeedEnclosure(BackendItem):
     def __init__(self, store, parent, id, title, enclosure):
+        BackendItem.__init__(self)
         self.store = store
         self.parent = parent
         self.external_id = id

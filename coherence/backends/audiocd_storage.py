@@ -44,6 +44,7 @@ class TrackItem(BackendItem):
     logCategory = "audiocd"
 
     def __init__(self, device_name="/dev/cdrom", track_number=1, artist="Unknown", title="Unknown"):
+        BackendItem.__init__(self)
         self.device_name = device_name
         self.track_number = track_number
         self.artist = artist

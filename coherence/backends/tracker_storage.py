@@ -70,6 +70,7 @@ class Container(BackendItem):
     logCategory = 'tracker_store'
 
     def __init__(self, id, parent_id, name, store=None, children_callback=None, container_class=DIDLLite.Container):
+        BackendItem.__init__(self)
         self.id = id
         self.parent_id = parent_id
         self.name = name
@@ -130,6 +131,7 @@ class Artist(BackendItem):
     logCategory = 'tracker_store'
 
     def __init__(self, store, id, name):
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'artist.%d' % int(id)
         self.name = name
@@ -188,6 +190,7 @@ class Album(BackendItem):
     logCategory = 'tracker_store'
 
     def __init__(self, store, id, title, artist):
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'album.%d' % int(id)
         self.name = unicode(title)
@@ -251,7 +254,7 @@ class Track(BackendItem):
                  duration, \
                  track_number, \
                  size, mimetype):
-
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'song.%d' % int(id)
         self.parent_id = parent_id
@@ -365,7 +368,7 @@ class Video(BackendItem):
                  file, title,
                  duration, \
                  size, mimetype):
-
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'video.%d' % int(id)
         self.parent_id = parent_id
@@ -440,7 +443,7 @@ class Image(BackendItem):
                  file, title, album,
                  date, width, height, \
                  size, mimetype):
-
+        BackendItem.__init__(self)
         self.store = store
         self.id = 'image.%d' % int(id)
         self.parent_id = parent_id

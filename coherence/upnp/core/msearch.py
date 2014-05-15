@@ -25,6 +25,7 @@ class MSearch(DatagramProtocol, log.Loggable):
     logCategory = 'msearch'
 
     def __init__(self, ssdp_server, test=False):
+        log.Loggable.__init__(self)
         self.ssdp_server = ssdp_server
         if test == False:
             self.port = reactor.listenUDP(0, self)

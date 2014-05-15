@@ -36,6 +36,7 @@ class Player(log.Loggable):
     def __init__(self, default_mimetype='audio/mpeg', audio_sink_name=None,
                  video_sink_name=None, audio_sink_options=None,
                  video_sink_options=None):
+        log.Loggable.__init__(self)
         self.audio_sink_name = audio_sink_name or "autoaudiosink"
         self.video_sink_name = video_sink_name or "autovideosink"
         self.audio_sink_options = audio_sink_options or {}
@@ -465,6 +466,7 @@ class GStreamerPlayer(log.Loggable, Plugin):
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum': 100}}}
 
     def __init__(self, device, **kwargs):
+        log.Loggable.__init__(self)
         if(device.coherence.config.get('use_dbus', 'no') != 'yes' and
            device.coherence.config.get('glib', 'no') != 'yes'):
             raise Exception('this media renderer needs use_dbus enabled in the configuration')

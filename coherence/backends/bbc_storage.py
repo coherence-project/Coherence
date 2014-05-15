@@ -22,6 +22,7 @@ SERIES_CONTAINER_ID = 100
 class BBCItem(BackendItem):
 
     def __init__(self, parent_id, id, title, url):
+        BackendItem.__init__(self)
         self.parent_id = parent_id
         self.id = id
         self.location = url
@@ -48,6 +49,7 @@ class BBCItem(BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
+        BackendItem.__init__(self)
         self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id

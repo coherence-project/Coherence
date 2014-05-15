@@ -93,6 +93,7 @@ class FSItem(BackendItem):
     logCategory = 'fs_item'
 
     def __init__(self, object_id, parent, path, mimetype, urlbase, UPnPClass, update=False, store=None):
+        BackendItem.__init__(self)
         self.id = object_id
         self.parent = parent
         if parent:

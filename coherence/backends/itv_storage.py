@@ -35,6 +35,7 @@ class ProxyStream(utils.ReverseProxyUriResource, log.Loggable):
     stream_url = None
 
     def __init__(self, uri):
+        log.Loggable.__init__(self)
         self.stream_url = None
         utils.ReverseProxyUriResource.__init__(self, uri)
 
@@ -90,6 +91,7 @@ class ProxyStream(utils.ReverseProxyUriResource, log.Loggable):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
+        BackendItem.__init__(self)
         self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id
@@ -148,6 +150,7 @@ class ITVItem(BackendItem):
     logCategory = 'itv'
 
     def __init__(self, store, id, obj, parent):
+        BackendItem.__init__(self)
         self.parent = parent
         self.id = id
         self.name = obj.get('name')

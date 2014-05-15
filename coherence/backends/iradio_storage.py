@@ -86,6 +86,7 @@ class PlaylistStreamProxy(utils.ReverseProxyUriResource, log.Loggable):
     stream_url = None
 
     def __init__(self, uri):
+        log.Loggable.__init__(self)
         self.stream_url = None
         utils.ReverseProxyUriResource.__init__(self, uri)
 
@@ -143,6 +144,7 @@ class IRadioItem(BackendItem):
     logCategory = 'iradio'
 
     def __init__(self, station_id, title, stream_url, mimetype):
+        BackendItem.__init__(self)
         self.station_id = station_id
         self.name = title
         self.mimetype = mimetype

@@ -46,6 +46,10 @@ class TubeConnection(Connection, log.Loggable):
 
         return self
 
+    def __init__(self, *args, **kwargs):
+        Connection.__init__(self, *args, **kwargs)
+        log.Loggable.__init__(self)
+
     def _on_get_self_handle_reply(self, handle):
         self.self_handle = handle
         tube_channel = self._tube[CHANNEL_TYPE_DBUS_TUBE]

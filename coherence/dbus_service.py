@@ -56,6 +56,7 @@ class DBusCDSService(dbus.service.Object, log.Loggable):
     NOT_FOR_THE_TUBES = True
 
     def __init__(self, service, dbus_device, bus):
+        log.Loggable.__init__(self)
         self.service = service
         self.dbus_device = dbus_device
 
@@ -462,6 +463,7 @@ class DBusService(dbus.service.Object, log.Loggable):
     SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self, service, dbus_device, bus):
+        log.Loggable.__init__(self)
         self.service = service
         self.dbus_device = dbus_device
 
@@ -678,6 +680,7 @@ class DBusDevice(dbus.service.Object, log.Loggable):
     SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self, device, bus):
+        log.Loggable.__init__(self)
         if device is not None:
             self.uuid = device.get_id()[5:]
             self.id = self.uuid.replace('-', '')
@@ -778,6 +781,7 @@ class DBusPontoon(dbus.service.Object, log.Loggable):
     SUPPORTS_MULTIPLE_CONNECTIONS = True
 
     def __init__(self, controlpoint, bus=None):
+        log.Loggable.__init__(self)
         self.bus = bus or dbus.SessionBus()
         try:
             bus_name = dbus.service.BusName(BUS_NAME, self.bus)

@@ -22,6 +22,7 @@ class Device(log.Loggable):
     logCategory = 'device'
 
     def __init__(self, parent=None):
+        log.Loggable.__init__(self)
         self.parent = parent
         self.services = []
         #self.uid = self.usn[:-len(self.st)-2]

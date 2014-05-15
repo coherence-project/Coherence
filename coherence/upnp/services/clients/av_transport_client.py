@@ -10,6 +10,7 @@ class AVTransportClient(log.Loggable):
     logCategory = 'avtransportclient'
 
     def __init__(self, service):
+        log.Loggable.__init__(self)
         self.service = service
         self.namespace = service.get_type()
         self.url = service.get_control_url()

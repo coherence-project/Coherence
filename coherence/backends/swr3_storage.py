@@ -23,6 +23,7 @@ ROOT_CONTAINER_ID = 0
 class Item(BackendItem):
 
     def __init__(self, parent, id, title, url):
+        BackendItem.__init__(self)
         self.parent = parent
         self.id = id
         self.location = url
@@ -54,6 +55,7 @@ class Item(BackendItem):
 class Container(BackendItem):
 
     def __init__(self, id, store, parent_id, title):
+        BackendItem.__init__(self)
         self.url = store.urlbase + str(id)
         self.parent_id = parent_id
         self.id = id

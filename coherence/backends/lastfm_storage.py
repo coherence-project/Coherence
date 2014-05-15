@@ -58,6 +58,7 @@ class LastFMUser(log.Loggable):
     tracks = []
 
     def __init__(self, user, passwd):
+        log.Loggable.__init__(self)
         if user is None:
             self.warn("No User", )
         if passwd is None:
@@ -161,6 +162,7 @@ class LFMProxyStream(utils.ReverseProxyResource, log.Loggable):
     logCategory = 'lastFM_stream'
 
     def __init__(self, uri, parent):
+        log.Loggable.__init__(self)
         self.uri = uri
         self.parent = parent
         _, host_port, path, _, _ = urlsplit(uri)
@@ -188,6 +190,7 @@ class LastFMItem(log.Loggable):
     logCategory = 'LastFM_item'
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass, update=False):
+        log.Loggable.__init__(self)
         self.id = id
 
         self.name = obj.get('name')
@@ -304,7 +307,7 @@ class LastFMStore(log.Loggable, Plugin):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        BackendStore.__init__(self, server, **kwargs)
+        log.Loggable.__init__(self)
 
         self.next_id = 1000
         self.config = kwargs

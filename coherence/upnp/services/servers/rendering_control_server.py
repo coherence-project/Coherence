@@ -15,6 +15,8 @@ from coherence.upnp.core import service
 class RenderingControlControl(service.ServiceControl, UPnPPublisher):
 
     def __init__(self, server):
+        service.ServiceControl.__init__(self)
+        UPnPPublisher.__init__(self)
         self.service = server
         self.variables = server.get_variables()
         self.actions = server.get_actions()

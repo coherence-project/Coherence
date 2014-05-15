@@ -55,6 +55,7 @@ class FakeTransformer(gst.Element, log.Loggable):
 
     def __init__(self, destination=None, request=None):
         gst.Element.__init__(self)
+        log.Loggable.__init__(self)
         self.sinkpad = gst.Pad(self._sinkpadtemplate, "sink")
         self.srcpad = gst.Pad(self._srcpadtemplate, "src")
         self.add_pad(self.sinkpad)
@@ -111,6 +112,7 @@ class DataSink(gst.Element, log.Loggable):
 
     def __init__(self, destination=None, request=None):
         gst.Element.__init__(self)
+        log.Loggable.__init__(self)
         self.sinkpad = gst.Pad(self._sinkpadtemplate, "sink")
         self.add_pad(self.sinkpad)
 
@@ -173,6 +175,7 @@ class GStreamerPipeline(resource.Resource, log.Loggable):
         self.streamheader = None
         self.parse_pipeline()
         resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
 
     def parse_pipeline(self):
         self.pipeline = gst.parse_launch(self.pipeline_description)
@@ -304,6 +307,7 @@ class BaseTranscoder(resource.Resource, log.Loggable):
         self.uri = uri
         self.destination = destination
         resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
 
     def getChild(self, name, request):
         self.info('getChild %s, %s', name, request)
@@ -617,6 +621,8 @@ class ExternalProcessPipeline(resource.Resource, log.Loggable):
 
     def __init__(self, uri):
         self.uri = uri
+        resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
 
     def getChildWithDefault(self, path, request):
         return self
@@ -693,6 +699,7 @@ class TranscoderManager(log.Loggable):
             with the main coherence class passed as an argument,
             so we have access to the config
         """
+        log.Loggable.__init__(self)
         self.transcoders = {}
         for transcoder in InternalTranscoder.__subclasses__():
             self.transcoders[get_transcoder_name(transcoder)] = transcoder

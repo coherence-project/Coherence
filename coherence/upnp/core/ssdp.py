@@ -39,6 +39,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     def __init__(self, test=False, interface=''):
         # Create SSDP server
+        log.Loggable.__init__(self)
         self.test = test
         if self.test == False:
             try:

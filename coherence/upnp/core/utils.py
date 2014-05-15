@@ -270,6 +270,7 @@ class Site(server.Site):
 class ProxyClient(proxy.ProxyClient):
 
     def __init__(self, command, rest, version, headers, data, father):
+        log.Loggable.__init__(self)
         #headers["connection"] = "close"
         self.send_data = 0
         web.ProxyClient.__init__(self, command, rest, version,

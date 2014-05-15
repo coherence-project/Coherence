@@ -316,7 +316,7 @@ class DummySignaler(SimpleSignaler):
     changer_with_default = ChangedSignalingProperty('state2', default='off')
 
     def __init__(self):
-        self.emitted = []
+        SimpleSignaler.__init__(self)
         self._x = 0
         self.x_get = 0
         self.x_set = 0

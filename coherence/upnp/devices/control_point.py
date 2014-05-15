@@ -61,6 +61,7 @@ class ControlPoint(log.Loggable):
     logCategory = 'controlpoint'
 
     def __init__(self, coherence, auto_client=['MediaServer', 'MediaRenderer', 'BinaryLight', 'DimmableLight']):
+        log.Loggable.__init__(self)
         self.coherence = coherence
 
         self.info("Coherence UPnP ControlPoint starting...")
@@ -201,6 +202,7 @@ class ControlPoint(log.Loggable):
 class XMLRPC(xmlrpc.XMLRPC):
 
     def __init__(self, control_point):
+        xmlrpc.XMLRPC.__init__(self)
         self.control_point = control_point
         self.allowNone = True
 

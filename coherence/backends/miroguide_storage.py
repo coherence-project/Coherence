@@ -22,6 +22,7 @@ from coherence.backends.youtube_storage import TestVideoProxy
 class VideoItem(BackendItem):
 
     def __init__(self, name, description, url, thumbnail_url, store):
+        BackendItem.__init__(self)
         self.name = name
         self.duration = None
         self.size = None

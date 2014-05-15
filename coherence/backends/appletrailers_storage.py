@@ -36,6 +36,7 @@ class Trailer(BackendItem):
 
     def __init__(self, parent_id, urlbase, id=None, name=None, cover=None,
             url=None):
+        BackendItem.__init__(self)
         self.parentid = parent_id
         self.id = id
         self.name = name
@@ -57,6 +58,7 @@ class Container(BackendItem):
 
     def __init__(self, id, parent_id, name, store=None, \
             children_callback=None):
+        BackendItem.__init__(self)
         self.id = id
         self.parent_id = parent_id
         self.name = name

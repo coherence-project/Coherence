@@ -30,6 +30,7 @@ class SOAPProxy(log.Loggable):
     logCategory = 'soap'
 
     def __init__(self, url, namespace=None, envelope_attrib=None, header=None, soapaction=None):
+        log.Loggable.__init__(self)
         self.url = url
         self.namespace = namespace
         self.header = header

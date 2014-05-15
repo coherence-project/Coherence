@@ -48,6 +48,7 @@ class SimpleRoot(resource.Resource, log.Loggable):
 
     def __init__(self, coherence):
         resource.Resource.__init__(self)
+        log.Loggable.__init__(self)
         self.coherence = coherence
         self.http_hostname = '%s:%d' % (self.coherence.hostname, self.coherence.web_server_port)
 
@@ -95,6 +96,7 @@ class WebServer(log.Loggable):
     logCategory = 'webserver'
 
     def __init__(self, ui, port, coherence):
+        log.Loggable.__init__(self)
         try:
             if ui != 'yes':
                 """ use this to jump out here if we do not want
@@ -154,6 +156,7 @@ class Plugins(log.Loggable):
         return str(self._plugins)
 
     def __init__(self, *args, **kwargs):
+        log.Loggable.__init__(self)
         pass
 
     def __getitem__(self, key):
@@ -225,6 +228,7 @@ class Coherence(log.Loggable):
             return obj
 
     def __init__(self, *args, **kwargs):
+        log.Loggable.__init__(self)
         pass
 
     def clear(self):

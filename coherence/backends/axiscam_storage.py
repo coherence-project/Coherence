@@ -18,6 +18,7 @@ class AxisCamItem(BackendItem):
     logCategory = 'axis_cam_item'
 
     def __init__(self, id, obj, parent, mimetype, urlbase, UPnPClass, update=False):
+        BackendItem.__init__(self)
         self.id = id
         if mimetype == 'directory':
             self.name = obj

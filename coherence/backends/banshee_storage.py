@@ -125,6 +125,7 @@ class Container(BackendItem):
 
     def __init__(self, id, parent_id, name, children_callback=None, store=None,
                  play_container=False):
+        BackendItem.__init__(self)
         self.id = id
         self.parent_id = parent_id
         self.name = name

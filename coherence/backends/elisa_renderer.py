@@ -34,6 +34,7 @@ class ElisaPlayer(log.Loggable, Plugin):
     vendor_range_defaults = {'RenderingControl': {'Volume': {'maximum': 100}}}
 
     def __init__(self, device, **kwargs):
+        log.Loggable.__init__(self)
         self.name = kwargs.get('name', 'Elisa MediaRenderer')
         self.host = kwargs.get('host', '127.0.0.1')
         self.player = None

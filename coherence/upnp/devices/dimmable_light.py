@@ -32,6 +32,10 @@ class DimmableLight(log.Loggable, BasicDeviceMixin):
     device_type = 'DimmableLight'
     version = 1
 
+    def __init__(self, coherence, backend, **kwargs):
+        BasicDeviceMixin.__init__(self, coherence, backend, **kwargs)
+        log.Loggable.__init__(self)
+
     def fire(self, backend, **kwargs):
         if kwargs.get('no_thread_needed', False) == False:
             """ this could take some time, put it in a  thread to be sure it doesn't block

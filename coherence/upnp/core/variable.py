@@ -27,6 +27,7 @@ class StateVariable(log.Loggable):
 
     def __init__(self, upnp_service, name, implementation, instance, send_events,
                  data_type, allowed_values):
+        log.Loggable.__init__(self)
         self.service = upnp_service
 
         self.name = name

@@ -32,6 +32,7 @@ mimetypes.add_type('video/x-matroska', '.mkv')
 class MovieItem(BackendItem):
 
     def __init__(self, movie, store, title=None, url=None):
+        BackendItem.__init__(self)
         self.movie_id = 'UNK'
         if movie.find('./id') is not None:
             self.movie_id = movie.find('./id').text

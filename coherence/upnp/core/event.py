@@ -27,6 +27,8 @@ class EventServer(resource.Resource, log.Loggable):
     logCategory = 'event_server'
 
     def __init__(self, control_point):
+        log.Loggable.__init__(self)
+        resource.Resource.__init__(self)
         self.coherence = control_point.coherence
         self.control_point = control_point
         self.coherence.add_web_resource('events',
@@ -177,6 +179,7 @@ class Event(dict, log.Loggable):
 
     def __init__(self, sid, elements=None, raw=None):
         dict.__init__(self)
+        log.Loggable.__init__(self)
         self._sid = sid
         self.raw = raw
         if elements != None:
@@ -209,6 +212,7 @@ class EventProtocol(Protocol, log.Loggable):
     logCategory = 'event_protocol'
 
     def __init__(self, service, action):
+        log.Loggable.__init__(self)
         self.service = service
         self.action = action
 
