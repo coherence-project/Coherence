@@ -118,7 +118,8 @@ class TEDStore(LolcatsStore):
         self.container.update_id += 1
         self.update_id += 1
 
-        if self.server:
+        if self.server and hasattr(self.server, 'content_directory_server'):
+            # the content_directory_server may not yet be initialised
             self.server.content_directory_server.set_variable(0, 'SystemUpdateID', self.update_id)
             value = (self.ROOT_ID, self.container.update_id)
             self.server.content_directory_server.set_variable(0, 'ContainerUpdateIDs', value)
