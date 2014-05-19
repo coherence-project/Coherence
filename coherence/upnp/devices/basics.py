@@ -4,6 +4,7 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2008 Frank Scholz <coherence@beebits.net>
+# Copyright 2014, Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 import os.path
 
@@ -340,3 +341,109 @@ class BasicDeviceMixin(object):
 
         s.doByebye(uuid)
         s.doByebye('%s::upnp:rootdevice' % uuid)
+
+
+class BasicDevice(log.Loggable, BasicDeviceMixin):
+
+    def __init__(self, coherence, backend, **kwargs):
+        BasicDeviceMixin.__init__(self, coherence, backend, **kwargs)
+        log.Loggable.__init__(self)
+
+    def fire(self, backend, **kwargs):
+        if kwargs.get('no_thread_needed', False) == False:
+            # This can take some time, put it in a thread to be sure
+            # it doesn't block as we can't tell for sure that every
+            # backend is implemented properly
+            from twisted.internet import threads
+            d = threads.deferToThread(backend, self, **kwargs)
+
+            def backend_ready(backend):
+                self.backend = backend
+
+            def backend_failure(x):
+                self.warning('backend not installed, %s activation aborted',
+                             self.device_type)
+                self.debug(x)
+
+            d.addCallback(backend_ready)
+            d.addErrback(backend_failure)
+
+            # :fixme: we need a timeout here so if the signal we for
+            # not arrives we'll can close down this device
+        else:
+            self.backend = backend(self, **kwargs)
+
+    def init_complete(self, backend):
+        if self.backend != backend: #
+            return
+        self._services = []
+        self._devices = []
+
+        for attrname, cls in self._service_definition:
+            try:
+                service = cls(self)
+            except LookupError, msg:
+                self.warning('%s %s', cls.__name__, msg)
+                raise LookupError(msg)
+            self._services.append(service)
+            setattr(self, attrname, service)
+
+        upnp_init = getattr(self.backend, "upnp_init", None)
+        if upnp_init:
+            upnp_init()
+
+        self.web_resource = self._httpRoot(self)
+        self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
+
+        try:
+            dlna_caps = self.backend.dlna_caps
+        except AttributeError:
+            dlna_caps = []
+
+        version = self.version
+        while version > 0:
+            self.web_resource.putChild(
+                'description-%d.xml' % version,
+                RootDeviceXML(self.coherence.hostname,
+                              str(self.uuid),
+                              self.coherence.urlbase,
+                              device_type=self.device_type,
+                              version=version,
+                              friendly_name=self.backend.name,
+                              model_description=self.model_description,
+                              model_name=self.model_name,
+                              services=self._services,
+                              devices=self._devices,
+                              icons=self.icons,
+                              dlna_caps=dlna_caps))
+            version -= 1
+
+        for service in self._services:
+            self.web_resource.putChild(service.id, service)
+
+        for icon in self.icons:
+            if not icon.has_key('url'):
+                continue
+            if icon['url'].startswith('file://'):
+                name = os.path.basename(icon['url'])
+                icon_path = icon['url'][7:]
+            elif icon['url'] == '.face':
+                name = 'face-icon.png'
+                icon_path = os.path.abspath(os.path.join(os.path.expanduser('~'), ".face"))
+            else:
+                from pkg_resources import resource_filename
+                name = icon['url']
+                icon_path = os.path.abspath(
+                    resource_filename(__name__,
+                                      os.path.join('..', '..', '..',
+                                                   'misc', 'device-icons', name)))
+            if os.path.exists(path):
+                self.web_resource.putChild(
+                    name, StaticFile(icon_path,
+                                     defaultType=icon['mimetype']))
+
+
+        self.register()
+        self.warning("%s %s (%s) activated with %s",
+                     self.backend.name, self.device_type, self.backend,
+                     str(self.uuid)[5:])
