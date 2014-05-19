@@ -130,6 +130,14 @@ class ControlPoint(log.Loggable):
     def get_device_by_host(self, host):
         return self.coherence.get_device_by_host(host)
 
+    __type_class_map = {
+        'MediaServer': MediaServerClient,
+        'MediaRenderer': MediaRendererClient,
+        'BinaryLight': BinaryLightClient,
+        'DimmableLight': DimmableLightClient,
+        'InternetGatewayDevice': InternetGatewayDeviceClient,
+        }
+
     def check_device(self, device):
         if device.client == None:
             self.info("found device %s of type %s - %r", device.get_friendly_name(),
@@ -139,16 +147,8 @@ class ControlPoint(log.Loggable):
                 self.info("identified %s %r",
                         short_type, device.get_friendly_name())
 
-                if short_type == 'MediaServer':
-                    client = MediaServerClient(device)
-                if short_type == 'MediaRenderer':
-                    client = MediaRendererClient(device)
-                if short_type == 'BinaryLight':
-                    client = BinaryLightClient(device)
-                if short_type == 'DimmableLight':
-                    client = DimmableLightClient(device)
-                if short_type == 'InternetGatewayDevice':
-                    client = InternetGatewayDeviceClient(device)
+                cls = self.__type_class_map.get(short_type, lambda x: None)
+                cls(device)
 
                 client.coherence = self.coherence
                 device.set_client(client)
