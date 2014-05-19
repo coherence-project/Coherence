@@ -16,11 +16,10 @@ def process_media_server_browse(result, client):
     for item in elt.getItems():
 
         if item.upnp_class.startswith("object.container"):
-            print "  container %s (%s) with %d items" % \
-                    (item.title, item.id, item.childCount)
-
-        if item.upnp_class.startswith("object.item"):
-            print "  item %s (%s)" % (item.title, item.id)
+            fmt = "  container %(title)s (%(id)s) with %(childCount)s items"
+        elif item.upnp_class.startswith("object.item"):
+            fmt = "  item %(title)s (%(id)s)"
+        print fmt % vars(item)
 
 
 # called for each media server found
