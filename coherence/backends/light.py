@@ -25,7 +25,7 @@ class SimpleLight(Backend):
     logCategory = 'simple_light'
 
     def __init__(self, server, **kwargs):
-        Backend.__init__(self)
+        Backend.__init__(self, server)
         self.name = kwargs.get('name', 'SimpleLight')
         self.server = server
         self.state = 0  # we start switched off
@@ -52,7 +52,7 @@ class BetterLight(Backend):
     logCategory = 'better_light'
 
     def __init__(self, server, **kwargs):
-        Backend.__init__(self)
+        Backend.__init__(self, server)
         self.name = kwargs.get('name', 'BetterLight')
         self.server = server
         self.state = 0  # we start switched off
