@@ -35,7 +35,7 @@ from coherence.upnp.services.servers.scheduled_recording_server import Scheduled
 from coherence.upnp.services.servers.media_receiver_registrar_server import MediaReceiverRegistrarServer
 from coherence.upnp.services.servers.media_receiver_registrar_server import FakeMediaReceiverRegistrarBackend
 
-from coherence.upnp.devices.basics import BasicDeviceMixin
+from coherence.upnp.devices.basics import BasicDeviceMixin, RootDeviceXML
 
 from coherence import log
 
@@ -466,122 +466,6 @@ class MSRoot(resource.Resource, log.Loggable):
                                          self.listchilds(request.uri))
 
 
-class RootDeviceXML(static.Data):
-
-    def __init__(self, hostname, uuid, urlbase,
-                        device_type='MediaServer',
-                        version=2,
-                        friendly_name='Coherence UPnP A/V MediaServer',
-                        xbox_hack=False,
-                        services=[],
-                        devices=[],
-                        icons=[],
-                        presentationURL=None):
-        uuid = str(uuid)
-        root = ET.Element('root')
-        root.attrib['xmlns'] = 'urn:schemas-upnp-org:device-1-0'
-        device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, int(version))
-        e = ET.SubElement(root, 'specVersion')
-        textElement(e, 'major', None, '1')
-        textElement(e, 'minor', None, '0')
-        #if version == 1:
-        #    textElement(root, 'URLBase', None, urlbase + uuid[5:] + '/')
-
-        d = ET.SubElement(root, 'device')
-        textElement(d, 'deviceType', None, device_type)
-        if xbox_hack == False:
-            textElement(d, 'friendlyName', None, friendly_name)
-        else:
-            textElement(d, 'friendlyName', None, friendly_name + ' : 1 : Windows Media Connect')
-        textElement(d, 'manufacturer', None, 'beebits.net')
-        textElement(d, 'manufacturerURL', None, 'http://coherence.beebits.net')
-        textElement(d, 'modelDescription', None, 'Coherence UPnP A/V MediaServer')
-        if xbox_hack == False:
-            textElement(d, 'modelName', None, 'Coherence UPnP A/V MediaServer')
-        else:
-            textElement(d, 'modelName', None, 'Windows Media Connect')
-        textElement(d, 'modelNumber', None, __version__)
-        textElement(d, 'modelURL', None, 'http://coherence.beebits.net')
-        textElement(d, 'serialNumber', None, '0000001')
-        textElement(d, 'UDN', None, uuid)
-        textElement(d, 'UPC', None, '')
-
-        if len(icons):
-            e = ET.SubElement(d, 'iconList')
-            for icon in icons:
-
-                icon_path = ''
-                if icon.has_key('url'):
-                    if icon['url'].startswith('file://'):
-                        icon_path = icon['url'][7:]
-                    elif icon['url'] == '.face':
-                        icon_path = os.path.join(os.path.expanduser('~'), ".face")
-                    else:
-                        from pkg_resources import resource_filename
-                        icon_path = os.path.abspath(resource_filename(__name__, os.path.join('..', '..', '..', 'misc', 'device-icons', icon['url'])))
-
-                if os.path.exists(icon_path) == True:
-                    i = ET.SubElement(e, 'icon')
-                    for k, v in icon.items():
-                        if k == 'url':
-                            if v.startswith('file://'):
-                                textElement(i, k, None, '/' + uuid[5:] + '/' + os.path.basename(v))
-                                continue
-                            elif v == '.face':
-                                textElement(i, k, None, '/' + uuid[5:] + '/' + 'face-icon.png')
-                                continue
-                            else:
-                                textElement(i, k, None, '/' + uuid[5:] + '/' + os.path.basename(v))
-                                continue
-                        textElement(i, k, None, str(v))
-
-        if len(services):
-            e = ET.SubElement(d, 'serviceList')
-            for service in services:
-                id = service.get_id()
-                if xbox_hack == False and id == 'X_MS_MediaReceiverRegistrar':
-                    continue
-                s = ET.SubElement(e, 'service')
-                try:
-                    namespace = service.namespace
-                except:
-                    namespace = 'schemas-upnp-org'
-                if(hasattr(service, 'version') and
-                    service.version < version):
-                    v = service.version
-                else:
-                    v = version
-                textElement(s, 'serviceType', None, 'urn:%s:service:%s:%d' % (namespace, id, int(v)))
-                try:
-                    namespace = service.id_namespace
-                except:
-                    namespace = 'upnp-org'
-                textElement(s, 'serviceId', None, 'urn:%s:serviceId:%s' % (namespace, id))
-                textElement(s, 'SCPDURL', None, '/' + uuid[5:] + '/' + id + '/' + service.scpd_url)
-                textElement(s, 'controlURL', None, '/' + uuid[5:] + '/' + id + '/' + service.control_url)
-                textElement(s, 'eventSubURL', None, '/' + uuid[5:] + '/' + id + '/' + service.subscription_url)
-
-                #textElement(s, 'SCPDURL', None, id + '/' + service.scpd_url)
-                #textElement(s, 'controlURL', None, id + '/' + service.control_url)
-                #textElement(s, 'eventSubURL', None, id + '/' + service.subscription_url)
-
-        if len(devices):
-            e = ET.SubElement(d, 'deviceList')
-
-        if presentationURL is None:
-            presentationURL = '/' + uuid[5:]
-        textElement(d, 'presentationURL', None, presentationURL)
-
-        textElement(d, 'X_DLNADOC', None, 'DMS-1.50')
-        textElement(d, 'X_DLNADOC', None, 'M-DMS-1.50')
-        textElement(d, 'X_DLNACAP', None, 'av-upload,image-upload,audio-upload')
-
-        #if self.has_level(LOG_DEBUG):
-        #    indent( root)
-        self.xml = """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
-        static.Data.__init__(self, self.xml, 'text/xml')
-
-
 class MediaServer(log.Loggable, BasicDeviceMixin):
     logCategory = 'mediaserver'
 
@@ -661,28 +545,48 @@ class MediaServer(log.Loggable, BasicDeviceMixin):
         self.coherence.add_web_resource(str(self.uuid)[5:], self.web_resource)
 
         version = int(self.version)
+        # :todo: rethink: do we really need to filter out this one for
+        # non-xbox-hacked descriptions?
+        normal_services = [svc for svc in self._services
+                           if svc.id != 'X_MS_MediaReceiverRegistrar']
+        # :todo: rethink: is this correct? This ist done only for media_server
+        presentationURL = self.presentationURL
+        if presentationURL is None:
+            presentationURL = '/' + str(self.uuid)[5:]
+
         while version > 0:
-            self.web_resource.putChild('description-%d.xml' % version,
-                                    RootDeviceXML(self.coherence.hostname,
-                                    str(self.uuid),
-                                    self.coherence.urlbase,
-                                    self.device_type, version,
-                                    friendly_name=self.backend.name,
-                                    services=self._services,
-                                    devices=self._devices,
-                                    icons=self.icons,
-                                    presentationURL=self.presentationURL))
-            self.web_resource.putChild('xbox-description-%d.xml' % version,
-                                    RootDeviceXML(self.coherence.hostname,
-                                    str(self.uuid),
-                                    self.coherence.urlbase,
-                                    self.device_type, version,
-                                    friendly_name=self.backend.name,
-                                    xbox_hack=True,
-                                    services=self._services,
-                                    devices=self._devices,
-                                    icons=self.icons,
-                                    presentationURL=self.presentationURL))
+            self.web_resource.putChild(
+                'description-%d.xml' % version,
+                RootDeviceXML(self.coherence.hostname,
+                              str(self.uuid),
+                              self.coherence.urlbase,
+                              device_type=self.device_type,
+                              version=version,
+                              friendly_name=self.backend.name,
+                              services=normal_services,
+                              devices=self._devices,
+                              icons=self.icons,
+                              presentation_url=presentationURL,
+                              model_description='Coherence UPnP A/V MediaServer',
+                              model_name='Coherence UPnP A/V MediaServer',
+                              dlna_caps='av-upload,image-upload,audio-upload',
+                              ))
+            self.web_resource.putChild(
+                'xbox-description-%d.xml' % version,
+                RootDeviceXML(self.coherence.hostname,
+                              str(self.uuid),
+                              self.coherence.urlbase,
+                              device_type=self.device_type,
+                              version=version,
+                              friendly_name=self.backend.name + ' : 1 : Windows Media Connect',
+                              services=self._services,
+                              devices=self._devices,
+                              icons=self.icons,
+                              presentation_url=presentationURL,
+                              model_description='Coherence UPnP A/V MediaServer',
+                              model_name='Windows Media Connect',
+                              dlna_caps='av-upload,image-upload,audio-upload',
+                              ))
             version -= 1
 
         self.web_resource.putChild('ConnectionManager', self.connection_manager_server)
