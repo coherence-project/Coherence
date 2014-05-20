@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Licensed under the GNU General Public License, version 3.0 (GPLv3)
+# http://opensource.org/licenses/GPL-3.0
+#
+# Copyright 2014, Hartmut Goebel <h.goebel@crazy-compilers.com>
+
+from twisted.internet import reactor
+
+from coherence.base import Coherence
+from coherence.upnp.devices.control_point import ControlPoint
+from coherence.upnp.core import DIDLLite
+#from coherence.upnp.devices.dimmable_light_client import DimmableLightClient
+
+
+def client_found(client, udn):
+    """Called for each client found."""
+    print "Dimmable Light found", client.device.friendly_name, client.device.udn
+
+def client_removed(udn):
+    """Called for each client disappearing."""
+    print "Dimmable Light removed", udn
+
+
+def start():
+    control_point = ControlPoint(Coherence({'logmode': 'warning'}),
+                                 auto_client=['DimmableLight'])
+    control_point.connect(
+        client_found, 'Coherence.UPnP.ControlPoint.DimmableLight.detected')
+    control_point.connect(
+        client_removed, 'Coherence.UPnP.ControlPoint.DimmableLight.removed')
+
+    # now we should also try to discover the ones that are already there:
+    for device in control_point.coherence.devices:
+        client_found(device, device.udn)
+
+if __name__ == "__main__":
+    reactor.callWhenRunning(start)
+    reactor.run()
