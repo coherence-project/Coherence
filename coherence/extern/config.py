@@ -3,8 +3,9 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2007,2008 Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
-from coherence.extern.et import ET, indent
+from coherence.extern.et import ET, indent, textElement
 
 
 class ConfigMixin(object):
@@ -59,11 +60,7 @@ class ConfigDict(dict, ConfigMixin):
             if isinstance(value, (dict, list)):
                 root.append(value.to_element())
             else:
-                s = ET.SubElement(root, key)
-                if isinstance(value, basestring):
-                    s.text = value
-                else:
-                    s.text = str(value)
+                textElement(root, key, None, str(value))
         return root
 
     def from_element(self, node):
@@ -158,11 +155,7 @@ class Config(ConfigDict):
             if isinstance(value, (dict, list)):
                 e.append(value.to_element())
             else:
-                s = ET.SubElement(e, key)
-                if isinstance(value, basestring):
-                    s.text = value
-                else:
-                    s.text = str(value)
+                textElement(e, key, None, str(value))
         indent(e)
         db = ET.ElementTree(e)
         db.write(file, encoding='utf-8')

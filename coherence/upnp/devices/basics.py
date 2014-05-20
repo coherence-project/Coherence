@@ -14,12 +14,13 @@ from twisted.internet import reactor
 
 from coherence import __version__
 
-from coherence.extern.et import ET, indent
+from coherence.extern.et import ET, indent, textElement
 
 import coherence.extern.louie as louie
 
 from coherence import log
 
+DEVICE_NS = 'urn:schemas-dlna-org:device-1-0'
 
 class DeviceHttpRoot(resource.Resource, log.Loggable):
     logCategory = 'basicdevice'
@@ -86,42 +87,37 @@ class RootDeviceXML(static.Data):
         root.attrib['xmlns'] = xmlns
         device_type_uri = ':'.join((device_uri_base, device_type, str(version)))
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement(e, 'major').text = '1'
-        ET.SubElement(e, 'minor').text = '0'
-        #ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
+        textElement(e, 'major', None, '1')
+        textElement(e, 'minor', None, '0')
+        #textElement(root, 'URLBase', None, urlbase + uuid[5:] + '/')
 
         d = ET.SubElement(root, 'device')
 
         if device_type == 'MediaServer':
-            x = ET.SubElement(d, 'dev:X_DLNADOC')
-            x.text = 'DMS-1.50'
-            x = ET.SubElement(d, 'dev:X_DLNADOC')
-            x.text = 'M-DMS-1.50'
+            textElement(d, 'X_DLNADOC', DEVICE_NS, 'DMS-1.50')
+            textElement(d, 'X_DLNADOC', DEVICE_NS, 'M-DMS-1.50')
         elif device_type == 'MediaRenderer':
-            x = ET.SubElement(d, 'dev:X_DLNADOC')
-            x.text = 'DMR-1.50'
-            x = ET.SubElement(d, 'dev:X_DLNADOC')
-            x.text = 'M-DMR-1.50'
+            textElement(d, 'X_DLNADOC', DEVICE_NS, 'DMR-1.50')
+            textElement(d, 'X_DLNADOC', DEVICE_NS, 'M-DMR-1.50')
 
         if len(dlna_caps) > 0:
             if isinstance(dlna_caps, basestring):
                 dlna_caps = [dlna_caps]
             for cap in dlna_caps:
-                x = ET.SubElement(d, 'dev:X_DLNACAP')
-                x.text = cap
+                textElement(d, 'X_DLNACAP', DEVICE_NS, cap)
 
-        ET.SubElement(d, 'deviceType').text = device_type_uri
-        ET.SubElement(d, 'friendlyName').text = friendly_name
-        ET.SubElement(d, 'manufacturer').text = manufacturer
-        ET.SubElement(d, 'manufacturerURL').text = manufacturer_url
-        ET.SubElement(d, 'modelDescription').text = model_description
-        ET.SubElement(d, 'modelName').text = model_name
-        ET.SubElement(d, 'modelNumber').text = model_number
-        ET.SubElement(d, 'modelURL').text = model_url
-        ET.SubElement(d, 'serialNumber').text = serial_number
-        ET.SubElement(d, 'UDN').text = uuid
-        ET.SubElement(d, 'UPC').text = ''
-        ET.SubElement(d, 'presentationURL').text = presentation_url
+        textElement(d, 'deviceType', None, device_type_uri)
+        textElement(d, 'friendlyName', None, friendly_name)
+        textElement(d, 'manufacturer', None, manufacturer)
+        textElement(d, 'manufacturerURL', None, manufacturer_url)
+        textElement(d, 'modelDescription', None, model_description)
+        textElement(d, 'modelName', None, model_name)
+        textElement(d, 'modelNumber', None, model_number)
+        textElement(d, 'modelURL', None, model_url)
+        textElement(d, 'serialNumber', None, serial_number)
+        textElement(d, 'UDN', None, uuid)
+        textElement(d, 'UPC', None, '')
+        textElement(d, 'presentationURL', None, presentation_url)
 
         if len(services):
             e = ET.SubElement(d, 'serviceList')
@@ -137,15 +133,15 @@ class RootDeviceXML(static.Data):
                     v = service.version
                 else:
                     v = version
-                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(v))
+                textElement(s, 'serviceType', None, 'urn:%s:service:%s:%d' % (namespace, id, int(v)))
                 try:
                     namespace = service.id_namespace
                 except:
                     namespace = 'upnp-org'
-                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace, id)
-                ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                textElement(s, 'serviceId', None, 'urn:%s:serviceId:%s' % (namespace, id))
+                textElement(s, 'SCPDURL', None, '/' + uuid[5:] + '/' + id + '/' + service.scpd_url)
+                textElement(s, 'controlURL', None, '/' + uuid[5:] + '/' + id + '/' + service.control_url)
+                textElement(s, 'eventSubURL', None, '/' + uuid[5:] + '/' + id + '/' + service.subscription_url)
 
         if len(devices):
             e = ET.SubElement(d, 'deviceList')
@@ -169,15 +165,15 @@ class RootDeviceXML(static.Data):
                     for k, v in icon.items():
                         if k == 'url':
                             if v.startswith('file://'):
-                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
+                                textElement(i, k, None, '/' + uuid[5:] + '/' + os.path.basename(v))
                                 continue
                             elif v == '.face':
-                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + 'face-icon.png'
+                                textElement(i, k, None, '/' + uuid[5:] + '/' + 'face-icon.png')
                                 continue
                             else:
-                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
+                                textElement(i, k, None, '/' + uuid[5:] + '/' + os.path.basename(v))
                                 continue
-                        ET.SubElement(i, k).text = str(v)
+                        textElement(i, k, None, str(v))
         #if self.has_level(LOG_DEBUG):
         #    indent( root)
 

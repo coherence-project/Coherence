@@ -2,6 +2,7 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2007 - Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 """ SOAP-lite
 
@@ -12,7 +13,7 @@
 """
 from twisted.python.util import OrderedDict
 
-from coherence.extern.et import ET
+from coherence.extern.et import ET, textElement
 
 NS_SOAP_ENV = "{http://schemas.xmlsoap.org/soap/envelope/}"
 NS_SOAP_ENC = "{http://schemas.xmlsoap.org/soap/encoding/}"
@@ -43,13 +44,13 @@ def build_soap_error(status, description='without words'):
     """ builds an UPnP SOAP error msg
     """
     root = ET.Element('s:Fault')
-    ET.SubElement(root, 'faultcode').text = 's:Client'
-    ET.SubElement(root, 'faultstring').text = 'UPnPError'
+    textElement(root, 'faultcode', None, 's:Client')
+    textElement(root, 'faultstring', None, 'UPnPError')
     e = ET.SubElement(root, 'detail')
     e = ET.SubElement(e, 'UPnPError')
     e.attrib['xmlns'] = 'urn:schemas-upnp-org:control-1-0'
-    ET.SubElement(e, 'errorCode').text = str(status)
-    ET.SubElement(e, 'errorDescription').text = UPNPERRORS.get(status, description)
+    textElement(e, 'errorCode', None, str(status))
+    textElement(e, 'errorDescription', None, UPNPERRORS.get(status, description))
     return build_soap_call(None, root, encoding=None)
 
 

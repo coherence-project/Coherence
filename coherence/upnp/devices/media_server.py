@@ -4,6 +4,7 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2006,2007 Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 import os
 import re
@@ -19,7 +20,7 @@ from twisted.web import resource, server
 from twisted.python import util
 from twisted.python.filepath import FilePath
 
-from coherence.extern.et import ET, indent
+from coherence.extern.et import ET, indent, textElement
 
 from coherence import __version__
 
@@ -481,29 +482,29 @@ class RootDeviceXML(static.Data):
         root.attrib['xmlns'] = 'urn:schemas-upnp-org:device-1-0'
         device_type = 'urn:schemas-upnp-org:device:%s:%d' % (device_type, int(version))
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement(e, 'major').text = '1'
-        ET.SubElement(e, 'minor').text = '0'
+        textElement(e, 'major', None, '1')
+        textElement(e, 'minor', None, '0')
         #if version == 1:
-        #    ET.SubElement(root, 'URLBase').text = urlbase + uuid[5:] + '/'
+        #    textElement(root, 'URLBase', None, urlbase + uuid[5:] + '/')
 
         d = ET.SubElement(root, 'device')
-        ET.SubElement(d, 'deviceType').text = device_type
+        textElement(d, 'deviceType', None, device_type)
         if xbox_hack == False:
-            ET.SubElement(d, 'friendlyName').text = friendly_name
+            textElement(d, 'friendlyName', None, friendly_name)
         else:
-            ET.SubElement(d, 'friendlyName').text = friendly_name + ' : 1 : Windows Media Connect'
-        ET.SubElement(d, 'manufacturer').text = 'beebits.net'
-        ET.SubElement(d, 'manufacturerURL').text = 'http://coherence.beebits.net'
-        ET.SubElement(d, 'modelDescription').text = 'Coherence UPnP A/V MediaServer'
+            textElement(d, 'friendlyName', None, friendly_name + ' : 1 : Windows Media Connect')
+        textElement(d, 'manufacturer', None, 'beebits.net')
+        textElement(d, 'manufacturerURL', None, 'http://coherence.beebits.net')
+        textElement(d, 'modelDescription', None, 'Coherence UPnP A/V MediaServer')
         if xbox_hack == False:
-            ET.SubElement(d, 'modelName').text = 'Coherence UPnP A/V MediaServer'
+            textElement(d, 'modelName', None, 'Coherence UPnP A/V MediaServer')
         else:
-            ET.SubElement(d, 'modelName').text = 'Windows Media Connect'
-        ET.SubElement(d, 'modelNumber').text = __version__
-        ET.SubElement(d, 'modelURL').text = 'http://coherence.beebits.net'
-        ET.SubElement(d, 'serialNumber').text = '0000001'
-        ET.SubElement(d, 'UDN').text = uuid
-        ET.SubElement(d, 'UPC').text = ''
+            textElement(d, 'modelName', None, 'Windows Media Connect')
+        textElement(d, 'modelNumber', None, __version__)
+        textElement(d, 'modelURL', None, 'http://coherence.beebits.net')
+        textElement(d, 'serialNumber', None, '0000001')
+        textElement(d, 'UDN', None, uuid)
+        textElement(d, 'UPC', None, '')
 
         if len(icons):
             e = ET.SubElement(d, 'iconList')
@@ -524,15 +525,15 @@ class RootDeviceXML(static.Data):
                     for k, v in icon.items():
                         if k == 'url':
                             if v.startswith('file://'):
-                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
+                                textElement(i, k, None, '/' + uuid[5:] + '/' + os.path.basename(v))
                                 continue
                             elif v == '.face':
-                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + 'face-icon.png'
+                                textElement(i, k, None, '/' + uuid[5:] + '/' + 'face-icon.png')
                                 continue
                             else:
-                                ET.SubElement(i, k).text = '/' + uuid[5:] + '/' + os.path.basename(v)
+                                textElement(i, k, None, '/' + uuid[5:] + '/' + os.path.basename(v))
                                 continue
-                        ET.SubElement(i, k).text = str(v)
+                        textElement(i, k, None, str(v))
 
         if len(services):
             e = ET.SubElement(d, 'serviceList')
@@ -550,33 +551,30 @@ class RootDeviceXML(static.Data):
                     v = service.version
                 else:
                     v = version
-                ET.SubElement(s, 'serviceType').text = 'urn:%s:service:%s:%d' % (namespace, id, int(v))
+                textElement(s, 'serviceType', None, 'urn:%s:service:%s:%d' % (namespace, id, int(v)))
                 try:
                     namespace = service.id_namespace
                 except:
                     namespace = 'upnp-org'
-                ET.SubElement(s, 'serviceId').text = 'urn:%s:serviceId:%s' % (namespace, id)
-                ET.SubElement(s, 'SCPDURL').text = '/' + uuid[5:] + '/' + id + '/' + service.scpd_url
-                ET.SubElement(s, 'controlURL').text = '/' + uuid[5:] + '/' + id + '/' + service.control_url
-                ET.SubElement(s, 'eventSubURL').text = '/' + uuid[5:] + '/' + id + '/' + service.subscription_url
+                textElement(s, 'serviceId', None, 'urn:%s:serviceId:%s' % (namespace, id))
+                textElement(s, 'SCPDURL', None, '/' + uuid[5:] + '/' + id + '/' + service.scpd_url)
+                textElement(s, 'controlURL', None, '/' + uuid[5:] + '/' + id + '/' + service.control_url)
+                textElement(s, 'eventSubURL', None, '/' + uuid[5:] + '/' + id + '/' + service.subscription_url)
 
-                #ET.SubElement(s, 'SCPDURL').text = id + '/' + service.scpd_url
-                #ET.SubElement(s, 'controlURL').text = id + '/' + service.control_url
-                #ET.SubElement(s, 'eventSubURL').text = id + '/' + service.subscription_url
+                #textElement(s, 'SCPDURL', None, id + '/' + service.scpd_url)
+                #textElement(s, 'controlURL', None, id + '/' + service.control_url)
+                #textElement(s, 'eventSubURL', None, id + '/' + service.subscription_url)
 
         if len(devices):
             e = ET.SubElement(d, 'deviceList')
 
         if presentationURL is None:
             presentationURL = '/' + uuid[5:]
-        ET.SubElement(d, 'presentationURL').text = presentationURL
+        textElement(d, 'presentationURL', None, presentationURL)
 
-        x = ET.SubElement(d, 'X_DLNADOC')
-        x.text = 'DMS-1.50'
-        x = ET.SubElement(d, 'X_DLNADOC')
-        x.text = 'M-DMS-1.50'
-        x = ET.SubElement(d, 'X_DLNACAP')
-        x.text = 'av-upload,image-upload,audio-upload'
+        textElement(d, 'X_DLNADOC', None, 'DMS-1.50')
+        textElement(d, 'X_DLNADOC', None, 'M-DMS-1.50')
+        textElement(d, 'X_DLNACAP', None, 'av-upload,image-upload,audio-upload')
 
         #if self.has_level(LOG_DEBUG):
         #    indent( root)

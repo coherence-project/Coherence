@@ -3,6 +3,7 @@
 
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006, Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 import os
 
@@ -17,7 +18,7 @@ from coherence.upnp.core.soap_proxy import SOAPProxy
 from coherence.upnp.core.soap_service import errorCode
 from coherence.upnp.core.event import EventSubscriptionServer
 
-from coherence.extern.et import ET
+from coherence.extern.et import ET, textElement, textElementIfNotNone
 
 from twisted.web import static
 from twisted.internet import defer, reactor
@@ -498,10 +499,10 @@ class ServiceServer(log.Loggable):
                 else:
                     text = self.build_last_change_event(n.instance)
                 if text is not None:
-                    ET.SubElement(e, n.name).text = text
+                    textElement(e, n.name, None, text)
                     evented_variables += 1
             else:
-                ET.SubElement(e, n.name).text = str(n.value)
+                textElement(e, n.name, None, str(n.value))
                 evented_variables += 1
 
         if evented_variables > 0:
@@ -571,7 +572,7 @@ class ServiceServer(log.Loggable):
     def build_single_notification(self, instance, variable_name, value):
         root = ET.Element('{%s}propertyset' % ns)
         e = ET.SubElement(root, '{%s}property' % ns)
-        s = ET.SubElement(e, variable_name).text = str(value)
+        textElement(e, variable_name, None, str(value))
         return ET.tostring(root, encoding='utf-8')
 
     def build_last_change_event(self, instance=0, force=False):
@@ -617,10 +618,10 @@ class ServiceServer(log.Loggable):
             if n.name == 'LastChange':
                 text = self.build_last_change_event(instance=n.instance)
                 if text is not None:
-                    ET.SubElement(e, n.name).text = text
+                    textElement(e, n.name, None, text)
                     evented_variables += 1
             else:
-                s = ET.SubElement(e, n.name).text = str(n.value)
+                s = textElement(e, n.name, None, str(n.value))
                 evented_variables += 1
                 if n.dependant_variable != None:
                     dependants = n.dependant_variable.get_allowed_values()
@@ -941,19 +942,19 @@ class scpdXML(static.Data):
         root = ET.Element('scpd')
         root.attrib['xmlns'] = 'urn:schemas-upnp-org:service-1-0'
         e = ET.SubElement(root, 'specVersion')
-        ET.SubElement(e, 'major').text = '1'
-        ET.SubElement(e, 'minor').text = '0'
+        textElement(e, 'major', None, '1')
+        textElement(e, 'minor', None, '0')
 
         e = ET.SubElement(root, 'actionList')
         for action in self.service_server._actions.values():
             s = ET.SubElement(e, 'action')
-            ET.SubElement(s, 'name').text = action.get_name()
+            textElement(s, 'name', None, action.get_name())
             al = ET.SubElement(s, 'argumentList')
             for argument in action.get_arguments_list():
                 a = ET.SubElement(al, 'argument')
-                ET.SubElement(a, 'name').text = argument.get_name()
-                ET.SubElement(a, 'direction').text = argument.get_direction()
-                ET.SubElement(a, 'relatedStateVariable').text = argument.get_state_variable()
+                textElement(a, 'name', None, argument.get_name())
+                textElement(a, 'direction', None, argument.get_direction())
+                textElement(a, 'relatedStateVariable', None, argument.get_state_variable())
 
         e = ET.SubElement(root, 'serviceStateTable')
         for var in self.service_server._variables[0].values():
@@ -962,13 +963,13 @@ class scpdXML(static.Data):
                 s.attrib['sendEvents'] = 'yes'
             else:
                 s.attrib['sendEvents'] = 'no'
-            ET.SubElement(s, 'name').text = var.name
-            ET.SubElement(s, 'dataType').text = var.data_type
+            textElement(s, 'name', None, var.name)
+            textElement(s, 'dataType', None, var.data_type)
             if(not var.has_vendor_values and len(var.allowed_values)):
             #if len(var.allowed_values):
                 v = ET.SubElement(s, 'allowedValueList')
                 for value in var.allowed_values:
-                    ET.SubElement(v, 'allowedValue').text = value
+                    textElement(v, 'allowedValue', None, value)
 
             if(var.allowed_value_range != None and
                 len(var.allowed_value_range) > 0):
@@ -979,8 +980,7 @@ class scpdXML(static.Data):
                 if complete == True:
                     avl = ET.SubElement(s, 'allowedValueRange')
                     for name, value in var.allowed_value_range.items():
-                        if value != None:
-                            ET.SubElement(avl, name).text = str(value)
+                        textElementIfNotNone(avl, name, None, value)
 
         return """<?xml version="1.0" encoding="utf-8"?>""" + ET.tostring(root, encoding='utf-8')
 
