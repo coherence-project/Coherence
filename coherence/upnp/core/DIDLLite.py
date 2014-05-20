@@ -30,7 +30,8 @@ my_namespaces = {
     EVENT_NS: 'e',
     }
 
-from coherence.extern.et import ET, namespace_map_update, ElementInterface
+from coherence.extern.et import (ET, namespace_map_update, ElementInterface,
+                                 qname)
 namespace_map_update(my_namespaces)
 
 from coherence.upnp.core import utils
@@ -38,12 +39,6 @@ from coherence.upnp.core import utils
 from coherence.upnp.core import dlna
 
 from coherence import log
-
-
-def qname(tag, ns=None):
-    if not ns:
-        return tag
-    return "{%s}%s" % (ns, tag)
 
 
 def is_audio(mimetype):

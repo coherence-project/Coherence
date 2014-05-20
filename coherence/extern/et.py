@@ -136,3 +136,8 @@ def parse_xml(data, encoding="utf-8", dump_invalid_data=False):
         raise
     else:
         return ET.ElementTree(parser.close())
+
+def qname(tag, ns=None):
+    if not ns:
+        return tag
+    return "{%s}%s" % (ns, tag)
