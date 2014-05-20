@@ -609,7 +609,11 @@ class FSStore(BackendStore):
         print "update_config", kwargs
         if 'content' in kwargs:
             new_content = kwargs['content']
-            new_content = Set([os.path.abspath(x) for x in new_content.split(',')])
+            if new_content:
+                new_content = Set([os.path.abspath(x)
+                                   for x in new_content.split(',')])
+            else:
+                new_content = Set('')
             new_folders = new_content.difference(self.content)
             obsolete_folders = self.content.difference(new_content)
             print new_folders, obsolete_folders
