@@ -17,10 +17,20 @@ from datetime import datetime
 
 DC_NS = 'http://purl.org/dc/elements/1.1/'
 UPNP_NS = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
+DLNA_NS = 'urn:schemas-dlna-org:metadata-1-0'
+PV_NS = 'http://www.pv.com/pvns/'
+EVENT_NS = 'urn:schemas-upnp-org:event-1-0'
+DEVICE_NS = 'urn:schemas-dlna-org:device-1-0'
 
-my_namespaces = {DC_NS: 'dc',
-                 UPNP_NS: 'upnp'
-                 }
+my_namespaces = {
+    DC_NS: 'dc',
+    UPNP_NS: 'upnp',
+    DLNA_NS: 'dlna',
+    PV_NS: 'pv',
+    DEVICE_NS: 'dev',
+    EVENT_NS: 'e',
+    }
+
 from coherence.extern.et import ET, namespace_map_update, ElementInterface
 namespace_map_update(my_namespaces)
 
@@ -498,7 +508,6 @@ class Object(log.Loggable):
         if self.albumArtURI is not None:
             e = ET.SubElement(root, qname('albumArtURI', UPNP_NS))
             e.text = self.albumArtURI
-            e.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
             e.attrib['dlna:profileID'] = 'JPEG_TN'
 
         if self.artist is not None:
@@ -940,10 +949,6 @@ class DIDLElement(ElementInterface, log.Loggable):
         ElementInterface.__init__(self, 'DIDL-Lite', {})
         log.Loggable.__init__(self)
         self.attrib['xmlns'] = 'urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/'
-        self.attrib['xmlns:dc'] = 'http://purl.org/dc/elements/1.1/'
-        self.attrib['xmlns:upnp'] = 'urn:schemas-upnp-org:metadata-1-0/upnp/'
-        self.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:metadata-1-0'
-        self.attrib['xmlns:pv'] = 'http://www.pv.com/pvns/'
         self._items = []
         self.upnp_client = upnp_client
         self.parent_container = parent_container

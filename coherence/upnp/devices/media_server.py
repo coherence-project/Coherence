@@ -571,14 +571,11 @@ class RootDeviceXML(static.Data):
             presentationURL = '/' + uuid[5:]
         ET.SubElement(d, 'presentationURL').text = presentationURL
 
-        x = ET.SubElement(d, 'dlna:X_DLNADOC')
-        x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
+        x = ET.SubElement(d, 'X_DLNADOC')
         x.text = 'DMS-1.50'
-        x = ET.SubElement(d, 'dlna:X_DLNADOC')
-        x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
+        x = ET.SubElement(d, 'X_DLNADOC')
         x.text = 'M-DMS-1.50'
-        x = ET.SubElement(d, 'dlna:X_DLNACAP')
-        x.attrib['xmlns:dlna'] = 'urn:schemas-dlna-org:device-1-0'
+        x = ET.SubElement(d, 'X_DLNACAP')
         x.text = 'av-upload,image-upload,audio-upload'
 
         #if self.has_level(LOG_DEBUG):
