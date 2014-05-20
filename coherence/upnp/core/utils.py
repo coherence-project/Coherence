@@ -62,7 +62,7 @@ def parse_http_response(data):
     header = data.split('\r\n\r\n')[0]
 
     lines = header.split('\r\n')
-    cmd = lines[0].split(' ')
+    cmd = lines[0].split(None, 2)
     lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
     lines = filter(lambda x: len(x) > 0, lines)
 
