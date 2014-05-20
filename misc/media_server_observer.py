@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+#
+# Copyright 2009, Benjamin Kampmann <ben.kampmann@gmail.com>
 
 from twisted.internet import reactor
 
