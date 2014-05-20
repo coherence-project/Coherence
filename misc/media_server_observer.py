@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Licensed under the MIT license
+# http://opensource.org/licenses/mit-license.php
+#
+# Copyright 2009, Benjamin Kampmann <ben.kampmann@gmail.com>
+# Copyright 2014, Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 from twisted.internet import reactor
 
@@ -9,8 +17,8 @@ from coherence.upnp.core import DIDLLite
 # browse callback
 def process_media_server_browse(result, client):
     print "browsing root of", client.device.get_friendly_name()
-    print "result contains %d out of %d total matches" % \
-            (int(result['NumberReturned']), int(result['TotalMatches']))
+    print "result contains", result['NumberReturned'],
+    print "out of", result['TotalMatches'], "total matches."
 
     elt = DIDLLite.DIDLElement.fromString(result['Result'])
     for item in elt.getItems():
@@ -24,8 +32,7 @@ def process_media_server_browse(result, client):
 
 # called for each media server found
 def media_server_found(client, udn):
-    print "media_server_found", client
-    print "media_server_found", client.device.get_friendly_name()
+    print "Media Server found:", client.device.get_friendly_name()
 
     d = client.content_directory.browse(0,
             browse_flag='BrowseDirectChildren', process_result=False,
@@ -35,7 +42,7 @@ def media_server_found(client, udn):
 
 # sadly they sometimes get removed as well :(
 def media_server_removed(udn):
-    print "media_server_removed", udn
+    print "Media Server gone:", udn
 
 
 def start():

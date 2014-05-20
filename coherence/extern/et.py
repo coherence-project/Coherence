@@ -80,7 +80,9 @@ if not hasattr(ET, 'XMLParser'):
     ET.XMLParser = XMLParser
 
 
-namespace_map_update = elementtree.ElementTree._namespace_map.update
+def namespace_map_update(namespaces):
+    for uri, prefix in namespaces.items():
+        elementtree.ElementTree.register_namespace(prefix, uri)
 
 
 class ElementInterface(elementtree.ElementTree._ElementInterface): pass

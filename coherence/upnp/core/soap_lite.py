@@ -64,10 +64,12 @@ def build_soap_call(method, arguments, is_response=False,
     """
     envelope = ET.Element("s:Envelope")
     if envelope_attrib:
+        # :fixme: ensure there is no xmlns defined here
         for n in envelope_attrib:
             envelope.attrib.update({n[0]: n[1]})
     else:
         envelope.attrib.update({'s:encodingStyle': "http://schemas.xmlsoap.org/soap/encoding/"})
+        # :fixme: remove explict xmlns attribute
         envelope.attrib.update({'xmlns:s': "http://schemas.xmlsoap.org/soap/envelope/"})
 
     body = ET.SubElement(envelope, "s:Body")

@@ -31,6 +31,7 @@ from coherence import log
 global subscribers
 subscribers = {}
 
+ns = 'urn:schemas-upnp-org:event-1-0'
 
 def subscribe(service):
     subscribers[service.get_sid()] = service
@@ -487,11 +488,10 @@ class ServiceServer(log.Loggable):
         if len(notify) <= 0:
             return
 
-        root = ET.Element('e:propertyset')
-        root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
+        root = ET.Element('{%s}propertyset' % ns)
         evented_variables = 0
         for n in notify:
-            e = ET.SubElement(root, 'e:property')
+            e = ET.SubElement(root, '{%s}property' % ns)
             if n.name == 'LastChange':
                 if subscriber['seq'] == 0:
                     text = self.build_last_change_event(n.instance, force=True)
@@ -569,9 +569,8 @@ class ServiceServer(log.Loggable):
             return None
 
     def build_single_notification(self, instance, variable_name, value):
-        root = ET.Element('e:propertyset')
-        root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
-        e = ET.SubElement(root, 'e:property')
+        root = ET.Element('{%s}propertyset' % ns)
+        e = ET.SubElement(root, '{%s}property' % ns)
         s = ET.SubElement(e, variable_name).text = str(value)
         return ET.tostring(root, encoding='utf-8')
 
@@ -607,15 +606,14 @@ class ServiceServer(log.Loggable):
         if len(notify) <= 0:
             return
 
-        root = ET.Element('e:propertyset')
-        root.attrib['xmlns:e'] = 'urn:schemas-upnp-org:event-1-0'
+        root = ET.Element('{%s}propertyset' % ns)
 
         if isinstance(notify, variable.StateVariable):
             notify = [notify, ]
 
         evented_variables = 0
         for n in notify:
-            e = ET.SubElement(root, 'e:property')
+            e = ET.SubElement(root, '{%s}property' % ns)
             if n.name == 'LastChange':
                 text = self.build_last_change_event(instance=n.instance)
                 if text is not None:
