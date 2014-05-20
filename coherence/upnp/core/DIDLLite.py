@@ -220,17 +220,14 @@ def build_dlna_additional_info(content_format, does_playcontainer=False):
 class Resource(object):
     """An object representing a resource."""
 
+    __attributes = ('bitrate', 'size', 'duration', 'nrAudioChannels',
+                    'resolution', 'importUri')
+
     def __init__(self, data=None, protocolInfo=None):
         self.data = data
         self.protocolInfo = protocolInfo
-        self.bitrate = None
-        self.size = None
-        self.duration = None
-
-        self.nrAudioChannels = None
-        self.resolution = None
-
-        self.importUri = None
+        for attrname in self.__attributes:
+            setattr(self, attrname, None)
 
         if self.protocolInfo is not None:
             protocol, network, content_format, additional_info = self.protocolInfo.split(':')
@@ -277,34 +274,21 @@ class Resource(object):
 
         root.text = self.data
 
-        if self.bitrate is not None:
-            root.attrib['bitrate'] = str(self.bitrate)
-
-        if self.size is not None:
-            root.attrib['size'] = str(self.size)
-
-        if self.duration is not None:
-            root.attrib['duration'] = self.duration
-
-        if self.nrAudioChannels is not None:
-            root.attrib['nrAudioChannels'] = self.nrAudioChannels
-
-        if self.resolution is not None:
-            root.attrib['resolution'] = self.resolution
-
-        if self.importUri is not None:
-            root.attrib['importUri'] = self.importUri
+        for attrname in self.__attributes:
+            val = getattr(self, attrname, None)
+            if val is not None:
+                root.attrib[attrname] = str(val)
 
         return root
 
     def fromElement(self, elt):
         self.protocolInfo = elt.attrib['protocolInfo']
         self.data = elt.text
-        self.bitrate = elt.attrib.get('bitrate')
-        self.size = elt.attrib.get('size')
-        self.duration = elt.attrib.get('duration', None)
-        self.resolution = elt.attrib.get('resolution', None)
-        self.importUri = elt.attrib.get('importUri', None)
+        for attrname in self.__attributes:
+            val = elt.attrib.get(attrname, None)
+            setattr(self, attrname, val)
+        # :todo: The old code did raise if bitrate and size where missing.
+        # Should we do this, too?
 
     def toString(self, **kwargs):
         return ET.tostring(self.toElement(**kwargs), encoding='utf-8')
