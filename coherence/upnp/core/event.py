@@ -233,7 +233,9 @@ class EventProtocol(Protocol, log.Loggable):
         cmd, headers = utils.parse_http_response(data)
         self.debug("%r %r", cmd, headers)
         if int(cmd[1]) != 200:
-            self.warning("response with error code %r received upon our %r request", cmd[1], self.action)
+            self.warning("response with error code %r received from %s "
+                         "upon our %r request",
+                         cmd[1], self.service.device.friendly_name, self.action)
             # XXX get around devices that return an error on our event subscribe request
             self.service.process_event({})
         else:
@@ -375,7 +377,9 @@ class NotificationProtocol(Protocol, log.Loggable):
         self.debug("notification response received %r %r", cmd, headers)
         try:
             if int(cmd[1]) != 200:
-                self.warning("response with error code %r received upon our notification", cmd[1])
+                self.warning("response with error code %r received from %s "
+                             "upon our notification",
+                             cmd[1], self.service.device.friendly_name)
         except:
             self.debug("response without error code received upon our notification")
         self.transport.loseConnection()
