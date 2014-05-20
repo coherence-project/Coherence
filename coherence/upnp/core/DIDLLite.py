@@ -57,7 +57,7 @@ def is_audio(mimetype):
         mimetype = test[2]
     if mimetype == 'application/ogg':
         return True
-    if mimetype.startswith('audio/'):
+    elif mimetype.startswith('audio/'):
         return True
     return False
 
@@ -144,32 +144,30 @@ class Resources(list):
 
 
 def classChooser(mimetype, sub=None):
-
     if mimetype == 'root':
         return Container
-    if mimetype == 'item':
+    elif mimetype == 'item':
         return Item
-    if mimetype == 'directory':
+    elif mimetype == 'directory':
         if sub == 'music':
             return MusicAlbum
         return Container
-    else:
-        if string.find(mimetype, 'image/') == 0:
-            return Photo
-        if string.find(mimetype, 'audio/') == 0:
-            if sub == 'music':       # FIXME: this is stupid
-                return MusicTrack
-            return AudioItem
-        if string.find(mimetype, 'video/') == 0:
-            return VideoItem
-        if mimetype == 'application/ogg':
-            if sub == 'music':       # FIXME: this is stupid
-                return MusicTrack
-            return AudioItem
-        if mimetype == 'application/x-flac':
-            if sub == 'music':       # FIXME: this is stupid
-                return MusicTrack
-            return AudioItem
+    elif string.find(mimetype, 'image/') == 0:
+        return Photo
+    elif string.find(mimetype, 'audio/') == 0:
+        if sub == 'music':       # FIXME: this is stupid
+            return MusicTrack
+        return AudioItem
+    elif string.find(mimetype, 'video/') == 0:
+        return VideoItem
+    elif mimetype == 'application/ogg':
+        if sub == 'music':       # FIXME: this is stupid
+            return MusicTrack
+        return AudioItem
+    elif mimetype == 'application/x-flac':
+        if sub == 'music':       # FIXME: this is stupid
+            return MusicTrack
+        return AudioItem
     return None
 
 simple_dlna_tags = ['DLNA.ORG_OP=01',      # operations parameter
@@ -182,29 +180,29 @@ def build_dlna_additional_info(content_format, does_playcontainer=False):
     additional_info = ['*']
     if content_format == 'audio/mpeg':
         additional_info = ['DLNA.ORG_PN=MP3'] + simple_dlna_tags
-    if content_format == 'audio/ms-wma':
+    elif content_format == 'audio/ms-wma':
         additional_info = ['DLNA.ORG_PN=WMABASE'] + simple_dlna_tags
-    if content_format == 'image/jpeg':
+    elif content_format == 'image/jpeg':
         dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
         additional_info = ['DLNA.ORG_PN=JPEG_LRG'] + dlna_tags
-    if content_format == 'image/png':
+    elif content_format == 'image/png':
         dlna_tags = simple_dlna_tags[:]
         dlna_tags[3] = 'DLNA.ORG_FLAGS=00900000000000000000000000000000'
         additional_info = ['DLNA.ORG_PN=PNG_LRG'] + dlna_tags
-    if content_format == 'video/mpeg':
+    elif content_format == 'video/mpeg':
         additional_info = ['DLNA.ORG_PN=MPEG_PS_PAL'] + simple_dlna_tags
-    if content_format == 'video/mpegts':
+    elif content_format == 'video/mpegts':
         additional_info = ['DLNA.ORG_PN=MPEG_TS_PAL'] + simple_dlna_tags
         content_format = 'video/mpeg'
-    if content_format in ['video/mp4', 'video/x-m4a']:
+    elif content_format in ['video/mp4', 'video/x-m4a']:
         additional_info = ['DLNA.ORG_PN=AVC_TS_BL_CIF15_AAC'] + simple_dlna_tags
-    if content_format in ['video/x-msvideo', 'video/avi', 'video/divx']:
+    elif content_format in ['video/x-msvideo', 'video/avi', 'video/divx']:
         #additional_info = ';'.join(['DLNA.ORG_PN=MPEG4_P2_MP4_SP_AAC']+simple_dlna_tags)
         additional_info = ['*']
-    if content_format == 'video/x-ms-wmv':
+    elif content_format == 'video/x-ms-wmv':
         additional_info = ['DLNA.ORG_PN=WMV_BASE'] + simple_dlna_tags
-    if content_format == '*':
+    elif content_format == '*':
         additional_info = simple_dlna_tags
 
     if does_playcontainer:
