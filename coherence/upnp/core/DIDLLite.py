@@ -11,7 +11,6 @@ TODO:
 
 """
 import os
-import string
 import urllib
 from datetime import datetime
 
@@ -152,13 +151,13 @@ def classChooser(mimetype, sub=None):
         if sub == 'music':
             return MusicAlbum
         return Container
-    elif string.find(mimetype, 'image/') == 0:
+    elif mimetype.startswith('image/'):
         return Photo
-    elif string.find(mimetype, 'audio/') == 0:
+    elif mimetype.startswith('audio/'):
         if sub == 'music':       # FIXME: this is stupid
             return MusicTrack
         return AudioItem
-    elif string.find(mimetype, 'video/') == 0:
+    elif mimetype.startswith('video/'):
         return VideoItem
     elif mimetype == 'application/ogg':
         if sub == 'music':       # FIXME: this is stupid
