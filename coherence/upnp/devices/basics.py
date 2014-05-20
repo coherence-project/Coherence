@@ -442,3 +442,65 @@ class BasicDevice(log.Loggable, BasicDeviceMixin):
         self.warning("%s %s (%s) activated with %s",
                      self.backend.name, self.device_type, self.backend,
                      str(self.uuid)[5:])
+
+
+class BasicClient(log.Loggable):
+
+    def __init__(self, device):
+        log.Loggable.__init__(self)
+        self.device = device
+        self.device_type = device.get_friendly_device_type()
+        self.version = int(device.get_device_type_version())
+        self.icons = device.icons
+
+        self._services = []
+        self.detection_completed = False
+
+        louie.connect(
+            self.service_notified,
+            signal='Coherence.UPnP.DeviceClient.Service.notified',
+            sender=self.device)
+
+        # build a dict of the services provided by this device
+        available_services = dict((svc.get_type(), svc)
+                                  for svc in (device.get_services()))
+        for attrname, cls, required, types in self._service_definition:
+            # :todo: is there a better way to get the name?
+            service_name = types[0].split(':')[3]
+            for type in types:
+                if type in available_services:
+                    client = cls(available_services[type])
+                    self._services.append(client)
+                    setattr(self, attrname, client)
+                    self.info("%s service available", service_name)
+                    break
+            else:
+                # the device does not provide this service
+                setattr(self, attrname, None)
+                if required:
+                    self.warning(
+                        "%s service not available, device not "
+                        "implemented properly according to the UPnP "
+                        "specification", service_name)
+
+    def remove(self):
+        self.info("Removal of %s started.", self.__class__.__name__)
+        for svc in self._services[::-1]:
+            svc.remove()
+
+    def service_notified(self, service):
+        self.info("Service %r sent notification.", service)
+        if self.detection_completed:
+            return
+
+        for elem in self._services:
+            if getattr(elem.service, 'last_time_updated', None) is None:
+                return
+
+        self.detection_completed = True
+        louie.send('Coherence.UPnP.DeviceClient.detection_completed',
+                   None, client=self, udn=self.device.udn)
+
+    def state_variable_change(self, variable):
+        self.info('%(name)r changed from %(old_value)r to %(value)r',
+                  vars(variable))

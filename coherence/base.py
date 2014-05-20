@@ -130,10 +130,20 @@ class WebServer(log.Loggable):
         # XXX: is this the right way to do it?
         self.warning("WebServer on port %d ready", coherence.web_server_port)
 
+__plugins_instance_ = None
+__coherence_instance_ = None
 
-class Plugins(log.Loggable):
+def Plugins(*args, **kwargs):
+    global __plugins_instance_
+    if __plugins_instance_:
+        assert not args and not kwargs
+        return __plugins_instance_
+    __plugins_instance_ = __PluginsClass(*args, **kwargs)
+    return __plugins_instance_
+
+
+class __PluginsClass(log.Loggable):
     logCategory = 'plugins'
-    _instance_ = None  # Singleton
 
     _valids = ("coherence.plugins.backend.media_server",
                "coherence.plugins.backend.media_renderer",
@@ -142,21 +152,12 @@ class Plugins(log.Loggable):
 
     _plugins = {}
 
-    def __new__(cls, *args, **kwargs):
-        obj = getattr(cls, '_instance_', None)
-        if obj is not None:
-            return obj
-        else:
-            obj = super(Plugins, cls).__new__(cls, *args, **kwargs)
-            cls._instance_ = obj
-            obj._collect(*args, **kwargs)
-            return obj
-
     def __repr__(self):
         return str(self._plugins)
 
     def __init__(self, *args, **kwargs):
         log.Loggable.__init__(self)
+        self._collect(*args, **kwargs)
         pass
 
     def __getitem__(self, key):
