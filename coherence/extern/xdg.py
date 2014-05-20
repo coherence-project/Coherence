@@ -13,7 +13,9 @@ hot_dirs = {'XDG_MUSIC_DIR': ('audio', 'audio'),
             'XDG_VIDEOS_DIR': ('video', 'videos')}
 
 
-def xdg_content():
+pub_dir = {'XDG_PUBLICSHARE_DIR': ('misc', 'misc')}
+
+def xdg_content(what='public'):
 
     content = []
     xdg_config_home = os.path.expanduser(getenv('XDG_CONFIG_HOME',
@@ -25,7 +27,10 @@ def xdg_content():
                 line = line.strip()
                 key, value = line.split('=')
                 try:
-                    info = hot_dirs[key]
+                    if what == "public":
+                        info = pub_dir[key]
+                    else:
+                        info = hot_dirs[key]
                     value = value.strip('"')
                     value = os.path.expandvars(value)
                     #content.append((value.decode('utf8'),info[0],info[1]))
@@ -38,4 +43,5 @@ def xdg_content():
     return None
 
 if __name__ == '__main__':
-    print xdg_content()
+    print 'public:', xdg_content()
+    print 'private:', xdg_content('private')
