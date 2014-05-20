@@ -232,7 +232,7 @@ class EventProtocol(Protocol, log.Loggable):
         #self.debug(data)
         cmd, headers = utils.parse_http_response(data)
         self.debug("%r %r", cmd, headers)
-        if int(cmd[1]) != 200:
+        if cmd[1] != '200':
             self.warning("response with error code %r received from %s "
                          "upon our %r request",
                          cmd[1], self.service.device.friendly_name, self.action)
@@ -375,13 +375,10 @@ class NotificationProtocol(Protocol, log.Loggable):
             pass
         cmd, headers = utils.parse_http_response(data)
         self.debug("notification response received %r %r", cmd, headers)
-        try:
-            if int(cmd[1]) != 200:
-                self.warning("response with error code %r received from %s "
-                             "upon our notification",
-                             cmd[1], self.service.device.friendly_name)
-        except:
-            self.debug("response without error code received upon our notification")
+        if cmd[1] != '200':
+            self.warning("response with error code %r received from %s "
+                         "upon our notification",
+                         cmd[1], self.service.device.friendly_name)
         self.transport.loseConnection()
 
     def connectionLost(self, reason):
