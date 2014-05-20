@@ -41,8 +41,8 @@ from coherence.upnp.core import dlna
 from coherence import log
 
 
-def qname(tag, ns=''):
-    if len(ns) == 0:
+def qname(tag, ns=None):
+    if not ns:
         return tag
     return "{%s}%s" % (ns, tag)
 
@@ -207,11 +207,11 @@ def build_dlna_additional_info(content_format, does_playcontainer=False):
     if content_format == '*':
         additional_info = simple_dlna_tags
 
-    if does_playcontainer == True:
+    if does_playcontainer:
         i = 0
         for part in additional_info:
             if part.startswith('DLNA.ORG_FLAGS'):
-                _, bits = part.split('=')
+                bits = part.split('=')[1]
                 bits = int(bits, 16)
                 bits |= 0x10000000000000000000000000000000
                 additional_info[i] = 'DLNA.ORG_FLAGS=%.32x' % bits
