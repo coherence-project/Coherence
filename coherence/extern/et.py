@@ -141,3 +141,15 @@ def qname(tag, ns=None):
     if not ns:
         return tag
     return "{%s}%s" % (ns, tag)
+
+def textElement(parent, tag, namespace, text):
+    """Create a subelement with text content."""
+    elem = ET.SubElement(parent, qname(tag, namespace))
+    elem.text = text
+    return elem
+
+def textElementIfNotNone(parent, tag, namespace, text):
+    """If text is not none, create a subelement with text content."""
+    if text is None:
+        return
+    return textElement(parent, tag, namespace, str(text))
