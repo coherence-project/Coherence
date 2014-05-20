@@ -24,7 +24,11 @@ def process_media_server_browse(result, client):
     for item in elt.getItems():
 
         if item.upnp_class.startswith("object.container"):
-            fmt = "  container %(title)s (%(id)s) with %(childCount)s items"
+            # Argl, item.childCount may not be a member of item, but
+            # from item.__class__, in which case it does not appear in
+            # vars(). Since I plan to rework the whole DIDL module
+            # anyway, I jsut add this workaround here for now.
+            fmt = "  container %(title)s (%(id)s) with "+str(item.childCount)+" items"
         elif item.upnp_class.startswith("object.item"):
             fmt = "  item %(title)s (%(id)s)"
         print fmt % vars(item)
