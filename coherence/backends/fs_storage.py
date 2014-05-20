@@ -136,7 +136,7 @@ class FSItem(BackendItem):
             if(isinstance(self.location, FilePath) and
                self.location.isdir() == True):
                 self.check_for_cover_art()
-                if hasattr(self, 'cover'):
+                if getattr(self, 'cover', None):
                     _, ext = os.path.splitext(self.cover)
                     """ add the cover image extension to help clients not reacting on
                         the mimetype """
@@ -145,7 +145,7 @@ class FSItem(BackendItem):
             self.get_url = lambda: self.url
 
             if self.mimetype.startswith('audio/'):
-                if hasattr(parent, 'cover'):
+                if getattr(parent, 'cover', None):
                     _, ext = os.path.splitext(parent.cover)
                     """ add the cover image extension to help clients not reacting on
                         the mimetype """
@@ -299,7 +299,7 @@ class FSItem(BackendItem):
         #print "rebuild", self.mimetype
         UPnPClass = classChooser(self.mimetype)
         self.item = UPnPClass(self.id, self.parent.id, self.get_name())
-        if hasattr(self.parent, 'cover'):
+        if getattr(self.parent, 'cover', None):
             _, ext = os.path.splitext(self.parent.cover)
             """ add the cover image extension to help clients not reacting on
                 the mimetype """
