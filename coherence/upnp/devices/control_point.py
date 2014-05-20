@@ -148,7 +148,7 @@ class ControlPoint(log.Loggable):
                         short_type, device.get_friendly_name())
 
                 cls = self.__type_class_map.get(short_type, lambda x: None)
-                cls(device)
+                client = cls(device)
 
                 client.coherence = self.coherence
                 device.set_client(client)
