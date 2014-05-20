@@ -31,11 +31,14 @@ import sys
 import socket
 
 from pkg_resources import resource_filename
-icon = resource_filename(__name__, '../../misc/Desktop Applet/tango-system-file-manager.png')
+icon = resource_filename(__name__, '../../misc/Desktop-Applet/tango-system-file-manager.png')
+icon_shared = resource_filename(__name__, '../../misc/Desktop-Applet/tango-system-file-manager-shared.png')
 # this ../.. is evil, I know :-(
 # there must be a better way
 if not os.path.exists(icon):
     icon = "/usr/share/icons/coherence/tango-system-file-manager.png"
+if not os.path.exists(icon_shared):
+    icon_shared = "/usr/share/icons/coherence/tango-system-file-manager-shared.png"
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -63,6 +66,7 @@ def startCoherence():
         proc = subprocess.Popen(["/usr/bin/coherence","--plugin=backend:FSStore,name:%s@%s" % ( user, host )])
     startAction.setDisabled(1)
     stopAction.setDisabled(0)
+    tray.setIcon(icon_shared)
     bool = True
 
 def stopCoherence():
@@ -70,6 +74,7 @@ def stopCoherence():
     os.kill( proc.pid, signal.SIGTERM )
     stopAction.setDisabled(1)
     startAction.setDisabled(0)
+    tray.setIcon(icon)
     bool = False
 
 def quitApplet():
@@ -87,6 +92,8 @@ if __name__ == "__main__":
 
     systrayIcon = QString(icon)
     icon = QIcon(systrayIcon)
+    systrayIcon_shared = QString(icon_shared)
+    icon_shared = QIcon(systrayIcon_shared)
     quitAction.connect( quitAction, SIGNAL("triggered()"), quitApplet)
     quitAction.connect( quitAction, SIGNAL("triggered()"), app, QtCore.SLOT("quit()"))
     startAction.connect( startAction, SIGNAL("triggered()"), startCoherence)
