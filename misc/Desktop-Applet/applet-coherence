@@ -1,5 +1,6 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 # Applet for Coherence
 # Copyright (C) 2008 Nicolas Lécureuil <neoclust@mandriva.org>
 # Copyright (C) 2008 Helio Chissini de Castro <helio@mandriva.com>
