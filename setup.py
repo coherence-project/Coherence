@@ -157,7 +157,7 @@ Kudos go to:
 if setuptools:
     setup_args['install_requires'] = [
         'ConfigObj >= 4.3',
-        'Twisted >= 2.5',
+        'Twisted >= 8.2',
         'zope.interface',
         'louie',
         ]
