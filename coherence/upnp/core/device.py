@@ -217,12 +217,12 @@ class Device(log.Loggable):
                 pass
 
         try:
-            for dlna_doc in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNADOC'):
+            for dlna_doc in d.findall('./{%s}X_DLNADOC' % ns):
                 self.dlna_device_classes.append(dlna_doc.text)
         except:
             pass
         try:
-            for dlna_cap in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNACAP'):
+            for dlna_cap in d.findall('./{%s}X_DLNACAP' % ns):
                 for cap in dlna_cap.text.split(','):
                     self.dlna_caps.append(cap)
         except:
