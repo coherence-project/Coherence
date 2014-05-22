@@ -197,42 +197,21 @@ class Device(log.Loggable):
         self.udn = d.findtext('./{%s}UDN' % ns)
         self.info("found udn %r %r", self.udn, self.friendly_name)
 
-        try:
-            self.manufacturer = d.findtext('./{%s}manufacturer' % ns)
-        except:
-            pass
-        try:
-            self.manufacturer_url = d.findtext('./{%s}manufacturerURL' % ns)
-        except:
-            pass
-        try:
-            self.model_name = d.findtext('./{%s}modelName' % ns)
-        except:
-            pass
-        try:
-            self.model_description = d.findtext('./{%s}modelDescription' % ns)
-        except:
-            pass
-        try:
-            self.model_number = d.findtext('./{%s}modelNumber' % ns)
-        except:
-            pass
-        try:
-            self.model_url = d.findtext('./{%s}modelURL' % ns)
-        except:
-            pass
-        try:
-            self.serial_number = d.findtext('./{%s}serialNumber' % ns)
-        except:
-            pass
-        try:
-            self.upc = d.findtext('./{%s}UPC' % ns)
-        except:
-            pass
-        try:
-            self.presentation_url = d.findtext('./{%s}presentationURL' % ns)
-        except:
-            pass
+        for attrname, tag in (
+            ('manufacturer', 'manufacturer'),
+            ('manufacturer_url', 'manufacturerURL'),
+            ('model_name', 'modelName'),
+            ('model_description', 'modelDescription'),
+            ('model_number', 'modelNumber'),
+            ('model_url', 'modelURL'),
+            ('serial_number', 'serialNumber'),
+            ('upc', 'UPC'),
+            ('presentation_url', 'presentationURL'),
+            ):
+            try:
+                setattr(self, attrname, d.findtext('./{%s}%s' % (ns, tag)))
+            except:
+                pass
 
         try:
             for dlna_doc in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNADOC'):
@@ -339,101 +318,48 @@ class Device(log.Loggable):
     def as_tuples(self):
         r = []
 
-        def append(name, attribute):
+        def append(name, *attributes):
+            value = []
             try:
-                if isinstance(attribute, tuple):
-                    if callable(attribute[0]):
-                        v1 = attribute[0]()
+                for attr in attributes:
+                    if callable(attr):
+                        res = attr()
                     else:
-                        v1 = getattr(self, attribute[0])
-                    if v1 in [None, 'None']:
+                        res = getattr(self, attr)
+                    if not res:
                         return
-                    if callable(attribute[1]):
-                        v2 = attribute[1]()
-                    else:
-                        v2 = getattr(self, attribute[1])
-                    if v2 in [None, 'None']:
-                        return
-                    r.append((name, (v1, v2)))
-                    return
-                elif callable(attribute):
-                    v = attribute()
+                    elif isinstance(res, list):
+                        res = ','.join(res)
+                    value.append(res)
+                if len(value) == 1:
+                    value = value[0]
                 else:
-                    v = getattr(self, attribute)
-                if v not in [None, 'None']:
-                    r.append((name, v))
+                    value = tuple(value)
+                r.append((name, value))
             except:
                 import traceback
-                self.debug(traceback.format_exc())
+                self.error(traceback.format_exc())
 
-        try:
-            r.append(('Location', (self.get_location(), self.get_location())))
-        except:
-            pass
-        try:
-            append('URL base', self.get_urlbase)
-        except:
-            pass
-        try:
-            r.append(('UDN', self.get_id()))
-        except:
-            pass
-        try:
-            r.append(('Type', self.device_type))
-        except:
-            pass
-        try:
-            r.append(('UPnP Version', self.upnp_version))
-        except:
-            pass
-        try:
-            r.append(('DLNA Device Class', ','.join(self.dlna_dc)))
-        except:
-            pass
-        try:
-            r.append(('DLNA Device Capability', ','.join(self.dlna_cap)))
-        except:
-            pass
-        try:
-            r.append(('Friendly Name', self.friendly_name))
-        except:
-            pass
-        try:
-            append('Manufacturer', 'manufacturer')
-        except:
-            pass
-        try:
-            append('Manufacturer URL', ('manufacturer_url', 'manufacturer_url'))
-        except:
-            pass
-        try:
-            append('Model Description', 'model_description')
-        except:
-            pass
-        try:
-            append('Model Name', 'model_name')
-        except:
-            pass
-        try:
-            append('Model Number', 'model_number')
-        except:
-            pass
-        try:
-            append('Model URL', ('model_url', 'model_url'))
-        except:
-            pass
-        try:
-            append('Serial Number', 'serial_number')
-        except:
-            pass
-        try:
-            append('UPC', 'upc')
-        except:
-            pass
-        try:
-            append('Presentation URL', ('presentation_url', lambda: self.make_fullyqualified(getattr(self, 'presentation_url'))))
-        except:
-            pass
+
+        append('Location', self.get_location, self.get_location)
+        append('URL base', self.get_urlbase)
+        append('UDN', self.get_id)
+        append('Type', 'device_type')
+        append('UPnP Version', 'upnp_version')
+        append('DLNA Device Class', 'dlna_device_classes')
+        append('DLNA Device Capability', 'dlna_caps')
+        append('Friendly Name', 'friendly_name)')
+        append('Manufacturer', 'manufacturer')
+        append('Manufacturer URL', 'manufacturer_url', 'manufacturer_url')
+        append('Model Description', 'model_description')
+        append('Model Name', 'model_name')
+        append('Model Number', 'model_number')
+        append('Model URL', 'model_url', 'model_url')
+        append('Serial Number', 'serial_number')
+        append('UPC', 'upc')
+        append('Presentation URL',
+               ('presentation_url',
+                lambda: self.make_fullyqualified(getattr(self, 'presentation_url'))))
 
         for icon in self.icons:
             r.append(('Icon', (icon['realurl'],
