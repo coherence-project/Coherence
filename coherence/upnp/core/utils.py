@@ -458,19 +458,12 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
 
     @param file: path to file on filesystem, or file-like object.
 
-    See HTTPDownloader to see what extra args can be passed.
+    See twisted.web.client.HTTPDownloader to see what extra args can
+    be passed.
     """
-    # This function is like twisted.web.client.downloadPage, except it
-    # uses our HeaderAwareHTTPDownloader instead of HTTPDownloader and
-    # sets the user agent.
-    factory.noisy = False # :todo: handle this
     kwargs['agent'] = "Coherence PageGetter"
-    factoryFactory = lambda url, *a, **kw: HeaderAwareHTTPDownloader(url, file, *a, **kw)
-    return client._makeGetterFactory(
-        url,
-        factoryFactory,
-        contextFactory=contextFactory,
-        *args, **kwargs).deferred
+    return client.downloadPage(url, file, contextFactory=contextFactory,
+                        *args, **kwargs)
 
 
 # StaticFile used to be a patched version of static.File. The later
