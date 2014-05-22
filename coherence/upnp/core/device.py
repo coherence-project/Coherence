@@ -218,22 +218,13 @@ class Device(log.Loggable):
 
         try:
             for dlna_doc in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNADOC'):
-                try:
-                    self.dlna_dc.append(dlna_doc.text)
-                except AttributeError:
-                    self.dlna_dc = []
-                    self.dlna_dc.append(dlna_doc.text)
+                self.dlna_device_classes.append(dlna_doc.text)
         except:
             pass
-
         try:
             for dlna_cap in d.findall('./{urn:schemas-dlna-org:device-1-0}X_DLNACAP'):
                 for cap in dlna_cap.text.split(','):
-                    try:
-                        self.dlna_cap.append(cap)
-                    except AttributeError:
-                        self.dlna_cap = []
-                        self.dlna_cap.append(cap)
+                    self.dlna_caps.append(cap)
         except:
             pass
 
