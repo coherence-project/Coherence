@@ -92,6 +92,7 @@ class BzFactory(protocol.ClientFactory, log.Loggable):
 class BzConnection(log.Loggable):
     """ a singleton class
     """
+    # :todo: __metaclass__ = _Singleton
     logCategory = 'buzztard_connection'
 
     def __new__(cls, *args, **kwargs):

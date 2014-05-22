@@ -25,6 +25,7 @@ from twisted.web import resource, server
 from twisted.internet import protocol
 
 from coherence import log
+from coherence.base import _Singleton
 
 import struct
 
@@ -682,15 +683,8 @@ class TranscoderManager(log.Loggable):
 
     """
 
+    __metaclass__ = _Singleton
     logCategory = 'transcoder_manager'
-    _instance_ = None  # Singleton
-
-    def __new__(cls, *args, **kwargs):
-        """ creates the singleton """
-        if cls._instance_ is None:
-            obj = super(TranscoderManager, cls).__new__(cls, *args, **kwargs)
-            cls._instance_ = obj
-        return cls._instance_
 
     def __init__(self, coherence=None):
         """ initializes the class

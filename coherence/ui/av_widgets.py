@@ -47,6 +47,7 @@ from pkg_resources import resource_filename
 
 class ControlPoint(object):
 
+    #:todo: __metaclass__ = _Singleton
     _instance_ = None  # Singleton
 
     def __new__(cls, *args, **kwargs):

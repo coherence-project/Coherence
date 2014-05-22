@@ -13,6 +13,7 @@
 import os
 import sys
 
+from coherence.base import _Singleton
 
 class Plugin(object):
     """ a new style class that
@@ -31,17 +32,7 @@ class Reception(object):
         we'll add some more functionality later
     """
 
-    _instance_ = None  # Singleton
-
-    def __new__(cls, *args, **kwargs):
-        """ creates the singleton """
-        obj = getattr(cls, '_instance_', None)
-        if obj is not None:
-            return obj
-        else:
-            obj = super(Reception, cls).__new__(cls, *args, **kwargs)
-            cls._instance_ = obj
-            return obj
+    __metaclass__ = _Singleton
 
     def __init__(self, plugin_path=None, log=None):
         """ initializes the class and

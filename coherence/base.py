@@ -42,6 +42,17 @@ except ImportError:
     pkg_resources = None
 
 
+class _Singleton(type):
+    """Singleton meta-class"""
+    # from http://stackoverflow.com/questions/6760685/
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 class SimpleRoot(resource.Resource, log.Loggable):
     addSlash = True
     logCategory = 'coherence'
@@ -130,19 +141,9 @@ class WebServer(log.Loggable):
         # XXX: is this the right way to do it?
         self.warning("WebServer on port %d ready", coherence.web_server_port)
 
-__plugins_instance_ = None
-__coherence_instance_ = None
 
-def Plugins(*args, **kwargs):
-    global __plugins_instance_
-    if __plugins_instance_:
-        assert not args and not kwargs
-        return __plugins_instance_
-    __plugins_instance_ = __PluginsClass(*args, **kwargs)
-    return __plugins_instance_
-
-
-class __PluginsClass(log.Loggable):
+class Plugins(log.Loggable):
+    __metaclass__ = _Singleton
     logCategory = 'plugins'
 
     _valids = ("coherence.plugins.backend.media_server",
@@ -152,13 +153,13 @@ class __PluginsClass(log.Loggable):
 
     _plugins = {}
 
-    def __repr__(self):
-        return str(self._plugins)
-
     def __init__(self, *args, **kwargs):
         log.Loggable.__init__(self)
         self._collect(*args, **kwargs)
         pass
+
+    def __repr__(self):
+        return str(self._plugins)
 
     def __getitem__(self, key):
         plugin = self._plugins.__getitem__(key)
@@ -212,25 +213,12 @@ class __PluginsClass(log.Loggable):
 
 
 class Coherence(log.Loggable):
+    __metaclass__ = _Singleton
     logCategory = 'coherence'
-    _instance_ = None  # Singleton
-
-    def __new__(cls, *args, **kwargs):
-        obj = getattr(cls, '_instance_', None)
-        if obj is not None:
-            cls._incarnations_ += 1
-            return obj
-        else:
-            obj = super(Coherence, cls).__new__(cls)
-            cls._instance_ = obj
-            cls._incarnations_ = 1
-            obj.setup(*args, **kwargs)
-            obj.cls = cls
-            return obj
 
     def __init__(self, *args, **kwargs):
         log.Loggable.__init__(self)
-        pass
+        self.setup(*args, **kwargs)
 
     def clear(self):
         """ we do need this to survive multiple calls
@@ -281,7 +269,7 @@ class Coherence(log.Loggable):
             subsystem_log = config.get('subsystem_log', {})
             for subsystem, level in subsystem_log.items():
                 #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
-                logging.getLogger(subsystem.lower()).setLevel(level)
+                logging.getLogger(subsystem.lower()).setLevel(level.upper())
         try:
             logfile = config.get('logging').get('logfile', None)
             if logfile != None:
