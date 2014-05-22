@@ -50,6 +50,16 @@ _global_dispatcher = GlobalDispatcher()
 _global_receivers_pool = {}
 
 
+def reset():
+    """Reset the state of Louie.
+
+    Useful during unit testing.  Should be avoided otherwise.
+    """
+    global _global_dispatcher, _global_receivers_pool
+    _global_dispatcher = GlobalDispatcher()
+    _global_receivers_pool = {}
+
+
 def connect(receiver, signal=All, sender=Any, weak=True):
     callback = receiver
     if signal in (Any, All):
