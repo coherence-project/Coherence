@@ -27,18 +27,23 @@ class Argument:
         return self.state_variable
 
     def __repr__(self):
-        return "Argument: %s, %s, %s" % (self.get_name(),
-                                         self.get_direction(), self.get_state_variable())
+        return ("Argument(%(name)r, %(direction)r, %(state_variable)r"
+                % vars(self))
 
     def as_tuples(self):
-        r = []
-        r.append(('Name', self.name))
-        r.append(('Direction', self.direction))
-        r.append(('Related State Variable', self.state_variable))
+        r = [
+            ('Name', self.name),
+            ('Direction', self.direction),
+            ('Related State Variable', self.state_variable)
+            ]
         return r
 
     def as_dict(self):
-        return {'name': self.name, 'direction': self.direction, 'related_state_variable': self.state_variable}
+        return {
+            'name': self.name,
+            'direction': self.direction,
+            'related_state_variable': self.state_variable
+            }
 
 
 class Action(log.Loggable):
@@ -65,10 +70,12 @@ class Action(log.Loggable):
         return self.arguments_list
 
     def get_in_arguments(self):
-        return [arg for arg in self.arguments_list if arg.get_direction() == 'in']
+        return [arg for arg in self.arguments_list
+                if arg.direction == 'in']
 
     def get_out_arguments(self):
-        return [arg for arg in self.arguments_list if arg.get_direction() == 'out']
+        return [arg for arg in self.arguments_list
+                if arg.direction == 'out']
 
     def get_service(self):
         return self.service
@@ -155,15 +162,19 @@ class Action(log.Loggable):
         return results
 
     def __repr__(self):
-        return "Action: %s [%s], (%s args)" % (self.get_name(), self.get_implementation(),
-                                         len(self.get_arguments_list()))
+        return ("Action(%(name)r, %(implementation)r, (%arguments_list)r"
+                % vars(self))
 
     def as_tuples(self):
-        r = []
-        r.append(('Name', self.get_name()))
-        r.append(("Number of 'in' arguments", len(self.get_in_arguments())))
-        r.append(("Number of 'out' arguments", len(self.get_out_arguments())))
+        r = [
+            ('Name', self.name),
+            ("Number of 'in' arguments", len(self.get_in_arguments())),
+            ("Number of 'out' arguments", len(self.get_out_arguments())),
+            ]
         return r
 
     def as_dict(self):
-        return {'name': self.get_name(), 'arguments': [a.as_dict() for a in self.arguments_list]}
+        return {
+            'name': self.name,
+            'arguments': [a.as_dict() for a in self.arguments_list]
+            }
