@@ -86,51 +86,46 @@ class Service(log.Loggable):
     def as_tuples(self):
         r = []
 
-        def append(name, attribute):
+        def append(name, *attributes):
+            value = []
             try:
-                if isinstance(attribute, tuple):
-                    if callable(attribute[0]):
-                        v1 = attribute[0]()
-                    elif hasattr(self, attribute[0]):
-                        v1 = getattr(self, attribute[0])
+                for attr in attributes[:2]:
+                    if callable(attr):
+                        res = attr()
                     else:
-                        v1 = attribute[0]
-                    if v1 in [None, 'None']:
+                        res = getattr(self, attr)
+                    if not res:
                         return
-                    if callable(attribute[1]):
-                        v2 = attribute[1]()
-                    elif hasattr(self, attribute[1]):
-                        v2 = getattr(self, attribute[1])
-                    else:
-                        v2 = attribute[1]
-                    if v2 in [None, 'None']:
-                        return
-                    if len(attribute) > 2:
-                        r.append((name, (v1, v2, attribute[2])))
-                    else:
-                        r.append((name, (v1, v2)))
-                    return
-                elif callable(attribute):
-                    v = attribute()
-                elif hasattr(self, attribute):
-                    v = getattr(self, attribute)
+                    elif isinstance(res, list):
+                        res = ','.join(res)
+                    value.append(res)
+                if len(value) == 1:
+                    value = value[0]
                 else:
-                    v = attribute
-                if v not in [None, 'None']:
-                    r.append((name, v))
+                    if len(attributes) > 2:
+                        value.extend(attributes[2:])
+                    value = tuple(value)
+                r.append((name, value))
             except:
                 import traceback
-                self.debug(traceback.format_exc())
+                self.error(traceback.format_exc())
 
-        r.append(('Location', (self.device.get_location(), self.device.get_location())))
+        append('Location', self.device.get_location, self.device.get_location)
         append('URL base', self.device.get_urlbase)
-        r.append(('UDN', self.device.get_id()))
-        r.append(('Type', self.service_type))
-        r.append(('ID', self.id))
-        append('Service Description URL', (self.scpd_url, lambda: self.device.make_fullyqualified(self.scpd_url)))
-        append('Control URL', (self.control_url, lambda: self.device.make_fullyqualified(self.control_url), False))
-        append('Event Subscription URL', (self.event_sub_url, lambda: self.device.make_fullyqualified(self.event_sub_url), False))
-
+        append('UDN', self.device.get_id)
+        append('Type', 'service_type')
+        append('ID', 'id')
+        append('Service Description URL',
+               'scpd_url',
+               lambda: self.device.make_fullyqualified(self.scpd_url))
+        append('Control URL',
+               'control_url',
+               lambda: self.device.make_fullyqualified(self.control_url),
+               False)
+        append('Event Subscription URL',
+               'event_sub_url',
+               lambda: self.device.make_fullyqualified(self.event_sub_url),
+               False)
         return r
 
     def as_dict(self):
