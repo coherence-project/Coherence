@@ -36,6 +36,9 @@ class Device(log.Loggable):
         self.icons = []
         self.devices = []
 
+        self.dlna_device_classes = []
+        self.dlna_caps = []
+
         louie.connect(self.receiver, 'Coherence.UPnP.Service.detection_completed', self)
         louie.connect(self.service_detection_failed, 'Coherence.UPnP.Service.detection_failed', self)
 
