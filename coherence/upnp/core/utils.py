@@ -429,11 +429,6 @@ class HeaderAwareHTTPClientFactory(client.HTTPClientFactory):
         client.HTTPClientFactory.page(self, (page, self.response_headers))
 
 
-# deprecated, do not use
-# already in twisted.web since at least 1.3.0
-HeaderAwareHTTPDownloader = client.HTTPDownloader
-
-
 def getPage(url, contextFactory=None, *args, **kwargs):
     """
     Download a web page as a string.
