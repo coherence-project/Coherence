@@ -162,7 +162,8 @@ class FSItem(BackendItem):
             except:
                 size = 0
 
-            if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+            if (self.store.server and
+                self.store.server.coherence.config.get('transcoding', 'no') == 'yes'):
                 if self.mimetype in ('application/ogg', 'audio/ogg',
                                      'audio/x-wav',
                                      'audio/x-m4a',
@@ -199,7 +200,8 @@ class FSItem(BackendItem):
                 self.item.res.append(res)
             """
 
-            if self.store.server.coherence.config.get('transcoding', 'no') == 'yes':
+            if (self.store.server and
+                self.store.server.coherence.config.get('transcoding', 'no') == 'yes'):
                 if self.mimetype in ('audio/mpeg',
                                      'application/ogg', 'audio/ogg',
                                      'audio/x-wav',
