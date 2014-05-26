@@ -26,6 +26,8 @@ from coherence.upnp.core.utils import getPage
 from coherence.backend import BackendStore, BackendItem, Container, LazyContainer, \
      AbstractBackendStore
 
+DEFAULT_NAME = 'Playlists'
+DEFAULT_PLAYLIST_URL = 'http://mafreebox.freebox.fr/freeboxtv/playlist.m3u'
 
 class PlaylistItem(BackendItem):
     logCategory = 'playlist_store'
@@ -88,8 +90,8 @@ class PlaylistStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.playlist_url = self.config.get('playlist_url', 'http://mafreebox.freebox.fr/freeboxtv/playlist.m3u')
-        self.name = self.config.get('name', 'playlist')
+        self.playlist_url = self.config.get('playlist_url', DEFAULT_PLAYLIST_URL)
+        self.name = self.config.get('name', DEFAULT_NAME)
 
         self.init_completed()
 

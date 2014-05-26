@@ -22,7 +22,9 @@ from coherence.backend import BackendItem, BackendStore, Container, LazyContaine
 from urlparse import urlsplit
 from coherence.extern.et import parse_xml
 
-OPML_BROWSE_URL = 'http://opml.radiotime.com/Browse.ashx'
+DEFAULT_NAME = 'Radiotime'
+DEFAULT_BROWSE_URL = 'http://opml.radiotime.com/Browse.ashx'
+DEFAULT_PARTNER_ID = 'TMe3Cn6v'
 
 # we only handle mp3 audio streams for now
 DEFAULT_FORMAT = "mp3"
@@ -80,11 +82,11 @@ class RadiotimeStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'radiotimeStore')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 
-        self.browse_url = self.config.get('browse_url', OPML_BROWSE_URL)
-        self.partner_id = self.config.get('partner_id', 'TMe3Cn6v')
+        self.browse_url = self.config.get('browse_url', DEFAULT_BROWSE_URL)
+        self.partner_id = self.config.get('partner_id', DEFAULT_PARTNER_ID)
         self.username = self.config.get('username', None)
         self.locale = self.config.get('locale', 'en')
         self.serial = server.uuid

@@ -15,6 +15,10 @@ from twisted.python.util import OrderedDict
 
 from coherence.extern.et import parse_xml
 
+DEFAULT_NAME = 'BBC'
+
+RSS_URL = "http://open.bbc.co.uk/rad/uriplay/availablecontent"
+
 ROOT_CONTAINER_ID = 0
 SERIES_CONTAINER_ID = 100
 
@@ -102,12 +106,11 @@ class Container(BackendItem):
 class BBCStore(BackendStore):
 
     implements = ['MediaServer']
-    rss_url = "http://open.bbc.co.uk/rad/uriplay/availablecontent"
 
     def __init__(self, server, *args, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'BBC')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1000
@@ -144,7 +147,7 @@ class BBCStore(BackendStore):
             print "fail", f
             return f
 
-        dfr = getPage(self.rss_url)
+        dfr = getPage(RSS_URL)
         dfr.addCallback(parse_xml)
         dfr.addErrback(fail)
         dfr.addCallback(self.parse_data)

@@ -20,6 +20,8 @@ import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 
+DEFAULT_NAME = 'Tracker'
+
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER_ID = 100
 AUDIO_ALL_CONTAINER_ID = 101
@@ -512,7 +514,7 @@ class TrackerStore(BackendStore):
         BackendStore.__init__(self, server, **kwargs)
 
         self.config = kwargs
-        self.name = kwargs.get('name', 'Tracker')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.update_id = 0
         self.token = None

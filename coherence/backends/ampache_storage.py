@@ -7,6 +7,9 @@ import time
 import mimetypes
 mimetypes.init()
 
+DEFAULT_NAME = 'Ampache'
+DEFAULT_URL = 'http://localhost/ampache/server/xml.server.php'
+
 try:
     import hashlib
 
@@ -593,10 +596,10 @@ class AmpacheStore(BackendStore):
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.config = kwargs
-        self.name = kwargs.get('name', 'Ampache')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.key = kwargs.get('password', kwargs.get('key', ''))
         self.user = kwargs.get('user', None)
-        self.url = kwargs.get('url', 'http://localhost/ampache/server/xml.server.php')
+        self.url = kwargs.get('url', DEFAULT_URL)
 
         if kwargs.get('proxy', 'no') in [1, 'Yes', 'yes', 'True', 'true']:
             self.proxy = True
@@ -1053,7 +1056,7 @@ if __name__ == '__main__':
         config['logmode'] = 'warning'
         c = Coherence(config)
         f = c.add_plugin('AmpacheStore',
-                        url='http://localhost/ampache/server/xml.server.php',
+                        url=AMPACHE_URL,
                         key='password',
                         user=None)
         reactor.callLater(3, call_browse, 0, 0, 0)

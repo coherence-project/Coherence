@@ -18,6 +18,8 @@ from urlparse import urlsplit
 
 from coherence.extern.galleryremote import Gallery
 
+DEFAULT_URL= 'http://localhost/gallery2'
+
 
 class ProxyGallery2Image(ReverseProxyUriResource):
 
@@ -181,7 +183,7 @@ class Gallery2Store(BackendStore):
         self.update_id = 0
         self.store = {}
 
-        self.gallery2_server_url = self.config.get('server_url', 'http://localhost/gallery2')
+        self.gallery2_server_url = self.config.get('server_url', DEFAULT_URL)
         self.gallery2_username = self.config.get('username', None)
         self.gallery2_password = self.config.get('password', None)
 

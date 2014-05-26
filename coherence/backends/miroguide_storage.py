@@ -61,6 +61,17 @@ class VideoItem(BackendItem):
     def get_id(self):
         return self.storage_id
 
+DEFAULT_NAME = 'MiroGuide'
+DEFAULT_LANGUAGE = 'English'
+DEFAULL_CACHE_DIRECTORY = '/tmp/coherence-cache'
+DEFAUTL_CACHE_MAXSIZE = 100000000
+DEFAUTL_BUFFER_SIZE = 750000
+DEFAULT_PROXY_MODE = 'redirect'
+
+CATEGORIES_URL = "https://www.miroguide.com/api/list_categories"
+LANGUAGES_URL = "https://www.miroguide.com/api/list_languages"
+GET_CHANNELS_URL = "https://www.miroguide.com/api/get_channels"
+GET_CHANNEL_URL = "https://www.miroguide.com/api/get_channel"
 
 class MiroGuideStore(AbstractBackendStore):
 
@@ -84,21 +95,22 @@ class MiroGuideStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'MiroGuide')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
-        self.language = kwargs.get('language', 'English')
+        self.language = kwargs.get('language', DEFAULT_LANGUAGE)
 
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 
-        self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
-        self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
+        self.proxy_mode = kwargs.get('proxy_mode', DEFAULT_PROXY_MODE)
+        self.cache_directory = kwargs.get('cache_directory',
+                                          DEFAULT_CACHE_DIRECTORY)
         try:
             if self.proxy_mode != 'redirect':
                 os.mkdir(self.cache_directory)
         except:
             pass
-        self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
-        self.buffer_size = kwargs.get('buffer_size', 750000)
+        self.cache_maxsize = kwargs.get('cache_maxsize', DEFAUTL_CACHE_MAXSIZE)
+        self.buffer_size = kwargs.get('buffer_size', DEFAUTL_BUFFER_SIZE)
 
         rootItem = Container(None, self.name)
         self.set_root_item(rootItem)
@@ -125,8 +137,7 @@ class MiroGuideStore(AbstractBackendStore):
                 name = category['name'].encode('ascii', 'strict')
                 category_url = category['url'].encode('ascii', 'strict')
                 self.appendCategory(name, name, categoriesItem)
-
-        categories_url = "https://www.miroguide.com/api/list_categories"
+        categories_url = CATEGORIES_URL
         d1 = utils.getPage(categories_url)
         d1.addCallbacks(gotCategories, gotError)
 
@@ -141,8 +152,7 @@ class MiroGuideStore(AbstractBackendStore):
                 language_url = language['url'].encode('ascii', 'strict')
                 self.appendLanguage(name, name, languagesItem)
 
-        languages_url = "https://www.miroguide.com/api/list_languages"
-        d2 = utils.getPage(languages_url)
+        d2 = utils.getPage(LANGUAGES_URL)
         d2.addCallbacks(gotLanguages, gotError)
 
         self.init_completed()
@@ -179,7 +189,7 @@ class MiroGuideStore(AbstractBackendStore):
         limit = count
         if (count == 0):
             limit = per_page
-        uri = "https://www.miroguide.com/api/get_channels?limit=%d&offset=%d&filter=%s&filter_value=%s&sort=%s" % (limit, offset, filter, filter_value, sort)
+        uri = GET_CHANNELS_URI + "?limit=%d&offset=%d&filter=%s&filter_value=%s&sort=%s" % (limit, offset, filter, filter_value, sort)
         #print uri
         d = utils.getPage(uri)
 
@@ -211,7 +221,7 @@ class MiroGuideStore(AbstractBackendStore):
         return d
 
     def retrieveChannelItems (self, parent, channel_id):
-        uri = "https://www.miroguide.com/api/get_channel?id=%s" % channel_id
+        uri = GET_CHANNEL_URL + "?id=%s" % channel_id
         d = utils.getPage(uri)
 
         def gotItems(result):

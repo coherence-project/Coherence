@@ -21,6 +21,10 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
+DEFAULT_NAME = 'Elisa MediaRenderer'
+DEFAULT_HOST = 'localhost'
+
+ELISA_PORT = 8789
 
 class ElisaPlayer(log.Loggable, Plugin):
 
@@ -35,8 +39,8 @@ class ElisaPlayer(log.Loggable, Plugin):
 
     def __init__(self, device, **kwargs):
         log.Loggable.__init__(self)
-        self.name = kwargs.get('name', 'Elisa MediaRenderer')
-        self.host = kwargs.get('host', '127.0.0.1')
+        self.name = kwargs.get('name', DEFAULT_NAME)
+        self.host = kwargs.get('host', DEFAULT_HOST)
         self.player = None
         self.metadata = None
 
@@ -51,7 +55,7 @@ class ElisaPlayer(log.Loggable, Plugin):
         else:
             factory = pb.PBClientFactory()
             factory.noisy = False
-            reactor.connectTCP(self.host, 8789, factory)
+            reactor.connectTCP(self.host, ELISA_PORT, factory)
             d = factory.getRootObject()
 
             def result(player):

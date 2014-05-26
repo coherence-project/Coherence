@@ -52,6 +52,15 @@ from coherence import log
 
 from urlparse import urlsplit
 
+DEFAULT_NAME = 'Flickr'
+
+LOGIN_URL = "http://flickr.com/services/auth/"
+XMLRPC_URL = 'http://api.flickr.com/services/xmlrpc/'
+SOAP_URL = "http://api.flickr.com/services/soap/"
+UPLOAD_URL = "http://api.flickr.com/services/upload/"
+API_KEY = '837718c8a622c699edab0ea55fcec224'
+API_SECRET = '30a684822c341c3c'
+
 ROOT_CONTAINER_ID = 0
 INTERESTINGNESS_CONTAINER_ID = 100
 RECENT_CONTAINER_ID = 101
@@ -73,7 +82,7 @@ class FlickrAuthenticate(object):
 
         api_sig = ''.join((api_secret, 'api_key', api_key, 'frob', frob, 'perms', perms))
         api_sig = md5(api_sig)
-        login_url = "http://flickr.com/services/auth/?api_key=%s&perms=%s&frob=%s&api_sig=%s" % (api_key, perms, frob, api_sig)
+        login_url = LOGIN_URL + "?api_key=%s&perms=%s&frob=%s&api_sig=%s" % (api_key, perms, frob, api_sig)
         browser.open(login_url)
         browser.select_form(name='login_form')
         browser['login'] = userid
@@ -387,7 +396,7 @@ class FlickrStore(BackendStore):
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.next_id = 10000
-        self.name = kwargs.get('name', 'Flickr')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.proxy = kwargs.get('proxy', 'false')
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 
@@ -408,9 +417,9 @@ class FlickrStore(BackendStore):
         self.wmc_mapping = {'16': 0}
 
         self.update_id = 0
-        self.flickr = Proxy('http://api.flickr.com/services/xmlrpc/')
-        self.flickr_api_key = '837718c8a622c699edab0ea55fcec224'
-        self.flickr_api_secret = '30a684822c341c3c'
+        self.flickr = Proxy(XMLRPC_URL)
+        self.flickr_api_key = API_KEY
+        self.flickr_api_secret = API_SECRET
         self.store = {}
         self.uploads = {}
 
@@ -894,7 +903,7 @@ class FlickrStore(BackendStore):
         return d
 
     def soap_flickr_test_echo(self, value):
-        client = SOAPProxy("http://api.flickr.com/services/soap/",
+        client = SOAPProxy(SOAP_URL,
                             namespace=("x", "urn:flickr"),
                             envelope_attrib=[("xmlns:s", "http://www.w3.org/2003/05/soap-envelope"),
                                             ("xmlns:xsi", "http://www.w3.org/1999/XMLSchema-instance"),
@@ -903,7 +912,7 @@ class FlickrStore(BackendStore):
         d = client.callRemote("FlickrRequest",
                                 method='flickr.test.echo',
                                 name=value,
-                                api_key='837718c8a622c699edab0ea55fcec224')
+                                api_key=API_KEY)
 
         def got_results(result):
             print result
@@ -1117,7 +1126,7 @@ class FlickrStore(BackendStore):
         headers = {"Content-Type": content_type,
                   "Content-Length": str(len(formdata))}
 
-        d = getPage("http://api.flickr.com/services/upload/",
+        d = getPage(UPLOAD_URL,
                               method="POST",
                               headers=headers,
                               postdata=formdata)

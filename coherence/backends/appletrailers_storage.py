@@ -17,7 +17,10 @@ from twisted.internet import task, reactor
 
 from coherence.extern.et import parse_xml
 
+DEFAULT_NAME = 'Apple Trailers'
+
 XML_URL = "http://www.apple.com/trailers/home/xml/current.xml"
+USER_AGENT = 'QuickTime/7.6.2 (qtver=7.6.2;os=Windows NT 5.1Service Pack 3)'
 
 ROOT_ID = 0
 
@@ -28,7 +31,7 @@ class AppleTrailerProxy(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        request.received_headers['user-agent'] = 'QuickTime/7.6.2 (qtver=7.6.2;os=Windows NT 5.1Service Pack 3)'
+        request.received_headers['user-agent'] = USER_AGENT
         return ReverseProxyUriResource.render(self, request)
 
 
@@ -99,7 +102,7 @@ class AppleTrailersStore(BackendStore):
     def __init__(self, server, *args, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.next_id = 1000
-        self.name = kwargs.get('name', 'Apple Trailers')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.refresh = int(kwargs.get('refresh', 8)) * (60 * 60)
 
         self.trailers = {}

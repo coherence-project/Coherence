@@ -43,6 +43,7 @@ except ImportError:
 
 import string
 
+DEFAULT_NAME = 'LastFMStore'
 
 class LastFMUser(log.Loggable):
 
@@ -311,7 +312,7 @@ class LastFMStore(log.Loggable, Plugin):
 
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name', 'LastFMStore')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.update_id = 0
         self.store = {}

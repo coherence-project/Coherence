@@ -22,6 +22,8 @@ import zlib
 
 from coherence.backend import BackendStore, BackendItem
 
+DEFAULT_NAME = 'iTV'
+
 ROOT_CONTAINER_ID = 0
 
 SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newtvlister.phtml?service=winamp2&no_compress=1'
@@ -197,7 +199,7 @@ class ITVStore(BackendStore):
         BackendStore.__init__(self, server, **kwargs)
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name', 'iTV')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.update_id = 0
         self.store = {}

@@ -17,6 +17,10 @@ from twisted.python.util import OrderedDict
 from coherence.upnp.core.utils import getPage
 from coherence.extern.et import parse_xml
 
+DEFAULT_NAME = 'SWR3'
+DEFAULT_OPML_URL = 'http://www.swr3.de/rdf-feed/podcast/'
+DEFAULT_ENCODING = "ISO-8859-1"
+
 ROOT_CONTAINER_ID = 0
 
 
@@ -112,9 +116,9 @@ class SWR3Store(BackendStore, BackendRssMixin):
     def __init__(self, server, *args, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'SWR3')
-        self.opml = kwargs.get('opml', 'http://www.swr3.de/rdf-feed/podcast/')
-        self.encoding = kwargs.get('encoding', "ISO-8859-1")
+        self.name = kwargs.get('name', DEFAULT_NAME)
+        self.opml = kwargs.get('opml', DEFAULT_OPML_URL)
+        self.encoding = kwargs.get('encoding', DEFAULT_ENCODING)
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1000

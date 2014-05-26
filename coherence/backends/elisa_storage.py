@@ -16,6 +16,11 @@ import coherence.extern.louie as louie
 
 from coherence.extern.simple_plugin import Plugin
 
+DEFAULT_NAME = 'Elisa'
+DEFAULT_HOST = 'localhost'
+
+ELISA_PORT = 8789
+
 
 class ElisaMediaStore(Plugin):
 
@@ -44,8 +49,8 @@ class ElisaMediaStore(Plugin):
     implements = ['MediaServer']
 
     def __init__(self, server, **kwargs):
-        self.name = kwargs.get('name', 'Elisa')
-        self.host = kwargs.get('host', '127.0.0.1')
+        self.name = kwargs.get('name', DEFAULT_NAME)
+        self.host = kwargs.get('host', DEFAULT_PORT )
         self.urlbase = kwargs.get('urlbase', '')
         ignore_patterns = kwargs.get('ignore_patterns', [])
 
@@ -62,7 +67,7 @@ class ElisaMediaStore(Plugin):
     def get_store(self):
         factory = pb.PBClientFactory()
         factory.noisy = False
-        reactor.connectTCP(self.host, 8789, factory)
+        reactor.connectTCP(self.host, ELISA_PORT, factory)
         return factory.getRootObject()
 
     def get_by_id(self, id):

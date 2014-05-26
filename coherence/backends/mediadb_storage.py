@@ -62,6 +62,11 @@ from coherence.extern.covers_by_amazon import CoverGetter
 
 from coherence.backend import BackendItem, BackendStore
 
+DEFAULT_NAME = 'MediaStore'
+DEFAULT_MEDIA_DB = 'tests/media.db'
+
+AWS_KEY = '1XHSE4FQJ0RK0X3S9WR2'
+
 KNOWN_AUDIO_TYPES = {'.mp3': 'audio/mpeg',
                      '.ogg': 'application/ogg',
                      '.mpc': 'audio/x-musepack',
@@ -125,7 +130,6 @@ except ImportError:
 if not get_tags:
     raise ImportError("we need some installed id3 tag library for this backend: python-tagpy, pyid3lib or libmtag")
 
-MEDIA_DB = 'tests/media.db'
 
 ROOT_CONTAINER_ID = 0
 AUDIO_CONTAINER = 100
@@ -456,9 +460,9 @@ class MediaStore(BackendStore):
         self.coverlocation = kwargs.get('coverlocation', None)
         if self.coverlocation is not None and self.coverlocation[-1] != '/':
             self.coverlocation = self.coverlocation + '/'
-        self.mediadb = kwargs.get('mediadb', MEDIA_DB)
+        self.mediadb = kwargs.get('mediadb', DEFAULT_MEDIA_DB)
 
-        self.name = kwargs.get('name', 'MediaStore')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = \
@@ -607,8 +611,7 @@ class MediaStore(BackendStore):
                         print "cover saved:", f, a.title
                         a.cover = f
 
-                    aws_key = '1XHSE4FQJ0RK0X3S9WR2'
-                    CoverGetter(cover_path, aws_key,
+                    CoverGetter(cover_path, AWS_KEY,
                                 callback=(got_it, (album)),
                                 artist=album.artist.name,
                                 title=album.title)

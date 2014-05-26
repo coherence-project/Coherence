@@ -13,6 +13,7 @@ from coherence.upnp.core.DIDLLite import classChooser, Container, Resource, DIDL
 
 from coherence.backend import BackendStore, BackendItem
 
+DEFAULT_NAME = 'AxisCamStore'
 
 class AxisCamItem(BackendItem):
     logCategory = 'axis_cam_item'
@@ -129,7 +130,7 @@ class AxisCamStore(BackendStore):
 
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name', 'AxisCamStore')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.update_id = 0
         self.store = {}

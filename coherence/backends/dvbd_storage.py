@@ -20,6 +20,8 @@ import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 
+DEFAULT_NAME = 'TV'
+
 ROOT_CONTAINER_ID = 0
 
 RECORDINGS_CONTAINER_ID = 100
@@ -218,7 +220,6 @@ class Recording(BackendItem):
     def get_path(self):
         return self.location.path
 
-
 class DVBDStore(BackendStore):
 
     """ this is a backend to the DVB Daemon
@@ -236,7 +237,7 @@ class DVBDStore(BackendStore):
 
         BackendStore.__init__(self, server, **kwargs)
         self.config = kwargs
-        self.name = kwargs.get('name', 'TV')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.update_id = 0
         self.channel_groups = []

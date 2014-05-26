@@ -28,6 +28,8 @@ mimetypes.add_type('video/divx', '.divx')
 mimetypes.add_type('video/divx', '.avi')
 mimetypes.add_type('video/x-matroska', '.mkv')
 
+DEFAULT_NAME = 'YAMJ'
+DEFAULT_YAMJ_URL = "http://localhost/yamj"
 
 class MovieItem(BackendItem):
 
@@ -139,8 +141,8 @@ class YamjStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'YAMJ')
-        self.yamj_url = kwargs.get('yamj_url', "http://localhost/yamj")
+        self.name = kwargs.get('name', DEFAULT_NAME)
+        self.yamj_url = kwargs.get('yamj_url', DEFAULT_YAMJ_URL)
         self.jukebox_url = self.yamj_url + "/Jukebox/"
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 

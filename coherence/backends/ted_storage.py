@@ -17,6 +17,10 @@ from coherence.backends.appletrailers_storage import Container
 from coherence.backend import BackendItem
 from coherence.upnp.core import DIDLLite
 
+DEFAULT_NAME = 'TEDtalks'
+
+ROOT_ID = 0
+
 
 class TedTalk(BackendItem):
 
@@ -41,20 +45,18 @@ class TEDStore(LolcatsStore):
 
     implements = ['MediaServer']
 
-    rss_url = "http://feeds.feedburner.com/tedtalks_video?format=xml"
-
-    ROOT_ID = 0
+    RSS_URL = "http://feeds.feedburner.com/tedtalks_video?format=xml"
 
     def __init__(self, server, *args, **kwargs):
         LolcatsStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'TEDtalks')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
 
         self.next_id = 1001
         self.last_updated = None
 
-        self.container = Container(None, self.ROOT_ID, self.name)
+        self.container = Container(None, ROOT_ID, self.name)
 
         self.videos = {}
 

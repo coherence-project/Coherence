@@ -52,6 +52,8 @@ AUDIO_PLAYLIST_CONTAINER_ID = 204
 VIDEO_ALL_CONTAINER_ID = 301
 VIDEO_PLAYLIST_CONTAINER_ID = 302
 
+DEFAULT_NAME = 'Banshee'
+DEFAULT_DB_PATH = os.path.expanduser("~/.config/banshee-1/banshee.db")
 
 def get_cover_path(artist_name, album_title):
     def _escape_part(part):
@@ -578,8 +580,7 @@ class BansheeDB(Loggable):
         Loggable.__init__(self)
         self._local_music_library_id = None
         self._local_video_library_id = None
-        default_db_path = os.path.expanduser("~/.config/banshee-1/banshee.db")
-        self._db_path = path or default_db_path
+        self._db_path = path or DEFAULT_DB_PATH
 
     def open_db(self):
         self.db = SQLiteDB(self._db_path)
@@ -772,7 +773,7 @@ class BansheeStore(BackendStore, BansheeDB):
         BackendStore.__init__(self, server, **kwargs)
         BansheeDB.__init__(self, kwargs.get("db_path"))
         self.update_id = 0
-        self.name = kwargs.get('name', 'Banshee')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.containers = {}
         self.containers[ROOT_CONTAINER_ID] = Container(ROOT_CONTAINER_ID,

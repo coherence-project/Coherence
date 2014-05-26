@@ -55,6 +55,8 @@ import coherence.extern.louie as louie
 
 from coherence.backend import BackendItem, BackendStore
 
+DEFAULT_NAME = 'my media'
+
 ## Sorting helpers
 NUMS = re.compile('([0-9]+)')
 
@@ -469,7 +471,7 @@ class FSStore(BackendStore):
     def __init__(self, server, **kwargs):
         BackendStore.__init__(self, server, **kwargs)
         self.next_id = 1000
-        self.name = kwargs.get('name', 'my media')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.content = kwargs.get('content', None)
         if self.content != None:
             if isinstance(self.content, basestring):

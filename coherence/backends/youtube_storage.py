@@ -22,8 +22,22 @@ from gdata.youtube.service import YouTubeService
 from coherence.extern.youtubedl import FileDownloader, YoutubeIE, MetacafeIE, YoutubePlaylistIE
 from coherence.backends.picasa_storage import Container, LazyContainer, AbstractBackendStore
 
+DEFAULT_NAME = 'YouTube'
+DEFAULT_QUALITY = 'sd'
+DEFAULT_LOCALE = None
+DEFAULL_CACHE_DIRECTORY = '/tmp/coherence-cache'
+DEFAUTL_CACHE_MAXSIZE = 100000000
+DEFAUTL_BUFFER_SIZE = 750000
+DEFAULT_PROXY_MODE = 'redirect'
+
 MPEG4_MIMETYPE = 'video/mp4'
 MPEG4_EXTENSION = 'mp4'
+
+STANDARDFEEDS_URI = 'http://gdata.youtube.com/feeds/api/standardfeeds'
+USERFEEDS_URI = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
+
+YT_SERVICE_CLIENT_ID = 'ytapi-JeanMichelSizun-youtubebackendpl-ruabstu7-0'
+YT_SERVICE_DEVELOPER_KEY = 'AI39si7dv2WWffH-s3pfvmw8fTND-cPWeqF1DOcZ8rwTgTPi4fheX7jjQXpn7SG61Ido0Zm_9gYR52TcGog9Pt3iG9Sa88-1yg'
 
 
 class TestVideoProxy(ReverseProxyUriResource, log.Loggable):
@@ -407,29 +421,29 @@ class YouTubeStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'YouTube')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.login = kwargs.get('userid', kwargs.get('login', ''))
         self.password = kwargs.get('password', '')
-        self.locale = kwargs.get('location', None)
-        self.quality = kwargs.get('quality', 'sd')
+        self.locale = kwargs.get('location', DEFAULT_LOCALE)
+        self.quality = kwargs.get('quality', DEFAULT_QUALITY)
         self.showStandardFeeds = (kwargs.get('standard_feeds', 'True') in ['Yes', 'yes', 'true', 'True', '1'])
         self.refresh = int(kwargs.get('refresh', 60)) * 60
-        self.proxy_mode = kwargs.get('proxy_mode', 'redirect')
-        self.cache_directory = kwargs.get('cache_directory', '/tmp/coherence-cache')
+        self.proxy_mode = kwargs.get('proxy_mode', DEFAULT_PROXY_MODE)
+        self.cache_directory = kwargs.get('cache_directory', DEFAULL_CACHE_DIRECTORY)
         try:
             if self.proxy_mode != 'redirect':
                 os.mkdir(self.cache_directory)
         except:
             pass
-        self.cache_maxsize = kwargs.get('cache_maxsize', 100000000)
-        self.buffer_size = kwargs.get('buffer_size', 750000)
+        self.cache_maxsize = kwargs.get('cache_maxsize', DEFAUTL_CACHE_MAXSIZE)
+        self.buffer_size = kwargs.get('buffer_size', DEFAUTL_BUFFER_SIZE)
 
         rootItem = Container(None, self.name)
         self.set_root_item(rootItem)
 
         if (self.showStandardFeeds):
-            standardfeeds_uri = 'http://gdata.youtube.com/feeds/api/standardfeeds'
+            standardfeeds_uri = STANDARDFEEDS_URI
             if self.locale is not None:
                 standardfeeds_uri += "/%s" % self.locale
             standardfeeds_uri += "/%s"
@@ -444,7 +458,7 @@ class YouTubeStore(AbstractBackendStore):
             self.appendFeed('Most Recent', standardfeeds_uri % 'most_recent', rootItem)
 
         if len(self.login) > 0:
-            userfeeds_uri = 'http://gdata.youtube.com/feeds/api/users/%s/%s'
+            userfeeds_uri = USERFEEDS_URI
             self.appendFeed('My Uploads', userfeeds_uri % (self.login, 'uploads'), rootItem)
             self.appendFeed('My Favorites', userfeeds_uri % (self.login, 'favorites'), rootItem)
             playlistsItem = LazyContainer(rootItem, 'My Playlists', None, self.refresh, self.retrievePlaylistFeeds)
@@ -483,8 +497,8 @@ class YouTubeStore(AbstractBackendStore):
         self.wmc_mapping = {'15': self.get_root_id()}
 
         self.yt_service = YouTubeService()
-        self.yt_service.client_id = 'ytapi-JeanMichelSizun-youtubebackendpl-ruabstu7-0'
-        self.yt_service.developer_key = 'AI39si7dv2WWffH-s3pfvmw8fTND-cPWeqF1DOcZ8rwTgTPi4fheX7jjQXpn7SG61Ido0Zm_9gYR52TcGog9Pt3iG9Sa88-1yg'
+        self.yt_service.client_id = YT_SERVICE_CLIENT_ID
+        self.yt_service.developer_key = YT_SERVICE_DEVELOPER_KEY
         self.yt_service.email = self.login
         self.yt_service.password = self.password
         self.yt_service.source = 'Coherence UPnP backend'

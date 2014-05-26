@@ -25,6 +25,8 @@ from coherence.backend import BackendItem, BackendStore, Container, LazyContaine
 
 from urlparse import urlsplit
 
+DEFAULT_NAME = 'iRadioStore'
+
 SHOUTCAST_WS_URL = 'http://www.shoutcast.com/sbin/newxml.phtml'
 
 genre_families = {
@@ -191,7 +193,7 @@ class IRadioStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'iRadioStore')
+        self.name = kwargs.get('name', DEFAULT_NAME)
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 
         self.shoutcast_ws_url = self.config.get('genrelist', SHOUTCAST_WS_URL)

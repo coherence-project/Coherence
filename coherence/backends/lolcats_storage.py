@@ -59,6 +59,12 @@ from twisted.internet import reactor
 # And to parse the RSS-Data (which is XML), we use the coherence helper
 from coherence.extern.et import parse_xml
 
+DEFAULT_NAME = 'LOLCats'
+
+# as we are going to build a (very small) tree with the items, we need to
+# define the first (the root) item:
+ROOT_ID = 0
+
 ########## The models
 # After the download and parsing of the data is done, we want to save it. In
 # this case, we want to fetch the images and store their URL and the title of
@@ -110,7 +116,7 @@ class LolcatsContainer(BackendItem):
         self.id = id
 
         # we never have a different name anyway
-        self.name = 'LOLCats'
+        self.name = DEFAULT_NAME
 
         # but we need to set it to a certain mimetype to explain it, that we
         # contain 'children'.
@@ -165,11 +171,7 @@ class LolcatsStore(BackendStore):
 
     # this is only for this implementation: the http link to the lolcats rss
     # feed that we want to read and parse:
-    rss_url = "http://feeds.feedburner.com/ICanHasCheezburger?format=xml"
-
-    # as we are going to build a (very small) tree with the items, we need to
-    # define the first (the root) item:
-    ROOT_ID = 0
+    RSS_URL = "http://feeds.feedburner.com/ICanHasCheezburger?format=xml"
 
     def __init__(self, server, *args, **kwargs):
         # first we inizialize our heritage
@@ -180,7 +182,7 @@ class LolcatsStore(BackendStore):
         # and allow some values to be set:
 
         # the name of the MediaServer as it appears in the network
-        self.name = kwargs.get('name', 'Lolcats')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         # timeout between updates in hours:
         self.refresh = int(kwargs.get('refresh', 1)) * (60 * 60)
@@ -197,7 +199,7 @@ class LolcatsStore(BackendStore):
         self.last_updated = None
 
         # initialize our lolcats container (no parent, this is the root)
-        self.container = LolcatsContainer(None, self.ROOT_ID)
+        self.container = LolcatsContainer(None, ROOT_ID)
 
         # but as we also have to return them on 'get_by_id', we have our local
         # store of images per id:
@@ -275,7 +277,7 @@ class LolcatsStore(BackendStore):
         # trigger an update of the data
 
         # fetch the rss
-        dfr = getPage(self.rss_url)
+        dfr = getPage(self.RSS_URL)
 
         # push it through our xml parser
         dfr.addCallback(parse_xml)

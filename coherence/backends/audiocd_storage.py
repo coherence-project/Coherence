@@ -35,6 +35,9 @@ from coherence.transcoder import GStreamerPipeline
 
 from coherence.backend import AbstractBackendStore, Container, BackendItem
 
+DEFAULT_NAME = 'Audio CD'
+DEFAULT_DEVICE = "/dev/cdrom"
+
 PLAY_TRACK_GST_PIPELINE = "cdiocddasrc device=%s track=%d ! wavenc name=enc"
 TRACK_MIMETYPE = "audio/x-wav"
 TRACK_FOURTH_FIELD = "*"
@@ -43,7 +46,7 @@ TRACK_FOURTH_FIELD = "*"
 class TrackItem(BackendItem):
     logCategory = "audiocd"
 
-    def __init__(self, device_name="/dev/cdrom", track_number=1, artist="Unknown", title="Unknown"):
+    def __init__(self, device_name=DEFAULT_DEVICE, track_number=1, artist="Unknown", title="Unknown"):
         BackendItem.__init__(self)
         self.device_name = device_name
         self.track_number = track_number
@@ -100,8 +103,8 @@ class AudioCDStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = 'audio CD'
-        self.device_name = kwargs.get('device_name', "/dev/cdom")
+        self.name = DEFAULT_NAME
+        self.device_name = kwargs.get('device_name', DEFAULT_DEVICE)
 
         threads.deferToThread(self.extractAudioCdInfo)
         # self.init_completed() # will be fired when the audio CD info is extracted

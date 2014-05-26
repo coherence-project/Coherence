@@ -9,6 +9,8 @@ from coherence.upnp.core.utils import generalise_boolean
 
 from coherence.backend import Backend
 
+DEFAULT_NAME_SIMPLE = 'SimpleLight'
+DEFAULT_NAME_BETTER = 'BetterLight'
 
 class SimpleLight(Backend):
 
@@ -26,7 +28,7 @@ class SimpleLight(Backend):
 
     def __init__(self, server, **kwargs):
         Backend.__init__(self, server)
-        self.name = kwargs.get('name', 'SimpleLight')
+        self.name = kwargs.get('name', DEFAULT_NAME_SIMPLE)
         self.server = server
         self.state = 0  # we start switched off
         louie.send('Coherence.UPnP.Backend.init_completed', None, backend=self)
@@ -53,7 +55,7 @@ class BetterLight(Backend):
 
     def __init__(self, server, **kwargs):
         Backend.__init__(self, server)
-        self.name = kwargs.get('name', 'BetterLight')
+        self.name = kwargs.get('name', DEFAULT_NAME_BETTER)
         self.server = server
         self.state = 0  # we start switched off
         self.loadlevel = 50  # we start with 50% brightness

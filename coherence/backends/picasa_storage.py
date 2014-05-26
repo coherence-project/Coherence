@@ -25,6 +25,8 @@ import gdata.photos.service
 import gdata.media
 import gdata.geo
 
+DEFAULT_NAME = 'Picasa Web Albums'
+FEED_URI = 'http://picasaweb.google.com/data/feed/api/featured'
 
 class PicasaProxy(ReverseProxyUriResource):
 
@@ -110,7 +112,7 @@ class PicasaStore(AbstractBackendStore):
     def __init__(self, server, **kwargs):
         AbstractBackendStore.__init__(self, server, **kwargs)
 
-        self.name = kwargs.get('name', 'Picasa Web Albums')
+        self.name = kwargs.get('name', DEFAULT_NAME)
 
         self.refresh = int(kwargs.get('refresh', 60)) * 60
 
@@ -198,5 +200,4 @@ class PicasaStore(AbstractBackendStore):
         return self.retrieveFeedPhotos(parent, album_feed_uri)
 
     def retrieveFeaturedPhotos (self, parent=None):
-        feed_uri = 'http://picasaweb.google.com/data/feed/api/featured'
-        return self.retrieveFeedPhotos(parent, feed_uri)
+        return self.retrieveFeedPhotos(parent, FEED_URI)

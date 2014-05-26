@@ -22,6 +22,10 @@ from coherence.extern.simple_plugin import Plugin
 
 from coherence import log
 
+DEFAULT_STORE_NAME = 'Buzztard'
+DEFAULT_RENDERER_NAME = 'Buzztard MediaRenderer'
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 7654
 
 class BzClient(LineReceiver, log.Loggable):
     logCategory = 'buzztard_client'
@@ -233,15 +237,15 @@ class BuzztardStore(log.Loggable, Plugin):
         log.Loggable.__init__(self)
         self.next_id = 1000
         self.config = kwargs
-        self.name = kwargs.get('name', 'Buzztard')
+        self.name = kwargs.get('name', DEFAULT_STORE_NAME)
 
         self.urlbase = kwargs.get('urlbase', '')
         if(len(self.urlbase) > 0 and
             self.urlbase[len(self.urlbase) - 1] != '/'):
             self.urlbase += '/'
 
-        self.host = kwargs.get('host', '127.0.0.1')
-        self.port = int(kwargs.get('port', 7654))
+        self.host = kwargs.get('host', DEFAULT_HOST)
+        self.port = int(kwargs.get('port', DEFAULT_PORT))
 
         self.server = server
         self.update_id = 0
@@ -347,9 +351,9 @@ class BuzztardPlayer(log.Loggable):
 
     def __init__(self, device, **kwargs):
         log.Loggable.__init__(self)
-        self.name = kwargs.get('name', 'Buzztard MediaRenderer')
-        self.host = kwargs.get('host', '127.0.0.1')
-        self.port = int(kwargs.get('port', 7654))
+        self.name = kwargs.get('name', DEFAULT_RENDERER_NAME)
+        self.host = kwargs.get('host', DEFAULT_HOST)
+        self.port = int(kwargs.get('port', DEFAULT_PORT))
         self.player = None
 
         self.playing = False
