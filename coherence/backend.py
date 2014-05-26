@@ -111,15 +111,15 @@ class BackendStore(Backend):
         if not self.urlbase.endswith('/'):
             self.urlbase += '/'
 
-        self.wmc_mapping = {'4': '4', '5': '5', '6': '6', '7': '7', '14': '14', 'F': 'F',
-                            '11': '11', '16': '16', 'B': 'B', 'C': 'C', 'D': 'D',
-                            '13': '13', '17': '17',
-                            '8': '8', '9': '9', '10': '10', '15': '15', 'A': 'A', 'E': 'E'}
-
-        self.wmc_mapping.update({'4': lambda: self._get_all_items(0),
-                                 '8': lambda: self._get_all_items(0),
-                                 'B': lambda: self._get_all_items(0),
-                                })
+        # create a mapping for hex-numbers 0x04 to 0x17
+        m = self.wmc_mapping = {
+            '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+            'A': 'A', 'B': 'B', 'C': 'C', 'D': 'D', 'E': 'E', 'F': 'F',
+            '10': '10', '11': '11',
+            # 12 is missing
+            '13': '13', '14': '14', '15': '15', '16': '16', '17': '17',
+            }
+        m['4'] = m['8'] = m['B'] = lambda: self._get_all_items(0)
 
         """ and send out the signal when ready
         """
