@@ -446,7 +446,10 @@ def getPage(url, contextFactory=None, *args, **kwargs):
     # This function is like twisted.web.client.getPage, except it uses
     # our HeaderAwareHTTPClientFactory instead of HTTPClientFactory
     # and sets the user agent.
-    kwargs['agent'] = "Coherence PageGetter"
+    if 'headers' in kwargs and 'user-agent' in kwargs['headers']:
+        kwargs['agent'] = kwargs['headers']['user-agent']
+    elif not 'agent' in kwargs:
+        kwargs['agent'] = "Coherence PageGetter"
     return client._makeGetterFactory(
         url,
         HeaderAwareHTTPClientFactory,
@@ -462,7 +465,10 @@ def downloadPage(url, file, contextFactory=None, *args, **kwargs):
     See twisted.web.client.HTTPDownloader to see what extra args can
     be passed.
     """
-    kwargs['agent'] = "Coherence PageGetter"
+    if 'headers' in kwargs and 'user-agent' in kwargs['headers']:
+        kwargs['agent'] = kwargs['headers']['user-agent']
+    elif not 'agent' in kwargs:
+        kwargs['agent'] = "Coherence PageGetter"
     return client.downloadPage(url, file, contextFactory=contextFactory,
                         *args, **kwargs)
 
