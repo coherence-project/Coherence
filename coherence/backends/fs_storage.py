@@ -566,6 +566,8 @@ class FSStore(BackendStore):
         if isinstance(id, basestring):
             id = id.split('@', 1)
             id = id[0]
+        elif isinstance(id, int):
+            id = str(id)
         #try:
         #    id = int(id)
         #except ValueError:
