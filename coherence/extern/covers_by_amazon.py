@@ -87,6 +87,8 @@ class WorkQueue(object):
             return obj
 
     def __init__(self, method, *args, **kwargs):
+        #:fixme: I doubt this is working as expected, since for a
+        # singleton __init__ ought be called only once.
         self.queue.append((method, args, kwargs))
         self.queue_run()
 
