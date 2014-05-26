@@ -106,6 +106,33 @@ class TestContentDirectoryServer(unittest.TestCase):
         self.coherence.ctrl.add_query(DeviceQuery('uuid', str(self.uuid), the_result, timeout=10, oneshot=True))
         return d
 
+    def test_Browse_Non_Existing_Object(self):
+
+        def the_result(mediaserver):
+
+            def got_first_answer(r):
+                try:
+                    self.assertIs(r, None)
+                    d.callback(None)
+                except:
+                    d.errback()
+
+            cdc = mediaserver.client.content_directory
+            try:
+                self.assertEqual(str(self.uuid), mediaserver.udn)
+                call = cdc.browse(object_id='9999', process_result=False)
+                call.addCallback(got_first_answer)
+                call.addErrback(lambda x: d.errback(None))
+                return call
+            except:
+                d.errback()
+
+        d = Deferred()
+        self.coherence.ctrl.add_query(
+            DeviceQuery('uuid', str(self.uuid), the_result,
+                        timeout=10, oneshot=True))
+        return d
+
     def test_Browse_Metadata(self):
         """ tries to find the activated FSStore backend
             and requests metadata for ObjectID 0.
