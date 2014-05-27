@@ -116,6 +116,7 @@ class ContentDirectoryClient:
             d.addCallback(got_process_result)
         #else:
         #    d.addCallback(got_result)
+        d.addErrback(self._failure)
         return d
 
     def search(self, container_id, criteria, starting_index=0,

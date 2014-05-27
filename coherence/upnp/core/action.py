@@ -135,6 +135,8 @@ class Action(log.Loggable):
         ordered_arguments = OrderedDict()
         for argument in self.get_in_arguments():
             ordered_arguments[argument.name] = kwargs[argument.name]
+        if kwargs.has_key('headers'):
+            ordered_arguments['headers'] = kwargs['headers']
 
         d = client.callRemote(action_name, ordered_arguments)
         d.addCallback(self.got_results, instance_id=instance_id, name=action_name)

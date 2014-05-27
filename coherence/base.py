@@ -281,7 +281,7 @@ class Coherence(log.Loggable):
             subsystem_log = config.get('subsystem_log', {})
             for subsystem, level in subsystem_log.items():
                 #self.info( "setting log-level for subsystem %s to %s" % (subsystem,level))
-                logging.getLogger(subsystem.lower()).setLevel(level)
+                logging.getLogger(subsystem.lower()).setLevel(level.upper())
         try:
             logfile = config.get('logging').get('logfile', None)
             if logfile != None:
