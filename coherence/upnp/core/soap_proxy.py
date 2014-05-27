@@ -104,26 +104,7 @@ class SOAPProxy(log.Loggable):
         result = {}
         if response != None:
             for elem in response:
-                result[elem.tag] = self.decode_result(elem)
+                result[elem.tag] = soap_lite.decode_result(elem)
         #print "_cbGotResult 3", result
 
         return result
-
-    def decode_result(self, element):
-        type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')
-        if type is not None:
-            try:
-                prefix, local = type.split(":")
-                if prefix == 'xsd':
-                    type = local
-            except ValueError:
-                pass
-
-        if type == "integer" or type == "int":
-            return int(element.text)
-        if type == "float" or type == "double":
-            return float(element.text)
-        if type == "boolean":
-            return element.text == "true"
-
-        return element.text or ""

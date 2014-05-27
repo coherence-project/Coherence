@@ -119,7 +119,7 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         args = []
         kwargs = {}
         for child in method.getchildren():
-            kwargs[child.tag] = self.decode_result(child)
+            kwargs[child.tag] = soap_lite.decode_result(child)
             args.append(kwargs[child.tag])
 
         #p, header, body, attrs = SOAPpy.parseSOAPRPC(data, 1, 1, 1)
@@ -165,21 +165,3 @@ class UPnPPublisher(resource.Resource, log.Loggable):
         d.addErrback(self._gotError, request, methodName, ns)
         return server.NOT_DONE_YET
 
-    def decode_result(self, element):
-        type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')
-        if type is not None:
-            try:
-                prefix, local = type.split(":")
-                if prefix == 'xsd':
-                    type = local
-            except ValueError:
-                pass
-
-        if type == "integer" or type == "int":
-            return int(element.text)
-        if type == "float" or type == "double":
-            return float(element.text)
-        if type == "boolean":
-            return element.text == "true"
-
-        return element.text or ""

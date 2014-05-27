@@ -118,3 +118,22 @@ def build_soap_call(method, arguments, is_response=False,
 
     preamble = """<?xml version="1.0" encoding="utf-8"?>"""
     return preamble + ET.tostring(envelope, 'utf-8')
+
+def decode_result(element):
+    type = element.get('{http://www.w3.org/1999/XMLSchema-instance}type')
+    if type is not None:
+        try:
+            prefix, local = type.split(":")
+            if prefix == 'xsd':
+                type = local
+        except ValueError:
+            pass
+
+    if type in ("integer", "int"):
+        return int(element.text)
+    elif type in ("float", "double"):
+        return float(element.text)
+    elif type == "boolean":
+        return element.text == "true"
+    else:
+        return element.text or ""
