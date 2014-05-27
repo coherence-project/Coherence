@@ -4,6 +4,7 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 """
 Test cases for L{upnp.services.servers.content_directory_server}
