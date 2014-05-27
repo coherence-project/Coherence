@@ -152,4 +152,6 @@ def textElementIfNotNone(parent, tag, namespace, text):
     """If text is not none, create a subelement with text content."""
     if text is None:
         return
-    return textElement(parent, tag, namespace, str(text))
+    if not isinstance(text, basestring):
+        text = unicode(text)
+    return textElement(parent, tag, namespace, text)
