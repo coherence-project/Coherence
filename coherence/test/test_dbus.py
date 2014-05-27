@@ -22,11 +22,25 @@ import coherence.extern.louie as louie
 
 from coherence.test import wrapped
 
+try:
+    import dbus
+    from dbus.mainloop.glib import DBusGMainLoop
+    DBusGMainLoop(set_as_default=True)
+    import dbus.service
+except ImportError:
+    dbus = None
+
 BUS_NAME = 'org.Coherence'
 OBJECT_PATH = '/org/Coherence'
 
 
 class TestDBUS(unittest.TestCase):
+
+    if not dbus:
+        skip = "Python dbus-bindings not available."
+    elif reactor.__class__.__name__ != 'Glib2Reactor':
+        skip = ("This test needs a Glib2Reactor, please start trial "
+                "with the '-r glib2' option.")
 
     def setUp(self):
         louie.reset()
@@ -97,17 +111,3 @@ class TestDBUS(unittest.TestCase):
 
         add_it(self.uuid)
         return d
-
-if reactor.__class__.__name__ != 'Glib2Reactor':
-    TestDBUS.skip = """This test needs a Glib2Reactor, pls start trial with the '-r glib2' option"""
-
-
-try:
-    import dbus
-
-    from dbus.mainloop.glib import DBusGMainLoop
-    DBusGMainLoop(set_as_default=True)
-
-    import dbus.service
-except ImportError:
-    TestDBUS.skip = "Python dbus-bindings not available"
