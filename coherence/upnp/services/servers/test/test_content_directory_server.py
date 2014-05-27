@@ -4,13 +4,13 @@
 # http://opensource.org/licenses/mit-license.php
 
 # Copyright 2008, Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 
 """
 Test cases for L{upnp.services.servers.content_directory_server}
 """
 
 import os
-import functools
 
 from twisted.trial import unittest
 from twisted.internet.defer import Deferred
@@ -22,20 +22,9 @@ from coherence.base import Coherence
 from coherence.upnp.core.uuid import UUID
 from coherence.upnp.devices.control_point import DeviceQuery
 from coherence.upnp.core import DIDLLite
-
 import coherence.extern.louie as louie
 
-def wrapped(deferred):
-    def decorator(callback):
-        @functools.wraps(callback)
-        def wrapper(*args, **kwargs):
-            try:
-                callback(*args, **kwargs)
-            except:
-                deferred.errback()
-        return wrapper
-    return decorator
-
+from coherence.test import wrapped
 
 class TestContentDirectoryServer(unittest.TestCase):
 
