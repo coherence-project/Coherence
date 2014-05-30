@@ -637,7 +637,7 @@ class ImageItem(Item):
         root = Item.toElement(self, **kwargs)
         textElementIfNotNone(root, 'rating', UPNP_NS, self.rating)
         textElementIfNotNone(root, 'storageMedium', UPNP_NS, self.storageMedium)
-        textElementIfNotNone(root, 'publisher', DC_NS, self.contributor)
+        textElementIfNotNone(root, 'publisher', DC_NS, self.publisher)
         textElementIfNotNone(root, 'rights', DC_NS, self.rights)
         return root
 
