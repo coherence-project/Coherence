@@ -106,7 +106,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     if ch is not None:
                         request.setResponseCode(200)
                         file = ch.get_cover()
-                        if os.path.exists(file):
+                        if file and os.path.exists(file):
                             self.info("got cover %s", file)
                             return StaticFile(file)
                     request.setResponseCode(404)
