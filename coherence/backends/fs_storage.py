@@ -432,13 +432,12 @@ class FSItem(BackendItem):
         return name
 
     def get_cover(self):
-        try:
+        if self.cover:
             return self.cover
-        except:
-            try:
-                return self.parent.cover
-            except:
-                return ''
+        try:
+            return self.parent.cover
+        except AttributeError:
+            return None
 
     def get_parent(self):
         return self.parent
