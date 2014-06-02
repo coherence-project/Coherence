@@ -186,6 +186,13 @@ class TestClient(unittest.TestCase):
             'usn': 'uuid:DDF542FB-A291-4AD0-A0C5-F7129B9D4422::urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1',
             })
 
+    def test_parse_http_error_response(self):
+        "An error response without header fields."""
+        response = 'HTTP/1.1 405 Method Not Allowed\r\n'
+        cmd, headers, content = utils.parse_http_response(response)
+        self.assertEqual(cmd, ['HTTP/1.1', '405', 'Method Not Allowed'])
+        self.assertEqual(content, '')
+        self.assertEqual(headers, {})
 
     def test_getPage(self):
         content = '0123456789'
