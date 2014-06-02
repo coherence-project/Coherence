@@ -50,20 +50,19 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.port = reactor.listenMulticast(SSDP_PORT, self,
                                                     listenMultiple=True)
                 #self.port.setLoopbackMode(1)
-
                 self.port.joinGroup(SSDP_ADDR, interface=interface)
-
-                self._resend_notify_loop = task.LoopingCall(self._resendNotify)
-                self._resend_notify_loop.start(777.0, now=False)
-
-                self._expire_loop = task.LoopingCall(self._expire)
-                self._expire_loop.start(333.0, now=False)
-
             except error.CannotListenError, err:
                 self.error("There seems to already be a SSDP server "
                            "running on this host, no need starting a "
                            "second one.")
 
+            self._resend_notify_loop = task.LoopingCall(self._resendNotify)
+            # notify every 777 seconds (~ 13 Minutes)
+            self._resend_notify_loop.start(777.0, now=False)
+
+            self._expire_loop = task.LoopingCall(self._expire)
+            # expire every 333 seconds (~ 5.5 Minutes)
+            self._expire_loop.start(333.0, now=False)
 
     def shutdown(self):
         for call in reactor.getDelayedCalls():
