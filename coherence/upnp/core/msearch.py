@@ -43,17 +43,9 @@ class MSearch(DatagramProtocol, log.Loggable):
         self.info('datagramReceived from %s:%d, protocol %s code %s', host, port, cmd[0], cmd[1])
         if cmd[0].startswith('HTTP/1.') and cmd[1] == '200':
             self.msg('for %r', headers['usn'])
-            if not self.ssdp_server.isKnown(headers['usn']):
-                self.info('register as remote %s, %s, %s', headers['usn'], headers['st'], headers['location'])
-                self.ssdp_server.register('remote',
-                                            headers['usn'], headers['st'],
-                                            headers['location'],
-                                            headers['server'],
-                                            headers['cache-control'],
-                                            host=host)
-            else:
-                self.ssdp_server._known[headers['usn']]['last-seen'] = time.time()
-                self.debug('updating last-seen for %r', headers['usn'])
+            if self.ssdp_server.service_seen(host, headers['st'], headers):
+                self.info('register as remote %(usn)s, %(st)s, %(location)s',
+                          headers)
 
         # make raw data available
         # send out the signal after we had a chance to register the device

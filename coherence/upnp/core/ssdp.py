@@ -149,6 +149,24 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def isKnown(self, usn):
         return self._known.has_key(usn)
 
+    def service_seen(self, host, service_type, headers):
+        """
+        Mark a service as been seen. If the service is not yet known,
+        automatically register it.
+
+        Returns True, if the service was unknown.
+        """
+        try:
+            self._known[headers['usn']]['last-seen'] = time.time()
+        except KeyError:
+            self.register('remote', headers['usn'], service_type,
+                          headers['location'], headers['server'],
+                          headers['cache-control'], host=host)
+            return True
+        else:
+            self.debug('updating last-seen for %r', headers['usn'])
+            return False
+
     def _notifyReceived(self, headers, (host, port)):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
@@ -157,14 +175,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.debug('Notification headers: %s', headers)
 
         if headers['nts'] == 'ssdp:alive':
-            try:
-                self._known[headers['usn']]['last-seen'] = time.time()
-            except KeyError:
-                self.register('remote', headers['usn'], headers['nt'],
-                              headers['location'], headers['server'],
-                              headers['cache-control'], host=host)
-            else:
-                self.debug('updating last-seen for %r', headers['usn'])
+            self.service_seen(host, headers['nt'], headers)
         elif headers['nts'] == 'ssdp:byebye':
             self.unRegister(headers['usn'])
         else:
