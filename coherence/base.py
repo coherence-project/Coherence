@@ -557,14 +557,8 @@ class Coherence(log.Loggable):
                 if self.web_server.port != None:
                     self.web_server.port.stopListening()
                     self.web_server.port = None
-                if hasattr(self.msearch, '_double_discover_loop'):
-                    self.msearch._double_discover_loop.stop()
-                if hasattr(self.msearch, '_port'):
-                    self.msearch._port.stopListening()
-                if hasattr(self.ssdp_server, '_resend_notify_loop'):
-                    self.ssdp_server._resend_notify_loop.stop()
-                if hasattr(self.ssdp_server, '_port'):
-                    self.ssdp_server._port.stopListening()
+                self.msearch.stopDiscovery()
+                self.ssdp_server.stopNotifying()
                 #self.renew_service_subscription_loop.stop()
             except:
                 pass

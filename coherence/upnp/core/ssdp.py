@@ -45,6 +45,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.active_calls = []
         self._resend_notify_loop = None
         self._expire_loop = None
+        self._port = None
         if not self.__test:
             try:
                 self._port = reactor.listenMulticast(SSDP_PORT, self,
@@ -64,15 +65,18 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             # expire every 333 seconds (~ 5.5 Minutes)
             self._expire_loop.start(333.0, now=False)
 
+    def stopNotifying(self):
+        if self._resend_notify_loop and self._resend_notify_loop.running:
+            self._resend_notify_loop.stop()
+        if self._port:
+            self._port.stopListening()
+
     def shutdown(self):
         for call in reactor.getDelayedCalls():
             if call.func == self.__send__discovery_request:
                 call.cancel()
         if not self.__test:
-            # :todo: check if shutdown() may ever be called when
-            # __init__() did not set these.
-            if self._resend_notify_loop.running:
-                self._resend_notify_loop.stop()
+            self.stopNotifying()
             if self._expire_loop.running:
                 self._expire_loop.stop()
             # Make sure we send out the byebye notifications.
