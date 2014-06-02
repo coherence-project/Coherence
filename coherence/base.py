@@ -528,6 +528,21 @@ class Coherence(log.Loggable):
             self._incarnations_ -= 1
             return
 
+        def homecleanup(result):
+            """anything left over"""
+            louie.disconnect(self.create_device,
+                             'Coherence.UPnP.SSDP.new_device', louie.Any)
+            louie.disconnect(self.remove_device,
+                             'Coherence.UPnP.SSDP.removed_device', louie.Any)
+            louie.disconnect(self.add_device,
+                             'Coherence.UPnP.RootDevice.detection_completed',
+                             louie.Any)
+            self.ssdp_server.shutdown()
+            if self.ctrl:
+                self.ctrl.shutdown()
+            self.warning('Coherence UPnP framework shutdown')
+            return result
+
         def _shutdown():
             self.mirabeau = None
             if self.dbus:
@@ -562,17 +577,6 @@ class Coherence(log.Loggable):
                 d = root_device.unsubscribe_service_subscriptions()
                 d.addCallback(root_device.remove)
                 l.append(d)
-
-            def homecleanup(result):
-                """anything left over"""
-                louie.disconnect(self.create_device, 'Coherence.UPnP.SSDP.new_device', louie.Any)
-                louie.disconnect(self.remove_device, 'Coherence.UPnP.SSDP.removed_device', louie.Any)
-                louie.disconnect(self.add_device, 'Coherence.UPnP.RootDevice.detection_completed', louie.Any)
-                self.ssdp_server.shutdown()
-                if self.ctrl:
-                    self.ctrl.shutdown()
-                self.warning('Coherence UPnP framework shutdown')
-                return result
 
             dl = defer.DeferredList(l)
             dl.addCallback(homecleanup)
