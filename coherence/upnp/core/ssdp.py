@@ -82,20 +82,9 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     def datagramReceived(self, data, (host, port)):
         """Handle a received multicast datagram."""
-
-        try:
-            header, payload = data.split('\r\n\r\n')[:2]
-        except ValueError, err:
-            print err
-            print 'Arggg,', data
-            import pdb; pdb.set_trace()
-
-        lines = header.splitlines()
-        cmd = lines.pop(0).split()[:2]
-        lines = (l.split(':', 1) for l in lines if l)
-        headers = dict((h.strip().lower(), d.strip())
-                       for (d, h) in lines)
-
+        cmd, headers, content = utils.parse_http_response(data)
+        cmd = cmd[:2] # we are interested in only the first two elements
+        del content # we do not need the content
         self.info('SSDP command %s %s - from %s:%d', cmd[0], cmd[1], host, port)
         self.debug('with headers: %s', headers)
         if cmd == ['M-SEARCH', '*']:

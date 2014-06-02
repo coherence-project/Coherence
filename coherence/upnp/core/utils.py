@@ -66,7 +66,7 @@ def parse_http_response(data):
     cmd = lines.pop(0).split(None, 2)
     lines = (l.split(':', 1) for l in lines if l)
     headers = dict((h.strip().lower(), d.strip())
-                   for (d, h) in lines)
+                   for (h, d) in lines)
     return cmd, headers, content
 
 
