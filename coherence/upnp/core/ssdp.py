@@ -94,7 +94,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         headers = [string.split(x, ':', 1) for x in lines]
         headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
-        self.msg('SSDP command %s %s - from %s:%d', cmd[0], cmd[1], host, port)
+        self.info('SSDP command %s %s - from %s:%d', cmd[0], cmd[1], host, port)
         self.debug('with headers: %s', headers)
         if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
             # SSDP discovery
@@ -119,20 +119,19 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('Registering %s (%s)', st, location)
 
-        self.known[usn] = {}
-        self.known[usn]['USN'] = usn
-        self.known[usn]['LOCATION'] = location
-        self.known[usn]['ST'] = st
-        self.known[usn]['EXT'] = ''
-        self.known[usn]['SERVER'] = server
-        self.known[usn]['CACHE-CONTROL'] = cache_control
-
-        self.known[usn]['MANIFESTATION'] = manifestation
-        self.known[usn]['SILENT'] = silent
-        self.known[usn]['HOST'] = host
-        self.known[usn]['last-seen'] = time.time()
-
-        self.msg(self.known[usn])
+        self.known[usn] = {
+            'USN': usn,
+            'LOCATION': location,
+            'ST': st,
+            'EXT': '',
+            'SERVER': server,
+            'CACHE-CONTROL': cache_control,
+            'MANIFESTATION': manifestation,
+            'SILENT': silent,
+            'HOST': host,
+            'last-seen': time.time(),
+            }
+        self.debug('%r', self.known[usn])
 
         if manifestation == 'local':
             self.doNotify(usn)
@@ -149,7 +148,6 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             louie.send('Coherence.UPnP.SSDP.removed_device', None,
                        device_type=st, infos=self.known[usn])
             #self.callback("removed_device", st, self.known[usn])
-
         del self.known[usn]
 
     def isKnown(self, usn):
@@ -192,36 +190,30 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
 
-        self.info('Discovery request from (%s,%d) for %s', host, port, headers['st'])
-        self.info('Discovery request for %s', headers['st'])
-
-        louie.send('Coherence.UPnP.Log', None, 'SSDP', host, 'M-Search for %s' % headers['st'])
-
+        self.info('Discovery request from (%s,%d) for %s',
+                  host, port, headers['st'])
+        louie.send('Coherence.UPnP.Log', None, 'SSDP', host,
+                   'M-Search for %s' % headers['st'])
         # Do we know about this service?
-        for i in self.known.values():
-            if i['MANIFESTATION'] == 'remote':
+        for known in self.known.values():
+            if known['MANIFESTATION'] == 'remote':
                 continue
-            if(headers['st'] == 'ssdp:all' and
-               i['SILENT'] == True):
+            elif known['SILENT'] and headers['st'] == 'ssdp:all':
                 continue
-            if(i['ST'] == headers['st'] or
-                headers['st'] == 'ssdp:all'):
+            elif (headers['st'] == known['ST'] or
+                  headers['st'] == 'ssdp:all'):
                 response = []
                 response.append('HTTP/1.1 200 OK')
-
-                for k, v in i.items():
-                    if k == 'USN':
-                        usn = v
+                for k, v in known.iteritems():
                     if k not in ('MANIFESTATION', 'SILENT', 'HOST'):
                         response.append('%s: %s' % (k, v))
                 response.append('DATE: %s' % datetimeToString())
-
                 response.extend(('', ''))
+                response = '\r\n'.join(response)
+
                 delay = random.randint(0, int(headers['mx']))
-
                 reactor.callLater(delay, self.send_it,
-                                '\r\n'.join(response), (host, port), delay, usn)
-
+                                  response, (host, port), delay, known['USN'])
     def doNotify(self, usn):
         """Do notification"""
 
@@ -279,8 +271,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             self.debug("error building byebye notification: %r", msg)
 
     def resendNotify(self):
-        for usn in self.known:
-            if self.known[usn]['MANIFESTATION'] == 'local':
+        for usn, entry in self.known.iteritems():
+            if entry['MANIFESTATION'] == 'local':
                 self.doNotify(usn)
 
     def check_valid(self):
@@ -289,18 +281,21 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         """
         self.debug("Checking devices/services are still valid")
         removable = []
-        for usn in self.known:
-            if self.known[usn]['MANIFESTATION'] != 'local':
-                _, expiry = self.known[usn]['CACHE-CONTROL'].split('=')
-                expiry = int(expiry)
-                now = time.time()
-                last_seen = self.known[usn]['last-seen']
-                self.debug("Checking if %r is still valid - last seen %d (+%d), now %d", self.known[usn]['USN'], last_seen, expiry, now)
-                if last_seen + expiry + 30 < now:
-                    self.debug("Expiring: %r", self.known[usn])
-                    if self.known[usn]['ST'] == 'upnp:rootdevice':
-                        louie.send('Coherence.UPnP.SSDP.removed_device', None, device_type=self.known[usn]['ST'], infos=self.known[usn])
-                    removable.append(usn)
+        for usn, entry in self.known.iteritems():
+            if entry['MANIFESTATION'] == 'local':
+                continue
+            expiry = int(entry['CACHE-CONTROL'].split('=')[1])
+            now = time.time()
+            last_seen = entry['last-seen']
+            self.debug("Checking if %r is still valid - "
+                       "last seen %d (+%d), now %d",
+                       entry['USN'], last_seen, expiry, now)
+            if last_seen + expiry + 30 < now:
+                self.debug("Expiring: %r", entry)
+                if entry['ST'] == 'upnp:rootdevice':
+                    louie.send('Coherence.UPnP.SSDP.removed_device', None,
+                               device_type=entry['ST'], infos=entry)
+                removable.append(usn)
         for usn in removable:
             del self.known[usn]
 
