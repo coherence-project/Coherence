@@ -86,8 +86,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             print 'Arggg,', data
             import pdb; pdb.set_trace()
 
-        lines = header.split('\r\n')
-        cmd = string.split(lines[0], ' ')
+        lines = header.splitlines()
+        cmd = lines.pop(0).split()[:2]
         lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
         lines = filter(lambda x: len(x) > 0, lines)
 
@@ -96,14 +96,14 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('SSDP command %s %s - from %s:%d', cmd[0], cmd[1], host, port)
         self.debug('with headers: %s', headers)
-        if cmd[0] == 'M-SEARCH' and cmd[1] == '*':
+        if cmd == ['M-SEARCH', '*']:
             # SSDP discovery
             self.discoveryRequest(headers, (host, port))
-        elif cmd[0] == 'NOTIFY' and cmd[1] == '*':
+        elif cmd == ['NOTIFY', '*']:
             # SSDP presence
             self.notifyReceived(headers, (host, port))
         else:
-            self.warning('Unknown SSDP command %s %s', cmd[0], cmd[1])
+            self.warning('Unknown SSDP command %s %s', *cmd)
 
         # make raw data available
         # send out the signal after we had a chance to register the device
