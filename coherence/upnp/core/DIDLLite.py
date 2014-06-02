@@ -684,7 +684,7 @@ class ImageItem(Item):
             ET.SubElement(root, qname('storageMedium', UPNP_NS)).text = self.storageMedium
 
         if self.publisher is not None:
-            ET.SubElement(root, qname('publisher', DC_NS)).text = self.contributor
+            ET.SubElement(root, qname('publisher', DC_NS)).text = self.publisher
 
         if self.rights is not None:
             ET.SubElement(root, qname('rights', DC_NS)).text = self.rights
