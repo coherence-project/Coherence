@@ -41,9 +41,9 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def __init__(self, test=False, interface=''):
         # Create SSDP server
         log.Loggable.__init__(self)
-        self.test = test
+        self.__test = test
         self.active_calls = []
-        if not self.test:
+        if not self.__test:
             try:
                 self.port = reactor.listenMulticast(SSDP_PORT, self,
                                                     listenMultiple=True)
@@ -51,11 +51,11 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
                 self.port.joinGroup(SSDP_ADDR, interface=interface)
 
-                self.resend_notify_loop = task.LoopingCall(self.resendNotify)
-                self.resend_notify_loop.start(777.0, now=False)
+                self._resend_notify_loop = task.LoopingCall(self._resendNotify)
+                self._resend_notify_loop.start(777.0, now=False)
 
-                self.check_valid_loop = task.LoopingCall(self.check_valid)
-                self.check_valid_loop.start(333.0, now=False)
+                self._check_valid_loop = task.LoopingCall(self._check_valid)
+                self._check_valid_loop.start(333.0, now=False)
 
             except error.CannotListenError, err:
                 self.error("There seems to already be a SSDP server "
@@ -65,13 +65,13 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     def shutdown(self):
         for call in reactor.getDelayedCalls():
-            if call.func == self.send_it:
+            if call.func == self.__send_it:
                 call.cancel()
-        if not self.test:
-            if self.resend_notify_loop.running:
-                self.resend_notify_loop.stop()
-            if self.check_valid_loop.running:
-                self.check_valid_loop.stop()
+        if not self.__test:
+            if self._resend_notify_loop.running:
+                self._resend_notify_loop.stop()
+            if self._check_valid_loop.running:
+                self._check_valid_loop.stop()
             # Make sure we send out the byebye notifications.
             for st in self.known:
                 if self.known[st]['MANIFESTATION'] == 'local':
@@ -97,10 +97,10 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.debug('with headers: %s', headers)
         if cmd == ['M-SEARCH', '*']:
             # SSDP discovery
-            self.discoveryRequest(headers, (host, port))
+            self._discoveryRequest(headers, (host, port))
         elif cmd == ['NOTIFY', '*']:
             # SSDP presence
-            self.notifyReceived(headers, (host, port))
+            self._notifyReceived(headers, (host, port))
         else:
             self.warning('Unknown SSDP command %s %s', *cmd)
 
@@ -141,7 +141,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             #self.callback("new_device", st, self.known[usn])
 
     def unRegister(self, usn):
-        if not self.isKnown(usn):
+        if not self._isKnown(usn):
             return
         self.info("Un-registering %s", usn)
         st = self.known[usn]['ST']
@@ -154,7 +154,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     def isKnown(self, usn):
         return self.known.has_key(usn)
 
-    def notifyReceived(self, headers, (host, port)):
+    def _notifyReceived(self, headers, (host, port)):
         """Process a presence announcement.  We just remember the
         details of the SSDP service announced."""
 
@@ -178,7 +178,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host,
                    'Notify %s for %s' % (headers['nts'], headers['usn']))
 
-    def send_it(self, response, destination, delay, usn):
+    def __send_it(self, response, destination, delay, usn):
         self.info('send discovery response delayed by %ds for %s to %r',
                   delay, usn, destination)
         try:
@@ -186,7 +186,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         except (AttributeError, socket.error), msg:
             self.info("failure sending out byebye notification: %r", msg)
 
-    def discoveryRequest(self, headers, (host, port)):
+    def _discoveryRequest(self, headers, (host, port)):
         """Process a discovery request.  The response must be sent to
         the address specified by (host, port)."""
 
@@ -212,7 +212,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 response = '\r\n'.join(response)
 
                 delay = random.randint(0, int(headers['mx']))
-                reactor.callLater(delay, self.send_it,
+                reactor.callLater(delay, self.__send_it,
                                   response, (host, port), delay, known['USN'])
 
     def __build_response(self, cmd, usn):
@@ -259,12 +259,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.info("failure sending out byebye notification: %r",
                           msg)
 
-    def resendNotify(self):
+    def _resendNotify(self):
         for usn, entry in self.known.iteritems():
             if entry['MANIFESTATION'] == 'local':
                 self.doNotify(usn)
 
-    def check_valid(self):
+    def _check_valid(self):
         """ check if the discovered devices are still ok, or
             if we haven't received a new discovery response
         """
