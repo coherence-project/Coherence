@@ -212,61 +212,50 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 delay = random.randint(0, int(headers['mx']))
                 reactor.callLater(delay, self.send_it,
                                   response, (host, port), delay, known['USN'])
-    def doNotify(self, usn):
-        """Do notification"""
 
-        if self.known[usn]['SILENT'] == True:
-            return
-        self.info('Sending alive notification for %s', usn)
-
+    def __build_response(self, cmd, usn):
         resp = ['NOTIFY * HTTP/1.1',
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
-            'NTS: ssdp:alive',
+            'NTS: %s' % cmd,
             ]
-        stcpy = dict(self.known[usn].iteritems())
+        stcpy = self.known[usn].copy()
         stcpy['NT'] = stcpy['ST']
-        del stcpy['ST']
-        del stcpy['MANIFESTATION']
-        del stcpy['SILENT']
-        del stcpy['HOST']
-        del stcpy['last-seen']
-
-        resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
+        for k in ('ST', 'MANIFESTATION', 'SILENT', 'HOST', 'last-seen'):
+            try:
+                # :fixme: this keys should always exist as we build the entry
+                del stcpy[k]
+            except:
+                pass
+        resp.extend(': '.join(x) for x in stcpy.iteritems())
         resp.extend(('', ''))
+        return '\r\n'.join(resp)
+
+    def doNotify(self, usn):
+        """Do notification"""
+        if self.known[usn]['SILENT']:
+            return
+        self.info('Sending alive notification for %s', usn)
+        resp = self.__build_response('ssdp:alive', usn)
         self.debug('doNotify content %s', resp)
         try:
-            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-            self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
+            # :fixme: why is this sent twice?
+            self.transport.write(resp, (SSDP_ADDR, SSDP_PORT))
+            self.transport.write(resp, (SSDP_ADDR, SSDP_PORT))
         except (AttributeError, socket.error), msg:
             self.info("failure sending out alive notification: %r", msg)
 
     def doByebye(self, usn):
         """Do byebye"""
-
+        # :todo: unite with doNotify(). Why are there differences at all?
         self.info('Sending byebye notification for %s', usn)
-
-        resp = ['NOTIFY * HTTP/1.1',
-                'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
-                'NTS: ssdp:byebye',
-                ]
-        try:
-            stcpy = dict(self.known[usn].iteritems())
-            stcpy['NT'] = stcpy['ST']
-            del stcpy['ST']
-            del stcpy['MANIFESTATION']
-            del stcpy['SILENT']
-            del stcpy['HOST']
-            del stcpy['last-seen']
-            resp.extend(map(lambda x: ': '.join(x), stcpy.iteritems()))
-            resp.extend(('', ''))
-            self.debug('doByebye content %s', resp)
-            if self.transport:
-                try:
-                    self.transport.write('\r\n'.join(resp), (SSDP_ADDR, SSDP_PORT))
-                except (AttributeError, socket.error), msg:
-                    self.info("failure sending out byebye notification: %r", msg)
-        except KeyError, msg:
-            self.debug("error building byebye notification: %r", msg)
+        resp = self.__build_response('ssdp:byebye', usn)
+        self.debug('doByebye content %s', resp)
+        if self.transport:
+            try:
+                self.transport.write(resp, (SSDP_ADDR, SSDP_PORT))
+            except (AttributeError, socket.error), msg:
+                self.info("failure sending out byebye notification: %r",
+                          msg)
 
     def resendNotify(self):
         for usn, entry in self.known.iteritems():
