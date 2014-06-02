@@ -33,13 +33,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     searchReceived methods are called when the appropriate type of
     datagram is received by the server."""
     logCategory = 'ssdp'
-    known = {}
-
-    _callbacks = {}
 
     def __init__(self, test=False, interface=''):
         # Create SSDP server
         log.Loggable.__init__(self)
+        self.known = {}
+        self._callbacks = {}
         self.test = test
         if self.test == False:
             try:
