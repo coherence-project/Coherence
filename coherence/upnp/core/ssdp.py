@@ -140,6 +140,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             #self.callback("new_device", st, self.known[usn])
 
     def unRegister(self, usn):
+        if not self.isKnown(usn):
+            return
         self.info("Un-registering %s", usn)
         st = self.known[usn]['ST']
         if st == 'upnp:rootdevice':
@@ -168,8 +170,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             else:
                 self.debug('updating last-seen for %r', headers['usn'])
         elif headers['nts'] == 'ssdp:byebye':
-            if self.isKnown(headers['usn']):
-                self.unRegister(headers['usn'])
+            self.unRegister(headers['usn'])
         else:
             self.warning('Unknown subtype %s for notification type %s',
                          headers['nts'], headers['nt'])
