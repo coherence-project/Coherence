@@ -552,13 +552,14 @@ class Coherence(log.Loggable):
             for backend in self.active_backends.itervalues():
                 backend.unregister()
             self.active_backends = {}
-            """ send service unsubscribe messages """
+            # send service unsubscribe messages
             try:
                 if self.web_server.port != None:
                     self.web_server.port.stopListening()
                     self.web_server.port = None
                 #self.renew_service_subscription_loop.stop()
             except:
+                # :fixme: this may leave some loops running
                 pass
             self.msearch.stopDiscovery()
             self.ssdp_server.stopNotifying()
@@ -571,7 +572,6 @@ class Coherence(log.Loggable):
                 d = root_device.unsubscribe_service_subscriptions()
                 d.addCallback(root_device.remove)
                 l.append(d)
-
             dl = defer.DeferredList(l)
             dl.addCallback(homecleanup)
             return dl
