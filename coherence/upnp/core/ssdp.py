@@ -65,7 +65,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     def shutdown(self):
         for call in reactor.getDelayedCalls():
-            if call.func == self.__send_it:
+            if call.func == self.__send__discovery_request:
                 call.cancel()
         if not self.__test:
             if self._resend_notify_loop.running:
@@ -178,7 +178,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host,
                    'Notify %s for %s' % (headers['nts'], headers['usn']))
 
-    def __send_it(self, response, destination, delay, usn):
+    def __send__discovery_request(self, response, destination, delay, usn):
         self.info('send discovery response delayed by %ds for %s to %r',
                   delay, usn, destination)
         try:
@@ -212,7 +212,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 response = '\r\n'.join(response)
 
                 delay = random.randint(0, int(headers['mx']))
-                reactor.callLater(delay, self.__send_it,
+                reactor.callLater(delay, self.__send__discovery_request,
                                   response, (host, port), delay, known['USN'])
 
     def __build_response(self, cmd, usn):
