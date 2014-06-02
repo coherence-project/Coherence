@@ -132,6 +132,17 @@ class TestUpnpUtils(unittest.TestCase):
         self.assertEqual(newData, '\r\n'.join(testChunkedDataResult))
 
 
+msearch_response1 = (
+    'HTTP/1.1 200 OK\r\n'
+'Cache-Control: max-age=1800\r\n'
+'Date: Mon, 02 Jun 2014 18:04:59 GMT\r\n'
+'Ext: \r\n'
+'Location: http://192.168.1.4:9000/plugins/UPnP/MediaServer.xml\r\n'
+'Server: Linux/armv5-linux UPnP/1.0 DLNADOC/1.50 MediaServer/7.3/735\r\n'
+'ST: urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\r\n'
+'USN: uuid:DDF542FB-A291-4AD0-A0C5-F7129B9D4422::urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1\r\n\r\n')
+
+
 class TestClient(unittest.TestCase):
 
     def _listen(self, site):
@@ -160,6 +171,21 @@ class TestClient(unittest.TestCase):
         for header in headers:
             self.assertIn(header, originalHeaders)
             self.assertEqual(originalHeaders[header], headers[header])
+
+    def test_parse_http_response(self):
+        cmd, headers, content = utils.parse_http_response(msearch_response1)
+        self.assertEqual(cmd, ['HTTP/1.1', '200', 'OK'])
+        self.assertEqual(content, '')
+        self.assertEqual(headers, {
+            'cache-control': 'max-age=1800',
+            'date': 'Mon, 02 Jun 2014 18:04:59 GMT',
+            'ext': '',
+            'location': 'http://192.168.1.4:9000/plugins/UPnP/MediaServer.xml',
+            'server': 'Linux/armv5-linux UPnP/1.0 DLNADOC/1.50 MediaServer/7.3/735',
+            'st': 'urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1',
+            'usn': 'uuid:DDF542FB-A291-4AD0-A0C5-F7129B9D4422::urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1',
+            })
+
 
     def test_getPage(self):
         content = '0123456789'
