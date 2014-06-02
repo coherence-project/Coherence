@@ -34,13 +34,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
     searchReceived methods are called when the appropriate type of
     datagram is received by the server."""
     logCategory = 'ssdp'
-    known = {}
-
-    _callbacks = {}
 
     def __init__(self, test=False, interface=''):
         # Create SSDP server
         log.Loggable.__init__(self)
+        self._known = {}
+        self._callbacks = {}
         self.__test = test
         self.active_calls = []
         self._resend_notify_loop = None
@@ -80,8 +79,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if self._expire_loop.running:
                 self._expire_loop.stop()
             # Make sure we send out the byebye notifications.
-            for st in self.known:
-                if self.known[st]['MANIFESTATION'] == 'local':
+            for st in self._known:
+                if self._known[st]['MANIFESTATION'] == 'local':
                     self.doByebye(st)
 
     def datagramReceived(self, data, (host, port)):
@@ -114,7 +113,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         self.info('Registering %s (%s)', st, location)
 
-        self.known[usn] = {
+        self._known[usn] = {
             'USN': usn,
             'LOCATION': location,
             'ST': st,
@@ -126,29 +125,29 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             'HOST': host,
             'last-seen': time.time(),
             }
-        self.debug('%r', self.known[usn])
+        self.debug('%r', self._known[usn])
 
         if manifestation == 'local':
             self.doNotify(usn)
 
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.new_device', None,
-                       device_type=st, infos=self.known[usn])
-            #self.callback("new_device", st, self.known[usn])
+                       device_type=st, infos=self._known[usn])
+            #self.callback("new_device", st, self._known[usn])
 
     def unRegister(self, usn):
         if not self._isKnown(usn):
             return
         self.info("Un-registering %s", usn)
-        st = self.known[usn]['ST']
+        st = self._known[usn]['ST']
         if st == 'upnp:rootdevice':
             louie.send('Coherence.UPnP.SSDP.removed_device', None,
-                       device_type=st, infos=self.known[usn])
-            #self.callback("removed_device", st, self.known[usn])
-        del self.known[usn]
+                       device_type=st, infos=self._known[usn])
+            #self.callback("removed_device", st, self._known[usn])
+        del self._known[usn]
 
     def isKnown(self, usn):
-        return self.known.has_key(usn)
+        return self._known.has_key(usn)
 
     def _notifyReceived(self, headers, (host, port)):
         """Process a presence announcement.  We just remember the
@@ -159,7 +158,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         if headers['nts'] == 'ssdp:alive':
             try:
-                self.known[headers['usn']]['last-seen'] = time.time()
+                self._known[headers['usn']]['last-seen'] = time.time()
             except KeyError:
                 self.register('remote', headers['usn'], headers['nt'],
                               headers['location'], headers['server'],
@@ -191,7 +190,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         louie.send('Coherence.UPnP.Log', None, 'SSDP', host,
                    'M-Search for %s' % headers['st'])
         # Do we know about this service?
-        for known in self.known.values():
+        for known in self._known.values():
             if known['MANIFESTATION'] == 'remote':
                 continue
             elif known['SILENT'] and headers['st'] == 'ssdp:all':
@@ -216,7 +215,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             'HOST: %s:%d' % (SSDP_ADDR, SSDP_PORT),
             'NTS: %s' % cmd,
             ]
-        stcpy = self.known[usn].copy()
+        stcpy = self._known[usn].copy()
         stcpy['NT'] = stcpy['ST']
         for k in ('ST', 'MANIFESTATION', 'SILENT', 'HOST', 'last-seen'):
             try:
@@ -230,7 +229,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
     def doNotify(self, usn):
         """Do notification"""
-        if self.known[usn]['SILENT']:
+        if self._known[usn]['SILENT']:
             return
         self.info('Sending alive notification for %s', usn)
         resp = self.__build_response('ssdp:alive', usn)
@@ -256,7 +255,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                           msg)
 
     def _resendNotify(self):
-        for usn, entry in self.known.iteritems():
+        for usn, entry in self._known.iteritems():
             if entry['MANIFESTATION'] == 'local':
                 self.doNotify(usn)
 
@@ -266,7 +265,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         """
         self.debug("Checking devices/services are still valid")
         removable = []
-        for usn, entry in self.known.iteritems():
+        for usn, entry in self._known.iteritems():
             if entry['MANIFESTATION'] == 'local':
                 continue
             expiry = int(entry['CACHE-CONTROL'].split('=')[1])
@@ -282,7 +281,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                                device_type=entry['ST'], infos=entry)
                 removable.append(usn)
         for usn in removable:
-            del self.known[usn]
+            del self._known[usn]
 
     def subscribe(self, name, callback):
         self._callbacks.setdefault(name, []).append(callback)

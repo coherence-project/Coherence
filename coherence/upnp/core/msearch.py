@@ -52,7 +52,7 @@ class MSearch(DatagramProtocol, log.Loggable):
                                             headers['cache-control'],
                                             host=host)
             else:
-                self.ssdp_server.known[headers['usn']]['last-seen'] = time.time()
+                self.ssdp_server._known[headers['usn']]['last-seen'] = time.time()
                 self.debug('updating last-seen for %r', headers['usn'])
 
         # make raw data available
