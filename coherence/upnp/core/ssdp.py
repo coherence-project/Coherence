@@ -43,6 +43,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         log.Loggable.__init__(self)
         self.__test = test
         self.active_calls = []
+        self._resend_notify_loop = None
+        self._expire_loop = None
         if not self.__test:
             try:
                 self.port = reactor.listenMulticast(SSDP_PORT, self,
@@ -54,8 +56,8 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self._resend_notify_loop = task.LoopingCall(self._resendNotify)
                 self._resend_notify_loop.start(777.0, now=False)
 
-                self._check_valid_loop = task.LoopingCall(self._check_valid)
-                self._check_valid_loop.start(333.0, now=False)
+                self._expire_loop = task.LoopingCall(self._expire)
+                self._expire_loop.start(333.0, now=False)
 
             except error.CannotListenError, err:
                 self.error("There seems to already be a SSDP server "
@@ -68,10 +70,12 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if call.func == self.__send__discovery_request:
                 call.cancel()
         if not self.__test:
+            # :todo: check if shutdown() may ever be called when
+            # __init__() did not set these.
             if self._resend_notify_loop.running:
                 self._resend_notify_loop.stop()
-            if self._check_valid_loop.running:
-                self._check_valid_loop.stop()
+            if self._expire_loop.running:
+                self._expire_loop.stop()
             # Make sure we send out the byebye notifications.
             for st in self.known:
                 if self.known[st]['MANIFESTATION'] == 'local':
@@ -264,7 +268,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
             if entry['MANIFESTATION'] == 'local':
                 self.doNotify(usn)
 
-    def _check_valid(self):
+    def _expire(self):
         """ check if the discovered devices are still ok, or
             if we haven't received a new discovery response
         """
