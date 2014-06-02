@@ -230,7 +230,8 @@ class EventProtocol(Protocol, log.Loggable):
             pass
         self.info("response received from the Service Events HTTP server ")
         #self.debug(data)
-        cmd, headers = utils.parse_http_response(data)
+        cmd, headers, content = utils.parse_http_response(data)
+        del content # we do not need the content
         self.debug("%r %r", cmd, headers)
         if cmd[1] != '200':
             self.warning("response with error code %r received from %s "

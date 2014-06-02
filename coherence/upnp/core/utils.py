@@ -57,9 +57,11 @@ def parse_xml(data, encoding="utf-8"):
 
 
 def parse_http_response(data):
-
-    """ don't try to get the body, there are reponses without """
-    header = data.split('\r\n\r\n')[0]
+    try:
+        header, content = data.split('\r\n\r\n')[0]
+    except ValueError:
+        header = data.strip()
+        content = ''
 
     lines = header.split('\r\n')
     cmd = lines[0].split(None, 2)
@@ -69,7 +71,7 @@ def parse_http_response(data):
     headers = [x.split(':', 1) for x in lines]
     headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
 
-    return cmd, headers
+    return cmd, headers, content
 
 
 def get_ip_address(ifname):

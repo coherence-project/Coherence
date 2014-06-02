@@ -34,7 +34,8 @@ class MSearch(DatagramProtocol, log.Loggable):
             self.double_discover_loop.start(120.0)
 
     def datagramReceived(self, data, (host, port)):
-        cmd, headers = utils.parse_http_response(data)
+        cmd, headers, content = utils.parse_http_response(data)
+        del content # we do not need the content
         self.info('datagramReceived from %s:%d, protocol %s code %s', host, port, cmd[0], cmd[1])
         if cmd[0].startswith('HTTP/1.') and cmd[1] == '200':
             self.msg('for %r', headers['usn'])
