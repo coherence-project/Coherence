@@ -12,13 +12,9 @@ from twisted.internet import reactor
 from twisted.internet import task
 
 from coherence.upnp.core import utils
-
 import coherence.extern.louie as louie
-
-SSDP_PORT = 1900
-SSDP_ADDR = '239.255.255.250'
-
 from coherence import log
+from coherence.upnp.core.ssdp import SSDP_PORT, SSDP_ADDR
 
 
 class MSearch(DatagramProtocol, log.Loggable):
