@@ -114,9 +114,9 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self.info('Registering %s (%s)', st, location)
 
         self._known[usn] = {
-            'USN': usn,
+            'USN': usn, # Unique Service Name
             'LOCATION': location,
-            'ST': st,
+            'ST': st, # Service Type
             'EXT': '',
             'SERVER': server,
             'CACHE-CONTROL': cache_control,
