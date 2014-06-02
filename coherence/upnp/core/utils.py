@@ -62,15 +62,11 @@ def parse_http_response(data):
     except ValueError:
         header = data.strip()
         content = ''
-
-    lines = header.split('\r\n')
-    cmd = lines[0].split(None, 2)
-    lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
-    lines = filter(lambda x: len(x) > 0, lines)
-
-    headers = [x.split(':', 1) for x in lines]
-    headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
-
+    lines = header.splitlines()
+    cmd = lines.pop(0).split(None, 2)
+    lines = (l.split(':', 1) for l in lines if l)
+    headers = dict((h.strip().lower(), d.strip())
+                   for (d, h) in lines)
     return cmd, headers, content
 
 

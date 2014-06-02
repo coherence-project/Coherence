@@ -22,7 +22,7 @@ from twisted.internet import task
 from twisted.web.http import datetimeToString
 
 from coherence import log, SERVER_ID
-
+from coherence.upnp.core import utils
 import coherence.extern.louie as louie
 
 SSDP_PORT = 1900
