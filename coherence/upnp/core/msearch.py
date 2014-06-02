@@ -24,10 +24,10 @@ class MSearch(DatagramProtocol, log.Loggable):
         log.Loggable.__init__(self)
         self.ssdp_server = ssdp_server
         if test == False:
-            self.port = reactor.listenUDP(0, self)
+            self._port = reactor.listenUDP(0, self)
 
-            self.double_discover_loop = task.LoopingCall(self.double_discover)
-            self.double_discover_loop.start(120.0)
+            self._double_discover_loop = task.LoopingCall(self.double_discover)
+            self._double_discover_loop.start(120.0)
 
     def datagramReceived(self, data, (host, port)):
         cmd, headers, content = utils.parse_http_response(data)

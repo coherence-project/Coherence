@@ -47,10 +47,10 @@ class SSDPServer(DatagramProtocol, log.Loggable):
         self._expire_loop = None
         if not self.__test:
             try:
-                self.port = reactor.listenMulticast(SSDP_PORT, self,
+                self._port = reactor.listenMulticast(SSDP_PORT, self,
                                                     listenMultiple=True)
                 #self.port.setLoopbackMode(1)
-                self.port.joinGroup(SSDP_ADDR, interface=interface)
+                self._port.joinGroup(SSDP_ADDR, interface=interface)
             except error.CannotListenError, err:
                 self.error("There seems to already be a SSDP server "
                            "running on this host, no need starting a "
