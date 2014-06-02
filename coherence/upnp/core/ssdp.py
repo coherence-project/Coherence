@@ -5,6 +5,7 @@
 # Copyright 2006 John-Mark Gurney <gurney_j@resnet.uroegon.edu>
 # Copyright (C) 2006 Fluendo, S.A. (www.fluendo.com).
 # Copyright 2006,2007,2008,2009 Frank Scholz <coherence@beebits.net>
+# Copyright 2014 Hartmut Goebel <h.goebel@crazy-compilers.com>
 #
 # Implementation of a SSDP server under Twisted Python.
 #
