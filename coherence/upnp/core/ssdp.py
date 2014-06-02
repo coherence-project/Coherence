@@ -88,11 +88,9 @@ class SSDPServer(DatagramProtocol, log.Loggable):
 
         lines = header.splitlines()
         cmd = lines.pop(0).split()[:2]
-        lines = map(lambda x: x.replace(': ', ':', 1), lines[1:])
-        lines = filter(lambda x: len(x) > 0, lines)
-
-        headers = [string.split(x, ':', 1) for x in lines]
-        headers = dict(map(lambda x: (x[0].lower(), x[1]), headers))
+        lines = (l.split(':', 1) for l in lines if l)
+        headers = dict((h.strip().lower(), d.strip())
+                       for (d, h) in lines)
 
         self.info('SSDP command %s %s - from %s:%d', cmd[0], cmd[1], host, port)
         self.debug('with headers: %s', headers)
