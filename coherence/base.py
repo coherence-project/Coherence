@@ -557,11 +557,11 @@ class Coherence(log.Loggable):
                 if self.web_server.port != None:
                     self.web_server.port.stopListening()
                     self.web_server.port = None
-                self.msearch.stopDiscovery()
-                self.ssdp_server.stopNotifying()
                 #self.renew_service_subscription_loop.stop()
             except:
                 pass
+            self.msearch.stopDiscovery()
+            self.ssdp_server.stopNotifying()
             l = []
             for root_device in self.get_devices():
                 for device in root_device.get_devices():
