@@ -14,7 +14,9 @@ from twisted.internet import protocol
 from twisted.test import proto_helpers
 
 from coherence.upnp.core import ssdp
-from coherence.upnp.core.ssdp import SSDP_PORT, SSDP_ADDR
+
+SSDP_PORT = 1900
+SSDP_ADDR = '239.255.255.250'
 
 ssdp_notify_1 = """NOTIFY * HTTP/1.1
 Host:239.255.255.250:1900
