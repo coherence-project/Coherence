@@ -9,6 +9,8 @@
 Test cases for L{upnp.core.sspd}
 """
 
+import time
+
 from twisted.trial import unittest
 from twisted.internet import protocol
 from twisted.test import proto_helpers
@@ -62,6 +64,18 @@ class TestSSDP(unittest.TestCase):
         data = '\r\n'.join(SSDP_NOTIFY_1) + '\r\n\r\n'
         self.proto.datagramReceived(data, ('127.0.0.1', 1234))
         self.assertEqual(self.tr.written, [])
+
+    def test_ssdp_notify_updates_timestamp(self):
+        data = '\r\n'.join(SSDP_NOTIFY_1) + '\r\n\r\n'
+        self.proto.datagramReceived(data, ('10.20.30.40', 1234))
+        service1 = self.proto.known[USN_1]
+        last_seen1 = service1['last-seen']
+        time.sleep(0.5)
+        self.proto.datagramReceived(data, ('10.20.30.40', 1234))
+        service2 = self.proto.known[USN_1]
+        last_seen2 = service1['last-seen']
+        self.assertIs(service1, service2)
+        self.assertLess(last_seen1, last_seen2+0.5)
 
     def test_doNotify(self):
         data = '\r\n'.join(SSDP_NOTIFY_1) + '\r\n\r\n'
