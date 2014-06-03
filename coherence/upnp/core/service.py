@@ -8,7 +8,7 @@
 import os
 
 import time
-import urllib2
+import urlparse
 from coherence.upnp.core import action
 from coherence.upnp.core import event
 from coherence.upnp.core import variable
@@ -77,7 +77,7 @@ class Service(log.Loggable):
 
         self.client = None
 
-        parsed = urllib2.urlparse.urlparse(location)
+        parsed = urlparse.urlparse(location)
         self.url_base = "%s://%s" % (parsed[0], parsed[1])
 
         self.parse_actions()
