@@ -135,9 +135,6 @@ class Service(log.Loggable):
 
     def __repr__(self):
         return "Service %s %s" % (self.service_type, self.id)
-    #def __del__(self):
-    #    print "Service deleted"
-    #    pass
 
     def _get_client(self, name):
         url = self.get_control_url()
@@ -323,8 +320,6 @@ class Service(log.Loggable):
     def parse_actions(self):
 
         def gotPage(x):
-            #print "gotPage"
-            #print x
             self.scpdXML, headers = x
             tree = utils.parse_xml(self.scpdXML, 'utf-8').getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
@@ -345,10 +340,9 @@ class Service(log.Loggable):
                 name = var_node.findtext('{%s}name' % ns)
                 data_type = var_node.findtext('{%s}dataType' % ns)
                 values = []
-                """ we need to ignore this, as there we don't get there our
-                    {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
-                    attibute there
-                """
+                # we need to ignore this, as there we don't get there our
+                # {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
+                # attribute there
                 for allowed in var_node.findall('.//{%s}allowedValue' % ns):
                     values.append(allowed.text)
                 instance = 0
@@ -356,30 +350,20 @@ class Service(log.Loggable):
                                                                'n/a',
                                                                instance, send_events,
                                                                data_type, values)
-                """ we need to do this here, as there we don't get there our
-                    {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
-                    attibute there
-                """
+                # we need to do this here, as there we don't get there our
+                # {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
+                # attibute there
                 self._variables.get(instance)[name].has_vendor_values = True
 
-            #print 'service parse:', self, self.device
             self.detection_completed = True
             louie.send('Coherence.UPnP.Service.detection_completed', sender=self.device, device=self.device)
             self.info("send signal Coherence.UPnP.Service.detection_completed for %r", self)
-            """
-            if (self.last_time_updated == None):
-                if( self.id.endswith('AVTransport') or
-                    self.id.endswith('RenderingControl')):
-                    louie.send('Coherence.UPnP.DeviceClient.Service.notified', sender=self.device, service=self)
-                    self.last_time_updated = time.time()
-            """
 
         def gotError(failure, url):
             self.warning('error requesting %s', url)
             self.info('failure %s', failure)
             louie.send('Coherence.UPnP.Service.detection_failed', self.device, device=self.device)
 
-        #print 'getPage', self.get_scpd_url()
         utils.getPage(self.get_scpd_url()).addCallbacks(gotPage, gotError, None, None, [self.get_scpd_url()], None)
 
 moderated_variables = \
@@ -449,7 +433,6 @@ class ServiceServer(log.Loggable):
         self.check_moderated_loop = None
         if moderated_variables.has_key(self.service_type):
             self.check_moderated_loop = task.LoopingCall(self.check_moderated_variables)
-            #self.check_moderated_loop.start(5.0, now=False)
             self.check_moderated_loop.start(0.5, now=False)
 
     def _release(self):
@@ -596,7 +579,6 @@ class ServiceServer(log.Loggable):
             return None
 
     def propagate_notification(self, notify):
-        #print "propagate_notification", notify
         if len(self._subscribers) <= 0:
             return
         if len(notify) <= 0:
@@ -626,7 +608,6 @@ class ServiceServer(log.Loggable):
         if evented_variables == 0:
             return
         xml = ET.tostring(root, encoding='utf-8')
-        #print "propagate_notification", xml
         for s in self._subscribers.values():
             d, p = event.send_notification(s, xml)
             self._pending_notifications[d] = p
@@ -635,21 +616,17 @@ class ServiceServer(log.Loggable):
     def check_subscribers(self):
         for s in self._subscribers.values():
             timeout = 86400
-            #print s
             if s['timeout'].startswith('Second-'):
                 timeout = int(s['timeout'][len('Second-'):])
             if time.time() > s['created'] + timeout:
                 del s
 
     def check_moderated_variables(self):
-        #print "check_moderated for %s" % self.id
-        #print self._subscribers
         if len(self._subscribers) <= 0:
             return
         variables = moderated_variables[self.get_type()]
         notify = []
         for v in variables:
-            #print self._variables[0][v].name, self._variables[0][v].updated
             for vdict in self._variables.values():
                 if vdict[v].updated == True:
                     vdict[v].updated = False
@@ -666,7 +643,6 @@ class ServiceServer(log.Loggable):
         return False
 
     def simulate_notification(self):
-        print "simulate_notification for", self.id
         self.set_variable(0, 'CurrentConnectionIDs', '0')
 
     def get_scpdXML(self):
@@ -737,18 +713,17 @@ class ServiceServer(log.Loggable):
         # we should raise an Exception when there as an Action with that name already
         # we should raise an Exception when there is no related StateVariable for an Argument
 
-        """ check for action in backend """
+        # check for action in backend
         callback = getattr(self.backend, "upnp_%s" % name, None)
 
         if callback == None:
-            """ check for action in ServiceServer """
+            # check for action in ServiceServer
             callback = getattr(self, "upnp_%s" % name, None)
 
         if(needs_callback == True and
             callback == None):
-            """ we have one or more 'A_ARG_TYPE_' variables
-                issue a warning for now
-            """
+            # we have one or more 'A_ARG_TYPE_' variables issue a
+            # warning for now
             if implementation == 'optional':
                 self.info('%s has a missing callback for %s action %s, action disabled', self.id, implementation, name)
                 return
@@ -799,20 +774,18 @@ class ServiceServer(log.Loggable):
                 if(arg_state_var[0:11] == 'A_ARG_TYPE_' and
                     arg_direction == 'out'):
                     needs_callback = True
-                #print arg_name, arg_direction, needs_callback
 
-            """ check for action in backend """
+            # check for action in backend
             callback = getattr(self.backend, "upnp_%s" % name, None)
 
             if callback == None:
-                """ check for action in ServiceServer """
+                # check for action in ServiceServer
                 callback = getattr(self, "upnp_%s" % name, None)
 
             if(needs_callback == True and
                 callback == None):
-                """ we have one or more 'A_ARG_TYPE_' variables
-                    issue a warning for now
-                """
+                # we have one or more 'A_ARG_TYPE_' variables
+                # issue a warning for now
                 if implementation == 'optional':
                     self.info('%s has a missing callback for %s action %s, action disabled', self.id, implementation, name)
                     continue
@@ -994,25 +967,19 @@ class ServiceControl(log.Loggable):
                                     add them to result dict
         """
         self.debug('get_action_results %s', result)
-        #print 'get_action_results', action, instance
         r = result
         notify = []
         for argument in action.get_out_arguments():
-            #print 'get_state_variable_contents', argument.name
             if argument.name[0:11] != 'A_ARG_TYPE_':
                 if action.get_callback() != None:
                     variable = self.variables[instance][argument.get_state_variable()]
                     variable.update(r[argument.name])
-                    #print 'update state variable contents', variable.name, variable.value, variable.send_events
                     if(variable.send_events == 'yes' and variable.moderated == False):
                         notify.append(variable)
                 else:
                     variable = self.variables[instance][argument.get_state_variable()]
-                    #print 'get state variable contents', variable.name, variable.value
                     r[argument.name] = variable.value
-                    #print "r", r
             self.service.propagate_notification(notify)
-        #r= { '%sResponse'%action.name: r}
         self.info('action_results unsorted %s %s', action.name, r)
         if len(r) == 0:
             return r
@@ -1043,7 +1010,7 @@ class ServiceControl(log.Loggable):
                 kwargs['X_UPnPClient'] == 'XBox'):
             if(action.name == 'Browse' and
                     kwargs.has_key('ContainerID')):
-                """ XXX: THIS IS SICK """
+                # XXX: THIS IS SICK - why?
                 kwargs['ObjectID'] = kwargs['ContainerID']
                 del kwargs['ContainerID']
 
@@ -1063,8 +1030,6 @@ class ServiceControl(log.Loggable):
             return failure.Failure(errorCode(402))
 
         def callit(*args, **kwargs):
-            #print 'callit args', args
-            #print 'callit kwargs', kwargs
             result = {}
             callback = action.get_callback()
             if callback != None:
@@ -1072,7 +1037,6 @@ class ServiceControl(log.Loggable):
             return result
 
         def got_error(x):
-            #print 'failure', x
             self.info('soap__generic error during call processing')
             return x
 
