@@ -93,7 +93,7 @@ class Action(log.Loggable):
         self.info("calling %s", self.name)
         in_arguments = self.get_in_arguments()
         self.info("in arguments %s", [a.get_name() for a in in_arguments])
-        instance_id = 0
+        instance_id = kwargs.get('InstanceID', 0)
         for arg_name, arg in kwargs.iteritems():
             l = [a for a in in_arguments if arg_name == a.get_name()]
             if len(l) > 0:
@@ -101,8 +101,6 @@ class Action(log.Loggable):
             else:
                 self.error("argument %s not valid for action %s", arg_name, self.name)
                 return
-            if arg_name == 'InstanceID':
-                instance_id = int(arg)
         if len(in_arguments) > 0:
             self.error("argument %s missing for action %s", [a.get_name() for a in in_arguments], self.name)
             return
