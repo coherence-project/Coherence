@@ -113,13 +113,6 @@ class Action(log.Loggable):
             action_name, kwargs = self.service.device.client.overlay_actions[self.name](**kwargs)
             self.info("changing action to %r %r", action_name, kwargs)
 
-        def got_error(failure):
-            self.warning("error on %s request with %s %s", self.name, self.
-                                                            service.service_type,
-                                                            self.service.control_url)
-            self.info(failure)
-            return failure
-
         if hasattr(self.service.device.client, 'overlay_headers'):
             self.info("action call has headers %r", kwargs.has_key('headers'))
             if kwargs.has_key('headers'):
@@ -128,20 +121,27 @@ class Action(log.Loggable):
                 kwargs['headers'] = self.service.device.client.overlay_headers
             self.info("action call with new/updated headers %r", kwargs['headers'])
 
-        client = self._get_client()
-
         ordered_arguments = OrderedDict()
         for argument in self.get_in_arguments():
             ordered_arguments[argument.name] = kwargs[argument.name]
         if kwargs.has_key('headers'):
             ordered_arguments['headers'] = kwargs['headers']
 
+        client = self._get_client()
         d = client.callRemote(action_name, ordered_arguments)
-        d.addCallback(self.got_results, instance_id=instance_id, name=action_name)
-        d.addErrback(got_error)
+        d.addCallback(self._got_results, instance_id=instance_id,
+                      name=action_name)
+        d.addErrback(self._got_error)
         return d
 
-    def got_results(self, results, instance_id, name):
+    def _got_error(self, failure):
+        self.warning("error on %s request with %s %s",
+                     self.name, self.service.service_type,
+                     self.service.control_url)
+        self.info(failure)
+        return failure
+
+    def _got_results(self, results, instance_id, name):
         instance_id = int(instance_id)
         out_arguments = self.get_out_arguments()
         self.info("call %s (instance %d) returns %d arguments: %r", name,
