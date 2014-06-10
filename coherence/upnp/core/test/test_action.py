@@ -222,6 +222,24 @@ class TestAction2(unittest.TestCase):
         result.addCallback(check_result)
         return result
 
+    def test_call_action_extraneous_result_values(self):
+        """
+        Check if extraneous result values are silently ignored.
+        """
+        # NB: This behaviour is new in coherence 0.7. Former versions
+        # would raise an IndexError.
+
+        def check_result(*args, **kw):
+            self.assertEqual(
+                self.service.get_state_variable('Brightness').value,
+                12)
+
+        client = DummyClient({'CurrentBrightness': 12, 'XtraValue': 456})
+        self.service._set_client(client)
+        result = self.action.call(InstanceID=23, Color='red')
+        result.addCallback(check_result)
+        return result
+
     def test_call_action_too_less_result_values(self):
         """
         Check if missing result values are silently ignored.
