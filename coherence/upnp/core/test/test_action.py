@@ -221,3 +221,20 @@ class TestAction2(unittest.TestCase):
         result = self.action.call(InstanceID=23, Color='red')
         result.addCallback(check_result)
         return result
+
+    def test_call_action_too_less_result_values(self):
+        """
+        Check if missing result values are silently ignored.
+        """
+        def check_result(*args, **kw):
+            self.assertEqual(
+                self.service.get_state_variable('Brightness').value,
+                NoImplementation)
+
+        self.assertIs(self.service.get_state_variable('Brightness').value,
+                      NoImplementation)
+        client = DummyClient({})
+        self.service._set_client(client)
+        result = self.action.call(InstanceID=23, Color='red')
+        result.addCallback(check_result)
+        return result
