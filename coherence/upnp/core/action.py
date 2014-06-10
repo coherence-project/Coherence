@@ -94,15 +94,17 @@ class Action(log.Loggable):
         in_arguments = self.get_in_arguments()
         self.info("in arguments %s", [a.get_name() for a in in_arguments])
         instance_id = kwargs.get('InstanceID', 0)
-        for arg_name, arg in kwargs.iteritems():
-            l = [a for a in in_arguments if arg_name == a.get_name()]
-            if len(l) > 0:
-                in_arguments.remove(l[0])
-            else:
-                self.error("argument %s not valid for action %s", arg_name, self.name)
-                return
-        if len(in_arguments) > 0:
-            self.error("argument %s missing for action %s", [a.get_name() for a in in_arguments], self.name)
+
+        # check for missing or extraneous arguments
+        passed_args = set(kwargs)
+        expected_args = set(a.get_name() for a in in_arguments)
+        if passed_args - expected_args:
+            self.error("arguments %s not valid for action %s",
+                       list(passed_args - expected_args), self.name)
+            return
+        elif expected_args - passed_args:
+            self.error("argument %s missing for action %s",
+                       list(expected_args - passed_args), self.name)
             return
 
         action_name = self.name
