@@ -145,16 +145,8 @@ class Action(log.Loggable):
     def _got_results(self, results, instance_id, name):
         instance_id = int(instance_id)
         out_arguments = self.get_out_arguments()
-        self.info("call %s (instance %d) returns %d arguments: %r", name,
-                                                                    instance_id,
-                                                                    len(out_arguments),
-                                                                    results)
-
-        # XXX A_ARG_TYPE_ arguments probably don't need a variable update
-        #if len(out_arguments) == 1:
-        #    self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
-        #elif len(out_arguments) > 1:
-
+        self.info("call %s (instance %d) returns %d arguments: %r",
+                  name, instance_id, len(out_arguments), results)
         # Update state-variables from the result. NB: This silently
         # ignores missing and extraneous result values. I'm not sure
         # if this is according to the DLNA specs. :todo: check the DLNS-specs
