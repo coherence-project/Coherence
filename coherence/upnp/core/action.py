@@ -156,10 +156,14 @@ class Action(log.Loggable):
         #    self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
         #elif len(out_arguments) > 1:
 
-        if len(out_arguments) > 0:
-            for arg_name, value in results.items():
-                state_variable_name = [a.get_state_variable() for a in out_arguments if a.get_name() == arg_name]
-                self.service.get_state_variable(state_variable_name[0], instance_id).update(value)
+        # Update state-variables from the result. NB: This silently
+        # ignores missing and extraneous result values. I'm not sure
+        # if this is according to the DLNA specs. :todo: check the DLNS-specs
+        for outarg in out_arguments:
+            if outarg.get_name() in results:
+                var = self.service.get_state_variable(
+                    outarg.get_state_variable(), instance_id)
+                var.update(results[outarg.get_name()])
 
         return results
 
