@@ -55,6 +55,7 @@ class Action(log.Loggable):
         self.name = name
         self.implementation = implementation
         self.arguments_list = arguments_list
+        self.callback = None
 
     def _get_client(self):
         client = self.service._get_client(self.name)
@@ -84,53 +85,42 @@ class Action(log.Loggable):
         self.callback = callback
 
     def get_callback(self):
-        try:
-            return self.callback
-        except:
-            return None
+        return self.callback
 
     def call(self, *args, **kwargs):
         self.info("calling %s", self.name)
         in_arguments = self.get_in_arguments()
         self.info("in arguments %s", [a.get_name() for a in in_arguments])
-        instance_id = 0
-        for arg_name, arg in kwargs.iteritems():
-            l = [a for a in in_arguments if arg_name == a.get_name()]
-            if len(l) > 0:
-                in_arguments.remove(l[0])
-            else:
-                self.error("argument %s not valid for action %s", arg_name, self.name)
-                return
-            if arg_name == 'InstanceID':
-                instance_id = int(arg)
-        if len(in_arguments) > 0:
-            self.error("argument %s missing for action %s", [a.get_name() for a in in_arguments], self.name)
+        instance_id = kwargs.get('InstanceID', 0)
+
+        # check for missing or extraneous arguments
+        passed_args = set(kwargs)
+        expected_args = set(a.get_name() for a in in_arguments)
+        if passed_args - expected_args:
+            self.error("arguments %s not valid for action %s",
+                       list(passed_args - expected_args), self.name)
+            return
+        elif expected_args - passed_args:
+            self.error("argument %s missing for action %s",
+                       list(expected_args - passed_args), self.name)
             return
 
         action_name = self.name
 
-        if(hasattr(self.service.device.client, 'overlay_actions') and
-           self.service.device.client.overlay_actions.has_key(self.name)):
-            self.info("we have an overlay method %r for action %r", self.service.device.client.overlay_actions[self.name], self.name)
-            action_name, kwargs = self.service.device.client.overlay_actions[self.name](**kwargs)
+        device_client = self.service.device.client
+        if self.name in getattr(device_client, 'overlay_actions', {}):
+            self.info("we have an overlay method %r for action %r",
+                      device_client.overlay_actions[self.name], self.name)
+            action_name, kwargs = device_client.overlay_actions[self.name](**kwargs)
             self.info("changing action to %r %r", action_name, kwargs)
 
-        def got_error(failure):
-            self.warning("error on %s request with %s %s", self.name, self.
-                                                            service.service_type,
-                                                            self.service.control_url)
-            self.info(failure)
-            return failure
-
-        if hasattr(self.service.device.client, 'overlay_headers'):
+        if hasattr(device_client, 'overlay_headers'):
             self.info("action call has headers %r", kwargs.has_key('headers'))
             if kwargs.has_key('headers'):
-                kwargs['headers'].update(self.service.device.client.overlay_headers)
+                kwargs['headers'].update(device_client.overlay_headers)
             else:
-                kwargs['headers'] = self.service.device.client.overlay_headers
+                kwargs['headers'] = device_client.overlay_headers
             self.info("action call with new/updated headers %r", kwargs['headers'])
-
-        client = self._get_client()
 
         ordered_arguments = OrderedDict()
         for argument in self.get_in_arguments():
@@ -138,28 +128,33 @@ class Action(log.Loggable):
         if kwargs.has_key('headers'):
             ordered_arguments['headers'] = kwargs['headers']
 
+        client = self._get_client()
         d = client.callRemote(action_name, ordered_arguments)
-        d.addCallback(self.got_results, instance_id=instance_id, name=action_name)
-        d.addErrback(got_error)
+        d.addCallback(self._got_results, instance_id=instance_id,
+                      name=action_name)
+        d.addErrback(self._got_error)
         return d
 
-    def got_results(self, results, instance_id, name):
+    def _got_error(self, failure):
+        self.warning("error on %s request with %s %s",
+                     self.name, self.service.service_type,
+                     self.service.control_url)
+        self.info(failure)
+        return failure
+
+    def _got_results(self, results, instance_id, name):
         instance_id = int(instance_id)
         out_arguments = self.get_out_arguments()
-        self.info("call %s (instance %d) returns %d arguments: %r", name,
-                                                                    instance_id,
-                                                                    len(out_arguments),
-                                                                    results)
-
-        # XXX A_ARG_TYPE_ arguments probably don't need a variable update
-        #if len(out_arguments) == 1:
-        #    self.service.get_state_variable(out_arguments[0].get_state_variable(), instance_id).update(results)
-        #elif len(out_arguments) > 1:
-
-        if len(out_arguments) > 0:
-            for arg_name, value in results.items():
-                state_variable_name = [a.get_state_variable() for a in out_arguments if a.get_name() == arg_name]
-                self.service.get_state_variable(state_variable_name[0], instance_id).update(value)
+        self.info("call %s (instance %d) returns %d arguments: %r",
+                  name, instance_id, len(out_arguments), results)
+        # Update state-variables from the result. NB: This silently
+        # ignores missing and extraneous result values. I'm not sure
+        # if this is according to the DLNA specs. :todo: check the DLNS-specs
+        for outarg in out_arguments:
+            if outarg.get_name() in results:
+                var = self.service.get_state_variable(
+                    outarg.get_state_variable(), instance_id)
+                var.update(results[outarg.get_name()])
 
         return results
 
