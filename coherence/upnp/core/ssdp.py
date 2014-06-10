@@ -54,7 +54,7 @@ class SSDPServer(DatagramProtocol, log.Loggable):
                 self.check_valid_loop.start(333.0, now=False)
 
             except error.CannotListenError, err:
-                self.warning("There seems to be already a SSDP server running on this host, no need starting a second one.")
+                self.error("There seems to be already a SSDP server running on this host, no need starting a second one.")
 
         self.active_calls = []
 
