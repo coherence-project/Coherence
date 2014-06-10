@@ -26,12 +26,14 @@ class DummyService:
 class TestArguments(unittest.TestCase):
 
     def test_argument(self):
+        """ Test initialization of Argument() instance """
         arg = action.Argument('SomeArgument', 'in-and-out', 'Brightness')
         self.assertEqual(arg.get_name(), 'SomeArgument')
         self.assertEqual(arg.get_direction(), 'in-and-out')
         self.assertEqual(arg.get_state_variable(), 'Brightness')
 
     def test_argument_as_dict(self):
+        """ Test Argument.as_dict() """
         arg = action.Argument('SomeArgument', 'in-and-out', 'Brightness')
         self.assertEqual(arg.as_dict(),
                          {'name': 'SomeArgument',
@@ -40,6 +42,7 @@ class TestArguments(unittest.TestCase):
                           })
 
     def test_argument_as_tuple(self):
+        """ Test Argument.as_tuples() """
         arg = action.Argument('SomeArgument', 'in-and-out', 'Brightness')
         self.assertEqual(arg.as_tuples(),
                          [('Name', 'SomeArgument'),
