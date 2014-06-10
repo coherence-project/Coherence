@@ -55,6 +55,7 @@ class Action(log.Loggable):
         self.name = name
         self.implementation = implementation
         self.arguments_list = arguments_list
+        self.callback = None
 
     def _get_client(self):
         client = self.service._get_client(self.name)
@@ -84,10 +85,7 @@ class Action(log.Loggable):
         self.callback = callback
 
     def get_callback(self):
-        try:
-            return self.callback
-        except:
-            return None
+        return self.callback
 
     def call(self, *args, **kwargs):
         self.info("calling %s", self.name)
