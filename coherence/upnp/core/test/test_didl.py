@@ -80,10 +80,8 @@ class TestDIDLLite(unittest.TestCase):
             expects an Exception.AttributeError
         """
         wrong_didl_fragment = copy(didl_fragment)
-        wrong_didl_fragment = wrong_didl_fragment.replace('object.container.album.musicAlbum', 'object.wrongcontainer.wrongalbum.videoAlbum')
-        e = None
-        try:
-            didl_element = DIDLLite.DIDLElement.fromString(wrong_didl_fragment)
-        except AttributeError:
-            return
-        self.assert_(False, "DIDLElement didn't return None from a totally wrong UPnP class identifier")
+        wrong_didl_fragment = wrong_didl_fragment.replace(
+            'object.container.album.musicAlbum',
+            'object.wrongcontainer.wrongalbum.videoAlbum')
+        self.assertRaises(AttributeError,
+                          DIDLLite.DIDLElement.fromString, wrong_didl_fragment)
