@@ -132,7 +132,7 @@ class TestAction(unittest.TestCase):
         self.assertIs(act.get_callback(), None)
 
     def test_action_as_dict(self):
-        """ Test rgumentAction.as_dict() """
+        """ Test Action.as_dict() """
         self.assertEqual(self.action.as_dict(),
                          {'name': 'SomeTestAction',
                           'arguments': [
@@ -159,7 +159,7 @@ class TestAction(unittest.TestCase):
                           ])
 
     def test_action_set_callback(self):
-        """ Test action.set_callback() """
+        """ Test Action.set_callback() """
         def _this_callback(): pass
         act = self.action
         self.assertIs(act.get_callback(), None)
