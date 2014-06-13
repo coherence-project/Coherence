@@ -426,7 +426,10 @@ class Track(BackendItem):
         self.title = element.find('title').text
         self.artist = element.find('artist').text
         self.album = element.find('album').text
-        self.genre = element.find('genre').text
+        try:
+            self.genre = element.find('genre').text
+        except:
+            self.genre = None
         self.track_nr = element.find('track').text
 
         try:
