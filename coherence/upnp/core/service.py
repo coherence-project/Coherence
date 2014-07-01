@@ -330,7 +330,13 @@ class Service(log.Loggable):
             #print "gotPage"
             #print x
             self.scpdXML, headers = x
-            tree = utils.parse_xml(self.scpdXML, 'utf-8').getroot()
+            try:
+                xml_doc = utils.parse_xml(self.scpdXML, 'utf-8')
+            except Exception as e:
+                self.warning("Invalid service description received from %r: e",
+                             self.get_scpd_url(), e)
+                return
+            tree = xml_doc.getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
 
             for action_node in tree.findall('.//{%s}action' % ns):
