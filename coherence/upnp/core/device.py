@@ -123,6 +123,7 @@ class Device(log.Loggable):
         self.debug("add_service %r", service)
         self.services.append(service)
 
+    # :fixme: This fails as Service.get_usn() is not implemented.
     def remove_service_with_usn(self, service_usn):
         for service in self.services:
             if service.get_usn() == service_usn:
