@@ -96,6 +96,7 @@ class DescriptionNotFound(unittest.TestCase):
 
         self.assertEqual(svc._actions, {})
         self.assertEqual(svc._variables, {0: {}})
+        # :fixme: this attribute is unused, remove it
         self.assertEqual(svc._var_subscribers, {})
 
         self.assertIs(svc.subscription_id, None)
@@ -367,7 +368,6 @@ class CompleteDescription(unittest.TestCase):
         self.assertEqual(len(svc._variables), 1)
         self.assertEqual(svc._variables.keys(), [0])
         compare_variables(svc._variables[0])
-        #self.assertEqual(svc._var_subscribers, {})
         #compare_variables(svc.get_state_variables(0))
 
     def test_getters(self):

@@ -60,7 +60,7 @@ class DescriptionNotFound(unittest.TestCase):
 class EmptyDescription(unittest.TestCase):
 
     def test_init(self):
-        # In thie case, the description XML is empty. As ServiceServer
+        # In this case, the description XML is empty. As ServiceServer
         # is used for services Coherence is implementing, the XML file
         # ought to be valid.
         with mock.patch(ET.__name__ + '.parse', fakeXMLparse('')):
@@ -146,6 +146,7 @@ class ValidButEmptyDescriptionXML(unittest.TestCase):
         srv = self.service_server
         # note: parameter `instance` is ignored.:fixme: remove it?
         self.assertEqual(
+            # :rethink: make classmethod
             srv.build_single_notification(0, 'DummyVariable', 987),
             # :todo: this tested result heavily depends on how ElementTree
             # handles the namespace.
@@ -157,6 +158,8 @@ class ValidButEmptyDescriptionXML(unittest.TestCase):
 
     def test_build_last_change_event(self):
         srv = self.service_server
+        # this returns None if no variables are found (and we have no
+        # variables defined in this test-case)
         # this returns None if no variables are found
         self.assertIs(srv.build_last_change_event(), None)
         self.assertIs(srv.build_last_change_event(1), None)
