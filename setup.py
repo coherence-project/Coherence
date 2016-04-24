@@ -95,6 +95,7 @@ membership/the UPnP related tasks as much as possible.
 New in this %s - the Red-Nosed Reindeer - release
 
  * new MediaServer backends that allow access to
+
    * Banshee - exports audio and video files from Banshees media db
      (http://banshee-project.org/)
    * FeedStore - a MediaServer serving generic RSS feeds
@@ -104,6 +105,7 @@ New in this %s - the Red-Nosed Reindeer - release
    * YAMJ - serves the movie/TV series data files and metadata from a
      given YAMJ (Yet Another Movie Jukebox) library
      (http://code.google.com/p/moviejukebox/)
+
  * updates on Mirabeau - our "UPnP over XMPP" bridge
  * simplifications in the D-Bus API
  * a first implementation of an JSON/REST API
