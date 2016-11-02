@@ -276,7 +276,7 @@ class MSRoot(resource.Resource, log.Loggable):
     def requestFinished(self, result, id, request):
         self.info("finished, remove %d from connection table", id)
         self.info("finished, sentLength: %d chunked: %d code: %d", request.sentLength, request.chunked, request.code)
-        self.info("finished %r", request.headers)
+        self.info("finished %r", request.responseHeaders)
         self.server.connection_manager_server.remove_connection(id)
 
     def import_file(self, name, request):
@@ -326,7 +326,7 @@ class MSRoot(resource.Resource, log.Loggable):
                     self.warning('%s request with content-length %s header - sanitizing',
                                     request.method,
                                     headers['content-length'])
-                    del request.received_headers['content-length']
+                    request.requestHeaders.removeHeader('content-length')
                 self.debug('data', )
                 if len(request.content.getvalue()) > 0:
                     """ shall we remove that?

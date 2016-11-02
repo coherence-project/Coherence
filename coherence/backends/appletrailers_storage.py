@@ -28,7 +28,7 @@ class AppleTrailerProxy(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        request.received_headers['user-agent'] = 'QuickTime/7.6.2 (qtver=7.6.2;os=Windows NT 5.1Service Pack 3)'
+        request.requestHeaders.setRawHeaders('user-agent', ['QuickTime/7.6.2 (qtver=7.6.2;os=Windows NT 5.1Service Pack 3)'])
         return ReverseProxyUriResource.render(self, request)
 
 
