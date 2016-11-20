@@ -93,13 +93,17 @@ class RootDeviceXML(static.Data):
 
         if device_type == 'MediaServer':
             x = ET.SubElement(d, 'dev:X_DLNADOC')
+            x.attrib['xmlns:dev'] = "urn:schemas-dlna-org:device-1-0"
             x.text = 'DMS-1.50'
             x = ET.SubElement(d, 'dev:X_DLNADOC')
+            x.attrib['xmlns:dev'] = "urn:schemas-dlna-org:device-1-0"
             x.text = 'M-DMS-1.50'
         elif device_type == 'MediaRenderer':
             x = ET.SubElement(d, 'dev:X_DLNADOC')
+            x.attrib['xmlns:dev'] = "urn:schemas-dlna-org:device-1-0"
             x.text = 'DMR-1.50'
             x = ET.SubElement(d, 'dev:X_DLNADOC')
+            x.attrib['xmlns:dev'] = "urn:schemas-dlna-org:device-1-0"
             x.text = 'M-DMR-1.50'
 
         if len(dlna_caps) > 0:
@@ -107,6 +111,7 @@ class RootDeviceXML(static.Data):
                 dlna_caps = [dlna_caps]
             for cap in dlna_caps:
                 x = ET.SubElement(d, 'dev:X_DLNACAP')
+                x.attrib['xmlns:dev'] = "urn:schemas-dlna-org:device-1-0"
                 x.text = cap
 
         ET.SubElement(d, 'deviceType').text = device_type_uri
