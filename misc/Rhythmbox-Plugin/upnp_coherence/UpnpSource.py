@@ -11,8 +11,6 @@ import gobject
 import gtk
 import re
 
-from coherence import __version_info__ as coherence_version
-
 from coherence import log
 from coherence.upnp.core import DIDLLite
 
