@@ -135,38 +135,34 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
         if self.config.get_bool(gconf_keys['dmr_active']):
             # create our own media renderer
-            # but only if we have a matching Coherence package installed
-            if self.coherence_version < (0, 5, 2):
-                print "activation failed. Coherence is older than version 0.5.2"
-            else:
-                from coherence.upnp.devices.media_renderer import MediaRenderer
-                from MediaPlayer import RhythmboxPlayer
-                kwargs = {
-                    "version": self.config.get_int(gconf_keys['dmr_version']),
-                    "no_thread_needed": True,
-                    "shell": self.shell,
-                    'dmr_uuid': gconf_keys['dmr_uuid']
-                    }
+            from coherence.upnp.devices.media_renderer import MediaRenderer
+            from MediaPlayer import RhythmboxPlayer
+            kwargs = {
+                "version": self.config.get_int(gconf_keys['dmr_version']),
+                "no_thread_needed": True,
+                "shell": self.shell,
+                'dmr_uuid': gconf_keys['dmr_uuid']
+                }
 
-                if the_icon:
-                    kwargs['icon'] = the_icon
+            if the_icon:
+                kwargs['icon'] = the_icon
 
-                dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
-                if dmr_uuid:
-                    kwargs['uuid'] = dmr_uuid
+            dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
+            if dmr_uuid:
+                kwargs['uuid'] = dmr_uuid
 
-                name = self.config.get_string(gconf_keys['dmr_name'])
-                if name:
-                    name = name.replace('{host}', self.coherence.hostname)
-                    kwargs['name'] = name
+            name = self.config.get_string(gconf_keys['dmr_name'])
+            if name:
+                name = name.replace('{host}', self.coherence.hostname)
+                kwargs['name'] = name
 
-                self.renderer = MediaRenderer(self.coherence,
-                        RhythmboxPlayer, **kwargs)
+            self.renderer = MediaRenderer(self.coherence,
+                    RhythmboxPlayer, **kwargs)
 
-                if dmr_uuid is None:
-                    self.config.set_string(gconf_keys['dmr_uuid'], str(self.renderer.uuid))
+            if dmr_uuid is None:
+                self.config.set_string(gconf_keys['dmr_uuid'], str(self.renderer.uuid))
 
-                self.warning("Media Renderer available with UUID %s" % str(self.renderer.uuid))
+            self.warning("Media Renderer available with UUID %s" % str(self.renderer.uuid))
 
         if self.config.get_bool(gconf_keys['dmc_active']):
             self.warning("start looking for media servers")
