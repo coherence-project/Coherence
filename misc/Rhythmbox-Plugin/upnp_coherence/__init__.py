@@ -7,6 +7,8 @@
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
+from __future__ import print_function
+
 import rhythmdb
 import rb
 import gobject
@@ -18,6 +20,8 @@ import coherence.extern.louie as louie
 
 from coherence import log
 from CoherenceDBEntryType import CoherenceDBEntryType
+
+REQUIRED_COHERENCE_VERSION = "0.5.7"
 
 # for the icon
 import urllib
@@ -204,22 +208,18 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
     def get_coherence (self):
         coherence_instance = None
-        required_version = (0, 5, 7)
-
         try:
             from coherence.base import Coherence
-            from coherence import __version_info__
+            from coherence import __version__
         except ImportError, e:
-            print "Coherence not found"
+            print("Coherence not found")
             return None
+        from distutils.version import LooseVersion
 
-        if __version_info__ < required_version:
-            required = '.'.join([str(i) for i in required_version])
-            found = '.'.join([str(i) for i in __version_info__])
-            print "Coherence %s required. %s found. Please upgrade" % (required, found)
+        if LooseVersion(__version__) < LooseVersion(REQUIRED_COHERENCE_VERSION):
+            print("Coherence", REQUIRED_COHERENCE_VERSION, "required,",
+                 __version__, "found. Please upgrade")
             return None
-
-        self.coherence_version = __version_info__
 
         coherence_config = {
             #'logmode': 'info',
