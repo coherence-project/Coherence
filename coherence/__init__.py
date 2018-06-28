@@ -1,8 +1,7 @@
 import platform
 import sys
 
-__version_info__ = (0, 6, 7)
-__version__ = '.'.join(map(str, __version_info__))
+__version__ = "0.6.7.dev0"
 
 SERVER_ID = ','.join([platform.system(),
                       platform.release(),
