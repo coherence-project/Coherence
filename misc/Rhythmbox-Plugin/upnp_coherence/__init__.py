@@ -21,7 +21,7 @@ import coherence.extern.louie as louie
 from coherence import log
 from CoherenceDBEntryType import CoherenceDBEntryType
 
-REQUIRED_COHERENCE_VERSION = "0.5.7"
+REQUIRED_COHERENCE_VERSION = "0.6.4"
 
 # for the icon
 import urllib

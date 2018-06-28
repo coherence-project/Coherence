@@ -3,7 +3,7 @@ This project is a plugin for the Rhythmbox music management application (http://
 PREREQUISISTES
 
 * Rhythmbox 0.13.3 or greater
-* Coherence (tested with Coherence 0.6.6.2)
+* Coherence 0.6.4 or greater (tested with Coherence 0.6.6.2)
 
 PRE-INSTALLATION
 
