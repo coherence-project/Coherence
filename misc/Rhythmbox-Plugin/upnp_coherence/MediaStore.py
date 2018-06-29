@@ -10,8 +10,6 @@ import rhythmdb
 import coherence.extern.louie as louie
 import urllib
 
-from coherence import __version_info__
-
 from coherence.upnp.core import DIDLLite
 
 from coherence.backend import BackendItem, BackendStore
@@ -121,10 +119,12 @@ class Playlist(BackendItem):
 
     def get_item(self):
         item = DIDLLite.PlaylistContainer(self.id, AUDIO_PLAYLIST_CONTAINER_ID, self.title)
-        if __version_info__ >= (0, 6, 4):
-            if self.get_child_count() > 0:
-                res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
-                item.res.append(res)
+        if self.get_child_count() > 0:
+            res = DIDLLite.PlayContainerResource(
+                self.store.server.uuid,
+                cid=self.get_id(),
+                fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
+            item.res.append(res)
         return item
 
     def get_id(self):
@@ -180,10 +180,12 @@ class Album(BackendItem):
     def get_item(self, parent_id=AUDIO_ALBUM_CONTAINER_ID):
         item = DIDLLite.MusicAlbum(self.id, parent_id, self.title)
 
-        if __version_info__ >= (0, 6, 4):
-            if self.get_child_count() > 0:
-                res = DIDLLite.PlayContainerResource(self.store.server.uuid, cid=self.get_id(), fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
-                item.res.append(res)
+        if self.get_child_count() > 0:
+            res = DIDLLite.PlayContainerResource(
+                self.store.server.uuid,
+                cid=self.get_id(),
+                fid=str(TRACK_COUNT + int(self.get_children()[0].get_id())))
+            item.res.append(res)
         return item
 
     def get_id(self):

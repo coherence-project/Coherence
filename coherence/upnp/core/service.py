@@ -321,7 +321,13 @@ class Service(log.Loggable):
 
         def gotPage(x):
             self.scpdXML, headers = x
-            tree = utils.parse_xml(self.scpdXML, 'utf-8').getroot()
+            try:
+                xml_doc = utils.parse_xml(self.scpdXML, 'utf-8')
+            except Exception as e:
+                self.warning("Invalid service description received from %r: e",
+                             self.get_scpd_url(), e)
+                return
+            tree = xml_doc.getroot()
             ns = "urn:schemas-upnp-org:service-1-0"
 
             for action_node in tree.findall('.//{%s}action' % ns):
@@ -350,6 +356,14 @@ class Service(log.Loggable):
                                                                'n/a',
                                                                instance, send_events,
                                                                data_type, values)
+                allowed_range = var_node.find('{%s}allowedValueRange' % ns)
+                if allowed_range:
+                    allowed_range_dict = {}
+                    for item in allowed_range:
+                        namespace_uri, tag = item.tag[1:].split("}", 1)
+                        if tag in ['maximum', 'minimum', 'step']:
+                            allowed_range_dict[tag] = item.text
+                    self._variables.get(instance)[name].set_allowed_value_range(**allowed_range_dict)
                 # we need to do this here, as there we don't get there our
                 # {urn:schemas-beebits-net:service-1-0}X_withVendorDefines
                 # attibute there

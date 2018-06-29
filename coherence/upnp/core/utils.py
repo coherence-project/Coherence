@@ -348,9 +348,10 @@ class ReverseProxyResource(proxy.ReverseProxyResource):
         # RFC 2616 tells us that we can omit the port if it's the default port,
         # but we have to provide it otherwise
         if self.port == 80:
-            request.received_headers['host'] = self.host
+            request.requestHeaders.setRawHeaders('host', [self.host])
         else:
-            request.received_headers['host'] = "%s:%d" % (self.host, self.port)
+            hostname = "%s:%d" % (self.host, self.port)
+            request.requestHeaders.setRawHeaders('host', [hostname])
         request.content.seek(0, 0)
         qs = urlparse.urlparse(request.uri)[4]
         if qs == '':
@@ -591,7 +592,7 @@ class BufferFile(static.File):
             # won't be overwritten.
             request.method = 'HEAD'
             return ''
-        #print "StaticFile out", request.headers, request.code
+        #print "StaticFile out", request.responseHeaders, request.code
 
         # return data
         # size is the byte position to stop sending, not how many bytes to send

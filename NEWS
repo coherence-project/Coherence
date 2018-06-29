@@ -1,3 +1,11 @@
+0.6.6.2 - Red-Nosed Reindeer Revolutions - 20100102
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* fixing the setup configuration to compensate for the gone
+'auto-include-all-files-under-version-control' setuptools feature
+* generic 'genre' handling in DIDLLite - thx Caleb
+* fix for broken .face-icon handling in the Rhythmbox plugin
+
 0.6.6.1 - Red-Nosed Reindeer Reloaded - 2009-12-22
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1,8 +1,7 @@
 import platform
 import sys
 
-__version_info__ = (0, 6, 7)
-__version__ = '.'.join(map(str, __version_info__))
+__version__ = "0.7.dev0"
 
 SERVER_ID = ','.join([platform.system(),
                       platform.release(),
@@ -24,8 +23,6 @@ try:
     if twisted_version < Version("twisted", 2, 5, 0):
         raise ImportError("Twisted >= 2.5 is required. Please install it.")
 
-    if twisted_web_version < Version("twisted.web", 2, 5, 0):
-        raise ImportError("Twisted.Web >= 2.5 is required. Please install it")
 except ImportError, exc:
     # log error to stderr, might be useful for debugging purpose
     for arg in exc.args:

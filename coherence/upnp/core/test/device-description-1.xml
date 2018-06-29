@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!--============================================================
+This file uses tabs (not spaces) for block indentation.
+Any updates to this file should maintain this convention.
+This includes disabling any automatic tab-to-space conversion
+feature provided by your editor.
+================================================================-->
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+	<specVersion>
+		<major>1</major>
+		<minor>0</minor>
+	</specVersion>
+	<device>
+		<deviceType>urn:schemas-upnp-org:device:MediaRenderer:1</deviceType>
+		<dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">DMR-1.50</dlna:X_DLNADOC>
+		<friendlyName>This is my Squeeze Box</friendlyName>
+		<manufacturer>Slim Devices</manufacturer>
+		<manufacturerURL>http://www.mysqueezebox.com</manufacturerURL>
+		<modelDescription>Squeezebox Server UPnP/DLNA Plugin</modelDescription>
+		<modelName>Squeezebox Radio</modelName>
+		<modelNumber>1</modelNumber>
+		<modelURL>http://wiki.slimdevices.com/Squeezebox_Radio</modelURL>
+		<serialNumber>00:04:20:12:34:56</serialNumber>
+		<UDN>uuid:12345678-ABCE-KLMN-rstu-987654321098</UDN>
+		<iconList>
+			<icon>
+				<mimetype>image/png</mimetype>
+				<width>120</width>
+				<height>120</height>
+				<depth>24</depth>
+				<url>/html/images/Players/baby_120x120.png</url>
+			</icon>
+			<icon>
+				<mimetype>image/png</mimetype>
+				<width>48</width>
+				<height>48</height>
+				<depth>24</depth>
+				<url>/html/images/Players/baby_48x48.png</url>
+			</icon>
+			<icon>
+				<mimetype>image/jpeg</mimetype>
+				<width>120</width>
+				<height>120</height>
+				<depth>24</depth>
+				<url>/html/images/Players/baby_120x120.jpg</url>
+			</icon>
+			<icon>
+				<mimetype>image/jpeg</mimetype>
+				<width>48</width>
+				<height>48</height>
+				<depth>24</depth>
+				<url>/html/images/Players/baby_48x48.jpg</url>
+			</icon>
+		</iconList>
+		<serviceList>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:RenderingControl:1</serviceType>
+				<serviceId>urn:upnp-org:serviceId:RenderingControl</serviceId>
+				<SCPDURL>/plugins/UPnP/MediaRenderer/RenderingControl-1.xml</SCPDURL>
+				<controlURL>/plugins/UPnP/MediaRenderer/RenderingControl/control?player=00%3A04%3A20%3A12%3A34%3A56</controlURL>
+				<eventSubURL>http://192.168.123.123:40872/plugins/UPnP/MediaRenderer/RenderingControl/eventsub?player=00%3A04%3A20%3A12%3A34%3A56</eventSubURL>
+			</service>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+				<serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+				<SCPDURL>/plugins/UPnP/MediaRenderer/ConnectionManager-1.xml</SCPDURL>
+				<controlURL>/plugins/UPnP/MediaRenderer/ConnectionManager/control?player=00%3A04%3A20%3A12%3A34%3A56</controlURL>
+				<eventSubURL>http://192.168.123.123:40872/plugins/UPnP/MediaRenderer/ConnectionManager/eventsub?player=00%3A04%3A20%3A12%3A34%3A56</eventSubURL>
+			</service>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType>
+				<serviceId>urn:upnp-org:serviceId:AVTransport</serviceId>
+				<SCPDURL>/plugins/UPnP/MediaRenderer/AVTransport-1.xml</SCPDURL>
+				<controlURL>/plugins/UPnP/MediaRenderer/AVTransport/control?player=00%3A04%3A20%3A12%3A34%3A56</controlURL>
+				<eventSubURL>http://192.168.123.123:40872/plugins/UPnP/MediaRenderer/AVTransport/eventsub?player=00%3A04%3A20%3A12%3A34%3A56</eventSubURL>
+			</service>
+		</serviceList>
+		<presentationURL>http://192.168.123.123:9000</presentationURL>
+	</device>
+</root>
+<!--
+Local Variables:
+tab-width: 2
+indent-tabs-mode: t
+End:
+-->

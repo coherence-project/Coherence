@@ -1,4 +1,4 @@
-# -*- Mode: python; coding: utf-8; tab-width: 8; indent-tabs-mode: t; -*-
+# -*- coding: utf-8 -*-
 #
 # Copyright 2011, Caleb Callaway <enlightened-despot@gmail.com>
 # Copyright 2008-2010, Frank Scholz <dev@coherence-project.org>
@@ -6,6 +6,8 @@
 #
 # Licensed under the MIT license
 # http://opensource.org/licenses/mit-license.php
+
+from __future__ import print_function
 
 import rhythmdb
 import rb
@@ -18,6 +20,8 @@ import coherence.extern.louie as louie
 
 from coherence import log
 from CoherenceDBEntryType import CoherenceDBEntryType
+
+REQUIRED_COHERENCE_VERSION = "0.6.4"
 
 # for the icon
 import urllib
@@ -135,38 +139,34 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
         if self.config.get_bool(gconf_keys['dmr_active']):
             # create our own media renderer
-            # but only if we have a matching Coherence package installed
-            if self.coherence_version < (0, 5, 2):
-                print "activation failed. Coherence is older than version 0.5.2"
-            else:
-                from coherence.upnp.devices.media_renderer import MediaRenderer
-                from MediaPlayer import RhythmboxPlayer
-                kwargs = {
-                    "version": self.config.get_int(gconf_keys['dmr_version']),
-                    "no_thread_needed": True,
-                    "shell": self.shell,
-                    'dmr_uuid': gconf_keys['dmr_uuid']
-                    }
+            from coherence.upnp.devices.media_renderer import MediaRenderer
+            from MediaPlayer import RhythmboxPlayer
+            kwargs = {
+                "version": self.config.get_int(gconf_keys['dmr_version']),
+                "no_thread_needed": True,
+                "shell": self.shell,
+                'dmr_uuid': gconf_keys['dmr_uuid']
+                }
 
-                if the_icon:
-                    kwargs['icon'] = the_icon
+            if the_icon:
+                kwargs['icon'] = the_icon
 
-                dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
-                if dmr_uuid:
-                    kwargs['uuid'] = dmr_uuid
+            dmr_uuid = self.config.get_string(gconf_keys['dmr_uuid'])
+            if dmr_uuid:
+                kwargs['uuid'] = dmr_uuid
 
-                name = self.config.get_string(gconf_keys['dmr_name'])
-                if name:
-                    name = name.replace('{host}', self.coherence.hostname)
-                    kwargs['name'] = name
+            name = self.config.get_string(gconf_keys['dmr_name'])
+            if name:
+                name = name.replace('{host}', self.coherence.hostname)
+                kwargs['name'] = name
 
-                self.renderer = MediaRenderer(self.coherence,
-                        RhythmboxPlayer, **kwargs)
+            self.renderer = MediaRenderer(self.coherence,
+                    RhythmboxPlayer, **kwargs)
 
-                if dmr_uuid is None:
-                    self.config.set_string(gconf_keys['dmr_uuid'], str(self.renderer.uuid))
+            if dmr_uuid is None:
+                self.config.set_string(gconf_keys['dmr_uuid'], str(self.renderer.uuid))
 
-                self.warning("Media Renderer available with UUID %s" % str(self.renderer.uuid))
+            self.warning("Media Renderer available with UUID %s" % str(self.renderer.uuid))
 
         if self.config.get_bool(gconf_keys['dmc_active']):
             self.warning("start looking for media servers")
@@ -208,22 +208,18 @@ class CoherencePlugin(rb.Plugin, log.Loggable):
 
     def get_coherence (self):
         coherence_instance = None
-        required_version = (0, 5, 7)
-
         try:
             from coherence.base import Coherence
-            from coherence import __version_info__
+            from coherence import __version__
         except ImportError, e:
-            print "Coherence not found"
+            print("Coherence not found")
             return None
+        from distutils.version import LooseVersion
 
-        if __version_info__ < required_version:
-            required = '.'.join([str(i) for i in required_version])
-            found = '.'.join([str(i) for i in __version_info__])
-            print "Coherence %s required. %s found. Please upgrade" % (required, found)
+        if LooseVersion(__version__) < LooseVersion(REQUIRED_COHERENCE_VERSION):
+            print("Coherence", REQUIRED_COHERENCE_VERSION, "required,",
+                 __version__, "found. Please upgrade")
             return None
-
-        self.coherence_version = __version_info__
 
         coherence_config = {
             #'logmode': 'info',

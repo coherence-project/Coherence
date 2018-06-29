@@ -34,8 +34,7 @@ class PicasaProxy(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        if request.received_headers.has_key('referer'):
-            del request.received_headers['referer']
+        request.requestHeaders.removeHeader('referer')
         return ReverseProxyUriResource.render(self, request)
 
 

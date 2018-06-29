@@ -31,7 +31,7 @@ class AppleTrailerProxy(ReverseProxyUriResource):
         ReverseProxyUriResource.__init__(self, uri)
 
     def render(self, request):
-        request.received_headers['user-agent'] = USER_AGENT
+        request.requestHeaders.setRawHeaders('user-agent', USER_AGENT)
         return ReverseProxyUriResource.render(self, request)
 
 
